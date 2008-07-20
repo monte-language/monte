@@ -1,0 +1,54 @@
+def bytecodes := <import:com.twistedmatrix.ecru.bytecodes>;
+def showBytecode(bc, out) {
+  def bytecodeList extends bc {
+    to __printOn(out) {
+      var i := 0
+      out.println()
+      while (i < bytecodeList.size()) {
+        def name := bytecodes.name(bytecodeList[i])
+        def arity := bytecodes.arity(bytecodeList[i])
+        var line := name
+        for j in 1..arity {
+          i += 1
+          line += ` ${bytecodeList[i]}`
+        }
+        i += 1
+        def spaces := " " * (24 - line.size())
+        out.println(`$line $spaces #$i`)
+      }
+    }
+  }
+  return bytecodeList
+}
+
+def debugDump(modd, out) {
+  out.println("Constants:")
+  out.println(modd.getConstants());
+  out.println("Selectors:")
+  out.println(modd.getSelectors());
+  def scripts := modd.getScripts()
+  for i in  0..!scripts.size() {
+    out.println(`Script ${i+1}`);
+    def s := scripts[i]
+    for m in s[0].getKeys() {
+      out.println(` ${m[0]}/${m[1]}:`)
+      out.println(showBytecode(s[0][m][1], out));
+      out.println("Handler table:")
+      out.println(s[0][m][0])
+    }
+    for m in s[1] {
+      out.println(`Matcher pattern:`)
+      out.println(showBytecode(m[1], out));
+      out.println("Pattern handler table:")
+      out.println(m[0])
+      out.println(`Matcher body:`)
+      out.println(showBytecode(m[3], out));
+      out.println("Body handler table:")
+      out.println(m[2])
+    }
+  }
+  out.println("Main handler table:")
+  out.println(modd.getToplevelHandlerTable())
+  out.println("Main code:")
+  out.println(showBytecode(modd.getCode(), out));
+}

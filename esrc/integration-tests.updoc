@@ -1,0 +1,341 @@
+#!/usr/bin/env rune
+First, some setup:
+
+? def rt := <unsafe:java.lang.makeRuntime>.getRuntime()
+
+#> def compile := <import:com.twistedmatrix.ecru.compiler>;
+#> def dump := <import:com.twistedmatrix.ecru.bytecodeDumper>;
+
+#? def test(text) {
+#>  def bc := dump(compile(e__quasiParser(text), safeScope))
+#>  def p := rt.exec("../scripts/compiler.e")
+#>  def w := p.getOutputStream()
+#>  w.write(bc)
+#>  w.close()
+#>  return p.getStderr().getText() + p.getStdout().getText()
+#>}
+
+
+? def test(text) {
+>  def p := rt.exec(["python", "-c", "import sys, monte.api; monte.api.do(sys.argv[1], True)", text])
+>  return p.getStderr().getText() + p.getStdout().getText()
+>}
+
+? test(`1 + 1`)
+# value: "2
+#        "
+
+? test("def f(x) { return x + 1}; f(1)")
+# value: "2
+#        "
+
+? test("def f(a, b, c, d) { return c}; f(3, 1, 7, 9)")
+# value: "7
+#        "
+
+? test(`var x := 0; def f(y) {x := y}; f(3); x`)
+# value: "3
+#        "
+
+? test(`var x := 0; def f(y) {x := __return}; f(3); x(1)`)
+# value: "Failed: ejector must be enabled
+#        "
+
+? test(`try { 1; throw ("oh no")} catch p { "done"}`)
+# value: "done
+#        "
+
+? test(`try { 1; throw("oh no")} catch p {p}`)
+# value: "oh no
+#        "
+
+?test(`escape e1 { escape e2 { e1("yes") }}`)
+# value: "yes
+#        "
+
+?test(`escape e { try { 2 } finally { 1 } }`)
+#value: "2
+#       "
+
+?test(`def g(e, y) {e(y) + 1}; def f(x) { g(x, 2); return 4}; escape e {f(e); 3}`)
+# value: "2
+#        "
+
+?test(`var i := 0; while (i < 3) { i += 1}; i`)
+#value: "3
+#        "
+
+?test(`[1,2][1]`)
+#value: "2
+#       "
+
+? test(`def [a, b] := [1, 2]; a`)
+#value: "1
+#       "
+
+
+?test(`[3 => 4, 'a' => 2]['a']`)
+#value: "2
+#      "
+
+?test(`require(true)`)
+#value: "null
+#       "
+
+?test(`require(false)`)
+#value: "required condition failed
+#       "
+
+? test(`require(false, "oh no")`)
+#value: "oh no
+#       "
+
+? test(`var x := 0; for i in 1..10 { x += i }; x`)
+# value: "55
+#        "
+
+? test(`var x := 0; for i in 1..!11 { x += i }; x`)
+# value: "55
+#        "
+
+? test(`var x := 0; for i in 1..10 { x += 1; if (i == 4) { break;} }; x`)
+# value: "4
+#        "
+? test(`var x := 0; for i in (1..10).descending() { x += 1; if (i == 4) { break;} }; x`)
+# value: "7
+#        "
+
+? test(`(1..10).op__cmp(1..10)`)
+# value: "0.0
+#        "
+
+? test(`(1..10).op__cmp(3..7)`)
+# value: "1.0
+#        "
+?test(`(1..10).op__cmp(1..20)`)
+# value: "-1.0
+#        "
+?test(`(1..10).op__cmp(-10..10)`)
+# value: "-1.0
+#        "
+?test(`(1..10).op__cmp(20..30)`)
+# value: "NaN
+#        "
+
+?test(`(1..10).getEdges()[1]`)
+# value: "10
+#        "
+
+?test(`def i :int := 1`);
+# value: "1
+#        "
+
+?test(`def c :char := 'a'`);
+# value: "\'a\'
+#        "
+
+?test(`def f :float64 := 1.0`)
+# value: "1.0
+#        "
+
+?test(`def s :String := "foo"`)
+# value: "foo
+#        "
+
+?test(`def _ :__Test := true`)
+#value: "true
+#       "
+
+XXX kind of an unpleasant error message here
+?test(`def _ :__Test := false`)
+#value: "<problem condition was false: false>
+#       "
+
+?test("def x; bind x := 1; x")
+#value: "1
+#       "
+
+?test(`switch (1) {match ==2 {'a'} match ==1 {'c'}}`)
+#value: "\'c\'
+#       "
+
+?test(`def x := 1.add; x(5)`)
+#value: "6
+#       "
+
+?test(`def x ? true := 3`)
+#value: "3
+#       "
+
+?test(`def x ? false := 3`)
+#value: "<problem such-that expression was: false>
+#       "
+
+?test(`def x := [3].diverge(); x[0]`);
+#value: "3
+#       "
+
+?test(`def x := [].diverge(); x.push(3); x[0]`);
+#value: "3
+#       "
+
+?test(`def x := [3].diverge(); x.pop(); x.size()`);
+#value: "0
+#       "
+
+?test(`def x := [3].diverge(); def y := x.snapshot();  x.pop(); y[0]`)
+#value: "3
+#       "
+
+?test(`def x := [].asMap().diverge(); x["a"] := "b"; x["a"]`)
+#value: "b
+#       "
+
+?test(`[1, 2].contains(2)`)
+#value: "true
+#       "
+
+?test(`[1, 2].contains(3)`)
+#value: "false
+#       "
+
+?test(`[1, 7, 9].lastIndexOf1(7)`)
+#value: "1
+#       "
+
+?test(`[7, 7, 7, 9].lastIndexOf1(7)`)
+#value: "2
+#       "
+
+
+?test(`[1, 7, 9].lastIndexOf1(13)`)
+#value: "-1
+#       "
+
+?test(`[].asSet()`);
+#value: "[].asSet()
+#       "
+
+?test(`def x := [].asSet(); def y := x.with(3); y.size()`);
+#value: "1
+#       "
+
+?test(`def x := [3, 4].asSet(); x.with(3).getElements().size()`);
+#value: "2
+#       "
+
+?test(`var y := 0; for x in [1, 3, 6] { y += x }; y`)
+#value: "10
+#       "
+
+?test(`[1, 5, 7].last()`);
+#value: "7
+#       "
+
+?test(`def x := [1 => 9, 17 => 42].getKeys(); x[0] + x[1]`);
+#value: "18
+#       "
+
+?test(`def x := [1 => 9, 17 => 42].getValues(); x[0] + x[1]`);
+#value: "51
+#       "
+
+?test(`[1 => 2].maps(1)`)
+#value: "true
+#       "
+
+?test(`[1 => 2].maps(2)`)
+#value: "false
+#       "
+
+?test(`[1 => 2].fetch(1, 3)`)
+#value: "2
+#       "
+
+?test(`[1 => 2].fetch(2, 3)`)
+#value: "3
+#       "
+
+?test(`def x := [4 => 2, 1 => 17, 12 => 3, 8 => 1].sortKeys().getKeys(); x[0] == 1 && x[1] == 4 && x[2] == 8 && x[3] == 12`)
+#value: "true
+#       "
+
+?test(`def x := (2**34).toByteArray(); x.size() == 5 && x[0] == 4 && x[1] == 0 && x[2] == 0 && x[3] == 0 && x[4] == 0`)
+#value: "true
+#       "
+
+?test(`var x := 1; escape e { throw.eject(e, 2); x := 2} catch p { x := 3}; x`)
+#value: "3
+#       "
+
+
+?test(`safeScope.getScopeLayout().getSynEnv().size()`)
+#value: "90
+#       "
+
+?test("def y := 1; def x := \"yes\"; `$x hooray $y`")
+#value: "yes hooray 1
+#       "
+
+?test("[1, \"bob\", 3]")
+#value: "[1, \"bob\", 3]
+#       "
+
+
+?test("[1 => 2, \"three\" => '4']")
+#value: "[1 => 2, \"three\" => \'4\']
+#       "
+
+?test("[]")
+#value: "[]
+#       "
+
+?test("[].asMap()")
+#value: "[].asMap()
+#       "
+
+?test("[1, 2].asSet()")
+#value: "[1, 2].asSet()
+#       "
+
+?test("[].asMap().with(1, 2)")
+#value: "[1 => 2]
+#       "
+
+?test(`def foo {to five() {return 5}}; foo.__respondsTo("five", 0)`)
+#value: "true
+#       "
+
+?test(`def foo {}; foo.__respondsTo("__respondsTo", 2)`);
+
+?test(`def foo {to baz(x) { return x + 1} match [name, [x, y]] {x+y}}; foo.boz(3, 4)`)
+#value: "7
+#       "
+
+?test(`def foo {match [_, [x]] {x*x} match [_, [x, y]] {x + y}}; foo.boz(3)`)
+#value: "9
+#       "
+
+?test(`def foo {match [_, [x]] {x*x} match [_, [x, y]] {x + y}}; foo.boz(3, 4)`)
+#value: "7
+#       "
+
+?test("def m := [1 => 2, 2 => 4]; def foo extends m {}; foo[1] + 2");
+#value: "4
+#       "
+
+?test("[1, 2] + [3, 4]")
+#value: "[1, 2, 3, 4]
+#       "
+
+?test("(3.141592653589793).toHexString()")
+#value: "0x1.921fb54442d18p+1
+#       "
+
+?test("def ten := 0..10; ten.coerce(9, null)")
+#value: "9
+#       "
+
+? test("def ten:= 0..10; ten.coerce(11, null)")
+# value: "<problem Value not in region: 11>
+#        "

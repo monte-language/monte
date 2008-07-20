@@ -1,0 +1,55 @@
+pragma.syntax("0.9")
+pragma.enable("accumulator")
+# name => [arity, stackprereq, stackeffect]
+def bytecodeInfo := ["OP_POP" => [0, 1, -1],
+                     "OP_SWAP" => [0, 2, 0],
+                     "OP_DUP" => [0, 1, 1] ,
+                     "OP_ROT" => [0, 3, 0],
+                     "OP_LITERAL" => [1, 0, 1],
+                     "OP_NOUN_OUTER" => [1, 0, 1],
+                     "OP_SLOT_OUTER" => [1, 0, 1],
+                     "OP_NOUN_LOCAL" => [1, 0, 1],
+                     "OP_SLOT_LOCAL" => [1, 0, 1],
+                     "OP_BIND" => [1, 1, -1],
+                     "OP_BINDSLOT" => [1, 1, -1],
+                     "OP_CALL" => [1, null, null],
+                     "OP_LIST_PATT" => [1, 2, null],
+                     "OP_SIMPLEVARSLOT" => [0, 1, 0],
+                     "OP_GUARDEDVARSLOT" => [0, 3, -2],
+                     "OP_COERCETOSLOT" => [0, 2, -1],
+                     "OP_ASSIGN_LOCAL" => [1, 1, -1],
+                     "OP_EJECTOR" => [2, 0, 1],
+                     "OP_UNWIND" => [2, 0, 1],
+                     "OP_TRY" => [2, 0, 0],
+                     "OP_END_HANDLER" => [0, 0, 0],
+                     "OP_JUMP" => [2, 0, 0],
+                     "OP_EJECTOR_ONLY" => [2, 0, 1],
+                     "OP_BRANCH" => [0, 2, -2],
+                     "OP_OBJECT" => [1, null, null],
+                     "OP_BINDOBJECT" => [2, null, null],
+                     "OP_VAROBJECT" => [2, null, null],
+                     "OP_NOUN_FRAME" => [1, 0, 1],
+                     "OP_ASSIGN_FRAME" => [1, 0, -1],
+                     "OP_SLOT_FRAME" => [1, 0, 1]]
+def bytecodeNames := bytecodeInfo.getKeys()
+def bytecodeMap := accum [].asMap() for i in 0..(bytecodeNames.size()-1) {
+  _.with(bytecodeNames[i], i+1)
+}
+def reverseBytecodeInfo := accum [null] for name in bytecodeNames {
+                             _.with(bytecodeInfo[name])
+}
+
+def bytecodes extends bytecodeMap {
+  to arity(code) {
+    return reverseBytecodeInfo[code][0]
+  }
+  to stackRequirement(code) {
+    return reverseBytecodeInfo[code][1]
+  }
+  to stackEffect(code) {
+    return reverseBytecodeInfo[code][2]
+  }
+  to name(code) {
+    return bytecodeNames[code-1]
+  }
+}

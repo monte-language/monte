@@ -1,0 +1,709 @@
+pragma.syntax("0.9")
+pragma.enable("accumulator")
+def bytecodes := <import:com.twistedmatrix.ecru.bytecodes>;
+
+def assertEqual(left, right) {
+  require(left == right, `$left != $right`)
+}
+
+def compile {
+  to run(expr, scope) {
+    return compile.run(expr, scope, [])
+  }
+  to run(expr, scope, initialLocals) {
+    def scopeNameList := scope.getScopeLayout().getSynEnv().getKeys()
+    def nullIdx := scopeNameList.lastIndexOf1("null")
+    def constants := [].diverge()
+    def selectors := [].diverge()
+    def scripts := [].diverge()
+    var currentFrame := null
+    var currentScope := null
+
+    def makeBlock(parent) {
+      def code := [].diverge()
+      def jumps := [].diverge()
+      var stackHeight := 0
+      var offset := null
+      def block {
+
+        to stackEffect(op, arg1) {
+          def eff := bytecodes.stackEffect(op)
+          if (eff == null) {
+            def name := bytecodes.name(op)
+
+            if (name == "OP_LIST_PATT") {
+              return (arg1 - 1) * 2
+            }
+          } else {
+            return eff
+          }
+        }
+        to getStackHeight(initial) {
+          def x := if (parent == null) {
+            stackHeight + initial
+          } else {
+            stackHeight + parent.getStackHeight(initial)
+          }
+          return x
+        }
+        to emit(op) {
+          require(op > 0)
+          stackHeight += block.stackEffect(op, null)
+          code.push(op)
+        }
+        to emit(op, arg) {
+          require(op > 0)
+          stackHeight += block.stackEffect(op, arg)
+          code.push(op)
+          code.push(arg)
+        }
+
+        to emitCall(verb, arity) {
+          def sel := [verb, arity]
+          #awkward phrasing to work around lack of full equalizer in ecru
+          var idx := 0
+          for x in selectors {
+            if (x[0] == sel[0] && x[1] == sel[1]) {
+              break
+            }
+            idx += 1
+          }
+          if (idx == selectors.size()) {
+            selectors.push(sel)
+          }
+          stackHeight -= arity
+          code.push(bytecodes["OP_CALL"])
+          code.push(idx)
+        }
+        to emitObject(name, opname, scriptIdx, nameIdx) {
+          block.emitObject(name, opname, scriptIdx)
+          code.push(nameIdx)
+        }
+        to emitObject(name, opname, scriptIdx) {
+          stackHeight += 1 - scripts[scriptIdx][2]
+          code.push(bytecodes[opname])
+          code.push(scriptIdx)
+        }
+
+        to collectOffsets(start) {
+          if (parent == null) {
+            offset := start
+          } else {
+            offset := parent.collectOffsets(start)
+          }
+          return offset + code.size()
+        }
+        to dumpMain() {
+          block.collectOffsets(0)
+          block.getStackHeight(0)
+          return block.dump()
+        }
+        to dumpScript(arity) {
+          block.collectOffsets(0)
+          block.getStackHeight(arity)
+          return block.dump()
+        }
+
+        to dump() {
+          def [htable, prev] := if (parent != null) {
+            parent.dump()
+          } else {
+            [[].asMap(), []]
+          }
+          return [htable, prev + code]
+        }
+      }
+      return block
+    }
+
+    def makeAlternative(parent, type) {
+      def blocks := [null, null].diverge()
+      def [nStackDelta, cStackDelta] := if (type == bytecodes["OP_EJECTOR"]) {
+        [1, 1]
+      } else if (type == bytecodes["OP_TRY"]) {
+        [0, 1]
+      } else if (type == bytecodes["OP_EJECTOR_ONLY"]) {
+        [1, 0]
+      } else if (type == bytecodes["OP_UNWIND"]) {
+        [0, 2]
+      }
+      var offset := null
+      def htableEntry := [type, null, null, null].diverge()
+      var normalBlockSize := null
+      var catchBlockSize := null
+      def alternative {
+        to setNormal(b) {
+          blocks[0] := b
+        }
+        to setExceptional(b) {
+          blocks[1] := b
+        }
+        to getStackHeight(initial) {
+          def start := if (parent == null) {
+            initial
+          } else {
+            parent.getStackHeight(initial)
+          }
+          htableEntry[1] := start
+          def nSH := blocks[0].getStackHeight(start+ nStackDelta)
+          if (blocks[1] != null) {
+            def cSH := blocks[1].getStackHeight(start + cStackDelta)
+            assertEqual(nSH, cSH)
+          }
+          return nSH
+        }
+        to dumpMain() {
+          alternative.collectOffsets(0)
+          alternative.getStackHeight(0)
+          return alternative.dump()
+        }
+        to dumpScript(arity) {
+          alternative.collectOffsets(0)
+          alternative.getStackHeight(arity)
+          return alternative.dump()(1,3)
+        }
+
+        to collectOffsets(start) {
+          if (parent == null) {
+            offset := start
+          } else {
+            offset := parent.collectOffsets(start)
+          }
+          def nstart := offset + 3
+          if (type == bytecodes["OP_TRY"]) {
+            def noffset := blocks[0].collectOffsets(nstart)
+            def cstart := noffset + 4
+            def coffset := blocks[1].collectOffsets(cstart)
+            htableEntry[2] := cstart
+            htableEntry[3] := nstart..noffset
+            return coffset
+          } else if (type == bytecodes["OP_EJECTOR_ONLY"] ||
+                     type == bytecodes["OP_EJECTOR"]) {
+            def noffset := blocks[0].collectOffsets(nstart)
+            if (blocks[1] != null) {
+              def cstart := noffset + 4
+              def coffset := blocks[1].collectOffsets(cstart)
+              htableEntry[2] := cstart
+              htableEntry[3] := nstart..noffset
+              return coffset
+            } else {
+              def nend := noffset + 1
+              htableEntry[2] := nend
+              htableEntry[3] := nstart..noffset
+              return nend
+            }
+          } else if (type == bytecodes["OP_UNWIND"]) {
+            def noffset := blocks[0].collectOffsets(nstart)
+            def cstart := noffset + 1
+            def coffset := blocks[1].collectOffsets(cstart)
+            htableEntry[2] := cstart
+            htableEntry[3] := nstart..noffset
+            return coffset
+          }
+        }
+        to dump() {
+          def HANDLER_OP_SIZE := 3
+          def [prevtable, prev] := if (parent != null) {
+            parent.dump()
+          } else {
+            [[].asMap(), []]}
+
+          def [ntable, normal] := blocks[0].dump()
+          def isUnwind := (type == bytecodes["OP_UNWIND"])
+          def [ctable, catch_] := if (blocks[1] != null) {
+            blocks[1].dump()
+          } else {
+            [[].asMap(), []]
+          }
+          def nsize := normal.size()
+          def csize := catch_.size()
+
+          def catchbits := if (csize > 0  && !isUnwind) {
+            [bytecodes["OP_JUMP"], csize & 0xff, (csize >> 8) & 0xff]
+          } else {
+            []
+          }
+          def normbits := normal + [bytecodes["OP_END_HANDLER"]] + catchbits
+          def nbsize := normbits.size()
+          def [e1, e2] := [nbsize & 0xff, (nbsize >> 8) & 0xff]
+          def code := prev + [type, e1, e2] + normbits + catch_
+          def table := (ntable | ctable | prevtable
+                        ).with(offset, htableEntry.snapshot())
+
+          return [table, code]
+        }
+      }
+
+      return alternative
+    }
+
+    def makeHandlerSorter(ht) {
+      def handlerSorter(x, y) {
+        def rangeCheck := (ht[x][3].op__cmp(ht[y][3]))
+        if (rangeCheck.isNaN()) {
+          return x.op__cmp(y)
+        } else {
+          return rangeCheck
+        }
+      }
+      return handlerSorter
+    }
+
+    def makeScope(parent, offset, initialLocals) {
+      def children := initialLocals.diverge()
+      def ecruScope {
+        to newChild() {
+          def s := makeScope(ecruScope, offset + ecruScope.size(), [])
+          children.push(s)
+          return s
+        }
+        to pushScope() {
+          def s := ecruScope.newChild()
+          currentScope := s
+        }
+        to popScope() {
+          currentScope := parent
+        }
+        /**
+        Allocate a new local. Raise an error if already defined in this scope.
+        */
+        to newLocal(name) {
+          if (children.contains(name)) {
+            throw(`Failed: $name already in scope`)
+          } else {
+            children.push(name)
+            return ecruScope.lookupLocal(name)
+          }
+        }
+        /**
+        Get the index of a local variable. -1 if not found.
+        */
+        to lookupLocal(target) {
+          var i := 0
+          for item in children {
+            switch (item) {
+              match ==target {
+                return offset + i
+              }
+              match name :String {
+                i += 1
+              }
+              match subScope {
+                i += subScope.size()
+              }
+            }
+          }
+          if (parent == null) {
+              return -1
+          } else {
+            return parent.lookupLocal(target)
+          }
+        }
+        /**
+           Return the total number of bindings in all contours of this local
+           scope.
+        */
+        to size() {
+          var i := 0
+          for item in children {
+            if (item =~ _ :String) {
+              i += 1
+            } else {
+              i += item.size()
+            }
+          }
+          return i
+        }
+        to getNames() {
+          def results := [].diverge()
+          for item in children {
+            if (item =~ _ :String) {
+              results.push(item)
+            } else {
+              results.append(item.getNames())
+            }
+          }
+          return results.snapshot()
+        }
+        /** Used by test methods. */
+        to getSubscopes() {
+          return accum [] for item in children {
+            if (item !~ _ :String) {_.with(item)}}
+        }
+      }
+      return ecruScope
+    }
+    def rootScope := makeScope(null, 0, initialLocals)
+    currentScope := rootScope
+
+    def emitGuard
+    def patternVisitor
+
+    /**
+     Add a value to the constant pool, or return its current index if
+     already added.
+    */
+    def constant(v) {
+      if ((def addr := constants.lastIndexOf1(v)) != -1) {
+        return addr
+      } else {
+        constants.push(v)
+        return constants.size()-1
+      }
+    }
+
+    /** Determine where a variable can be found and its index. */
+    def lookupVariable(n) {
+      if ((def idx := currentScope.lookupLocal(n)) != -1) {
+        return [idx, "LOCAL"]
+      } else if (currentFrame != null &&
+                 (def idx := currentFrame.lastIndexOf1(n)) != -1) {
+        return [idx, "FRAME"]
+      } else if ((def idx := scopeNameList.lastIndexOf1(n)) != -1) {
+        return [idx, "OUTER"]
+      } else {
+        throw(`Failed: Undefined variable: $n`)
+      }
+    }
+
+    def firstBlock := makeBlock(null)
+    var currentBlock := firstBlock
+
+    /**
+       Look up a noun in the current environment and emit code for
+       assigning to it.
+    */
+    def emitVarAssign(n) {
+      def [idx, mode] := lookupVariable(n)
+      currentBlock.emit(bytecodes["OP_ASSIGN_"+mode], idx)
+    }
+
+    /**
+       The main event. Emits bytecode for Kernel-E nodes.
+    */
+    def visitor {
+      to visitLiteralExpr(_, v) {
+        currentBlock.emit(bytecodes["OP_LITERAL"], constant(v))
+      }
+      to visitNounExpr(_, n) {
+        def [idx, mode] := lookupVariable(n)
+        currentBlock.emit(bytecodes["OP_NOUN_"+mode], idx)
+      }
+      to visitSlotExpr(_, n) {
+        def [idx, mode] := lookupVariable(n.getName())
+        currentBlock.emit(bytecodes["OP_SLOT_"+mode], idx)
+      }
+      to visitSeqExpr(_, subs) {
+        def len := subs.size()
+        for sub in subs(0,len-1) {
+          sub.welcome(visitor)
+          currentBlock.emit(bytecodes["OP_POP"])
+        }
+        subs[len-1].welcome(visitor)
+      }
+      to visitCallExpr(_, rec, verb, args) {
+        for arg in args {
+          arg.welcome(visitor)
+        }
+        rec.welcome(visitor)
+        currentBlock.emitCall(verb, args.size())
+      }
+      to visitDefineExpr(_, pat, ej, expr) {
+        expr.welcome(visitor)
+        currentBlock.emit(bytecodes["OP_DUP"])
+        if (ej != null) {
+          ej.welcome(visitor)
+        } else {
+          currentBlock.emit(bytecodes["OP_NOUN_OUTER"], nullIdx)
+        }
+        pat.welcome(patternVisitor)
+      }
+      to visitAssignExpr(_, noun, value) {
+        value.welcome(visitor)
+        currentBlock.emit(bytecodes["OP_DUP"])
+        emitVarAssign(noun.getName())
+      }
+      to visitEscapeExpr(_, pat, body, catchPat, catchBody) {
+        def ejBlock := makeAlternative(currentBlock, bytecodes["OP_EJECTOR"])
+        currentBlock := makeBlock(null)
+        currentBlock.emit(bytecodes["OP_NOUN_OUTER"], nullIdx)
+        currentScope.pushScope()
+        pat.welcome(patternVisitor)
+        body.welcome(visitor)
+        currentScope.popScope()
+        ejBlock.setNormal(currentBlock)
+        if (catchPat != null) {
+          currentBlock := makeBlock(null)
+          currentBlock.emit(bytecodes["OP_NOUN_OUTER"], nullIdx)
+          currentScope.pushScope()
+          catchPat.welcome(patternVisitor)
+          catchBody.welcome(visitor)
+          currentScope.popScope()
+          ejBlock.setExceptional(currentBlock)
+        }
+      currentBlock := makeBlock(ejBlock)
+      }
+      to visitFinallyExpr(_, body, cleanup) {
+        def unwindBlock := makeAlternative(currentBlock, bytecodes["OP_UNWIND"])
+        currentBlock := makeBlock(null)
+        currentScope.pushScope()
+        body.welcome(visitor)
+        currentScope.popScope()
+        unwindBlock.setNormal(currentBlock)
+        currentBlock := makeBlock(null)
+        currentScope.pushScope()
+        cleanup.welcome(visitor)
+        currentScope.popScope()
+        currentBlock.emit(bytecodes["OP_POP"])
+        currentBlock.emitCall("run", 1)
+        unwindBlock.setExceptional(currentBlock)
+        currentBlock := makeBlock(unwindBlock)
+      }
+
+      to visitCatchExpr(_, body, catchPat, catchBody) {
+        def tryBlock := makeAlternative(currentBlock, bytecodes["OP_TRY"])
+        currentBlock := makeBlock(null)
+        currentScope.pushScope()
+        body.welcome(visitor)
+        currentScope.popScope()
+        tryBlock.setNormal(currentBlock)
+        currentBlock := makeBlock(null)
+        currentScope.pushScope()
+        currentBlock.emit(bytecodes["OP_NOUN_OUTER"], nullIdx)
+        catchPat.welcome(patternVisitor)
+        catchBody.welcome(visitor)
+        currentScope.popScope()
+        tryBlock.setExceptional(currentBlock)
+        currentBlock := makeBlock(tryBlock)
+      }
+
+      to visitHideExpr(_, body) {
+        currentScope.pushScope()
+        body.welcome(visitor)
+        currentScope.popScope()
+      }
+
+      to visitIfExpr(_, cond, then, els) {
+        def ifBlock := makeAlternative(currentBlock, bytecodes["OP_EJECTOR_ONLY"])
+        currentBlock := makeBlock(null)
+        currentScope.pushScope()
+        cond.welcome(visitor)
+        currentBlock.emit(bytecodes["OP_BRANCH"])
+        then.welcome(visitor)
+        currentScope.popScope()
+        ifBlock.setNormal(currentBlock)
+        currentBlock := makeBlock(null)
+        currentScope.pushScope()
+        els.welcome(visitor)
+        currentScope.popScope()
+        ifBlock.setExceptional(currentBlock)
+        currentBlock := makeBlock(ifBlock)
+      }
+
+      to visitObjectExpr(_, docComment, objName, auditors, script) {
+        def finalMethods
+        def finalMatchers
+        def numSlots
+        scripts.push([finalMethods, finalMatchers, numSlots])
+        def nameIdx
+        #first emit the bytecode that creates the object
+        def scriptIdx := scripts.size()-1
+        for a in auditors {
+          a.welcome(visitor)
+        }
+        if (objName.asText() != "_") {
+        bind nameIdx := currentScope.newLocal(objName.getNoun().asText())
+        }
+        def used := script.staticScope().namesUsed().getKeys()
+        def actualUsed := [].diverge()
+        var numIVars := 0
+        for name in used {
+          def [idx, mode] := lookupVariable(name)
+          if (mode != "OUTER") {
+            currentBlock.emit(bytecodes["OP_SLOT_"+mode], idx)
+            actualUsed.push(name)
+          }
+        }
+        bind numSlots := actualUsed.size()
+
+        objName.welcome(def _ {
+                          to visitFinalPattern(_, name, _) {
+                            currentBlock.emitObject(name, "OP_BINDOBJECT",
+                                                    scriptIdx, nameIdx)
+                          }
+                          to visitVarPattern(_, name, _) {
+                            currentBlock.emitObject(name, "OP_VAROBJECT",
+                                                    scriptIdx, nameIdx)
+                          }
+                          to visitIgnorePattern(_, _) {
+                            currentBlock.emitObject(null, "OP_OBJECT",
+                                                    scriptIdx)
+                          }
+                        })
+
+        #now emit the methods/matchers in their own scope and place them
+        #in the script pool
+        def methodsCode := [].asMap().diverge()
+        def matchersCode := [].diverge()
+        def matchers := script.getMatchers()
+        def methodsAST := script.getOptMethods()
+        if (methodsAST != null) {
+          for m in methodsAST {
+            def name := m.getVerb()
+            def args := m.getPatterns()
+            def arity := args.size()
+            if (methodsCode.maps([name, arity])) {
+              throw(`Failed: Conflicting definitions of $name/$arity`)
+            }
+            def visitMethod() {
+              for i in ((0..!arity).descending()) {
+                currentBlock.emit(bytecodes["OP_NOUN_OUTER"], nullIdx)
+                args[i].welcome(patternVisitor)
+              }
+              m.getBody().welcome(visitor)
+              #XXX return value guard
+            }
+            def methodScope := makeScope(null, 0, [])
+            def meth :=  visitor.subVisit(methodScope, actualUsed,
+                                          arity, visitMethod)
+            def msiz := methodScope.size()
+            methodsCode[[name, arity]] := meth.with(msiz)
+          }
+          for m in matchers {
+            def visitMatcherPattern() {
+              m.getPattern().welcome(patternVisitor)
+            }
+            def visitMatcherBody() {
+              m.getBody().welcome(visitor)
+            }
+            def matcherScope := makeScope(null, 0, [])
+            def patternCode := visitor.subVisit(matcherScope, actualUsed, 2,
+                                                visitMatcherPattern)
+            def bodyCode := visitor.subVisit(matcherScope, actualUsed, 0,
+                                             visitMatcherBody)
+            matchersCode.push(patternCode + bodyCode + [matcherScope.size()])
+
+          }
+        }
+        bind finalMethods := methodsCode.snapshot()
+        bind finalMatchers := matchersCode.snapshot()
+      }
+
+      to subVisit(scope, actualUsed, arity, doVisitage) {
+        #rearrange things so we can reuse the visitor
+        #(kinda icky)
+        def mainScope := currentScope
+        def mainBlock := currentBlock
+        currentScope := scope
+        currentBlock := makeBlock(null)
+        def oldFrame := currentFrame
+        currentFrame := actualUsed
+        doVisitage()
+        def num_locals := currentScope.size()
+        currentScope := mainScope
+        def subBlock := currentBlock
+        currentBlock := mainBlock
+        currentFrame := oldFrame
+        def [htable, code] := subBlock.dumpScript(arity)
+        return [htable.sortKeys(makeHandlerSorter(htable)).getValues().snapshot(),
+                code]
+      }
+    }
+    /**
+    Emit bytecode to create a guard object and coerce a specimen,
+    optionally calling an ejector on coercion failure.
+    Stack requirement: [optEjector, specimen], []
+    */
+    bind emitGuard(guardE) {
+      guardE.welcome(visitor)
+      currentBlock.emitCall("coerce", 2)
+    }
+
+    /**
+     Emit bytecode to match a pattern -- assumes optEjector at top of stack,
+     followed by specimen
+    */
+    bind patternVisitor {
+      to visitIgnorePattern(_, guardE) {
+        if (guardE != null) {
+          emitGuard(guardE)
+        } else {
+          currentBlock.emit(bytecodes["OP_POP"])
+        }
+          currentBlock.emit(bytecodes["OP_POP"])
+      }
+      to visitFinalPattern(_, nameExpr, guardE) {
+        if (guardE != null) {
+          emitGuard(guardE)
+        } else {
+          currentBlock.emit(bytecodes["OP_POP"])
+        }
+        currentBlock.emit(bytecodes["OP_BIND"],
+                          currentScope.newLocal(nameExpr.getName()))
+      }
+      to visitVarPattern(_, nameExpr, guardE) {
+        if (guardE != null) {
+          guardE.welcome(visitor)
+          currentBlock.emit(bytecodes["OP_GUARDEDVARSLOT"])
+        } else {
+          currentBlock.emit(bytecodes["OP_POP"])
+          currentBlock.emit(bytecodes["OP_SIMPLEVARSLOT"])
+        }
+        currentBlock.emit(bytecodes["OP_BINDSLOT"], currentScope.newLocal(nameExpr.getName()))
+      }
+      to visitSlotPattern(_, nameExpr, guardE) {
+        if (guardE != null) {
+          currentBlock.emit(bytecodes["OP_DUP"])
+          currentBlock.emit(bytecodes["OP_ROT"])
+          emitGuard(guardE)
+          currentBlock.emit(bytecodes["OP_SWAP"])
+        }
+        currentBlock.emit(bytecodes["OP_COERCETOSLOT"])
+        currentBlock.emit(bytecodes["OP_BINDSLOT"],
+                          currentScope.newLocal(nameExpr.getName()))
+      }
+      to visitListPattern(_, subs) {
+        currentBlock.emit(bytecodes["OP_LIST_PATT"], subs.size())
+        for i in 0..!subs.size() {
+          subs[i].welcome(patternVisitor)
+        }
+      }
+      to visitViaPattern(_, viaExpr, sub) {
+        currentBlock.emit(bytecodes["OP_DUP"])
+        currentBlock.emit(bytecodes["OP_ROT"])
+        viaExpr.welcome(visitor)
+        currentBlock.emitCall("run", 2)
+        currentBlock.emit(bytecodes["OP_SWAP"])
+        sub.welcome(patternVisitor)
+      }
+    }
+
+    expr.welcome(visitor)
+    def [handlerTable, allCode] := currentBlock.dumpMain()
+
+    def bytecodeObject {
+      to getConstants() {
+        return constants.snapshot()
+      }
+      to getSelectors() {
+        return selectors.snapshot()
+      }
+      to getCode() {
+        return allCode.snapshot()
+      }
+      to getBindings() {
+        return rootScope
+      }
+      to getScripts() {
+        return scripts.snapshot()
+      }
+      to getToplevelHandlerTable() {
+        return handlerTable.sortKeys(makeHandlerSorter(handlerTable)).getValues().snapshot()
+      }
+      to getToplevelLocals() {
+        return rootScope.getNames()
+      }
+    }
+    return bytecodeObject
+  }
+}

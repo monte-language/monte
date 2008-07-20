@@ -1,0 +1,8 @@
+#!/usr/bin/python
+
+import sys, monte.api
+
+if len(sys.argv) == 1:
+  monte.api.repl()
+else:
+  monte.api.do(open(sys.argv[1]).read(), True, monte.api.e_privilegedScope)

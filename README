@@ -1,0 +1,69 @@
+Ecru 0.1.0
+
+What is this?
+=============
+
+  Ecru is a C runtime for the E language (http://erights.org/).
+
+  Ecru is at a very early stage of development, so only implements a small
+  portion of the features found in E-on-Java. However, it supports enough of
+  the language to run the bytecode compiler. So far, Ecru supports:
+
+  - All of Kernel-E's semantics (except for meta.getScope(), meta.syntax(), and
+    auditors).
+
+  - All of the objects for which there are special syntax (strings,
+    quasiliterals, integers, float64s, booleans, characters, ConstLists,
+    ConstMaps, OrderedRegions, Promises/Resolvers, Slots, VarSlots), though
+    many methods are currently unimplemented.
+
+  - Guards for these types.
+
+  - Simple emaker import, loading bytecode files with fully-qualified names
+    from a directory defined at compile time.
+
+  - ConstSets, FlexSets, FlexMaps, and FlexLists.
+
+  - All the objects required by 0.9 syntax expansion (except TypeDesc and
+    MessageDesc).
+
+  Notable unimplemented features at this point include:
+
+  - Full Equalizer implementation, comparing non-scalar types (lists, maps,
+    other Selfless objects).
+
+  - Message buffering on Promises.
+
+  - Vats. Currently everything effectively occurs within a single turn.
+
+  - Any quasiparser other than simple__quasiParser.
+
+
+How do I install it?
+====================
+  First, install the packages named in DEPENDENCIES.  Ecru uses Autotools, so
+  the standard './configure', 'make', 'make install' procedure should be all
+  you need. 'make check' will run the C unit tests.  See the included standard
+  Autotools INSTALL document for details.
+
+
+How can I try it out?
+=====================
+
+  Ecru currently includes a frontend written in Python that provides a simple
+  REPL, located in scripts/monte.
+
+  The E script in scripts/compile.e accepts E source on stdin and outputs
+  bytecode on stdout. The 'ecru' executable compiled by the default make rule
+  accepts bytecode on stdin and runs it.
+
+
+Where can I find more information?
+==================================
+
+Ecru's project page is http://launchpad.net/ecru - bug and patches can be filed
+there, as well as questions submitted. Ecru developers can be found on IRC at
+#erights on irc.freenode.net.
+
+Allen Short
+washort@divmod.com

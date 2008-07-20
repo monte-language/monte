@@ -1,0 +1,23 @@
+def makeFakeModule(constants, selectors, scripts, htable, code, bindings) {
+  def testModule {
+    to getConstants() {
+      return constants.snapshot()
+    }
+    to getSelectors() {
+      return selectors
+    }
+    to getCode() {
+      return code
+    }
+    to getScripts() {
+      return scripts
+    }
+    to getBindings() {
+      return bindings
+    }
+    to getToplevelHandlerTable() {
+      return htable
+    }
+  }
+  return testModule
+}

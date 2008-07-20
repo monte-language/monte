@@ -1,0 +1,669 @@
+ def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>;
+def compile := <import:com.twistedmatrix.ecru.compiler>;
+def bytecodes := <import:com.twistedmatrix.ecru.bytecodes>;
+def safeScopeList := safeScope.getScopeLayout().getSynEnv().domain().getElements();
+def nullIdx := safeScopeList.lastIndexOf1("null")
+
+def _emptyBytecode := compile(e``, safeScope);
+
+def COERCE := ["coerce", 2]
+
+
+def showBytecode(bc) {
+  def bytecodeList extends bc {
+    to __printOn(out) {
+      var i := 0
+      out.println()
+      while (i < bytecodeList.size()-1) {
+        def name := bytecodes.name(bytecodeList[i])
+        def arity := bytecodes.arity(bytecodeList[i])
+        out.print(`$name	`)
+        for j in 1..arity {
+          i += 1
+          out.print(`${bytecodeList[i]} `)
+        }
+        i += 1
+        out.println()
+      }
+    }
+  }
+  return bytecodeList
+}
+
+
+def assertBytecodeEqual(left, right) {
+  require(left == right,
+`Left length: ${left.size()}
+Right length: ${right.size()}
+
+${showBytecode(left)} != ${showBytecode(right)}`)
+}
+
+def assertEqual(left, right) {
+  require(left == right, `$left != $right`)
+}
+
+def assertEquiv(left, right) {
+  require(left <=> right, `$left !<=> $right`)
+}
+
+  /**
+     A set of tests for converting Kernel-E trees to Smallcaps
+     bytecode.
+  */
+def makeTestCompiler() {
+  def testCompiler extends makeTestCase(testCompiler) {
+    /**
+       Test that literals get put in a constants pool and that
+       bytecode accessing it is emitted.
+    */
+    to test_literal() {
+      def bytecode := compile(e`17`, safeScope)
+      def size := bytecode.getConstants().size()
+      assertEqual(bytecode.getConstants()[size-1], 17)
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], size-1])
+    }
+    /**
+       Test that bytecode for variables in the outer scope is emitted
+       properly.
+    */
+    to test_outerNoun() {
+      def bytecode := compile(e`true`, safeScope)
+      def idx := safeScopeList.lastIndexOf1("true")
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_NOUN_OUTER"], idx])
+    }
+    /**
+     Ensure that an error is produced for references to undefined variables.
+    */
+    to test_nonexistentNoun() {
+      def problem
+      try {
+        def bytecode := compile(e`fred`, safeScope)
+      } catch p {
+        bind problem := p.leaf()
+      }
+      assertEqual(problem.getMessage(), "Failed: Undefined variable: fred")
+    }
+    /**
+       Test that bytecode for references to slots in the outer scope
+       is emitted properly.
+    */
+    to test_outerSlot() {
+      def bytecode := compile(e`&true`, safeScope)
+      def idx := safeScopeList.lastIndexOf1("true")
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_SLOT_OUTER"], idx])
+    }
+    /**
+       Ensure that sequences of expressions are compiled to execute
+       all expressions and only leave the value of the last one on the
+       stack.
+    */
+    to test_seq() {
+      def bytecode := compile(e`1; 2; 3`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], 0,
+                                     bytecodes["OP_POP"],
+                                     bytecodes["OP_LITERAL"], 1,
+                                     bytecodes["OP_POP"],
+                                     bytecodes["OP_LITERAL"], 2])
+    }
+    /**
+       Test that method calls are generated properly.
+    */
+    to test_call() {
+      def bytecode := compile(e`E.toString(true)`, safeScope)
+      def eIdx := safeScopeList.lastIndexOf1("E")
+      def argIdx := safeScopeList.lastIndexOf1("true")
+      def vIdx := bytecode.getSelectors().lastIndexOf1(["toString", 1])
+      assertBytecodeEqual(bytecode.getCode(), [
+                                       bytecodes["OP_NOUN_OUTER"], argIdx,
+                                       bytecodes["OP_NOUN_OUTER"], eIdx,
+                                       bytecodes["OP_CALL"], vIdx])
+    }
+    /**
+       Method arguments should be evaluated left-to-right.
+    */
+    to test_callOrder() {
+      def bytecode := compile(e`[def x := 1, x + 1]`, safeScope)
+
+    }
+    /**
+       Test that simple noun definitions are generated properly.
+    */
+    to test_define() {
+      def bytecode := compile(e`def x := 1`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], 0,
+                                     bytecodes["OP_DUP"],
+                                     bytecodes["OP_NOUN_OUTER"], nullIdx,
+                                     bytecodes["OP_POP"],
+                                     bytecodes["OP_BIND"], 0])
+    }
+    to test_guardedDefine() {
+      def bytecode := compile(e`def x :int := 1`, safeScope)
+      def intIdx := safeScopeList.lastIndexOf1("int")
+      def coerceIdx := bytecode.getSelectors().lastIndexOf1(COERCE);
+      def valIdx := bytecode.getConstants().lastIndexOf1(1)
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], valIdx,
+                                     bytecodes["OP_DUP"],
+                                     bytecodes["OP_NOUN_OUTER"], nullIdx,
+                                     bytecodes["OP_NOUN_OUTER"], intIdx,
+                                     bytecodes["OP_CALL"], coerceIdx,
+                                     bytecodes["OP_BIND"], 0])
+    }
+    to test_trinaryDefine() {
+      #Won't actually execute, but should compile just dandy --
+      #this saves me from having to test escape exprs here too
+      def bytecode := compile(e`def x :int exit true := 1`, safeScope)
+      def intIdx := safeScopeList.lastIndexOf1("int")
+      def trueIdx := safeScopeList.lastIndexOf1("true")
+      def coerceIdx := bytecode.getSelectors().lastIndexOf1(COERCE);
+      def valIdx := bytecode.getConstants().lastIndexOf1(1)
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], valIdx,
+                                     bytecodes["OP_DUP"],
+                                     bytecodes["OP_NOUN_OUTER"], trueIdx,
+                                     bytecodes["OP_NOUN_OUTER"], intIdx,
+                                     bytecodes["OP_CALL"], coerceIdx,
+                                     bytecodes["OP_BIND"], 0])
+    }
+    to test_guardedIgnore() {
+      def bytecode := compile(e`def _ :int := 1`, safeScope)
+      def intIdx := safeScopeList.lastIndexOf1("int")
+      def coerceIdx := bytecode.getSelectors().lastIndexOf1(COERCE);
+      def valIdx := bytecode.getConstants().lastIndexOf1(1)
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], valIdx,
+                                     bytecodes["OP_DUP"],
+                                     bytecodes["OP_NOUN_OUTER"], nullIdx,
+                                     bytecodes["OP_NOUN_OUTER"], intIdx,
+                                     bytecodes["OP_CALL"], coerceIdx,
+                                     bytecodes["OP_POP"]])
+    }
+    to test_listPattern() {
+      def bytecode := compile(e`def [a, b] := 1`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], 0,
+                                     bytecodes["OP_DUP"],
+                                     bytecodes["OP_NOUN_OUTER"], nullIdx,
+                                     bytecodes["OP_LIST_PATT"], 2,
+                                     bytecodes["OP_POP"],
+                                     bytecodes["OP_BIND"], 0,
+                                     bytecodes["OP_POP"],
+                                     bytecodes["OP_BIND"], 1,])
+    }
+    to test_slotPattern() {
+      def bytecode := compile(e`def &x := 1`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_COERCETOSLOT"],
+                           bytecodes["OP_BINDSLOT"], 0])
+    }
+    to test_guardedSlotPattern() {
+      #another non-executing bit of code
+      def bytecode := compile(e`def &x :int := 1`, safeScope)
+      def intIdx := safeScopeList.lastIndexOf1("int")
+      def coerceIdx := bytecode.getSelectors().lastIndexOf1(COERCE);
+      def valIdx := bytecode.getConstants().lastIndexOf1(1)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], valIdx,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_ROT"],
+                           bytecodes["OP_NOUN_OUTER"], intIdx,
+                           bytecodes["OP_CALL"], coerceIdx,
+                           bytecodes["OP_SWAP"],
+                           bytecodes["OP_COERCETOSLOT"],
+                           bytecodes["OP_BINDSLOT"], 0])
+    }
+    to test_viaPattern() {
+      def bytecode := compile(e`def via (require) x := true`, safeScope)
+      def trueIdx := safeScopeList.lastIndexOf1("true")
+      def reqIdx := safeScopeList.lastIndexOf1("require")
+      def runIdx := bytecode.getSelectors().lastIndexOf1(["run", 2])
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_NOUN_OUTER"], trueIdx,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_ROT"],
+                           bytecodes["OP_NOUN_OUTER"], reqIdx,
+                           bytecodes["OP_CALL"], runIdx,
+                           bytecodes["OP_SWAP"],
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0])
+    }
+    /**
+       Patterns in a list pattern are matched left-to-right.
+     */
+    to test_listPatternOrder() {
+      def bytecode := compile(e`def [a, via (a) b] := null`, safeScope)
+    }
+    to test_varPattern() {
+      def bytecode := compile(e`def var x := 1`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], 0,
+                                     bytecodes["OP_DUP"],
+                                     bytecodes["OP_NOUN_OUTER"], nullIdx,
+                                     bytecodes["OP_POP"],
+                                     bytecodes["OP_SIMPLEVARSLOT"],
+                                     bytecodes["OP_BINDSLOT"], 0])
+    }
+    to test_guardedVarPattern() {
+      def bytecode := compile(e`def var x :int := 1`, safeScope)
+      def intIdx := safeScopeList.lastIndexOf1("int")
+      assertBytecodeEqual(bytecode.getCode(), [bytecodes["OP_LITERAL"], 0,
+                                     bytecodes["OP_DUP"],
+                                     bytecodes["OP_NOUN_OUTER"], nullIdx,
+                                     bytecodes["OP_NOUN_OUTER"], intIdx,
+                                     bytecodes["OP_GUARDEDVARSLOT"],
+                                     bytecodes["OP_BINDSLOT"], 0])
+    }
+    to test_listPatternDefAndAccess() {
+      def bytecode := compile(e`def [a, b] := 1; a; b`, safeScope)
+      def aIdx := bytecode.getBindings().lookupLocal("a")
+      def bIdx := bytecode.getBindings().lookupLocal("b")
+      assertEqual(aIdx, 0)
+      assertEqual(bIdx, 1)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_LIST_PATT"], 2,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], aIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], bIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_NOUN_LOCAL"], aIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_NOUN_LOCAL"], bIdx])
+    }
+    to test_assign() {
+      def bytecode := compile(e`var x := 1; x := 2`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_SIMPLEVARSLOT"],
+                           bytecodes["OP_BINDSLOT"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_LITERAL"], 1,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_ASSIGN_LOCAL"], 0])
+    }
+    to test_escapeOnly() {
+      def bytecode := compile(e`escape e {1}`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_EJECTOR"], 8, 0,
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0,
+                           bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_END_HANDLER"]])
+      assertEquiv(bytecode.getToplevelHandlerTable(), [[bytecodes["OP_EJECTOR"], 0, 11, 3..10]])
+    }
+    to test_escape() {
+      def bytecode := compile(e`escape e {1} catch p {2}`, safeScope)
+      def escapeScopes := bytecode.getBindings().getSubscopes()
+      def ejIdx := escapeScopes[0].lookupLocal("e")
+      def pIdx := escapeScopes[1].lookupLocal("p")
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_EJECTOR"], 11, 0,
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], ejIdx,
+                           bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_END_HANDLER"],
+                           bytecodes["OP_JUMP"], 7, 0,
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], pIdx,
+                           bytecodes["OP_LITERAL"], 1])
+      assertEquiv(bytecode.getToplevelHandlerTable(), [[bytecodes["OP_EJECTOR"], 0, 14, 3..10]])
+    }
+    to test_escapeWithEj() {
+      def bytecode := compile(e`escape e {e(1)} catch p {2}`, safeScope)
+      def escapeScopes := bytecode.getBindings().getSubscopes()
+      def ejIdx := escapeScopes[0].lookupLocal("e")
+      def pIdx := escapeScopes[1].lookupLocal("p")
+      assertEqual(ejIdx, 0)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_EJECTOR"], 15, 0,
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], ejIdx,
+                           bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_NOUN_LOCAL"], ejIdx,
+                           bytecodes["OP_CALL"], 0,
+                           bytecodes["OP_END_HANDLER"],
+                           bytecodes["OP_JUMP"], 7, 0,
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], pIdx,
+                           bytecodes["OP_LITERAL"], 1])
+      assertEquiv(bytecode.getToplevelHandlerTable(), [[bytecodes["OP_EJECTOR"], 0, 18, 3..14]])
+    }
+    to test_finallyExpr() {
+      def bytecode := compile(e`try {1} finally {2}`, safeScope)
+      def runIdx := bytecode.getSelectors().lastIndexOf1(["run", 1]);
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_UNWIND"], 3, 0,
+                           bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_END_HANDLER"],
+                           bytecodes["OP_LITERAL"], 1,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_CALL"], runIdx])
+      assertEquiv(bytecode.getToplevelHandlerTable(), [[bytecodes["OP_UNWIND"], 0, 6, 3..5]])
+    }
+    to test_catchExpr() {
+      def bytecode := compile(e`try {1} catch p {2}`, safeScope)
+      def tryScopes := bytecode.getBindings().getSubscopes()
+      def pIdx := tryScopes[1].lookupLocal("p")
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_TRY"], 6, 0,
+                           bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_END_HANDLER"],
+                           bytecodes["OP_JUMP"], 7, 0,
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], pIdx,
+                           bytecodes["OP_LITERAL"], 1])
+      assertEquiv(bytecode.getToplevelHandlerTable(), [[bytecodes["OP_TRY"], 0, 9, 3..5]])
+    }
+    to test_hideExpr() {
+      def bytecode := compile(e`def x := 1; def y := 2; {def x := 3; y};
+                                def z := 4`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_LITERAL"], 1,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 1,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_LITERAL"], 2,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 2,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_NOUN_LOCAL"], 1,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_LITERAL"], 3,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 3])
+    }
+    to test_scopeNesting() {
+      def bytecode := compile(e`def x := 1; {{def y := 2}}`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_LITERAL"], 1,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 1])
+    }
+
+    to test_ifExpr() {
+      def bytecode := compile(e`if (true) {1} else {2}`, safeScope)
+      def trueIdx := safeScopeList.lastIndexOf1("true")
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_EJECTOR_ONLY"], 9, 0,
+                           bytecodes["OP_NOUN_OUTER"], trueIdx,
+                           bytecodes["OP_BRANCH"],
+                           bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_END_HANDLER"],
+                           bytecodes["OP_JUMP"], 2, 0,
+                           bytecodes["OP_LITERAL"], 1])
+      assertEquiv(bytecode.getToplevelHandlerTable(), [[bytecodes["OP_EJECTOR_ONLY"], 0, 12, 3..8]])
+    }
+    to test_ifExprScoping() {
+      def bytecode := compile(e`if (def x := 1) {2}; def x := 2`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_EJECTOR_ONLY"], 15, 0,
+                           bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0,
+                           bytecodes["OP_BRANCH"],
+                           bytecodes["OP_LITERAL"], 1,
+                           bytecodes["OP_END_HANDLER"],
+                           bytecodes["OP_JUMP"], 2, 0,
+                           bytecodes["OP_NOUN_OUTER"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_LITERAL"], 1,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 1])
+    }
+
+    to test_trivialObjectExpr() {
+      def bytecode := compile(e`def foo { method run() {17}}`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_BINDOBJECT"], 0, 0])
+      assertBytecodeEqual(bytecode.getScripts()[0][0][["run", 0]][1],
+                          [bytecodes["OP_LITERAL"], 0])
+      assertEqual(bytecode.getConstants()[0], 17)
+      assertEqual(bytecode.getScripts()[0][0][["run", 0]][2], 0)
+      assertEqual(bytecode.getScripts()[0][2], 0)
+    }
+    to test_trivialVarObjectExpr() {
+      def bytecode := compile(e`def var foo { method run() {17}}`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_VAROBJECT"], 0, 0])
+      assertBytecodeEqual(bytecode.getScripts()[0][0][["run", 0]][1],
+                          [bytecodes["OP_LITERAL"], 0])
+      assertEqual(bytecode.getConstants()[0], 17)
+      assertEqual(bytecode.getScripts()[0][0][["run", 0]][2], 0)
+      assertEqual(bytecode.getScripts()[0][2], 0)
+    }
+    to test_trivialAnonObjectExpr() {
+      def bytecode := compile(e`def _ { method run() {17}}`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_OBJECT"], 0])
+      assertBytecodeEqual(bytecode.getScripts()[0][0][["run", 0]][1],
+                          [bytecodes["OP_LITERAL"], 0])
+      assertEqual(bytecode.getConstants()[0], 17)
+      assertEqual(bytecode.getScripts()[0][0][["run", 0]][2], 0)
+      assertEqual(bytecode.getScripts()[0][2], 0)
+    }
+    to test_trivialClosure() {
+      def bytecode := compile(e`def x := 1; def foo { method run() {x}}`,
+                              safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_SLOT_LOCAL"], 0,
+                           bytecodes["OP_BINDOBJECT"], 0, 1])
+      assertBytecodeEqual(bytecode.getScripts()[0][0][["run", 0]][1],
+                          [bytecodes["OP_NOUN_FRAME"], 0])
+    }
+    to test_methodArgs() {
+      def bytecode := compile(e`def foo { method run(x, y) {x}}`, safeScope)
+      assertBytecodeEqual(bytecode.getScripts()[0][0][["run", 2]][1],
+                          [bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0,
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 1,
+                           bytecodes["OP_NOUN_LOCAL"], 1])
+    }
+    to test_numLocals() {
+      def bytecode := compile(e`def foo { method run() { def a := 1; def b := 2; def c := 3 } }`, safeScope)
+      assertEqual(bytecode.getScripts()[0][0][["run", 0]][2], 3);
+    }
+    to test_nestedObjects() {
+      def bytecode := compile(e`def x := 1;
+                                def foo {
+                                    method run() {
+                                        def y := 2;
+                                        def baz {
+                                            method run() {
+                                                x.add(y)
+                                            }}}}`,
+                              safeScope)
+      #main bytecode is same as previous, because only the method is changed
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_SLOT_LOCAL"], 0,
+                           bytecodes["OP_BINDOBJECT"], 0, 1])
+      assertBytecodeEqual(bytecode.getScripts()[0][0][["run", 0]][1],
+                          [bytecodes["OP_LITERAL"], 1,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_BIND"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_SLOT_LOCAL"], 0,
+                           bytecodes["OP_SLOT_FRAME"], 0,
+                           bytecodes["OP_BINDOBJECT"], 1, 1])
+      assertBytecodeEqual(bytecode.getScripts()[1][0][["run", 0]][1],
+                          [bytecodes["OP_NOUN_FRAME"], 0,
+                           bytecodes["OP_NOUN_FRAME"], 1,
+                           bytecodes["OP_CALL"], 0])
+      assertEqual(bytecode.getScripts()[0][0][["run", 0]][2], 2);
+      assertEqual(bytecode.getScripts()[1][0][["run", 0]][2], 0);
+      assertEqual(bytecode.getScripts()[0][2], 1);
+      assertEqual(bytecode.getScripts()[1][2], 2);
+    }
+    to test_outerReference() {
+      def bytecode := compile(e`def foo { method run() {null}}`, safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_BINDOBJECT"], 0, 0])
+      assertBytecodeEqual(bytecode.getScripts()[0][0][["run", 0]][1],
+                          [bytecodes["OP_NOUN_OUTER"], 0])
+    }
+    to test_selfReference() {
+      def bytecode := compile(e`def foo { method run() {foo}}`, safeScope)
+    }
+    to test_objectReference() {
+      def bytecode := compile(e`def foo { method run() {1}}; foo`, safeScope)
+    }
+    to test_frameAssignment() {
+      def bytecode := compile(e`var x := 1; def foo { method run() {x := 2}}`,
+                              safeScope)
+      assertBytecodeEqual(bytecode.getCode(),
+                          [bytecodes["OP_LITERAL"], 0,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_NOUN_OUTER"], nullIdx,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_SIMPLEVARSLOT"],
+                           bytecodes["OP_BINDSLOT"], 0,
+                           bytecodes["OP_POP"],
+                           bytecodes["OP_SLOT_LOCAL"], 0,
+                           bytecodes["OP_BINDOBJECT"], 0, 1])
+      assertBytecodeEqual(bytecode.getScripts()[0][0][["run", 0]][1],
+                          [bytecodes["OP_LITERAL"], 1,
+                           bytecodes["OP_DUP"],
+                           bytecodes["OP_ASSIGN_FRAME"], 0])
+    }
+    to test_localBindings() {
+      def bytecode := compile(e`1`, safeScope)
+      def root := bytecode.getBindings()
+      assertEqual(root.size(), 0)
+      root.newLocal("a")
+      assertEqual(root.size(), 1)
+      assertEqual(root.lookupLocal("a"), 0)
+      assertEqual(root.lookupLocal("b"), -1)
+
+      def s2 := root.newChild()
+      s2.newLocal("a")
+      assertEqual(s2.lookupLocal("a"), 1)
+      assertEqual(root.size(), 2)
+      s2.newLocal("b")
+      assertEqual(s2.lookupLocal("b"), 2)
+
+      root.newLocal("b")
+      assertEqual(root.lookupLocal("b"), 3)
+      assertEqual(root.size(), 4)
+
+      def s3 := root.newChild()
+      s3.newLocal("c")
+      assertEqual(s3.lookupLocal("c"), 4)
+      assertEqual(root.size(), 5)
+      assertEqual(root.lookupLocal("c"), -1)
+      root.newLocal("d")
+      assertEqual(root.lookupLocal("d"), 5)
+    }
+
+    to test_nestedHandlers() {
+      def bytecode := compile(e`try { def x := 1; try { def y := 2} catch p1 {3}} catch p2 {4}`, safeScope)
+      def code := [bytecodes["OP_TRY"], 35, 0,
+                   bytecodes["OP_LITERAL"], 0,
+                   bytecodes["OP_DUP"],
+                   bytecodes["OP_NOUN_OUTER"], 0,
+                   bytecodes["OP_POP"],
+                   bytecodes["OP_BIND"], 0,
+                   bytecodes["OP_POP"],
+                   bytecodes["OP_TRY"], 12, 0,
+                   bytecodes["OP_LITERAL"], 1,
+                   bytecodes["OP_DUP"],
+                   bytecodes["OP_NOUN_OUTER"], 0,
+                   bytecodes["OP_POP"],
+                   bytecodes["OP_BIND"], 1,
+                   bytecodes["OP_END_HANDLER"],
+                   bytecodes["OP_JUMP"], 7, 0,
+                   bytecodes["OP_NOUN_OUTER"], 0,
+                   bytecodes["OP_POP"],
+                   bytecodes["OP_BIND"], 2,
+                   bytecodes["OP_LITERAL"], 2,
+                   bytecodes["OP_END_HANDLER"],
+                   bytecodes["OP_JUMP"], 7, 0,
+                   bytecodes["OP_NOUN_OUTER"], 0,
+                   bytecodes["OP_POP"],
+                   bytecodes["OP_BIND"], 3,
+                   bytecodes["OP_LITERAL"], 3]
+      assertBytecodeEqual(bytecode.getCode(), code)
+      assertEquiv(bytecode.getToplevelHandlerTable(),
+                  [[bytecodes["OP_TRY"], 0, 27, 15..23],
+                   [bytecodes["OP_TRY"], 0, 38, 3..34]])
+    }
+    to test_stackDepth() {
+      def bytecode := compile(e`require(7, try { def x := 1} catch p2 {4})`,
+                              safeScope)
+      def code := [bytecodes["OP_LITERAL"], 0,
+                   bytecodes["OP_TRY"], 12, 0,
+                   bytecodes["OP_LITERAL"], 1,
+                   bytecodes["OP_DUP"],
+                   bytecodes["OP_NOUN_OUTER"], 0,
+                   bytecodes["OP_POP"],
+                   bytecodes["OP_BIND"], 0,
+                   bytecodes["OP_END_HANDLER"],
+                   bytecodes["OP_JUMP"], 7, 0,
+                   bytecodes["OP_NOUN_OUTER"], 0,
+                   bytecodes["OP_POP"],
+                   bytecodes["OP_BIND"], 1,
+                   bytecodes["OP_LITERAL"], 2,
+                   bytecodes["OP_NOUN_OUTER"], 15,
+                   bytecodes["OP_CALL"], 0]
+      assertBytecodeEqual(bytecode.getCode(), code)
+      assertEquiv(bytecode.getToplevelHandlerTable(),
+                  [[bytecodes["OP_TRY"], 1, 17, 5..13]])
+    }
+
+  }
+  return testCompiler
+}
