@@ -1,5 +1,6 @@
 AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = -I build-aux/m4
+EXTRA_DIST = CREDITS DEPENDENCIES
 ecrudir = $(libdir)/ecru
 AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"'
 lib_LTLIBRARIES = libecru.la libmonte_bridge.la
