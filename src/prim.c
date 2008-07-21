@@ -1188,14 +1188,18 @@ e_Script e__char_script;
 //@{
 static e_Ref writer_print(e_Ref self, e_Ref *args) {
   GOutputStream *stream = self.data.other;
-  GError *err;
+  GError *err = NULL;
   e_Ref arg = e_ref_target(args[0]);
   if (e_is_string(arg)) {
     _Bool win = g_output_stream_write_all(stream, arg.data.gstring->str,
                                           arg.data.gstring->len,
                                           NULL, NULL, &err);
     if (!win) {
-      return e_throw_pair(err->message, e_make_fixnum(err->code));
+      if (err != NULL) {
+        return e_throw_pair(err->message, e_make_fixnum(err->code));
+      } else {
+        return e_throw_cstring("Unspecified error in writer_print");
+      }
     }
   } else {
     E_ERROR_CHECK(e_print_on(arg, self));

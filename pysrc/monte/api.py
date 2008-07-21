@@ -468,6 +468,7 @@ def do(source, doPrint=False, scope=e_safeScope):
 
 def interactiveEval(expr, scope, boundNames, stackp):
     w = e.e_make_string_writer()
+    fromEObject(w)
     try:
         ktree = parse(expr)
         mod = compile(ktree, scope, [x for (x, i) in boundNames])
