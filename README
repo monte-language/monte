@@ -29,8 +29,8 @@ What is this?
 
   Notable unimplemented features at this point include:
 
-  - Full Equalizer implementation, comparing non-scalar types (lists, maps,
-    other Selfless objects).
+  - Full Equalizer implementation, comparing Selfless objects (other than
+    ConstLists) properly.
 
   - Message buffering on Promises.
 

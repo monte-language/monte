@@ -26,6 +26,7 @@ static e_Selector run2, op__cmp;
 
 e_Method no_methods[] = {{NULL, NULL}};
 
+/// Comparisons of primitive types, without recursion or ref shortening.
 _Bool e_same(e_Ref ref1, e_Ref ref2) {
     if (e_eq(ref1, ref2)) {
         return true;
