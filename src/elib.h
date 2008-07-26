@@ -269,12 +269,7 @@ extern e_Ref e_stderr;
 extern e_Script e__writer_script;
 extern e_Script e__reader_script;
 
-static inline e_Ref e_make_writer(GOutputStream *stream) {
-  e_Ref ref;
-  ref.script = &e__writer_script;
-  ref.data.other = stream;
-  return ref;
-}
+e_Ref e_make_writer(GOutputStream *stream);
 
 static inline e_Ref e_make_reader(GInputStream *stream) {
   e_Ref ref;

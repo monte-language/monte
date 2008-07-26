@@ -234,9 +234,35 @@ e_Ref e_makeMap_fromPairs(e_Ref self, e_Ref *args) {
   return newMap;
 }
 
+static e_Ref e_makeMap_fromColumns(e_Ref self, e_Ref *args) {
+  e_Ref sizeObj = e_call_0(args[0],  &size);
+  E_ERROR_CHECK(sizeObj);
+  e_Ref vsizeObj = e_call_0(args[1],  &size);
+  E_ERROR_CHECK(vsizeObj);
+  sizeObj = e_call_2(e_IntGuard, &coerce, sizeObj, e_null);
+  vsizeObj = e_call_2(e_IntGuard, &coerce, vsizeObj, e_null);
+  int size = sizeObj.data.fixnum;
+  int vsize = vsizeObj.data.fixnum;
+
+  if (size != vsize) {
+    return e_throw_cstring("Arity mismatch in __makeMap.fromColumns");
+  }
+  e_Ref result = e_make_constmap(size);
+  for (int i = 0; i < size; i++) {
+    e_Ref k = e_call_1(args[0], &get, e_make_fixnum(i));
+    E_ERROR_CHECK(k);
+    e_Ref v = e_call_1(args[1], &get, e_make_fixnum(i));
+    E_ERROR_CHECK(v);
+    e_Ref args[] = {k, v};
+    E_ERROR_CHECK(e_flexmap_put(result, args));
+  }
+  return result;
+}
+
 static e_Script e__makeMap_script;
 static e_Method makeMap_methods[] = {
   {"fromPairs/1", e_makeMap_fromPairs},
+  {"fromColumns/2", e_makeMap_fromColumns},
   {NULL}
 };
 
@@ -583,7 +609,7 @@ static e_Ref substituter_substitute(e_Ref self, e_Ref *args) {
   template_segments *segments = self.data.other;
   int len = segments->size;
   e_Ref memWriter = e_make_string_writer();
-  GOutputStream *stream = memWriter.data.other;
+  GOutputStream *stream = memWriter.data.refs[0].data.other;
   GError *err;
   for (int i = 0; i < len; i++) {
     template_segment *seg = segments->segs + i;
@@ -743,10 +769,19 @@ static e_Ref e_callWithPair(e_Ref self, e_Ref *args) {
   e_Selector sel;
   e_make_selector(&sel, (verb.data.gstring)->str, arity);
   return e_call(receiver, &sel, newArgs);
+
 }
+
+static e_Ref e_toString(e_Ref self, e_Ref *args) {
+  e_Ref memWriter = e_make_string_writer();
+  E_ERROR_CHECK(e_print(memWriter, args[0]));
+  return e_string_writer_get_string(memWriter);
+}
+
 static e_Script THE_E_script;
 static e_Method THE_E_methods[] = {
   {"callWithPair/2", e_callWithPair},
+  {"toString/1", e_toString},
   {NULL}
 };
 

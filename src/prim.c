@@ -128,6 +128,29 @@ static e_Ref string_compareTo(e_Ref self, e_Ref *args) {
                                arg.data.gstring->str, a));
 }
 
+static e_Ref string_run2(e_Ref self, e_Ref *args) {
+  e_Ref intguard_args[] = {args[0], e_null};
+  e_Ref arg = intguard_coerce(e_null, intguard_args);
+  E_ERROR_CHECK(arg);
+  int start = arg.data.fixnum;
+  e_Ref intguard2_args[] = {args[1], e_null};
+  arg = intguard_coerce(e_null, intguard2_args);
+  E_ERROR_CHECK(arg);
+  int end = arg.data.fixnum;
+  if (start < 0 || start >= self.data.gstring->len
+      || end < start || end > self.data.gstring->len) {
+    return e_throw_cstring("String index out of bounds");
+  }
+  GString *newstr = g_string_new_len(self.data.gstring->str + start,
+                                     end - start);
+  return e_make_gstring(newstr);
+}
+
+static e_Ref string_run1(e_Ref self, e_Ref *args) {
+  e_Ref newargs[] = {args[0], e_make_fixnum(self.data.gstring->len)};
+  return string_run2(self, newargs);
+}
+
 static e_Method string_methods[] = {
   {"add/1", string_append },
   { "size/0", string_size },
@@ -136,6 +159,8 @@ static e_Method string_methods[] = {
   {"multiply/1", string_multiply},
   {"get/1", string_get},
   {"op__cmp/1", string_compareTo},
+  {"run/2", string_run2},
+  {"run/1", string_run1},
   {NULL}
 };
 e_Script e__string_script;
@@ -1187,33 +1212,64 @@ e_Script e__char_script;
 //@}
 /// @addtogroup print
 //@{
-static e_Ref writer_print(e_Ref self, e_Ref *args) {
-  GOutputStream *stream = self.data.other;
+static e_Ref writer_print(e_Ref self, e_Ref *args, int numItems) {
+  GOutputStream *stream = self.data.refs[0].data.other;
   GError *err = NULL;
-  e_Ref arg = e_ref_target(args[0]);
-  if (e_is_string(arg)) {
-    _Bool win = g_output_stream_write_all(stream, arg.data.gstring->str,
-                                          arg.data.gstring->len,
-                                          NULL, NULL, &err);
-    if (!win) {
-      if (err != NULL) {
-        return e_throw_pair(err->message, e_make_fixnum(err->code));
-      } else {
-        return e_throw_cstring("Unspecified error in writer_print");
+  for (int i = 0; i < numItems; i++) {
+    e_Ref arg = e_ref_target(args[i]);
+    if (e_is_string(arg)) {
+      _Bool win = g_output_stream_write_all(stream, arg.data.gstring->str,
+                                            arg.data.gstring->len,
+                                            NULL, NULL, &err);
+      if (!win) {
+        if (err != NULL) {
+          return e_throw_pair(err->message, e_make_fixnum(err->code));
+        } else {
+          return e_throw_cstring("Unspecified error in writer_print");
+        }
       }
+    } else {
+      E_ERROR_CHECK(e_print_on(arg, self));
     }
-  } else {
-    E_ERROR_CHECK(e_print_on(arg, self));
   }
   return e_null;
 }
+
+static e_Ref writer_print1(e_Ref self, e_Ref *args) {
+  return writer_print(self, args, 1);
+}
+
+static e_Ref writer_print2(e_Ref self, e_Ref *args) {
+  return writer_print(self, args, 2);
+}
+
+static e_Ref writer_print3(e_Ref self, e_Ref *args) {
+  return writer_print(self, args, 3);
+}
+
+static e_Ref writer_print4(e_Ref self, e_Ref *args) {
+  return writer_print(self, args, 4);
+}
+
+static e_Ref writer_print5(e_Ref self, e_Ref *args) {
+  return writer_print(self, args, 5);
+}
+
+static e_Ref writer_print6(e_Ref self, e_Ref *args) {
+  return writer_print(self, args, 6);
+}
+
+static e_Ref writer_print7(e_Ref self, e_Ref *args) {
+  return writer_print(self, args, 7);
+}
+
 static e_Ref writer_println0(e_Ref self, e_Ref *args) {
-  return e_print(self, e_make_string("\n"));
+  return e_print(self, self.data.refs[1]);
 }
 
 static e_Ref writer_println(e_Ref self, e_Ref *args) {
-  E_ERROR_CHECK(writer_print(self, args));
-  E_ERROR_CHECK(e_print(self, e_make_string("\n")));
+  E_ERROR_CHECK(writer_print1(self, args));
+  E_ERROR_CHECK(e_print(self, self.data.refs[1]));
   return e_null;
 }
 
@@ -1223,10 +1279,10 @@ static e_Ref writer_quotePrint(e_Ref self, e_Ref *args) {
     GString *original = arg.data.other;
     e_Ref escapedString = e_make_string(g_strescape(original->str, NULL));
     E_ERROR_CHECK(e_print(self, e_make_string("\"")));
-    E_ERROR_CHECK(writer_print(self, &escapedString));
+    E_ERROR_CHECK(writer_print1(self, &escapedString));
     E_ERROR_CHECK(e_print(self, e_make_string("\"")));
   } else {
-    E_ERROR_CHECK(writer_print(self, args));
+    E_ERROR_CHECK(writer_print1(self, args));
   }
   return e_null;
 }
@@ -1236,12 +1292,35 @@ static e_Ref writer_printOn(e_Ref self, e_Ref *args) {
   return e_null;
 }
 
+static e_Ref writer_indent(e_Ref self, e_Ref *args) {
+  e_Ref new = e_make_writer(self.data.refs[0].data.other);
+  new.data.refs[1] = args[0];
+  return new;
+}
+
+e_Ref e_make_writer(GOutputStream *stream) {
+  e_Ref result;
+  e_Ref *bits = e_malloc(2 * sizeof *bits);
+  bits[0].data.other = stream;
+  bits[1] = e_make_string("\n");
+  result.script = &e__writer_script;
+  result.data.other = bits;
+  return result;
+}
+
 static e_Method writer_methods[] = {
-  {"print/1", writer_print},
+  {"print/1", writer_print1},
+  {"print/2", writer_print2},
+  {"print/3", writer_print3},
+  {"print/4", writer_print4},
+  {"print/5", writer_print5},
+  {"print/6", writer_print6},
+  {"print/7", writer_print7},
   {"println/1", writer_println},
   {"println/0", writer_println0},
   {"quote/1", writer_quotePrint},
   {"__printOn/1", writer_printOn},
+  {"indent/1", writer_indent},
   {NULL}
 };
 e_Script e__writer_script;
@@ -1259,7 +1338,7 @@ e_Ref e_make_string_writer() {
   return e_make_writer(stream);
 }
 e_Ref e_string_writer_get_string(e_Ref writer) {
-  GMemoryOutputStream *stream = writer.data.other;
+  GMemoryOutputStream *stream = writer.data.refs[0].data.other;
 #if OLD_GIO
    char *output = g_memory_output_stream_get_data(stream)->data;
 #else
@@ -2201,6 +2280,15 @@ e_Ref e_make_flexmap(int initial_size) {
 static e_Ref flexmap_getvalues(e_Ref self, e_Ref *args);
 static e_Ref flexmap_getkeys(e_Ref self, e_Ref *args);
 
+static e_Ref flexmap_iterate(e_Ref self, e_Ref *args) {
+    Flexmap_data *map = self.data.other;
+    for (int i = 0; i < map->size; i++) {
+      e_Ref res = e_call_2(args[0], &run2, map->keys[i],
+                           map->values[i]);
+      E_ERROR_CHECK(res);
+    }
+    return e_null;
+}
 
 static e_Method flexmap_methods[] = {
   {"__printOn/1", flexmap_printOn},
@@ -2218,6 +2306,7 @@ static e_Method flexmap_methods[] = {
   {"snapshot/0", flexmap_snapshot},
   {"or/1", flexmap_or},
   {"removeKey/1", e_flexmap_removeKey},
+  {"iterate/1", flexmap_iterate},
   {NULL}
 };
 
@@ -2241,6 +2330,7 @@ static e_Method constmap_methods[] = {
   {"sortKeys/1", flexmap_sortKeys_1},
   {"with/2", flexmap_with},
   {"or/1", flexmap_or},
+  {"iterate/1", flexmap_iterate},
   {NULL}
 };
 
@@ -2486,6 +2576,20 @@ static e_Ref flexlist_append(e_Ref self, e_Ref *args) {
   return e_null;
 }
 
+e_Ref flexlist_insert(e_Ref self, e_Ref *args) {
+  e_Ref intguard_args[] = {args[0], e_null};
+  e_Ref idx = intguard_coerce(e_null, intguard_args);
+  E_ERROR_CHECK(idx);
+  Flexlist_data *data = self.data.other;
+  int originalSize = data->size;
+  flexlist_setSize(self, originalSize+1);
+  for (int i = originalSize; i > idx.data.fixnum; i--) {
+    data->elements[i] = data->elements[i-1];
+  }
+  data->elements[idx.data.fixnum] = args[1];
+  return e_null;
+}
+
 static e_Ref flexlist_run_2(e_Ref self, e_Ref *args) {
   Flexlist_data *selfData = self.data.other;
   e_Ref start_args[] = {args[0], e_null};
@@ -2580,6 +2684,7 @@ static e_Method flexlist_methods[] = {
   {"append/1", flexlist_append},
   {"run/2", flexlist_run_2},
   {"put/2", flexlist_put_2},
+  {"insert/2", flexlist_insert},
   {NULL}
 };
 
@@ -2631,6 +2736,15 @@ static e_Ref constset_printOn(e_Ref self, e_Ref *args) {
   return e_null;
 }
 
+
+static e_Ref flexset_printOn(e_Ref self, e_Ref *args) {
+  e_Ref out = args[0];
+  E_ERROR_CHECK(constlist_printOn(self, args));
+  E_ERROR_CHECK(e_print(out, e_make_string(".asSet().diverge()")));
+  return e_null;
+}
+
+
 e_Script e__constset_script;
 static e_Method constset_methods[] = {
   {"__printOn/1", constset_printOn},
@@ -2639,6 +2753,16 @@ static e_Method constset_methods[] = {
   {"with/1", constset_with},
   {"iterate/1", flexlist_iterate},
   {NULL}};
+
+e_Script e__flexset_script;
+static e_Method flexset_methods[] = {
+  {"__printOn/1", flexset_printOn},
+  {"size/0", flexlist_size},
+  {"getElements/0", flexlist_snapshot},
+  {"with/1", constset_with},
+  {"iterate/1", flexlist_iterate},
+  {NULL}};
+
 
 //@}
 
@@ -2813,6 +2937,7 @@ static void set_up_prims(void) {
   e_make_script(&e__constlist_script, NULL, constlist_methods, "List");
   e_make_script(&e__flexlist_script, NULL, flexlist_methods, "FlexList");
   e_make_script(&e__constset_script, NULL, constset_methods, "Set");
+  e_make_script(&e__flexset_script, NULL, flexset_methods, "FlexSet");
   e_make_script(&problem_script, NULL, problem_methods, "problem");
   e_make_script(&e__finalslot_script, NULL, finalslot_methods, "FinalSlot");
   e_make_script(&e__varslot_script, NULL, varslot_methods, "SettableSlot");

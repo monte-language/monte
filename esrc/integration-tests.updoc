@@ -345,6 +345,14 @@ XXX kind of an unpleasant error message here
 # value: "<problem Value not in region: 11>
 #        "
 
+? test("__makeMap.fromColumns(['a', 'b', 'c'], [1, 2, 3])")
+# value: "[\'a\' => 1, \'b\' => 2, \'c\' => 3]
+#        "
+
+?test("def x := [4, 7, 2, 9].diverge(); x.insert(2, 3); x")
+#value: "[4, 7, 3, 2, 9].diverge()
+#       "
+
 ?test("[1, 2] == [1, 2]")
 #value: "true
 #       "
@@ -356,3 +364,14 @@ XXX kind of an unpleasant error message here
 ?test("def x; def y := [1, x]; bind x := 2; y == [1, 2]")
 #value: "true
 #       "
+
+?test("def x := [].diverge(); ['a' => 1, 'b' => 3].iterate(fn k, v { x.push(k); x.push(v) }); x.snapshot()")
+#value: "[\'a\', 1, \'b\', 3]"
+
+?test("\"abcdefg\".run(2, 5)")
+#value: "\"cde\"
+#       "
+
+?test("stdout.indent(\"yay> \").println([1, 2])")
+#value: "[1, 2]
+#        yay> "
