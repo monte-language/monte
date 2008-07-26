@@ -1,6 +1,8 @@
 
-#include <elib.h>
-#include <ref.h>
+#include "elib.h"
+#include "ecru.h"
+#include "vm.h"
+#include "ref.h"
 #include <scope.h>
 #include <Python.h>
 #include <string.h>
@@ -18,10 +20,11 @@ static PyObject *monte_EObjectWrapper;
 static PyObject *monte_PythonCharacter;
 
 /* XXX these are global variables because boehm GC needs to have a root for
-objects only otherwise referenced by Python. Presumably once there are vats
-this won't be necessary. */
+objects only otherwise referenced by Python's ctypes. These won't be necessary
+once we stop manipulating C structs from Python. */
 
 e_Ref saveset, e_interactiveScope;
+ecru_stackframe *lastStackFrame;
 
 e_Script e__python_object_script;
 
@@ -279,4 +282,43 @@ int extendInteractiveScope(PyObject *bindings, e_Ref *locals) {
   scopeContents->slots = newSlots;
   scopeContents->size = newSize;
   return 1;
+}
+
+PyObject *doModuleInteractive(ecru_module *m, PyObject *boundNames,
+                              ecru_stackframe **stackp) {
+  e_Ref *inits = NULL;
+  int numBoundNames = 0;
+  e_Ref w = e_make_string_writer();
+  if (!PySequence_Check(boundNames)) {
+    PyErr_SetString(PyExc_TypeError, "boundNames must be a sequence");
+    return NULL;
+  }
+  numBoundNames = PySequence_Fast_GET_SIZE(boundNames);
+  e_Ref initials[numBoundNames];
+  if (numBoundNames > 0) {
+    for (int i = 0; i < numBoundNames; i++) {
+      PyObject *item = PySequence_Fast_GET_ITEM(boundNames, i);
+      PyObject *val = PySequence_GetItem(item, 1);
+      if (val == NULL) {
+        return NULL;
+      }
+      int idx = PyInt_AsLong(val);
+      if (idx == -1) {
+        return NULL;
+      }
+      initials[i] = (*stackp)->locals[idx];
+    }
+    inits = initials;
+  }
+  e_Ref res = ecru_vm_execute_interactive(inits, numBoundNames,
+                                          0, 0, 0, NULL, m,
+                                          NULL, 0, stackp);
+  lastStackFrame = *stackp;
+  if (res.script != NULL) {
+    e_println(w, res);
+  } else {
+    e_println(w, e_thrown_problem);
+  }
+  e_Ref str = e_string_writer_get_string(w);
+  return e_to_py(str);
 }

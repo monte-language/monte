@@ -245,7 +245,13 @@ monte_wrap = monte_wrap_proto(("monte_wrap", bridge))
 
 bridge.monte_unwrap.restype = ctypes.py_object
 bridge.monte_unwrap.argtypes = (ERef,)
-
+bridge.doModuleInteractive.restype = ctypes.py_object
+bridge.doModuleInteractive.argtypes = (ctypes.POINTER(Module),
+                                       ctypes.py_object,
+                                       ctypes.POINTER(
+                                               ctypes.POINTER(Stackframe)))
+bridge.doModuleInteractive.paramflags = ((1, "m"), (1, "boundNames"),
+                                         (3, "stackp"))
 def openFile(path):
     f = gio.g_file_new_for_path(path)
     ifs = gio.g_file_read(f, 0, 0)
@@ -430,32 +436,6 @@ def doModule(m, doPrint=False, stackframeHolder=None):
     else:
         e_println(e_stdout, e_thrown_problem)
 
-def doModuleInteractive(m, out, boundNames, stackframe):
-    if len(boundNames) > 0:
-        initials = []
-        bits = stackframe.contents.locals
-        for n, i in boundNames:
-            initials.append(bits[i])
-            #to get it in the saved set:
-            fromEObject(bits[i])
-        LA = ERef * len(initials)
-        inits = LA(*initials)
-        initsSize = len(initials)
-    else:
-        inits = None
-        initsSize = 0
-    res = e.ecru_vm_execute_interactive(inits, initsSize,
-                                         '\0', '\0', '\0', None,
-                                         ctypes.pointer(m),
-                                         None, 0, ctypes.pointer(stackframe))
-    if res.script:
-        if out is not None:
-            e_println(out, res)
-        else:
-            return fromEObject(res)
-    else:
-        e_println(out, e_thrown_problem)
-
 
 modules = []
 
@@ -467,8 +447,6 @@ def do(source, doPrint=False, scope=e_safeScope):
     return doModule(m, doPrint)
 
 def interactiveEval(expr, scope, boundNames, stackp):
-    w = e.e_make_string_writer()
-    fromEObject(w)
     try:
         ktree = parse(expr)
         mod = compile(ktree, scope, [x for (x, i) in boundNames])
@@ -476,8 +454,7 @@ def interactiveEval(expr, scope, boundNames, stackp):
         localscopenames = ktree.staticScope().outNames()
         names = list(e_call(mod, "getToplevelLocals"))
         modules.append(m)
-        doModuleInteractive(m, w, boundNames, stackp)
-        res = fromEObject(e.e_string_writer_get_string(w))
+        res = bridge.doModuleInteractive(m, boundNames, ctypes.pointer(stackp))
         if len(names) > 0:
             for i in range(len(names)):
                 if names[i] not in localscopenames:

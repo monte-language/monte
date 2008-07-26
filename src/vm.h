@@ -12,7 +12,7 @@ extern e_Script e__returner_script;
 extern e_Script e__problem_handler_script;
 extern e_Script e__vmObject_script;
 
-enum e_ref_state_enum {METHOD=0, MATCHER_PATTERN, MATCHER_BODY};
+enum e_vm_state_enum {METHOD=0, MATCHER_PATTERN, MATCHER_BODY};
 ///@defgroup vm VM
 ///@{
 
