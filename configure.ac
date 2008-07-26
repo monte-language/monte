@@ -1,4 +1,4 @@
-AC_INIT([Ecru], [0.1.1], [washort@divmod.com])
+AC_INIT([Ecru], [0.1.2], [washort@divmod.com])
 AC_CONFIG_AUX_DIR(build-aux)
 AM_INIT_AUTOMAKE([foreign])
 AC_PREREQ(2.60)
