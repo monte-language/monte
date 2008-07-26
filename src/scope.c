@@ -157,7 +157,7 @@ void e__scope_set_up() {
   };
   e_Ref *_privilegedScope = e_make_array(122);
   char **_privilegedScope_names = e_malloc(122 * sizeof (char *));
-  memcpy(_privilegedScope, safeScope, 90 * sizeof(e_Ref));
+  memcpy(_privilegedScope, _safeScope, 90 * sizeof(e_Ref));
   memcpy(_privilegedScope + 90, privilegedScope, 32 * sizeof(e_Ref));
   memcpy(_privilegedScope_names, safeScope_names, 90 * sizeof(char *));
   memcpy(_privilegedScope_names + 90, privilegedScope_names,

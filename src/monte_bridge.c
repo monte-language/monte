@@ -223,7 +223,7 @@ void monte_bridge_set_up(PyObject *wrapper, PyObject *(*wrap)(e_Ref),
 void monte_handle_finalize(void *hptr, void *cd) {
   monte_handle *handle = hptr;
   Py_DECREF((PyObject *)cd);
-  handle->object = NULL;
+  //handle->object = NULL;
 }
 
 e_Ref monte_wrap(PyObject *obj) {

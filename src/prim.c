@@ -22,7 +22,7 @@
 
 
 e_Selector e_do_print, e_do_println, e_do_printOn, e_do_quote_print;
-static e_Selector run2, op__cmp;
+static e_Selector run2, op__cmp, add;
 
 e_Method no_methods[] = {{NULL, NULL}};
 
@@ -1294,7 +1294,9 @@ static e_Ref writer_printOn(e_Ref self, e_Ref *args) {
 
 static e_Ref writer_indent(e_Ref self, e_Ref *args) {
   e_Ref new = e_make_writer(self.data.refs[0].data.other);
-  new.data.refs[1] = args[0];
+  e_Ref newline = e_call_1(self.data.refs[1], &add, args[0]);
+  E_ERROR_CHECK(newline);
+  new.data.refs[1] = newline;
   return new;
 }
 
@@ -2963,6 +2965,7 @@ static void set_up_prims(void) {
   e_make_selector(&e_do_println, "println", 1);
   e_make_selector(&run2, "run", 2);
   e_make_selector(&op__cmp, "op__cmp", 1);
+  e_make_selector(&add, "add", 1);
 
   e_make_script(&e__null_script, NULL, null_methods, "void");
   e_make_script(&e__boolean_script, NULL, boolean_methods, "Boolean");
