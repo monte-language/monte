@@ -2445,6 +2445,14 @@ static e_Ref flexlist_diverge(e_Ref self, e_Ref *args) {
   return result;
 }
 
+static e_Ref flexlist_diverge_1(e_Ref self, e_Ref *args) {
+  Flexlist_data *list;
+  e_Ref res = flexlist_diverge(self, args);
+  list = self.data.other;
+  list->elementGuard = args[0];
+  return res;
+}
+
 e_Ref flexlist_snapshot(e_Ref self, e_Ref *args) {
   e_Ref result = flexlist_diverge(self, NULL);
   result.script = &e__constlist_script;
@@ -2610,6 +2618,12 @@ static e_Ref flexlist_run_2(e_Ref self, e_Ref *args) {
                                 selfData->elements + startIdx);
 }
 
+static e_Ref flexlist_run_1(e_Ref self, e_Ref *args) {
+  Flexlist_data *list = self.data.other;
+  e_Ref newargs[] = {args[0], e_make_fixnum(list->size)};
+  return flexlist_run_2(self, newargs);
+}
+
 static e_Ref flexlist_multiply(e_Ref self, e_Ref *args) {
   e_Ref times_args[] = {args[0], e_null};
   e_Ref times = intguard_coerce(e_null, times_args);
@@ -2631,6 +2645,8 @@ static e_Method constlist_methods[] = {
   {"get/1", flexlist_get_1},
   {"size/0", flexlist_size},
   {"diverge/0", flexlist_diverge},
+  // disabled until guard checks actually done
+  //{"diverge/1", flexlist_diverge_1},
   {"asMap/0", flexlist_asMap},
   {"contains/1", flexlist_contains},
   {"snapshot/0", flexlist_snapshot},
@@ -2643,6 +2659,7 @@ static e_Method constlist_methods[] = {
   {"last/0", flexlist_last},
   {"add/1", flexlist_add},
   {"multiply/1", flexlist_multiply},
+  {"run/1", flexlist_run_1},
   {"run/2", flexlist_run_2},
   {NULL}
 };
@@ -2654,6 +2671,7 @@ e_Ref e_constlist_from_array(int size, e_Ref* contents) {
   result.data.other = info;
   info->size = size;
   info->capacity = size;
+  info->elementGuard = e_null;
   if (info->capacity > 0) {
     info->elements = e_malloc(sizeof(e_Ref) * info->capacity);
     memcpy(info->elements, contents, sizeof(e_Ref) * info->size);
@@ -2667,6 +2685,8 @@ static e_Method flexlist_methods[] = {
   {"get/1", flexlist_get_1},
   {"size/0", flexlist_size},
   {"diverge/0", flexlist_diverge},
+  // disabled until guard checks actually done
+  //{"diverge/1", flexlist_diverge_1},
   {"push/1", flexlist_push},
   {"pop/0", flexlist_pop},
   {"snapshot/0", flexlist_snapshot},
@@ -2744,6 +2764,24 @@ static e_Ref flexset_printOn(e_Ref self, e_Ref *args) {
   return e_null;
 }
 
+static e_Ref flexset_diverge(e_Ref self, e_Ref *args) {
+  e_Ref res = flexlist_diverge(self, args);
+  res.script = &e__flexset_script;
+  return res;
+}
+
+static e_Ref flexset_addElement(e_Ref self, e_Ref *args) {
+  if (e_same(flexlist_contains(self, args), e_false)) {
+    E_ERROR_CHECK(flexlist_push(self, args));
+  }
+  return e_null;
+}
+
+static e_Ref flexset_snapshot(e_Ref self, e_Ref *args) {
+  e_Ref result = flexlist_diverge(self, NULL);
+  result.script = &e__constset_script;
+  return result;
+}
 
 e_Script e__constset_script;
 static e_Method constset_methods[] = {
@@ -2752,6 +2790,7 @@ static e_Method constset_methods[] = {
   {"getElements/0", flexlist_snapshot},
   {"with/1", constset_with},
   {"iterate/1", flexlist_iterate},
+  {"diverge/0", flexset_diverge},
   {NULL}};
 
 e_Script e__flexset_script;
@@ -2761,6 +2800,8 @@ static e_Method flexset_methods[] = {
   {"getElements/0", flexlist_snapshot},
   {"with/1", constset_with},
   {"iterate/1", flexlist_iterate},
+  {"addElement/1", flexset_addElement},
+  {"snapshot/0", flexset_snapshot},
   {NULL}};
 
 
