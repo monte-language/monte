@@ -4,7 +4,7 @@ EXTRA_DIST = CREDITS DEPENDENCIES
 ecrudir = $(libdir)/ecru
 AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"' -I$(top_srcdir)/include
 lib_LTLIBRARIES = libecru.la libmonte_bridge.la
-libecru_la_SOURCES = src/objects/null.h include/null.h src/invoke.c	 \
+libecru_la_SOURCES = src/objects/null.c include/null.h src/invoke.c	 \
 	src/prim.c src/intern.c src/elib_private.h src/bytecode_loader.h \
 	src/bytecode_loader.c src/vm.c src/ref.c src/safescope.c	 \
 	src/privilegedscope.c src/guards.c src/import.c src/scope.c	 \
@@ -17,7 +17,7 @@ dist_ecru_DATA = bootstrap/com.twistedmatrix.ecru.bytecodeDumper.ec \
 	bootstrap/com.twistedmatrix.ecru.debugDump.ec
 
 libmonte_bridge_la_SOURCES = src/monte_bridge.c
-libmonte_bridge_la_CPPFLAGS = -I/usr/include/python2.5 -I$(top_srcdir)/src  $(GLIB_CFLAGS)
+libmonte_bridge_la_CPPFLAGS = -I/usr/include/python2.5 -I$(top_srcdir)/include  $(GLIB_CFLAGS)
 libmonte_bridge_la_LIBADD = @GLIB_LIBS@ libecru.la
 
 test_elib_SOURCES = src/tests/test_elib.c

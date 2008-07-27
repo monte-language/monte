@@ -22,7 +22,6 @@
 #include <gio/gio.h>
 #endif
 
-#include "null.h"
 
 /// @defgroup misc Miscellaneous
 //@{
@@ -236,12 +235,7 @@ e_def_type_predicate(e_is_ejector, e__ejector_script);
 
 /** @defgroup null The null object */
 //@{
-extern e_Script e__null_script;
-
-extern e_Ref e_null;
-
-e_def_type_predicate (e_is_null, e__null_script);
-
+#include "null.h"
 //@}
 
 
