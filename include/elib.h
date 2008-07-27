@@ -241,142 +241,20 @@ e_def_type_predicate(e_is_ejector, e__ejector_script);
 
 /** @defgroup bools Booleans */
 //@{
-
-extern e_Script e__boolean_script;
-
-extern e_Ref e_true, e_false;
-
-e_def_type_predicate (e_is_boolean, e__boolean_script);
-
-static inline e_Ref
-e_make_boolean (int flag)
-{
-  return flag ? e_true : e_false;
-}
+#include "boolobject.h"
 //@}
 
 
 /** @defgroup file Files */
 //@{
-extern e_Ref e_stdin;
-extern e_Ref e_stdout;
-extern e_Ref e_stderr;
-
-extern e_Script e__writer_script;
-extern e_Script e__reader_script;
-
-e_Ref e_make_writer(GOutputStream *stream);
-
-static inline e_Ref e_make_reader(GInputStream *stream) {
-  e_Ref ref;
-  ref.script = &e__reader_script;
-  ref.data.other = stream;
-  return ref;
-}
-
-e_Ref e_make_string_writer();
-e_Ref e_string_writer_get_string(e_Ref writer);
+#include "streamobject.h"
 
 //@}
+#define MAX_CHAR 65535
 
-/** @defgroup cstring Strings */
-//@{
-extern e_Script e__string_script;
-
-e_def_type_predicate (e_is_string, e__string_script);
-
-/** @pre 'cstring' is immutable and of indefinite extent. */
-static inline e_Ref
-e_make_string (const char *cstring) {
-  e_Ref ref;
-  ref.script = &e__string_script;
-  ref.data.gstring = g_string_new(cstring);
-  return ref;
-}
-/** @pre 'gstring' is immutable and of indefinite extent. */
-static inline e_Ref e_make_gstring (GString *gstring) {
-  e_Ref ref;
-  ref.script = &e__string_script;
-  ref.data.gstring = gstring;
-  return ref;
-}
-
-//@}
-
-/** @defgroup char Characters */
-//@{
-extern e_Script e__char_script;
-
-e_def_type_predicate (e_is_char, e__char_script);
-
-static inline e_Ref
-e_make_char (unsigned short chr)
-{
-  e_Ref ref;
-  ref.script = &e__char_script;
-  // pacify valgrind - eq compares fixnums
-  ref.data.fixnum = 0;
-  ref.data.chr = chr;
-  return ref;
-}
-//@}
-
-/** @defgroup fixnum Small integers */
-//@{
-extern e_Script e__fixnum_script;
-
-e_def_type_predicate (e_is_fixnum, e__fixnum_script);
-
-static inline e_Ref
-e_make_fixnum (int fixnum)
-{
-  e_Ref ref;
-  ref.script = &e__fixnum_script;
-  ref.data.fixnum = fixnum;
-  return ref;
-}
-//@}
-
-/// Return whether the specimen is of a primitive integral type.
-char e_is_integer(e_Ref specimen);
-
-/** @defgroup bignum Big integers */
-//@{
-extern e_Script e__bignum_script;
-
-e_def_type_predicate (e_is_bignum, e__bignum_script);
-
-static inline e_Ref
-e_make_bignum (mpz_t *bignum)
-{
-  e_Ref ref;
-  ref.script = &e__bignum_script;
-  ref.data.bignum = bignum;
-  return ref;
-}
-
-e_Ref e_bignum_as_float64(e_Ref big);
-e_Ref e_bignum_from_fixnum(int a);
-//@}
-
-
-/** @defgroup float64 Float64 */
-//@{
-extern e_Script e__float64_script;
-
-e_def_type_predicate (e_is_float64, e__float64_script);
-
-static inline e_Ref
-e_make_float64 (double value)
-{
-  e_Ref ref;
-  double *p = e_malloc_atomic (sizeof *p);
-  *p = value;
-  ref.script = &e__float64_script;
-  ref.data.float64 = p;
-  return ref;
-}
-//@}
+#include "numberobject.h"
+#include "charobject.h"
+#include "stringobject.h"
 
 /** Return a new array of 'size' elements, all initially null. */
 e_Ref *e_make_array (int size);
@@ -664,5 +542,8 @@ void e_die(e_Ref problem);
       (e_ejector_disable(ej), true))
 
 //@}
+
+#include "ref.h"
+#include "ref_private.h"
 
 #endif /* ELIB_H */

@@ -4,12 +4,17 @@ EXTRA_DIST = CREDITS DEPENDENCIES
 ecrudir = $(libdir)/ecru
 AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"' -I$(top_srcdir)/include
 lib_LTLIBRARIES = libecru.la libmonte_bridge.la
-libecru_la_SOURCES = src/objects/null.c include/null.h src/invoke.c	 \
-	src/prim.c src/intern.c src/elib_private.h src/bytecode_loader.h \
-	src/bytecode_loader.c src/vm.c src/ref.c src/safescope.c	 \
-	src/privilegedscope.c src/guards.c src/import.c src/scope.c	 \
-	src/scope.h include/elib.h src/bytecodes.h src/vm.h src/ref.h	 \
-	src/ref_private.h src/ecru.h
+libecru_la_SOURCES = src/objects/null.c include/null.h		\
+	src/objects/stringobject.c include/stringobject.h	\
+	src/objects/boolobject.c include/boolobject.h 		\
+	src/objects/numberobject.c include/numberobject.h	\
+	src/objects/charobject.c include/charobject.h		\
+	src/objects/streamobject.c include/streamobject.h	\
+	src/invoke.c src/prim.c src/intern.c src/elib_private.h		\
+	src/bytecode_loader.h src/bytecode_loader.c src/vm.c src/ref.c	\
+	src/safescope.c src/privilegedscope.c src/guards.c src/import.c	\
+	src/scope.c src/scope.h include/elib.h src/bytecodes.h src/vm.h	\
+	src/ref.h src/ref_private.h src/ecru.h
 
 dist_ecru_DATA = bootstrap/com.twistedmatrix.ecru.bytecodeDumper.ec \
 	bootstrap/com.twistedmatrix.ecru.compiler.ec \
