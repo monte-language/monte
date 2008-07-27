@@ -22,6 +22,8 @@
 #include <gio/gio.h>
 #endif
 
+#include "null.h"
+
 /// @defgroup misc Miscellaneous
 //@{
 /** Initialize the E system. */

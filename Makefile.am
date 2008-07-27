@@ -2,13 +2,14 @@ AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = -I build-aux/m4
 EXTRA_DIST = CREDITS DEPENDENCIES
 ecrudir = $(libdir)/ecru
-AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"'
+AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"' -I$(top_srcdir)/include
 lib_LTLIBRARIES = libecru.la libmonte_bridge.la
-libecru_la_SOURCES = src/invoke.c src/prim.c src/intern.c src/elib_private.h \
-	src/bytecode_loader.h src/bytecode_loader.c src/vm.c src/ref.c       \
-	src/safescope.c src/privilegedscope.c src/guards.c src/import.c      \
-	src/scope.c src/scope.h src/elib.h src/bytecodes.h src/vm.h src/ref.h\
-        src/ref_private.h src/ecru.h
+libecru_la_SOURCES = src/objects/null.h include/null.h src/invoke.c	 \
+	src/prim.c src/intern.c src/elib_private.h src/bytecode_loader.h \
+	src/bytecode_loader.c src/vm.c src/ref.c src/safescope.c	 \
+	src/privilegedscope.c src/guards.c src/import.c src/scope.c	 \
+	src/scope.h include/elib.h src/bytecodes.h src/vm.h src/ref.h	 \
+	src/ref_private.h src/ecru.h
 
 dist_ecru_DATA = bootstrap/com.twistedmatrix.ecru.bytecodeDumper.ec \
 	bootstrap/com.twistedmatrix.ecru.compiler.ec \
@@ -21,23 +22,23 @@ libmonte_bridge_la_LIBADD = @GLIB_LIBS@ libecru.la
 
 test_elib_SOURCES = src/tests/test_elib.c
 test_elib_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
-test_elib_CPPFLAGS = -I$(top_srcdir)/src $(CHECK_CFLAGS) $(GLIB_CFLAGS)
+test_elib_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_vm_SOURCES = src/tests/test_vm.c
 test_vm_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
-test_vm_CPPFLAGS = -I$(top_srcdir)/src $(CHECK_CFLAGS) $(GLIB_CFLAGS)
+test_vm_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_invoke_SOURCES = src/tests/test_invoke.c
 test_invoke_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
-test_invoke_CPPFLAGS = -I$(top_srcdir)/src $(CHECK_CFLAGS) $(GLIB_CFLAGS)
+test_invoke_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_bytecode_loader_SOURCES = src/tests/test_bytecode_loader.c
 test_bytecode_loader_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
-test_bytecode_loader_CPPFLAGS = -I$(top_srcdir)/src $(CHECK_CFLAGS) $(GLIB_CFLAGS)
+test_bytecode_loader_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_ref_SOURCES = src/tests/test_ref.c
 test_ref_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
-test_ref_CPPFLAGS = -I$(top_srcdir)/src $(CHECK_CFLAGS) $(GLIB_CFLAGS)
+test_ref_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 check_PROGRAMS = test_vm test_elib test_invoke test_bytecode_loader test_ref
 

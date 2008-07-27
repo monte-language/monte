@@ -42,22 +42,6 @@ _Bool e_same(e_Ref ref1, e_Ref ref2) {
     return false;
 }
 
-/// @addtogroup null
-//@{
-static e_Ref null_printOn(e_Ref self, e_Ref *args) {
-  E_ERROR_CHECK(e_print(args[0], e_make_string("null")));
-  return e_null;
-}
-
-static e_Method null_methods[] = {
-  { "__printOn/1", null_printOn },
-  {NULL}
-};
-e_Script e__null_script;
-
-e_Ref e_null = { &e__null_script, {0}};
-//@}
-
 /// @addtogroup cstring
 //@{
 static e_Ref string_size(e_Ref self, e_Ref *args) {
