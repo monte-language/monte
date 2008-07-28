@@ -1,6 +1,3 @@
-/* Copyright 2003 Darius Bacon under the terms of the MIT X license
-   found at http://www.opensource.org/licenses/mit-license.html */
-
 #ifndef ELIB_H
 #define ELIB_H
 
@@ -210,7 +207,6 @@ e_call_2 (e_Ref receiver, e_Selector *selector, e_Ref arg1, e_Ref arg2)
   {                                      \
     return &(script_name) == ref.script; \
   }
-e_def_type_predicate(e_is_ejector, e__ejector_script);
 
 /* TODO: similar macro for constructors */
 /* TODO: similar macro for immediate-value extractors (char_value etc.) */
@@ -250,29 +246,7 @@ e_Ref *e_make_array (int size);
 
 /// @defgroup list Lists
 //@{
-
-e_Ref e_constlist_from_array(int size, e_Ref* contents);
-e_Ref e_flexlist_from_array(int size, e_Ref* contents);
-
-extern e_Script e__constlist_script;
-extern e_Script e__flexlist_script;
-
-
-/// XXX probably shouldn't be public
-e_Ref flexlist_snapshot(e_Ref self, e_Ref *args);
-e_Ref flexlist_size(e_Ref self, e_Ref *args);
-void  flexlist_setSize(e_Ref self, int newSize);
-
-typedef struct Flexlist_data {
-  int size;
-  int capacity;
-  e_Ref elementGuard;
-  e_Ref *elements;
-} Flexlist_data;
-
-e_def_type_predicate(e_is_constlist, e__constlist_script);
-e_def_type_predicate(e_is_flexlist, e__flexlist_script);
-
+#include "listobject.h"
 /// The safe-scope object bound to '__makeList'.
 extern e_Ref e_makeList;
 //@}
