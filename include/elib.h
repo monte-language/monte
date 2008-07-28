@@ -148,30 +148,12 @@ extern e_Method e_miranda_methods[];
     Return 'verb' as mangled and interned according to 'arity'. */
 const char *e_mangle (const char *verb, int arity);
 
+extern e_Ref e_empty_ref;
+#include "problemobject.h"
+#include "ejectorobject.h"
+
 //// @ingroup except
 //@{
-extern e_Script e__ejector_script;
-/** Return a new problem. */
-e_Ref e_make_problem (const char *complaint, e_Ref irritant);
-
-/** Throw a problem.  'complaint' must have indefinite extent. */
-e_Ref e_throw_pair (const char *complaint, e_Ref irritant);
-
-/** Throw 'cstring' as a problem, converting it into an E string. */
-e_Ref e_throw_cstring (const char *cstring);
-
-/** Throw an error according to the last C library error code in errno. */
-void e_throw_errno (void);
-
-/// XXX does this clobber the docstring in prim.c
-e_Ref e_make_ejector();
-e_Ref ejector_run(e_Ref self, e_Ref *args);
-
-/// Disable an ejector object.
-void e_ejector_disable(e_Ref self);
-
-e_Ref e_ejectOrThrow(e_Ref optEjector, const char *complaint, e_Ref irritant);
-e_Ref e_ejectOrThrow_problem(e_Ref optEjector, e_Ref problem);
 
 /// The thrower object. Bound as 'throw' in the universal scope.
 extern e_Ref e_thrower;
@@ -262,27 +244,7 @@ e_Ref *e_make_array (int size);
 
 /** @defgroup Map Maps */
 //@{
-e_Ref e_make_flexmap (int initial_size);
-e_Ref e_make_constmap (int initial_size);
-
-/// XXX arguably these should be not be public.
-e_Ref e_flexmap_put(e_Ref self, e_Ref *args);
-e_Ref e_flexmap_removeKey(e_Ref self, e_Ref *args);
-
-typedef struct Flexmap_data {
-  int size;		 /**< count of associations elements can hold, > 0 */
-  int occupancy;		/**< count of associations stored */
-  e_Ref *keys;
-  e_Ref *values;
-} Flexmap_data;
-
-extern e_Script e__flexmap_script;
-extern e_Script e__constmap_script;
-/// The safe-scope object bound to '__makeMap'.
-extern e_Ref e_makeMap;
-
-e_def_type_predicate (e_is_flexmap, e__flexmap_script);
-e_def_type_predicate (e_is_constmap, e__constmap_script);
+#include "mapobject.h"
 //@}
 
 
@@ -295,9 +257,11 @@ e_Ref e_flexlist_from_array(int size, e_Ref* contents);
 extern e_Script e__constlist_script;
 extern e_Script e__flexlist_script;
 
+
 /// XXX probably shouldn't be public
 e_Ref flexlist_snapshot(e_Ref self, e_Ref *args);
 e_Ref flexlist_size(e_Ref self, e_Ref *args);
+void  flexlist_setSize(e_Ref self, int newSize);
 
 typedef struct Flexlist_data {
   int size;
