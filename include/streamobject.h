@@ -22,4 +22,26 @@ static inline e_Ref e_make_reader(GInputStream *stream) {
 e_Ref e_make_string_writer();
 e_Ref e_string_writer_get_string(e_Ref writer);
 
+extern e_Selector e_do_printOn;
+extern e_Selector e_do_print;
+extern e_Selector e_do_quote_print;
+extern e_Selector e_do_println;
+
+static inline e_Ref e_print(e_Ref out, e_Ref ref) {
+  return e_call_1 (out, &e_do_print, ref);
+}
+
+static inline e_Ref e_println(e_Ref out, e_Ref ref) {
+  return e_call_1 (out, &e_do_println, ref);
+}
+
+static inline e_Ref e_print_on(e_Ref ref, e_Ref out) {
+  return e_call_1 (ref, &e_do_printOn, out);
+}
+
+static inline e_Ref
+e_quote_print(e_Ref out, e_Ref ref) {
+  return e_call_1 (out, &e_do_quote_print, ref);
+}
+
 #endif

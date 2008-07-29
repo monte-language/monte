@@ -4,18 +4,6 @@
 ///@defgroup guards
 //@{
 
-/// Return whether the specimen is of a primitive integral type.
-char e_is_integer(e_Ref specimen) {
-  return e_is_fixnum(specimen) || e_is_bignum(specimen);
-}
-
-/// Return whether the specimen is one of the base slot types.
-char e_is_slot(e_Ref specimen) {
-  return (e_is_finalslot(specimen)
-       || e_is_guardedslot(specimen)
-       || e_is_varslot(specimen));
-}
-
 /// Return the specimen if it's a fixnum or bignum. Otherwise eject (if ejector present) or throw.
 e_Ref intguard_coerce(e_Ref self, e_Ref *args) {
   e_Ref specimen = e_ref_target(args[0]);

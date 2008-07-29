@@ -1332,6 +1332,11 @@ static e_Ref identity(e_Ref self, e_Ref *args) {
   return self;
 }
 
+/// Return whether the specimen is of a primitive integral type.
+char e_is_integer(e_Ref specimen) {
+  return e_is_fixnum(specimen) || e_is_bignum(specimen);
+}
+
 e_Method fixnum_methods[] = {
   { "aboveZero/0", fixnum_aboveZero },
   { "abs/0", fixnum_abs },

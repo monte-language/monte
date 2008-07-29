@@ -255,25 +255,13 @@ extern e_Ref e_makeList;
 //@{
 
 /// Create an immutable set object with the given contents.
-e_Ref e_constset_from_array(int size, e_Ref* contents);
+#include "setobject.h"
 
-extern e_Script e__constset_script;
-extern e_Script e__flexset_script;
-e_def_type_predicate(e_is_constset, e__constset_script);
 //@}
 
 /// @defgroup slot Slots
 //@{
-
-e_Ref e_make_finalslot(e_Ref value);
-extern e_Script e__finalslot_script;
-
-e_def_type_predicate (e_is_finalslot, e__finalslot_script);
-
-e_Ref e_make_varslot(e_Ref value);
-extern e_Script e__varslot_script;
-
-e_def_type_predicate (e_is_varslot, e__varslot_script);
+#include "slotobject.h"
 
 //@}
 //@}
@@ -287,10 +275,6 @@ extern e_Ref e_StringGuard;
 extern e_Ref e_BooleanGuard;
 extern e_Ref e_EListGuard;
 
-extern e_Script e__guardedslot_script;
-e_Ref e_new_guardedslot(e_Ref value, e_Ref guard, e_Ref optEjector);
-e_def_type_predicate(e_is_guardedslot, e__guardedslot_script);
-char e_is_slot(e_Ref specimen);
 
 /// Coerce method on BooleanGuard. Declared here because it's useful
 /// on its own.
@@ -313,34 +297,6 @@ e_Ref stringguard_coerce(e_Ref self, e_Ref *args);
 /// @defgroup print Printing
 
 //@{
-extern e_Selector e_do_printOn;
-extern e_Selector e_do_print;
-extern e_Selector e_do_quote_print;
-extern e_Selector e_do_println;
-
-static inline e_Ref
-e_print (e_Ref out, e_Ref ref)
-{
-  return e_call_1 (out, &e_do_print, ref);
-}
-
-static inline e_Ref
-e_println (e_Ref out, e_Ref ref)
-{
-  return e_call_1 (out, &e_do_println, ref);
-}
-
-static inline e_Ref
-e_print_on (e_Ref ref, e_Ref out)
-{
-  return e_call_1 (ref, &e_do_printOn, out);
-}
-
-static inline e_Ref
-e_quote_print (e_Ref out, e_Ref ref)
-{
-  return e_call_1 (out, &e_do_quote_print, ref);
-}
 
 //@}
 

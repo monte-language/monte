@@ -14,6 +14,8 @@ libecru_la_SOURCES = src/objects/null.c include/null.h		\
 	src/objects/ejectorobject.c include/ejectorobject.h	\
 	src/objects/mapobject.c include/mapobject.h		\
 	src/objects/listobject.c include/listobject.h		\
+	src/objects/setobject.c include/setobject.h		\
+	src/objects/slotobject.c include/slotobject.h		\
 	src/invoke.c src/prim.c src/intern.c src/elib_private.h		\
 	src/bytecode_loader.h src/bytecode_loader.c src/vm.c src/ref.c	\
 	src/safescope.c src/privilegedscope.c src/guards.c src/import.c	\
