@@ -22,6 +22,7 @@ e_Selector e_do_print, e_do_println, e_do_printOn, e_do_quote_print;
 static e_Selector run2;
 
 e_Method no_methods[] = {{NULL, NULL}};
+e_Ref e_empty_ref = {NULL, {0}};
 
 /// Comparisons of primitive types, without recursion or ref shortening.
 _Bool e_same(e_Ref ref1, e_Ref ref2) {
@@ -38,38 +39,6 @@ _Bool e_same(e_Ref ref1, e_Ref ref2) {
     }
     return false;
 }
-
-
-e_Ref e_empty_ref = {NULL, {0}};
-
-//@}
-
-/// @ingroup misc
-//@{
-/* An array of refs is not itself an E object; we use it to implement
-   collections. */
-
-e_Ref *e_make_array(int size) {
-  e_Ref *result = e_malloc(size * sizeof result[0]);
-  int i;
-  for (i = 0; i < size; ++i)
-    result[i] = e_null;
-  return result;
-}
-
-//@}
-
-/// @ingroup list
-//@{
-
-//@}
-/// @ingroup set
-//@{
-
-//@}
-
-/// @ingroup slot
-//@{
 
 static void set_up_prims(void) {
   e_ejector_counter = 1;

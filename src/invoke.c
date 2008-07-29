@@ -102,6 +102,16 @@ void * e_malloc (size_t size) {
     e_throw_errno ();
   return p;
 }
+
+e_Ref *e_make_array(int size) {
+  e_Ref *result = e_malloc(size * sizeof result[0]);
+  int i;
+  for (i = 0; i < size; ++i)
+    result[i] = e_null;
+  return result;
+}
+
+
 /// @addtogroup messages
 //@{
 e_Ref e_call(e_Ref receiver, e_Selector *selector, e_Ref *args) {

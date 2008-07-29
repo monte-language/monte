@@ -4,7 +4,8 @@
 extern e_Script e__ejector_script;
 extern e_Method ejector_methods[];
 
-/// XXX does this clobber the docstring in prim.c
+e_def_type_predicate(e_is_ejector, e__ejector_script);
+
 e_Ref e_make_ejector();
 e_Ref ejector_run(e_Ref self, e_Ref *args);
 

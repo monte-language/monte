@@ -1,5 +1,8 @@
 #ifndef ECRU_CHAR_H
 #define ECRU_CHAR_H
+
+#define MAX_CHAR 65535
+
 extern e_Script e__char_script;
 extern e_Method char_methods[];
 
