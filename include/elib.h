@@ -207,6 +207,7 @@ e_call_2 (e_Ref receiver, e_Selector *selector, e_Ref arg1, e_Ref arg2)
   {                                      \
     return &(script_name) == ref.script; \
   }
+e_def_type_predicate(e_is_ejector, e__ejector_script);
 
 /* TODO: similar macro for constructors */
 /* TODO: similar macro for immediate-value extractors (char_value etc.) */
