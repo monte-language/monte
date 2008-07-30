@@ -25,14 +25,30 @@ extern e_Method makeOrderedSpace_methods[];
 extern e_Method orderedSpace_methods[];
 extern e_Method descender_methods[];
 
-/// The thrower object. Bound as 'throw' in the universal scope.
-extern e_Ref e_thrower;
-
-/// The safe-scope object bound to '__makeList'.
-extern e_Ref e_makeList;
 
 /// The safe-scope object for 'while' loops.
 extern e_Ref e_looper;
+extern e_Script e__looper_script;
+extern e_Method looper_methods[];
+
+/// The thrower object. Bound as 'throw' in the universal scope.
+extern e_Ref e_thrower;
+extern e_Script thrower_script;
+extern e_Method thrower_methods[];
+
+/// The safe-scope object bound to '__makeList'.
+extern e_Ref e_makeList;
+extern e_Script e__makeList_script;
+extern e_Method makeList_methods[];
+e_Ref makeList_dispatch(e_Ref receiver, e_Selector *selector, e_Ref *args);
+
+
+
+/// The safe-scope object bound to '__makeMap'.
+extern e_Ref e_makeMap;
+extern e_Script e__makeMap_script;
+extern e_Method makeMap_methods[];
+
 
 /// The safe-scope object 'require'.
 extern e_Ref e_require;
@@ -54,6 +70,10 @@ extern e_Ref e__suchThat;
 
 /// The safe-scope object 'simple__quasiParser'.
 extern e_Ref e_simple__quasiParser;
+extern e_Script simple__quasiParser_script;
+extern e_Method simple__quasiParser_methods[];
+extern e_Script substituter_script;
+extern e_Method substituter_methods[];
 
 /// The safe-scope object 'import__uriGetter'.
 extern e_Ref e_import__uriGetter;

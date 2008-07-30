@@ -21,9 +21,6 @@ typedef struct Flexmap_data {
 } Flexmap_data;
 
 
-/// The safe-scope object bound to '__makeMap'.
-extern e_Ref e_makeMap;
-
 e_def_type_predicate (e_is_flexmap, e__flexmap_script);
 e_def_type_predicate (e_is_constmap, e__constmap_script);
 

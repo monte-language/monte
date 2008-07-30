@@ -1,5 +1,5 @@
 #include "elib.h"
-#include "string.h"
+#include <string.h>
 
 /** Return a pointer to the array element holding the value that 'key'
    maps to, if any; otherwise NULL. */

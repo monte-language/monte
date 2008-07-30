@@ -17,7 +17,9 @@ libecru_la_SOURCES = src/prim/null.c include/null.h		\
 	src/prim/setobject.c include/setobject.h		\
 	src/prim/slotobject.c include/slotobject.h		\
 	src/safescope/equalizer.c src/safescope/comparer.c	\
-	src/safescope/orderedspace.c				\
+	src/safescope/orderedspace.c src/safescope/looper.c	\
+	src/safescope/thrower.c src/safescope/makelist.c	\
+	src/safescope/makemap.c src/safescope/simple_quasiparser.c	\
 	include/safescope.h					\
 	src/invoke.c src/prim.c src/intern.c src/elib_private.h		\
 	src/bytecode_loader.h src/bytecode_loader.c src/vm.c src/ref.c	\

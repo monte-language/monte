@@ -1,5 +1,5 @@
 #include "elib.h"
-#include "string.h"
+#include <string.h>
 
 static e_Ref string_size(e_Ref self, e_Ref *args) {
   GString *string = self.data.gstring;
