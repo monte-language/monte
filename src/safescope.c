@@ -1,6 +1,5 @@
 #include <string.h>
 #include "elib.h"
-#include "ref.h"
 
 
 #if OLD_GIO
@@ -9,184 +8,19 @@
 #endif
 
 
-e_Ref e_equalizer, e_comparer, e_looper, e_thrower, e_require,
+e_Ref e_looper, e_thrower, e_require,
       e_makeOrderedSpace, e_makeMap, e_makeList, e__Test, e__bind,
       e__is, e__makeVerbFacet, e__suchThat, e_simple__quasiParser,
       e_import__uriGetter, THE_E, e_traceln, e_safeScope;
 
 
-static e_Selector op__cmp, belowZero, atMostZero, isZero, atLeastZero,
-                  aboveZero, size, get, put, push, run0, run2, coerce,
-                  resolve;
 
-static e_Script e__equalizer_script;
-static e_Ref make_equalizer() {
-  e_Ref result;
-  e_Ref *bits = e_malloc(2 * sizeof(e_Ref));
-  bits[0] = e_constlist_from_array(0, NULL);
-  bits[1] = e_constlist_from_array(0, NULL);
-  result.script = &e__equalizer_script;
-  result.data.refs = bits;
-  return result;
-}
-
-static int eq_pushSoFar(e_Ref self, e_Ref left, e_Ref right, int soFar) {
-  // XXX EoJ uses identityHashCode. do we need a similar mechanism?
-  int lhash = left.data.fixnum;
-  int rhash = right.data.fixnum;
-  if (rhash < lhash) {
-    e_Ref t = left;
-    left = right;
-    right = t;
-  }
-  e_call_1(self.data.refs[0], &push, left);
-  e_call_1(self.data.refs[1], &push, right);
-  return soFar + 1;
-}
-
-
-static int eq_findSoFar(e_Ref self, e_Ref left, e_Ref right, int soFar) {
-  // XXX identityHashCode again
-  int lhash = left.data.fixnum;
-  int rhash = right.data.fixnum;
-  if (rhash < lhash) {
-    e_Ref t = left;
-    left = right;
-    right = t;
-  }
-  for (int i = 0; i < soFar; i++) {
-    e_Ref myLeft = e_call_1(self.data.refs[0], &get, e_make_fixnum(i));
-    e_Ref myRight = e_call_1(self.data.refs[1], &get, e_make_fixnum(i));
-    if (e_same(left, myLeft) && e_same(right, myRight)) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-static e_Ref _eq_optSame(e_Ref self, e_Ref left, e_Ref right, int soFar) {
-  if (e_same(left, right)) {
-    return e_true;
-  }
-  if (e_is_ref(left) && (e_same(e_ref_isResolved(left), e_false))
-      || e_is_ref(right) && (e_same(e_ref_isResolved(right), e_false))) {
-    return e_null;
-  }
-  left = e_ref_target(left);
-  right = e_ref_target(right);
-  if (e_same(left, right)) {
-    return e_true;
-  }
-  if (eq_findSoFar(self, left, right, soFar)) {
-    return e_true;
-  }
-  // Recurse through ConstLists (EoJ uses arrays instead)
-  if (e_is_constlist(left) && e_is_constlist(right)) {
-    e_Ref leftlen = flexlist_size(left, NULL);
-    if (!e_same(flexlist_size(right, NULL), leftlen)) {
-      return e_false;
-    }
-    int soFarther = eq_pushSoFar(self, left, right, soFar);
-    for (int i = 0; i < leftlen.data.fixnum; i++) {
-      e_Ref newLeft = e_call_1(left, &get, e_make_fixnum(i));
-      E_ERROR_CHECK(newLeft);
-      e_Ref newRight = e_call_1(right, &get, e_make_fixnum(i));
-      E_ERROR_CHECK(newRight);
-      e_Ref optResult = _eq_optSame(self, newLeft, newRight, soFarther);
-      E_ERROR_CHECK(optResult);
-      if (e_same(optResult, e_null)) {
-        return e_null;
-      } else if (e_same(optResult, e_false)) {
-        return e_false;
-      }
-    }
-    return e_true;
-  } else if (e_is_constlist(left) || e_is_constlist(right)) {
-    return e_false;
-  }
-  // XXX put in selfless checks
-  return e_false;
-}
-
-
-static e_Ref eq_optSame(e_Ref self, e_Ref left, e_Ref right) {
-  e_Ref res = _eq_optSame(self, left, right, 0);
-  return res;
-}
-
-
-/// Compare two E objects and return true if they are operationally identical.
-e_Ref e_sameEver(e_Ref self, e_Ref *args) {
-    if (e_same(args[0], args[1])) {
-        return e_true;
-    }
-    // are we in '__equalizer'?
-    if (self.data.refs == NULL) {
-      e_Ref eq = make_equalizer();
-      e_Ref res = e_sameEver(eq, args);
-      return res;
-    } else {
-      // or in an internal instance?
-      e_Ref optResult = eq_optSame(self, args[0], args[1]);
-      E_ERROR_CHECK(optResult);
-      if (e_eq(optResult, e_null)) {
-        return e_throw_cstring("Equality comparison of insufficiently settled objects");
-      } else {
-        return optResult;
-      }
-    }
-}
-
-static e_Method equalizer_methods[] = {
-  {"sameEver/2", e_sameEver},
-  {NULL}
-};
-
-e_Ref e_compare(e_Ref self, e_Ref *args) {
-  return e_call_1(args[0], &op__cmp, args[1]);
-}
-
-e_Ref e_lessThan(e_Ref self, e_Ref *args) {
-  e_Ref comp = e_compare(self, args);
-  E_ERROR_CHECK(comp);
-  return e_call_0(comp, &belowZero);
-}
-
-e_Ref e_leq(e_Ref self, e_Ref *args) {
-  e_Ref comp = e_compare(self, args);
-  E_ERROR_CHECK(comp);
-  return e_call_0(comp, &atMostZero);
-}
-e_Ref e_asBigAs(e_Ref self, e_Ref *args) {
-  e_Ref comp = e_compare(self, args);
-  E_ERROR_CHECK(comp);
-  return e_call_0(comp, &isZero);
-}
-e_Ref e_geq(e_Ref self, e_Ref *args) {
-  e_Ref comp = e_compare(self, args);
-  E_ERROR_CHECK(comp);
-  return e_call_0(comp, &atLeastZero);
-}
-
-e_Ref e_greaterThan(e_Ref self, e_Ref *args) {
-  e_Ref comp = e_compare(self, args);
-  E_ERROR_CHECK(comp);
-  return e_call_0(comp, &aboveZero);
-}
-
-
-static e_Script e__comparer_script;
-static e_Method comparer_methods[] = {
-  {"compare/2", e_compare},
-  {"lessThan/2", e_lessThan},
-  {"leq/2", e_leq},
-  {"asBigAs/2", e_asBigAs},
-  {"geq/2", e_geq},
-  {"greaterThan/2", e_greaterThan}
-};
 
 
 e_Ref e_loop(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector run0;
+  e_make_selector(&run0, "run", 0);
   e_Ref val;
   do {
     val = e_call_0(args[0], &run0);
@@ -216,6 +50,12 @@ static e_Method makeList_methods[] = {
 };
 
 e_Ref e_makeMap_fromPairs(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector get, put, size;
+  e_make_selector(&get, "get", 1);
+  e_make_selector(&put, "put", 1);
+  e_make_selector(&size, "size", 0);
+
   e_Ref sizeObj = e_call_0(args[0],  &size);
   E_ERROR_CHECK(sizeObj);
   int length = sizeObj.data.fixnum;
@@ -235,20 +75,26 @@ e_Ref e_makeMap_fromPairs(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref e_makeMap_fromColumns(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector coerce, get, size;
+  e_make_selector(&coerce, "coerce", 2);
+  e_make_selector(&get, "get", 1);
+  e_make_selector(&size, "size", 0);
+
   e_Ref sizeObj = e_call_0(args[0],  &size);
   E_ERROR_CHECK(sizeObj);
   e_Ref vsizeObj = e_call_0(args[1],  &size);
   E_ERROR_CHECK(vsizeObj);
   sizeObj = e_call_2(e_IntGuard, &coerce, sizeObj, e_null);
   vsizeObj = e_call_2(e_IntGuard, &coerce, vsizeObj, e_null);
-  int size = sizeObj.data.fixnum;
-  int vsize = vsizeObj.data.fixnum;
+  int siz = sizeObj.data.fixnum;
+  int vsiz = vsizeObj.data.fixnum;
 
-  if (size != vsize) {
+  if (siz != vsiz) {
     return e_throw_cstring("Arity mismatch in __makeMap.fromColumns");
   }
-  e_Ref result = e_make_constmap(size);
-  for (int i = 0; i < size; i++) {
+  e_Ref result = e_make_constmap(siz);
+  for (int i = 0; i < siz; i++) {
     e_Ref k = e_call_1(args[0], &get, e_make_fixnum(i));
     E_ERROR_CHECK(k);
     e_Ref v = e_call_1(args[1], &get, e_make_fixnum(i));
@@ -268,6 +114,10 @@ static e_Method makeMap_methods[] = {
 
 
 e_Ref descender_iterate(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector run2;
+  e_make_selector(&run2, "run", 2);
+
   int left = self.data.refs[0].data.fixnum;
   int right = self.data.refs[1].data.fixnum;
   for (int i = 0, j = right; j >= left; i++, j--) {
@@ -284,6 +134,10 @@ static e_Method descender_methods[] = {
 
 
 e_Ref orderedSpace_iterate(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector run2;
+  e_make_selector(&run2, "run", 2);
+
   int left = self.data.refs[0].data.fixnum;
   int right = self.data.refs[1].data.fixnum;
   for (int i = 0, j = left; j <= right; i++, j++) {
@@ -430,6 +284,10 @@ static e_Method test_methods[] = {
   {NULL}};
 
 static e_Ref viaFunc1(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector resolve;
+  e_make_selector(&resolve, "resolve", 1);
+
   E_ERROR_CHECK(e_call_1(self.data.refs[0], &resolve, args[0]));
   return e_null;
 }
@@ -440,6 +298,11 @@ static e_Method viafunc1_methods[] = {
   {NULL}};
 
 static e_Ref viaFunc2(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector resolve, coerce;
+  e_make_selector(&resolve, "resolve", 1);
+  e_make_selector(&coerce, "coerce", 2);
+
   e_Ref obj = e_call(self.data.refs[1], &coerce, args);
   E_ERROR_CHECK(obj);
   E_ERROR_CHECK(e_call_1(self.data.refs[0], &resolve, obj));
@@ -603,6 +466,10 @@ typedef struct template_segments {
 
 
 static e_Ref substituter_substitute(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector get;
+  e_make_selector(&get, "get", 1);
+
   e_Ref listguard_args[] = {args[0], e_null};
   e_Ref inputs = elistguard_coerce(e_null, listguard_args);
   E_ERROR_CHECK(inputs);
@@ -753,6 +620,10 @@ static e_Method e__traceln_methods[] = {
 };
 
 static e_Ref e_callWithPair(e_Ref self, e_Ref *args) {
+  //XXX selector pooling
+  e_Selector get;
+  e_make_selector(&get, "get", 1);
+
   e_Ref receiver = args[0];
   e_Ref argPair = elistguard_coerce(e_null, args + 1);
   E_ERROR_CHECK(argPair);
@@ -851,12 +722,4 @@ void e__safescope_set_up() {
   e_make_selector(&isZero, "isZero", 0);
   e_make_selector(&atLeastZero, "atLeastZero", 0);
   e_make_selector(&aboveZero, "aboveZero", 0);
-  e_make_selector(&size, "size", 0);
-  e_make_selector(&get, "get", 1);
-  e_make_selector(&put, "put", 2);
-  e_make_selector(&run0, "run", 0);
-  e_make_selector(&run2, "run", 2);
-  e_make_selector(&coerce, "coerce", 2);
-  e_make_selector(&resolve, "resolve", 1);
-  e_make_selector(&push, "push", 1);
 }

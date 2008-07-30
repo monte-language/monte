@@ -104,5 +104,11 @@ extern e_Method e_miranda_methods[];
 
 extern e_Ref e_empty_ref;
 
+/// Compares E references for pointer equality.
+static inline _Bool e_eq(e_Ref ref1, e_Ref ref2) {
+  return ref1.script == ref2.script &&
+    ref1.data.fixnum == ref2.data.fixnum;
+}
+
 
 #endif

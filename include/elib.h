@@ -62,6 +62,7 @@ e_Ref *e_make_array (int size);
 #include "setobject.h"
 #include "slotobject.h"
 
+#include "safescope.h"
 
 extern e_Ref e_IntGuard;
 extern e_Ref e_Float64Guard;
@@ -108,19 +109,6 @@ e_Ref e_make_scope(char **names, e_Ref *slots, int size);
 
 /// @ingroup objects
 /// @{
-
-/// Compares E references for pointer equality.
-static inline _Bool e_eq(e_Ref ref1, e_Ref ref2) {
-  return ref1.script == ref2.script &&
-    ref1.data.fixnum == ref2.data.fixnum;
-}
-
-/// Compares E references for equality of primitive types, or pointer equality. 
-_Bool e_same(e_Ref ref1, e_Ref ref2);
-
-/// The safe-scope object for performing equality comparisons.
-extern e_Ref e_equalizer;
-
 /// The safe-scope object for performing comparisons.
 extern e_Ref e_comparer;
 

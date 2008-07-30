@@ -4,18 +4,20 @@ EXTRA_DIST = CREDITS DEPENDENCIES
 ecrudir = $(libdir)/ecru
 AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"' -I$(top_srcdir)/include
 lib_LTLIBRARIES = libecru.la libmonte_bridge.la
-libecru_la_SOURCES = src/objects/null.c include/null.h		\
-	src/objects/stringobject.c include/stringobject.h	\
-	src/objects/boolobject.c include/boolobject.h 		\
-	src/objects/numberobject.c include/numberobject.h	\
-	src/objects/charobject.c include/charobject.h		\
-	src/objects/streamobject.c include/streamobject.h	\
-	src/objects/problemobject.c include/problemobject.h	\
-	src/objects/ejectorobject.c include/ejectorobject.h	\
-	src/objects/mapobject.c include/mapobject.h		\
-	src/objects/listobject.c include/listobject.h		\
-	src/objects/setobject.c include/setobject.h		\
-	src/objects/slotobject.c include/slotobject.h		\
+libecru_la_SOURCES = src/prim/null.c include/null.h		\
+	src/prim/stringobject.c include/stringobject.h		\
+	src/prim/boolobject.c include/boolobject.h 		\
+	src/prim/numberobject.c include/numberobject.h		\
+	src/prim/charobject.c include/charobject.h		\
+	src/prim/streamobject.c include/streamobject.h		\
+	src/prim/problemobject.c include/problemobject.h	\
+	src/prim/ejectorobject.c include/ejectorobject.h	\
+	src/prim/mapobject.c include/mapobject.h		\
+	src/prim/listobject.c include/listobject.h		\
+	src/prim/setobject.c include/setobject.h		\
+	src/prim/slotobject.c include/slotobject.h		\
+	src/safescope/equalizer.c src/safescope/comparer.c	\
+	include/safescope.h					\
 	src/invoke.c src/prim.c src/intern.c src/elib_private.h		\
 	src/bytecode_loader.h src/bytecode_loader.c src/vm.c src/ref.c	\
 	src/safescope.c src/privilegedscope.c src/guards.c src/import.c	\
