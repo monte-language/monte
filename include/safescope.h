@@ -52,21 +52,46 @@ extern e_Method makeMap_methods[];
 
 /// The safe-scope object 'require'.
 extern e_Ref e_require;
+extern e_Script e__require_script;
+extern e_Method require_methods[];
 
 /// The safe-scope object '__Test'.
 extern e_Ref e__Test;
+extern e_Script e__test_script;
+extern e_Method test_methods[];
 
 /// The safe-scope object '__bind'.
 extern e_Ref e__bind;
+extern e_Script e__bind_script;
+extern e_Method bind_methods[];
+extern e_Script viafunc1_script;
+extern e_Method viafunc1_methods[];
+extern e_Script viafunc2_script;
+extern e_Method viafunc2_methods[];
 
 /// The safe-scope object '__is'.
 extern e_Ref e__is;
+extern e_Script e__is_script;
+extern e_Method is_methods[];
+extern e_Script isSameFunc_script;
+extern e_Method isSameFunc_methods[];
 
 /// The safe-scope object '__makeVerbFacet'.
 extern e_Ref e__makeVerbFacet;
+extern e_Script e__makeVerbFacet_script;
+extern e_Method makeVerbFacet_methods[];
+extern e_Script verbFacet_script;
+e_Ref verbFacet_dispatch(e_Ref self, e_Selector *selector, e_Ref *args);
 
 /// The safe-scope object '__suchThat'.
 extern e_Ref e__suchThat;
+extern e_Script e__suchThat_script;
+extern e_Method suchThat_methods[];
+extern e_Script suchThatFuncFalse_script;
+extern e_Method suchThatFuncFalse_methods[];
+extern e_Script suchThatFuncTrue_script;
+extern e_Method suchThatFuncTrue_methods[];
+
 
 /// The safe-scope object 'simple__quasiParser'.
 extern e_Ref e_simple__quasiParser;
