@@ -1,4 +1,5 @@
 #include "elib.h"
+#include <sys/time.h>
 
 static e_Ref timer_now(e_Ref self, e_Ref *args) {
   struct timeval t;

@@ -19,7 +19,6 @@
 
 
 e_Selector e_do_print, e_do_println, e_do_printOn, e_do_quote_print;
-static e_Selector run2;
 
 e_Method no_methods[] = {{NULL, NULL}};
 e_Ref e_empty_ref = {NULL, {0}};
@@ -48,7 +47,6 @@ static void set_up_prims(void) {
   e_make_selector(&e_do_print, "print", 1);
   e_make_selector(&e_do_quote_print, "quote", 1);
   e_make_selector(&e_do_println, "println", 1);
-  e_make_selector(&run2, "run", 2);
 
   e_make_script(&e__null_script, NULL, null_methods, "void");
   e_make_script(&e__boolean_script, NULL, boolean_methods, "Boolean");
