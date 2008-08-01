@@ -102,21 +102,21 @@ extern e_Method substituter_methods[];
 
 /// The safe-scope object 'import__uriGetter'.
 extern e_Ref e_import__uriGetter;
+extern e_Script import__uriGetter_script;
+extern e_Method import__uriGetter_methods[];
+
 
 /// The safe-scope object 'E'.
 extern e_Ref THE_E;
+extern e_Script THE_E_script;
+extern e_Method THE_E_methods[];
+
 
 /// The safe-scope object 'traceln'.
 extern e_Ref e_traceln;
+extern e_Script e__traceln_script;
+extern e_Method e__traceln_methods[];
 
-/// The privileged-scope object 'timer'.
-extern e_Ref e_timer;
-
-/// The privileged-scope object 'print'.
-extern e_Ref e_print_object;
-
-/// The privileged-scope object 'println'.
-extern e_Ref e_println_object;
 
 /// The scope in which code with no capabilities is evaluated.
 extern e_Ref e_safeScope;

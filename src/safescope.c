@@ -8,67 +8,8 @@
 #endif
 
 
-e_Ref e_import__uriGetter, THE_E, e_traceln, e_safeScope;
+e_Ref e_safeScope;
 
-static e_Ref module_import_method(e_Ref self, e_Ref *args) {
-  e_Ref stringguard_args[] = {args[0], e_null};
-  e_Ref modName = stringguard_coerce(e_null, stringguard_args);
-  E_ERROR_CHECK(modName);
-  return e_module_import(modName.data.gstring);
-}
-
-static e_Script import__uriGetter_script;
-static e_Method import__uriGetter_methods[] = {
-  {"get/1", module_import_method},
-  {NULL}
-};
-
-static e_Ref e_traceln_run(e_Ref self, e_Ref *args) {
-  return e_println(e_stderr, args[0]);
-}
-
-static e_Script e__traceln_script;
-static e_Method e__traceln_methods[] = {
-  {"run/1", e_traceln_run},
-  {NULL},
-};
-
-static e_Ref e_callWithPair(e_Ref self, e_Ref *args) {
-  //XXX selector pooling
-  e_Selector get;
-  e_make_selector(&get, "get", 1);
-
-  e_Ref receiver = args[0];
-  e_Ref argPair = elistguard_coerce(e_null, args + 1);
-  E_ERROR_CHECK(argPair);
-  e_Ref verb = e_call_1(argPair, &get, e_make_fixnum(0));
-  E_ERROR_CHECK(verb);
-  verb = stringguard_coerce(e_null, &verb);
-  E_ERROR_CHECK(verb);
-  e_Ref arglist = e_call_1(argPair, &get, e_make_fixnum(1));
-  E_ERROR_CHECK(arglist);
-  elistguard_coerce(e_null, &arglist);
-  E_ERROR_CHECK(arglist);
-  e_Ref *newArgs = ((Flexlist_data *)arglist.data.other)->elements;
-  int arity = ((Flexlist_data *)arglist.data.other)->size;
-  e_Selector sel;
-  e_make_selector(&sel, (verb.data.gstring)->str, arity);
-  return e_call(receiver, &sel, newArgs);
-
-}
-
-static e_Ref e_toString(e_Ref self, e_Ref *args) {
-  e_Ref memWriter = e_make_string_writer();
-  E_ERROR_CHECK(e_print(memWriter, args[0]));
-  return e_string_writer_get_string(memWriter);
-}
-
-static e_Script THE_E_script;
-static e_Method THE_E_methods[] = {
-  {"callWithPair/2", e_callWithPair},
-  {"toString/1", e_toString},
-  {NULL}
-};
 
 void e__safescope_set_up() {
   e_make_script(&e__equalizer_script, NULL, equalizer_methods, "Equalizer");

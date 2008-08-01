@@ -23,7 +23,10 @@ libecru_la_SOURCES = src/prim/null.c include/null.h		\
 	src/safescope/require.c src/safescope/test.c		\
 	src/safescope/bind.c src/safescope/is.c			\
 	src/safescope/verbfacet.c src/safescope/suchthat.c	\
-	include/safescope.h					\
+	src/safescope/traceln.c src/safescope/eobject.c		\
+	src/privilegedscope/timer.c				\
+	include/safescope.h include/privilegedscope.h		\
+	include/guards.h					\
 	src/invoke.c src/prim.c src/intern.c src/elib_private.h		\
 	src/bytecode_loader.h src/bytecode_loader.c src/vm.c src/ref.c	\
 	src/safescope.c src/privilegedscope.c src/guards.c src/import.c	\

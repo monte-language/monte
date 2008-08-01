@@ -63,29 +63,8 @@ e_Ref *e_make_array (int size);
 #include "slotobject.h"
 
 #include "safescope.h"
-
-extern e_Ref e_IntGuard;
-extern e_Ref e_Float64Guard;
-extern e_Ref e_CharGuard;
-extern e_Ref e_StringGuard;
-extern e_Ref e_BooleanGuard;
-extern e_Ref e_EListGuard;
-
-
-/// Coerce method on BooleanGuard. Declared here because it's useful
-/// on its own.
-e_Ref booleanguard_coerce(e_Ref self, e_Ref *args);
-/// Coercer to a primitive list.
-e_Ref elistguard_coerce(e_Ref self, e_Ref *args);
-
-/// Coercer to an integer.
-e_Ref intguard_coerce(e_Ref self, e_Ref *args);
-
-/// Coercer to a float.
-e_Ref float64guard_coerce(e_Ref self, e_Ref *args);
-
-/// Coercer to a string.
-e_Ref stringguard_coerce(e_Ref self, e_Ref *args);
+#include "privilegedscope.h"
+#include "guards.h"
 
 /// @ingroup scopes
 /// @{
@@ -104,10 +83,6 @@ int e_scope_getSize(e_Ref self);
 
 /// Create a new scope object from an array of names and an array of slots.
 e_Ref e_make_scope(char **names, e_Ref *slots, int size);
-
-
-/// The default top-level scope for non-interactive code.
-extern e_Ref e_privilegedScope;
 
 e_Ref e_module_import(GString *module_name);
 
