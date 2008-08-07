@@ -2,7 +2,7 @@
 #include "elib_private.h"
 #include "vm.h"
 #include "bytecodes.h"
-#include "string.h"
+#include <string.h>
 
 e_Script e__rethrower_script = {-1, NULL, NULL};
 e_Script e__reEjector_script = {-1, NULL, NULL};

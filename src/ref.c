@@ -1,8 +1,6 @@
 #include <stdbool.h>
 #include "elib.h"
 #include "elib_private.h"
-#include "ref.h"
-#include "ref_private.h"
 
 e_Ref TheViciousRef, THE_REF;
 

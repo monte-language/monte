@@ -1,3 +1,5 @@
+#ifndef ECRU_REF_PRIVATE_H
+#define ECRU_REF_PRIVATE_H
 extern e_Script e__SwitchableRef_script;
 extern e_Script e__LocalResolver_script;
 extern e_Script e__UnconnectedRef_script;
@@ -25,3 +27,5 @@ typedef struct LocalResolver_data {
   e_Ref myRef;
   messageBuffer *buf;
 } LocalResolver_data;
+
+#endif

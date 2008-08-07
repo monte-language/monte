@@ -30,3 +30,18 @@ e_Ref e_module_import(GString *modName) {
   }
   return ecru_vm_execute(0, 0, false, NULL, mod, NULL, 0, NULL);
 }
+
+static e_Ref module_import_method(e_Ref self, e_Ref *args) {
+  e_Ref stringguard_args[] = {args[0], e_null};
+  e_Ref modName = stringguard_coerce(e_null, stringguard_args);
+  E_ERROR_CHECK(modName);
+  return e_module_import(modName.data.gstring);
+}
+
+e_Script import__uriGetter_script;
+e_Method import__uriGetter_methods[] = {
+  {"get/1", module_import_method},
+  {NULL}
+};
+
+e_Ref e_import__uriGetter;
