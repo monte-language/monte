@@ -4,7 +4,7 @@ e_Ref e_makeMap_fromPairs(e_Ref self, e_Ref *args) {
   //XXX selector pooling
   e_Selector get, put, size;
   e_make_selector(&get, "get", 1);
-  e_make_selector(&put, "put", 1);
+  e_make_selector(&put, "put", 2);
   e_make_selector(&size, "size", 0);
 
   e_Ref sizeObj = e_call_0(args[0],  &size);
