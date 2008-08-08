@@ -1,39 +1,40 @@
 AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = -I build-aux/m4
-EXTRA_DIST = CREDITS DEPENDENCIES
+EXTRA_DIST = CREDITS DEPENDENCIES build-aux/checkmk
 ecrudir = $(libdir)/ecru
 AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"' -I$(top_srcdir)/include
 lib_LTLIBRARIES = libecru.la libmonte_bridge.la
-libecru_la_SOURCES = src/prim/null.c include/null.h		\
-	src/prim/stringobject.c include/stringobject.h		\
-	src/prim/boolobject.c include/boolobject.h 		\
-	src/prim/numberobject.c include/numberobject.h		\
-	src/prim/charobject.c include/charobject.h		\
-	src/prim/streamobject.c include/streamobject.h		\
-	src/prim/problemobject.c include/problemobject.h	\
-	src/prim/ejectorobject.c include/ejectorobject.h	\
-	src/prim/mapobject.c include/mapobject.h		\
-	src/prim/listobject.c include/listobject.h		\
-	src/prim/setobject.c include/setobject.h		\
-	src/prim/slotobject.c include/slotobject.h		\
-	src/safescope/equalizer.c src/safescope/comparer.c	\
-	src/safescope/orderedspace.c src/safescope/looper.c	\
-	src/safescope/thrower.c src/safescope/makelist.c	\
-	src/safescope/makemap.c src/safescope/simple_quasiparser.c	\
-	src/safescope/require.c src/safescope/test.c		\
-	src/safescope/bind.c src/safescope/is.c			\
-	src/safescope/verbfacet.c src/safescope/suchthat.c	\
-	src/safescope/traceln.c src/safescope/eobject.c		\
-	src/privilegedscope/timer.c src/privilegedscope/printobject.c 	\
-	include/safescope.h include/privilegedscope.h		\
-	src/guards/numberguard.c src/guards/charguard.c		\
-	src/guards/stringguard.c src/guards/booleanguard.c	\
-	src/guards/listguard.c include/guards.h			\
-	src/invoke.c src/prim.c src/intern.c src/elib_private.h		\
-	src/bytecode_loader.h src/bytecode_loader.c src/vm.c src/ref.c	\
-	src/safescope.c src/privilegedscope.c src/guards.c src/import.c	\
-	src/scope.c src/scope.h include/elib.h src/bytecodes.h src/vm.h	\
-	src/ref.h src/ref_private.h src/ecru.h
+libecru_la_SOURCES = src/prim/null.c src/prim/stringobject.c		 \
+	src/prim/boolobject.c src/prim/numberobject.c			 \
+	src/prim/charobject.c src/prim/streamobject.c			 \
+	src/prim/problemobject.c src/prim/ejectorobject.c		 \
+	src/prim/mapobject.c src/prim/listobject.c src/prim/setobject.c	 \
+	src/prim/slotobject.c src/safescope/equalizer.c			 \
+	src/safescope/comparer.c src/safescope/orderedspace.c		 \
+	src/safescope/looper.c src/safescope/thrower.c			 \
+	src/safescope/makelist.c src/safescope/makemap.c		 \
+	src/safescope/simple_quasiparser.c src/safescope.c		 \
+	src/safescope/require.c src/safescope/test.c			 \
+	src/safescope/bind.c src/safescope/is.c				 \
+	src/safescope/verbfacet.c src/safescope/suchthat.c		 \
+	src/safescope/traceln.c src/safescope/eobject.c			 \
+	src/privilegedscope.c src/privilegedscope/timer.c		 \
+	src/privilegedscope/printobject.c src/guards/numberguard.c	 \
+	src/guards/charguard.c src/guards/stringguard.c			 \
+	src/guards/booleanguard.c src/guards/listguard.c src/invoke.c	 \
+	src/prim.c src/intern.c src/vm.c src/ref.c src/bytecode_loader.c \
+	src/scope.c src/guards.c src/import.c
+
+include_HEADERS = include/boolobject.h include/bytecode_loader.h	\
+	include/bytecodes.h include/charobject.h include/ecru.h		\
+	include/ecruobject.h include/ejectorobject.h include/elib.h	\
+	include/elib_private.h include/guards.h include/invoke.h	\
+	include/listobject.h include/mapobject.h include/null.h		\
+	include/numberobject.h include/privilegedscope.h		\
+	include/problemobject.h include/ref.h include/ref_private.h	\
+	include/safescope.h include/scope.h include/setobject.h		\
+	include/slotobject.h include/streamobject.h			\
+	include/stringobject.h include/vm.h
 
 dist_ecru_DATA = bootstrap/com.twistedmatrix.ecru.bytecodeDumper.ec \
 	bootstrap/com.twistedmatrix.ecru.compiler.ec \
