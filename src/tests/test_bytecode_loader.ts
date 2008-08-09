@@ -23,7 +23,7 @@ ecru_module *load_testdata(char *data, int length) {
                                                              length, NULL);
   m = ecru_load_bytecode(e_make_reader(stream), scope);
   if (m == NULL) {
-    e_println(e_stdout, e_thrown_problem);
+    e_println(e_stdout, e_thrown_problem());
     fail("Exception");
   }
   return m;
@@ -69,7 +69,7 @@ ecru_module *load_testdata(char *data, int length) {
   GInputStream *stream = g_memory_input_stream_new_from_data(data, 0, NULL);
   m = ecru_load_bytecode(e_make_reader(stream), scope);
   if (m == NULL) {
-    fail(e_thrown_problem.data.gstring->str);
+    fail(e_thrown_problem().data.gstring->str);
   }
   fail_unless(m->constants == NULL);
   fail_unless(m->constantsLength == 0);

@@ -10,17 +10,51 @@
 #include "elib.h"
 #include "elib_private.h"
 
-/* TLS */ e_Ref e_thrown_problem;
-// used in prim.c but I figured it belongs here for the moment
-/* TLS */ e_Ref e_ejected_value;
-/* TLS */ int e_ejector_counter;
+GStaticPrivate e_thrown_problem_key = G_STATIC_PRIVATE_INIT;
+GStaticPrivate e_ejected_value_key = G_STATIC_PRIVATE_INIT;
+GStaticPrivate e_ejector_counter_key = G_STATIC_PRIVATE_INIT;
 
 e_Selector respondsTo, order, whenBroken, whenMoreResolved,
            optSealedDispatch, conformTo, printOn, optUncall,
            getAllegedType, reactToLostClient;
 
-/// @addtogroup except
-//@{
+/// Get the last thrown problem in the current thread.
+e_Ref e_thrown_problem() {
+  e_Ref *prob = g_static_private_get(&e_thrown_problem_key);
+  return *prob;
+}
+
+/// Get the last ejected value in the current thread.
+e_Ref e_ejected_value() {
+  e_Ref *val =  g_static_private_get(&e_ejected_value_key);
+  return *val;
+}
+
+/// Get the number for the most recent ejection in the current thread.
+int e_ejector_counter() {
+  int *counter = g_static_private_get(&e_ejector_counter_key);
+  return *counter;
+}
+
+/// Set the problem currently being thrown in this thread.
+void e_thrown_problem_set(e_Ref problem) {
+  e_Ref *prob = g_static_private_get(&e_thrown_problem_key);
+  *prob = problem;
+}
+
+/// Set the value currently being ejected in this thread.
+void e_ejected_value_set(e_Ref value) {
+  e_Ref *val = g_static_private_get(&e_ejected_value_key);
+  *val = value;
+}
+
+/// Proceed to the next ejector number.
+int e_ejector_counter_increment() {
+  int *counter = g_static_private_get(&e_ejector_counter_key);
+  *counter = *counter + 1;
+  return *counter;
+}
+
 /// Complain and halt the process. Only for use from top-level driver.
 void e_die(e_Ref problem) {
   e_print(e_stderr, e_make_string("Unhandled exception: "));
@@ -31,7 +65,7 @@ void e_die(e_Ref problem) {
 
 /* Throw a problem. */
 e_Ref e_throw(e_Ref problem) {
-  e_thrown_problem = problem;
+  e_thrown_problem_set(problem);
   return e_empty_ref;
 }
 
@@ -285,4 +319,16 @@ void e__miranda_set_up() {
   for (int i = 0; i < E_NUM_MIRANDA_METHODS; i++) {
     e_miranda_methods[i].verb = e_intern(e_miranda_methods[i].verb);
   }
+}
+
+void e__exit_set_up() {
+  e_Ref *problem = e_malloc(sizeof *problem);
+  e_Ref *value = e_malloc(sizeof *value);
+  int *counter = e_malloc(sizeof *counter);
+  g_static_private_set(&e_thrown_problem_key, problem, NULL);
+  g_static_private_set(&e_ejected_value_key, value, NULL);
+  g_static_private_set(&e_ejector_counter_key, counter, NULL);
+  e_thrown_problem(e_empty_ref);
+  e_ejected_value_set(e_empty_ref);
+  *counter = 1;
 }

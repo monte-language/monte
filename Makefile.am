@@ -23,7 +23,7 @@ libecru_la_SOURCES = src/prim/null.c src/prim/stringobject.c		 \
 	src/guards/charguard.c src/guards/stringguard.c			 \
 	src/guards/booleanguard.c src/guards/listguard.c src/invoke.c	 \
 	src/prim.c src/intern.c src/vm.c src/ref.c src/bytecode_loader.c \
-	src/scope.c src/guards.c src/import.c
+	src/scope.c src/guards.c src/import.c src/vat.c
 
 include_HEADERS = include/boolobject.h include/bytecode_loader.h	\
 	include/bytecodes.h include/charobject.h include/ecru.h		\
@@ -34,7 +34,7 @@ include_HEADERS = include/boolobject.h include/bytecode_loader.h	\
 	include/problemobject.h include/ref.h include/ref_private.h	\
 	include/safescope.h include/scope.h include/setobject.h		\
 	include/slotobject.h include/streamobject.h			\
-	include/stringobject.h include/vm.h
+	include/stringobject.h include/vm.h include/vat.h
 
 dist_ecru_DATA = bootstrap/com.twistedmatrix.ecru.bytecodeDumper.ec \
 	bootstrap/com.twistedmatrix.ecru.compiler.ec \

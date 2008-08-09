@@ -40,9 +40,6 @@ _Bool e_same(e_Ref ref1, e_Ref ref2) {
 }
 
 static void set_up_prims(void) {
-  e_ejector_counter = 1;
-  e_ejected_value = e_empty_ref;
-  e_thrown_problem = e_empty_ref;
   e_make_selector(&e_do_printOn, "__printOn", 1);
   e_make_selector(&e_do_print, "print", 1);
   e_make_selector(&e_do_quote_print, "quote", 1);
@@ -111,6 +108,8 @@ void e_set_up(void) {
   g_type_init();
   e__set_up_interner();
   e__miranda_set_up();
+  e__exit_set_up();
+  ecru_vat_set_up();
   set_up_prims();
   e__ref_set_up();
   e__guards_set_up();

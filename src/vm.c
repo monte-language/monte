@@ -28,7 +28,7 @@ e_Ref rethrower_run(e_Ref self, e_Ref *args) {
 e_Ref reejector_run(e_Ref self, e_Ref *args) {
   e_Ref eject;
   reEjector_data *info = self.data.other;
-  e_ejected_value = info->ejectorValue;
+  e_ejected_value_set(info->ejectorValue);
   eject.script = NULL;
   eject.data.fixnum = info->ejectorNumber;
   return eject;
@@ -204,21 +204,21 @@ ecru_stackframe *ecru_error_check(e_Ref ref, ecru_stackframe *stackframe) {
   ecru_handler_table_entry *ht = handler_table(stackframe);
   stackframe->stack_top = stackframe->stack_bottom + ht[i].stackLevel;
   if (ht[i].type == OP_EJECTOR) {
-    *(stackframe->stack_top)++ = e_ejected_value;
-    e_ejected_value = e_empty_ref;
+    *(stackframe->stack_top)++ = e_ejected_value();
+    e_ejected_value_set(e_empty_ref);
   } else if (ht[i].type == OP_TRY) {
-    *(stackframe->stack_top)++ = e_thrown_problem;
-    e_thrown_problem = e_empty_ref;
+    *(stackframe->stack_top)++ = e_thrown_problem();
+    e_thrown_problem_set(e_empty_ref);
   } else if (ht[i].type == OP_UNWIND) {
     if (ref.data.fixnum == 0) {
       *stackframe->stack_top++ = e_null;
-      *stackframe->stack_top++ = ecru_make_rethrower(e_thrown_problem);
-      e_thrown_problem = e_empty_ref;
+      *stackframe->stack_top++ = ecru_make_rethrower(e_thrown_problem());
+      e_thrown_problem_set(e_empty_ref);
     } else {
       *stackframe->stack_top++ = e_null;
       *stackframe->stack_top++ = ecru_make_reEjector(ref.data.fixnum,
-                                                      e_ejected_value);
-      e_ejected_value = e_empty_ref;
+                                                     e_ejected_value());
+      e_ejected_value_set(e_empty_ref);
     }
   }
   stackframe->pc = ht[i].target;

@@ -12,21 +12,19 @@ void setup(void) {
 }
 
 void teardown(void) {
-  if (e_thrown_problem.script != NULL) {
-    e_println(e_stdout, e_thrown_problem);
+  if (e_thrown_problem().script != NULL) {
+    e_println(e_stdout, e_thrown_problem());
     fail("Unhandled exception");
-  } else if (e_ejected_value.script != NULL) {
-    e_println(e_stdout, e_ejected_value);
+  } else if (e_ejected_value().script != NULL) {
+    e_println(e_stdout, e_ejected_value());
     fail("Unhandled ejection");
   }
 }
 
 #define HAS_PROBLEM(val) (val.script == NULL && val.data.fixnum == 0)
 static void cleanup_exits() {
-  e_thrown_problem.script = NULL;
-  e_thrown_problem.data.fixnum = 0;
-  e_ejected_value.script = NULL;
-  e_ejected_value.data.fixnum = 0;
+  e_thrown_problem_set(e_empty_ref);
+  e_ejected_value_set(e_empty_ref);
 }
 
 #test hello_world
@@ -37,7 +35,7 @@ static void cleanup_exits() {
 
   e_Ref res = e_print(e_stdout, e_make_string ("Hello, world!\n"));
   if (HAS_PROBLEM(res)) {
-    e_println (e_stderr, e_thrown_problem);
+    e_println (e_stderr, e_thrown_problem());
     fail("E error raised");
   }
 }
@@ -104,7 +102,7 @@ static void cleanup_exits() {
   if(!HAS_PROBLEM(res)) {
     fail("Final slot allowed assignment");
   } else {
-    fail_unless(strcmp((e_thrown_problem.data.gstring)->str, "Final variables may not be changed.") == 0);
+    fail_unless(strcmp((e_thrown_problem().data.gstring)->str, "Final variables may not be changed.") == 0);
     cleanup_exits();
   }
 }
@@ -155,7 +153,7 @@ static void cleanup_exits() {
   res = e_call_2(e_IntGuard, &do_coerce, str, ej2);
   e_ON_EJECTION(res, ej2) {
     // XXX assert something about the complaint?
-    fail_unless(e_same(e_ejected_value.data.refs[1], str));
+    fail_unless(e_same(e_ejected_value().data.refs[1], str));
   } else {
     fail("IntGuard didn't eject when coercing a string");
   }
@@ -169,7 +167,7 @@ static void cleanup_exits() {
   if (!HAS_PROBLEM(res)) {
     fail("IntGuard didn't throw a problem when coercing a string");
   } else {
-    fail_unless(e_same(e_thrown_problem.data.refs[1], str));
+    fail_unless(e_same(e_thrown_problem().data.refs[1], str));
   }
   cleanup_exits();
 }
@@ -208,7 +206,7 @@ static void cleanup_exits() {
   if (!HAS_PROBLEM(res)) {
     fail("Assigning a string to an IntGuard-guarded slot succeeded");
   } else {
-    fail_unless(e_same(e_thrown_problem.data.refs[1], str));
+    fail_unless(e_same(e_thrown_problem().data.refs[1], str));
   }
   cleanup_exits();
 }
@@ -257,7 +255,7 @@ static void cleanup_exits() {
   if (!HAS_PROBLEM(res)) {
     fail("thrower didn't throw");
   } else {
-    fail_unless(e_same(e_thrown_problem, e_make_fixnum(1)));
+    fail_unless(e_same(e_thrown_problem(), e_make_fixnum(1)));
   }
   cleanup_exits();
 }

@@ -20,6 +20,8 @@
 #endif
 
 #include "ecruobject.h"
+#include "ecru.h"
+#include "vat.h"
 
 /** Initialize the E system. */
 /**  Must be called before any other e_foo()
@@ -31,7 +33,7 @@ void e_set_up (void);
 void * e_malloc (size_t size);
 
 /** Allocate space on the GC'd heap for an object that will have no
-   pointers (useful for efficiency -- this tells the GC it won't have
+  pointers (useful for efficiency -- this tells the GC it won't have
    to trace it). */
 void * e_malloc_atomic (size_t size);
 

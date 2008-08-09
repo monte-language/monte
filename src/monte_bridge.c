@@ -317,7 +317,7 @@ PyObject *doModuleInteractive(ecru_module *m, PyObject *boundNames,
   if (res.script != NULL) {
     e_println(w, res);
   } else {
-    e_println(w, e_thrown_problem);
+    e_println(w, e_thrown_problem());
   }
   e_Ref str = e_string_writer_get_string(w);
   return e_to_py(str);
