@@ -13,11 +13,11 @@
 #define HAS_PROBLEM(val) (val.script == NULL && val.data.fixnum == 0)
 #define ERROR_CHECK(x)                          \
   if (HAS_PROBLEM(x)) {                         \
-    if (e_thrown_problem.script != NULL) {      \
-      e_println(e_stdout, e_thrown_problem);    \
+    if (e_thrown_problem().script != NULL) {    \
+      e_println(e_stdout, e_thrown_problem());  \
       fail("Unhandled exception");              \
     } else {                                    \
-      e_println(e_stdout, e_ejected_value);     \
+      e_println(e_stdout, e_ejected_value());   \
       fail("Unhandled ejection");               \
     }                                           \
   }
@@ -510,9 +510,9 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   char code[] = {OP_UNWIND, 5, 0, OP_LITERAL, 0, OP_END_HANDLER, OP_LITERAL, 1};
   e_Ref constants[] = {e_make_fixnum(17), e_make_fixnum(99)};
   ecru_handler_table_entry ht[] = {{OP_UNWIND, 0, 8, 3, 5}};
-  e_thrown_problem = e_empty_ref;
+  e_thrown_problem_set(e_empty_ref);
   e_Ref res = vm_exec_constants_sels_htable(code, 8, constants, 2, 0, NULL, 0, ht, 1);
-  fail_unless(e_same(e_thrown_problem, e_empty_ref));
+  fail_unless(e_same(e_thrown_problem(), e_empty_ref));
   fail_unless(e_same(constants[1], res));
   fail_unless(ecru_is_returner(FIRST()));
 }

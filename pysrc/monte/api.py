@@ -272,13 +272,14 @@ e_false = newFixnum(0)
 e_false.script = booleanScript
 e_safeScope = ERef.in_dll(e, "e_safeScope")
 e_privilegedScope = ERef.in_dll(e, "e_privilegedScope")
-e_thrown_problem = ERef.in_dll(e, "e_thrown_problem")
 e_stdin = ERef.in_dll(e, "e_stdin")
 e_stdout = ERef.in_dll(e, "e_stdout")
 e_do_println = newSelector("println", 1)
 e_do_print = newSelector("print", 1)
 e_run_1 = newSelector("run", 1)
 
+e.e_thrown_problem.restype = ERef
+e.e_thrown_problem.argtypes = ()
 e.e_make_string_writer.restype = ERef
 e.e_string_writer_get_string.restype = ERef
 e.e_string_writer_get_string.argtypes = (ERef,)
@@ -297,7 +298,7 @@ def e_call(receiver, verb, *args):
     if res.script:
         return fromEObject(res)
     else:
-        e_println(e_stdout, e_thrown_problem)
+        e_println(e_stdout, e_thrown_problem())
         raise RuntimeError()
 
 def runModule(path):
@@ -307,7 +308,7 @@ def runModule(path):
     if res.script:
         return res
     else:
-        e_println(e_stdout, e_thrown_problem)
+        e_println(e_stdout, e_thrown_problem())
 
 _compile = None
 _dump = None
@@ -434,7 +435,7 @@ def doModule(m, doPrint=False, stackframeHolder=None):
         else:
             return fromEObject(res)
     else:
-        e_println(e_stdout, e_thrown_problem)
+        e_println(e_stdout, e_thrown_problem())
 
 
 modules = []
