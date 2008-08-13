@@ -8,10 +8,10 @@ void e_ejector_disable(e_Ref self) {
 /// ejector.
 e_Ref ejector_run(e_Ref self, e_Ref *args) {
   e_Ref ej;
-    if (self.data.refs[0].data.fixnum == 0) {
-      return e_throw_cstring("Failed: ejector must be enabled");
-    }
-  e_ejected_value = args[0];
+  if (self.data.refs[0].data.fixnum == 0) {
+    return e_throw_cstring("Failed: ejector must be enabled");
+  }
+  e_ejected_value_set(args[0]);
   ej.script = NULL;
   ej.data.fixnum = self.data.refs[0].data.fixnum;
   return ej;
@@ -50,10 +50,9 @@ e_Ref e_make_ejector() {
   ej.script = &e__ejector_script;
   ej.data.refs = e_malloc(sizeof(e_Ref));
   ej.data.refs[0].script = NULL;
-  ej.data.refs[0].data.fixnum = e_ejector_counter++;
-  if (e_ejector_counter <= 0) {
-    printf("WARNING: ejector counter rollover!\n");
-    e_ejector_counter = 1;
+  ej.data.refs[0].data.fixnum = e_ejector_counter_increment();
+  if (e_ejector_counter() <= 0) {
+    e_die(e_make_problem("Ejector counter rollover!\n", e_null));
   }
   return ej;
 }

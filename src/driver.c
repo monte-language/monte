@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 
   ecru_module *module = ecru_load_bytecode(e_stdin, e_privilegedScope);
   if (module == NULL) {
-    e_println(e_stdout, e_thrown_problem);
+    e_println(e_stdout, e_thrown_problem());
     return 1;
   }
   fclose(stdin);
@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     e_println(e_stdout, result);
     return 0;
   } else {
-    e_println(e_stdout, e_thrown_problem);
+    e_println(e_stdout, e_thrown_problem());
     return 1;
   }
 }

@@ -49,15 +49,25 @@ static inline e_Ref e_call_2(e_Ref receiver, e_Selector *selector,
 }
 
 
-extern /* TLS */ e_Ref e_thrown_problem;
-extern /* TLS */ e_Ref e_ejected_value;
-extern /* TLS */ int e_ejector_counter;
+extern GStaticPrivate e_thrown_problem_key;
+extern GStaticPrivate e_ejected_value_key;
+extern GStaticPrivate e_ejector_counter_key;
 
 /** Throw a problem. */
 e_Ref e_throw(e_Ref problem);
 
 /// Halt the process and print a problem.
 void e_die(e_Ref problem);
+
+e_Ref e_thrown_problem();
+e_Ref e_ejected_value();
+int e_ejector_counter();
+
+void e_thrown_problem_set(e_Ref problem);
+void e_ejected_value_set(e_Ref value);
+int e_ejector_counter_increment();
+
+void e__exit_set_up();
 
 #define E_ERROR_CHECK(expr)                      \
   {e_Ref _val = expr;                            \

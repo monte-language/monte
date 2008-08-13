@@ -22,18 +22,16 @@ void setup(void) {
 #define HAS_PROBLEM(val) (val.script == NULL && val.data.fixnum == 0)
 
 static void cleanup_exits() {
-  e_thrown_problem.script = NULL;
-  e_thrown_problem.data.fixnum = 0;
-  e_ejected_value.script = NULL;
-  e_ejected_value.data.fixnum = 0;
+  e_thrown_problem_set(e_empty_ref);
+  e_ejected_value_set(e_empty_ref);;
 }
 
 void teardown(void) {
-  if (e_thrown_problem.script != NULL) {
-    e_println(e_stdout, e_thrown_problem);
+  if (e_thrown_problem().script != NULL) {
+    e_println(e_stdout, e_thrown_problem());
     fail("Unhandled exception");
-  } else if (e_ejected_value.script != NULL) {
-    e_println(e_stdout, e_ejected_value);
+  } else if (e_ejected_value().script != NULL) {
+    e_println(e_stdout, e_ejected_value());
     fail("Unhandled ejection");
   }
 }
@@ -159,8 +157,8 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   if (!HAS_PROBLEM(res)) {
     fail("Wrong-selector error not handled");
   } else {
-    fail_unless(strcmp(e_thrown_problem.data.refs[0].data.gstring->str, "Unknown method") == 0);
-    fail_unless(strcmp(e_thrown_problem.data.refs[1].data.gstring->str, "<a test>.wrong/1") == 0);
+    fail_unless(strcmp(e_thrown_problem().data.refs[0].data.gstring->str, "Unknown method") == 0);
+    fail_unless(strcmp(e_thrown_problem().data.refs[1].data.gstring->str, "<a test>.wrong/1") == 0);
   }
   cleanup_exits();
 }
@@ -171,7 +169,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   /// Test that 'e_throw' correctly indicates an error condition.
   e_Ref obj = e_null, val = test_throw_function(7);
   if (HAS_PROBLEM(val)) {
-    obj = e_thrown_problem;
+    obj = e_thrown_problem();
   }
   fail_unless(obj.data.fixnum == 7);
   cleanup_exits();
@@ -187,7 +185,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   const char *txt = "oh no";
   e_Ref res = e_throw_pair(txt, irr);
   if (HAS_PROBLEM(res)) {
-    obj = e_thrown_problem;
+    obj = e_thrown_problem();
   }
   fail_if(e_same(obj, e_null));
   fail_unless(e_same(obj.data.refs[0], e_make_string("oh no")));
@@ -203,7 +201,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   e_Ref ej = e_make_ejector();
   e_Ref res = test_eject_function(7, ej);
   e_ON_EJECTION(res, ej) {
-    obj = e_ejected_value;
+    obj = e_ejected_value();
     cleanup_exits();
   }
   fail_unless(obj.data.fixnum == 7);
@@ -217,7 +215,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   e_Ref ej = e_make_ejector();
   val = test_eject_function3(7, ej);
   e_ON_EJECTION(val, ej) {
-    obj = e_ejected_value;
+    obj = e_ejected_value();
     cleanup_exits();
   }
   fail_unless(obj.data.fixnum == 7);
