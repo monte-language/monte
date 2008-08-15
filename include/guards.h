@@ -1,12 +1,11 @@
 #ifndef ECRU_GUARDS_H
 #define ECRU_GUARDS_H
 
+/// Convenience function for coercing an object with a guard.
+e_Ref e_coerce(e_Ref guard, e_Ref specimen, e_Ref optEjector);
 
-
-extern e_Ref e_StringGuard;
-extern e_Ref e_BooleanGuard;
-extern e_Ref e_EListGuard;
-
+/// Create a new guard object that only passes objects with the given script.
+e_Ref e_make_typeguard(e_Script *script);
 
 /// Coercer to an integer.
 e_Ref intguard_coerce(e_Ref self, e_Ref *args);
@@ -15,33 +14,24 @@ extern e_Script intguard_script;
 extern e_Method intguard_methods[];
 
 /// Coercer to a float.
-e_Ref float64guard_coerce(e_Ref self, e_Ref *args);
 extern e_Ref e_Float64Guard;
-extern e_Script float64guard_script;
-extern e_Method float64guard_methods[];
 
 /// Coercer to a character.
 extern e_Ref e_CharGuard;
-extern e_Script charguard_script;
-extern e_Method charguard_methods[];
 
 /// Coerce method on BooleanGuard. Declared here because it's useful
 /// on its own.
-e_Ref booleanguard_coerce(e_Ref self, e_Ref *args);
 extern e_Ref e_BooleanGuard;
-extern e_Script booleanguard_script;
-extern e_Method booleanguard_methods[];
 
-/// Coercer to a primitive list.
-e_Ref listguard_coerce(e_Ref self, e_Ref *args);
+/// Coercer to a primitive list (mutable or otherwise).
 extern e_Ref e_ListGuard;
 extern e_Script listguard_script;
 extern e_Method listguard_methods[];
 
+extern e_Ref e_ConstListGuard;
+extern e_Ref e_FlexListGuard;
+
 /// Coercer to a string.
-e_Ref stringguard_coerce(e_Ref self, e_Ref *args);
-extern e_Script stringguard_script;
-extern e_Method stringguard_methods[];
 extern e_Ref e_StringGuard;
 
 #endif

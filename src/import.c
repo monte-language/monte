@@ -32,8 +32,7 @@ e_Ref e_module_import(GString *modName) {
 }
 
 static e_Ref module_import_method(e_Ref self, e_Ref *args) {
-  e_Ref stringguard_args[] = {args[0], e_null};
-  e_Ref modName = stringguard_coerce(e_null, stringguard_args);
+  e_Ref modName = e_coerce(e_StringGuard, args[0], e_null);
   E_ERROR_CHECK(modName);
   return e_module_import(modName.data.gstring);
 }

@@ -7,15 +7,15 @@ static e_Ref e_callWithPair(e_Ref self, e_Ref *args) {
   e_make_selector(&get, "get", 1);
 
   e_Ref receiver = args[0];
-  e_Ref argPair = listguard_coerce(e_null, args + 1);
+  e_Ref argPair = e_coerce(e_ListGuard, args[1], e_null);
   E_ERROR_CHECK(argPair);
   e_Ref verb = e_call_1(argPair, &get, e_make_fixnum(0));
   E_ERROR_CHECK(verb);
-  verb = stringguard_coerce(e_null, &verb);
+  verb = e_coerce(e_StringGuard, verb, e_null);
   E_ERROR_CHECK(verb);
   e_Ref arglist = e_call_1(argPair, &get, e_make_fixnum(1));
   E_ERROR_CHECK(arglist);
-  listguard_coerce(e_null, &arglist);
+  arglist = e_coerce(e_ListGuard, arglist, e_null);
   E_ERROR_CHECK(arglist);
   e_Ref *newArgs = ((Flexlist_data *)arglist.data.other)->elements;
   int arity = ((Flexlist_data *)arglist.data.other)->size;

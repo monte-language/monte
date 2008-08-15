@@ -147,8 +147,7 @@ static int e_ref_comparer(const void *one, const void *other,
       *sort_failure = res.data.fixnum;
       return 0;
     } else {
-      e_Ref f64guard_args[] = {res, e_null};
-      e_Ref f64res = float64guard_coerce(e_null, f64guard_args);
+      e_Ref f64res = e_coerce(e_Float64Guard, res, e_null);
       if (f64res.script == NULL) {
         *sort_failure = 0;
         return 0;
@@ -198,8 +197,7 @@ static int e_custom_comparer(const void *one, const void *other,
       sortBits[1] = res;
       return 0;
     } else {
-      e_Ref f64guard_args[] = {res, e_null};
-      e_Ref f64res = float64guard_coerce(e_null, f64guard_args);
+      e_Ref f64res = e_coerce(e_Float64Guard, res, e_null);
       if (f64res.script == NULL) {
         sortBits[1] = f64res;
         return 0;

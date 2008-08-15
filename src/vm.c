@@ -418,11 +418,10 @@ static e_Ref ecru_object_respondsTo(e_Ref self, e_Ref *args) {
   ecru_object *obj = self.data.other;
   ecru_script *script = obj->module->scripts[obj->scriptNum];
   int _methodNum;
-  e_Ref stringguard_args[] = {args[0], e_null};
-  e_Ref str = stringguard_coerce(e_null, stringguard_args);
+  e_Ref str = e_coerce(e_StringGuard, args[0], e_null);
   E_ERROR_CHECK(str);
   e_Ref intguard_args[] = {args[1], e_null};
-  e_Ref ar = intguard_coerce(e_null, intguard_args);
+  e_Ref ar = e_coerce(e_IntGuard, args[1], e_null);
   E_ERROR_CHECK(ar);
   int arity = ar.data.fixnum;
   GString *original = str.data.other;
@@ -656,16 +655,15 @@ e_Ref _ecru_vm_execute(ecru_stackframe *stackframe,
     case OP_LIST_PATT:
       {
         int size = NEXT_CODEBYTE();
-        e_Ref args[] = {e_null, e_null};
-        e_Ref listobj;
-        POP_INTO(args[1]); // optEjector
-        POP_INTO(args[0]); // specimen
-        listobj = listguard_coerce(e_null, args);
+        e_Ref optEjector, specimen, listobj;
+        POP_INTO(optEjector);
+        POP_INTO(specimen);
+        listobj = e_coerce(e_ListGuard, specimen, optEjector);
         ECRU_ERROR_CHECK(listobj);
         // OK to use e_call here because it's constrained to be non-bytecode
         e_Ref listsize = e_call_0(listobj, &do_size);
         if (listsize.data.fixnum != size) {
-          ECRU_ERROR_CHECK(e_ejectOrThrow(args[1],
+          ECRU_ERROR_CHECK(e_ejectOrThrow(optEjector,
                                            "List/pattern size mismatch",
                                            listsize));
         }
@@ -674,7 +672,7 @@ e_Ref _ecru_vm_execute(ecru_stackframe *stackframe,
                                      e_make_fixnum(i));
           ECRU_ERROR_CHECK(value);
           PUSH(value);
-          PUSH(args[1]);
+          PUSH(optEjector);
         }
       }
       break;
@@ -766,19 +764,18 @@ e_Ref _ecru_vm_execute(ecru_stackframe *stackframe,
       break;
     case OP_BRANCH:
       {
-        e_Ref res;
-        e_Ref args[] = {e_null, e_null};
-        POP_INTO(args[0]); // specimen
-        POP_INTO(args[1]); // optEjector
-        res = booleanguard_coerce(e_null, args);
+        e_Ref res, specimen, optEjector;
+        POP_INTO(specimen); // specimen
+        POP_INTO(optEjector); // optEjector
+        res = e_coerce(e_BooleanGuard, specimen, optEjector);
         ECRU_ERROR_CHECK(res);
         if (e_same(res, e_false)) {
-          if (e_same(args[1], e_null)) {
+          if (e_same(optEjector, e_null)) {
             e_throw_pair("No ejector provided for branch at pc:",
                          e_make_fixnum(pc));
           } else {
-            PUSH(args[0]);
-            ECRU_CALL(args[1], do_run1, false);
+            PUSH(specimen);
+            ECRU_CALL(optEjector, do_run1, false);
           }
         }
       }

@@ -13,7 +13,7 @@ static e_Ref string_printOn(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref string_append(e_Ref self, e_Ref *args) {
-  e_Ref otherString = stringguard_coerce(e_null, args);
+  e_Ref otherString = e_coerce(e_null, args[0], args[1]);
   E_ERROR_CHECK(otherString);
   GString *result = g_string_new_len(self.data.gstring->str,
                                      self.data.gstring->len);
@@ -31,8 +31,7 @@ static e_Ref string_getBytes(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref string_get(e_Ref self, e_Ref *args) {
-  e_Ref intguard_args[] = {args[0], e_null};
-  e_Ref arg = intguard_coerce(e_null, intguard_args);
+  e_Ref arg = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(arg);
   if (arg.data.fixnum < 0 || arg.data.fixnum >= self.data.gstring->len) {
     return e_throw_pair("Index out of bounds", arg);
@@ -41,8 +40,7 @@ static e_Ref string_get(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref string_multiply(e_Ref self, e_Ref *args) {
-  e_Ref intguard_args[] = {args[0], e_null};
-  e_Ref arg = intguard_coerce(e_null, intguard_args);
+  e_Ref arg = e_coerce(e_IntGuard, args[0], args[1]);
   E_ERROR_CHECK(arg);
   int times = arg.data.fixnum;
   GString *result = g_string_new_len(self.data.gstring->str,
@@ -57,8 +55,7 @@ static e_Ref string_multiply(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref string_compareTo(e_Ref self, e_Ref *args) {
-  e_Ref stringguard_args[] = {args[0], e_null};
-  e_Ref arg = stringguard_coerce(e_null, stringguard_args);
+  e_Ref arg = e_coerce(e_StringGuard, args[0], e_null);
   E_ERROR_CHECK(arg);
   int a = self.data.gstring->len;
   int b = arg.data.gstring->len;
@@ -70,14 +67,12 @@ static e_Ref string_compareTo(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref string_run2(e_Ref self, e_Ref *args) {
-  e_Ref intguard_args[] = {args[0], e_null};
-  e_Ref arg = intguard_coerce(e_null, intguard_args);
+  e_Ref arg = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(arg);
   int start = arg.data.fixnum;
-  e_Ref intguard2_args[] = {args[1], e_null};
-  arg = intguard_coerce(e_null, intguard2_args);
-  E_ERROR_CHECK(arg);
-  int end = arg.data.fixnum;
+  e_Ref arg2 = e_coerce(e_IntGuard, args[1], e_null);
+  E_ERROR_CHECK(arg2);
+  int end = arg2.data.fixnum;
   if (start < 0 || start >= self.data.gstring->len
       || end < start || end > self.data.gstring->len) {
     return e_throw_cstring("String index out of bounds");

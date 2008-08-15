@@ -15,11 +15,6 @@ void teardown(void) {
     fail("Unhandled ejection");
   }
 }
-e_Ref e_coerce(e_Ref guard, e_Ref specimen, e_Ref optEjector) {
-  e_Selector do_coerce;
-  e_make_selector(&do_coerce, "coerce", 2);
-  return e_call_2(guard, &do_coerce, specimen, optEjector);
-}
 
 #define HAS_PROBLEM(val) (val.script == NULL && val.data.fixnum == 0)
 static void cleanup_exits() {
@@ -104,7 +99,8 @@ static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
   e_Ref bits[] = {e_true, e_null, e_make_fixnum(1)};
   e_Ref list = e_constlist_from_array(3, bits);
   e_Ref flexlist = e_flexlist_from_array(3, bits);
-  test_type_guard(e_ListGuard, "List", list, flexlist);
+  test_type_guard(e_ListGuard, "List", list, e_null);
+  test_type_guard(e_ListGuard, "List", flexlist, e_null);
 }
 
 

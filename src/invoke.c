@@ -178,11 +178,9 @@ e_Ref e_call(e_Ref receiver, e_Selector *selector, e_Ref *args) {
 
 static e_Ref miranda_respondsTo(e_Ref self, e_Ref *args) {
   e_Script *script = self.script;
-  e_Ref stringguard_args[] = {args[0], e_null};
-  e_Ref str = stringguard_coerce(e_null, stringguard_args);
+  e_Ref str = e_coerce(e_StringGuard, args[0], e_null);
   E_ERROR_CHECK(str);
-  e_Ref intguard_args[] = {args[1], e_null};
-  e_Ref ar = intguard_coerce(e_null, intguard_args);
+  e_Ref ar = e_coerce(e_IntGuard, args[1], e_null);
   E_ERROR_CHECK(ar);
   int arity = ar.data.fixnum;
   GString *original = str.data.other;
@@ -207,11 +205,9 @@ static e_Ref miranda_respondsTo(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref miranda_order(e_Ref self, e_Ref *args) {
-  e_Ref stringguard_args[] = {args[0], e_null};
-  e_Ref str = stringguard_coerce(e_null, stringguard_args);
+  e_Ref str = e_coerce(e_StringGuard, args[0], e_null);
   E_ERROR_CHECK(str);
-  e_Ref listguard_args[] = {args[1], e_null};
-  e_Ref arglist = listguard_coerce(e_null, listguard_args);
+  e_Ref arglist = e_coerce(e_ListGuard, args[1], e_null);
   E_ERROR_CHECK(arglist);
   e_Selector sel;
   Flexlist_data *list = arglist.data.other;

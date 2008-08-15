@@ -6,7 +6,11 @@ e_Ref listguard_coerce(e_Ref self, e_Ref *args) {
   if (e_is_constlist(specimen)) {
     return specimen;
   }
-  return e_ejectOrThrow(optEjector, "Value doesn't coerce to a List", specimen);
+  if (e_is_flexlist(specimen)) {
+    return specimen;
+  }
+  return e_ejectOrThrow(optEjector, "Value doesn't coerce to any kind of list",
+                        specimen);
 }
 
 e_Script listguard_script;
