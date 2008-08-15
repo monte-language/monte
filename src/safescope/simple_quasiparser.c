@@ -24,7 +24,7 @@ static e_Ref substituter_substitute(e_Ref self, e_Ref *args) {
   e_make_selector(&get, "get", 1);
 
   e_Ref listguard_args[] = {args[0], e_null};
-  e_Ref inputs = elistguard_coerce(e_null, listguard_args);
+  e_Ref inputs = listguard_coerce(e_null, listguard_args);
   E_ERROR_CHECK(inputs);
   template_segments *segments = self.data.other;
   int len = segments->size;

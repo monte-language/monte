@@ -33,9 +33,10 @@ extern e_Script booleanguard_script;
 extern e_Method booleanguard_methods[];
 
 /// Coercer to a primitive list.
-e_Ref elistguard_coerce(e_Ref self, e_Ref *args);
-extern e_Ref e_EListGuard;
-
+e_Ref listguard_coerce(e_Ref self, e_Ref *args);
+extern e_Ref e_ListGuard;
+extern e_Script listguard_script;
+extern e_Method listguard_methods[];
 
 /// Coercer to a string.
 e_Ref stringguard_coerce(e_Ref self, e_Ref *args);

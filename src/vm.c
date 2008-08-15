@@ -660,7 +660,7 @@ e_Ref _ecru_vm_execute(ecru_stackframe *stackframe,
         e_Ref listobj;
         POP_INTO(args[1]); // optEjector
         POP_INTO(args[0]); // specimen
-        listobj = elistguard_coerce(e_null, args);
+        listobj = listguard_coerce(e_null, args);
         ECRU_ERROR_CHECK(listobj);
         // OK to use e_call here because it's constrained to be non-bytecode
         e_Ref listsize = e_call_0(listobj, &do_size);

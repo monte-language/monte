@@ -40,31 +40,6 @@ static void cleanup_exits() {
   }
 }
 
-#test primitive_same
-{
-    // e_same should compare primitively-typed E objects with identical values
-    // as identical.
-    mpz_t bignum, bignum2;
-    mpz_init_set_str(bignum, "4000000000", 10);
-    mpz_init_set_str(bignum2, "4000000000", 10);
-    fail_unless(e_same(e_make_fixnum(17), e_make_fixnum(17)));
-    fail_unless(e_same(e_make_bignum(&bignum), e_make_bignum(&bignum2)));
-    fail_unless(e_same(e_make_char('q'), e_make_char('q')));
-    fail_unless(e_same(e_make_string("foo"), e_make_string("foo")));
-    fail_unless(e_same(e_make_float64(3.14159), e_make_float64(3.14159)));
-    fail_if(e_same(e_make_fixnum(97), e_make_char('a')));
-}
-
-#test equalizer
-{
-    e_Selector sameEver;
-    e_make_selector(&sameEver, "sameEver", 2);
-    fail_unless(e_eq(e_call_2(e_equalizer, &sameEver,
-                    e_make_string("foo"),
-                    e_make_string("foo")), e_true));
-
-}
-
 #test fixnum_add
 {
   /*
@@ -126,51 +101,6 @@ static void cleanup_exits() {
   }
 }
 
-#test intguard
-{
-  /// Test that IntGuard accepts ints and ints only, calling an ejector on
-  /// coercion failure if specified and throwing a problem if not.
-  e_Selector do_coerce;
-  e_make_selector(&do_coerce, "coerce", 2);
-  e_Ref fn = e_make_fixnum(1);
-  e_Ref str = e_make_string("1");
-  // coercion should work with a null ejector
-  e_Ref res = e_call_2(e_IntGuard, &do_coerce, fn, e_null);
-  if (HAS_PROBLEM(res)) {
-    fail("IntGuard threw an error when coercing an int");
-  }
-  fail_unless(e_same(res, fn));
-  e_Ref ej = e_make_ejector();
-  // coercion should work with a defined ejector
-  res = e_call_2(e_IntGuard, &do_coerce, fn, ej);
-  fail_unless(e_same(res, fn));
-  e_ON_EJECTION(res, ej) {
-    fail("IntGuard failed to accept an int");
-  }
-  e_ejector_disable(ej);
-  e_Ref ej2 = e_make_ejector();
-  // coercion should eject when it can't succeed
-  res = e_call_2(e_IntGuard, &do_coerce, str, ej2);
-  e_ON_EJECTION(res, ej2) {
-    // XXX assert something about the complaint?
-    fail_unless(e_same(e_ejected_value().data.refs[1], str));
-  } else {
-    fail("IntGuard didn't eject when coercing a string");
-  }
-  e_ejector_disable(ej2);
-  if (HAS_PROBLEM(res)) {
-    fail("IntGuard threw an error instead of ejecting on coercion failure");
-  }
-
-
-  res = e_call_2(e_IntGuard, &do_coerce, str, e_null);
-  if (!HAS_PROBLEM(res)) {
-    fail("IntGuard didn't throw a problem when coercing a string");
-  } else {
-    fail_unless(e_same(e_thrown_problem().data.refs[1], str));
-  }
-  cleanup_exits();
-}
 
 #test guardedslot
 {

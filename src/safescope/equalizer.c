@@ -3,8 +3,8 @@
 static e_Ref make_equalizer() {
   e_Ref result;
   e_Ref *bits = e_malloc(2 * sizeof(e_Ref));
-  bits[0] = e_constlist_from_array(0, NULL);
-  bits[1] = e_constlist_from_array(0, NULL);
+  bits[0] = e_flexlist_from_array(0, NULL);
+  bits[1] = e_flexlist_from_array(0, NULL);
   result.script = &e__equalizer_script;
   result.data.refs = bits;
   return result;

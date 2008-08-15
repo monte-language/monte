@@ -26,5 +26,9 @@ void e__guards_set_up() {
   e_StringGuard.data.fixnum = 0;
   e_StringGuard.script = &stringguard_script;
 
+  e_make_script(&listguard_script, NULL, listguard_methods,
+                "ListGuard");
+  e_ListGuard.data.fixnum = 0;
+  e_ListGuard.script = &listguard_script;
 }
 //@}

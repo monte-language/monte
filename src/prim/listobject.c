@@ -209,7 +209,7 @@ static e_Ref flexlist_last(e_Ref self, e_Ref *args) {
 static e_Ref flexlist_add(e_Ref self, e_Ref *args) {
   e_Ref result;
   e_Ref listguardargs[] = {args[0], e_null};
-  e_Ref arg = elistguard_coerce(e_null, listguardargs);
+  e_Ref arg = listguard_coerce(e_null, listguardargs);
   E_ERROR_CHECK(arg);
   Flexlist_data *resData = e_malloc(sizeof *resData);
   Flexlist_data *selfData = self.data.other;
@@ -235,7 +235,7 @@ static e_Ref flexlist_add(e_Ref self, e_Ref *args) {
 
 static e_Ref flexlist_append(e_Ref self, e_Ref *args) {
   e_Ref listguardargs[] = {args[0], e_null};
-  e_Ref arg = elistguard_coerce(e_null, listguardargs);
+  e_Ref arg = listguard_coerce(e_null, listguardargs);
   E_ERROR_CHECK(arg);
   Flexlist_data *selfData = self.data.other;
   Flexlist_data *otherData = arg.data.other;

@@ -211,7 +211,7 @@ static e_Ref miranda_order(e_Ref self, e_Ref *args) {
   e_Ref str = stringguard_coerce(e_null, stringguard_args);
   E_ERROR_CHECK(str);
   e_Ref listguard_args[] = {args[1], e_null};
-  e_Ref arglist = elistguard_coerce(e_null, listguard_args);
+  e_Ref arglist = listguard_coerce(e_null, listguard_args);
   E_ERROR_CHECK(arglist);
   e_Selector sel;
   Flexlist_data *list = arglist.data.other;

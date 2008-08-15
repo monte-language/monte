@@ -65,7 +65,16 @@ test_ref_SOURCES = src/tests/test_ref.c
 test_ref_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
 test_ref_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
-check_PROGRAMS = test_vm test_elib test_invoke test_bytecode_loader test_ref
+test_same_SOURCES = src/tests/test_same.c
+test_same_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
+test_same_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
+
+test_guards_SOURCES = src/tests/test_guards.c
+test_guards_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
+test_guards_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
+
+
+check_PROGRAMS = test_vm test_elib test_invoke test_bytecode_loader test_ref test_same test_guards
 
 ecru_SOURCES = src/driver.c
 ecru_LDADD = @GLIB_LIBS@ libecru.la
