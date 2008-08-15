@@ -91,7 +91,10 @@ static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
 
 #test intguard
 {
+  mpz_t bignum;
   test_type_guard(e_IntGuard, "int", e_make_fixnum(1), e_make_string("1"));
+  mpz_init_set_str(bignum,  "4000000000", 10);
+  test_type_guard(e_IntGuard, "int", e_make_bignum(&bignum), e_null);
 }
 
 #test listguard
@@ -102,6 +105,7 @@ static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
   test_type_guard(e_ListGuard, "List", list, e_null);
   test_type_guard(e_ListGuard, "List", flexlist, e_null);
 }
+
 
 
 #main-pre

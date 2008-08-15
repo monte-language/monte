@@ -39,6 +39,23 @@ _Bool e_same(e_Ref ref1, e_Ref ref2) {
     return false;
 }
 
+e_Ref e_spread_uncall(e_Ref obj) {
+  // XXX selector pooling
+  e_Selector optUncall, add, run, get;
+  e_make_selector(&optUncall, "__optUncall", 0);
+  e_make_selector(&add, "add", 1);
+  e_make_selector(&run, "run", 2);
+  e_make_selector(&get, "get", 1);
+  e_Ref uncall = e_ref_target(e_call_0(obj, &optUncall));
+  if (!e_eq(uncall, e_null)) {
+    e_Ref front = e_call_2(uncall, &run, e_make_fixnum(0), e_make_fixnum(2));
+    e_Ref args = e_call_1(uncall, &get, e_make_fixnum(2));
+    return e_call_1(front, &add, args);
+  } else {
+    return e_null;
+  }
+}
+
 static void set_up_prims(void) {
   e_make_selector(&e_do_printOn, "__printOn", 1);
   e_make_selector(&e_do_print, "print", 1);

@@ -100,7 +100,7 @@ e_Ref otherwise_miranda_methods(e_Ref self, e_Selector *selector, e_Ref *args);
 
 /// The array of default Miranda method implementations.
 extern e_Method e_miranda_methods[];
-#define E_NUM_MIRANDA_METHODS 7
+#define E_NUM_MIRANDA_METHODS 8
 
 extern e_Ref e_empty_ref;
 
@@ -110,5 +110,7 @@ static inline _Bool e_eq(e_Ref ref1, e_Ref ref2) {
     ref1.data.fixnum == ref2.data.fixnum;
 }
 
+/// Returns the visible internal state of an object, or null.
+e_Ref e_spread_uncall(e_Ref obj);
 
 #endif

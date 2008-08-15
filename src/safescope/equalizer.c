@@ -90,10 +90,15 @@ static e_Ref _eq_optSame(e_Ref self, e_Ref left, e_Ref right, int soFar) {
       }
     }
     return e_true;
-  } else if (e_is_constlist(left) || e_is_constlist(right)) {
-    return e_false;
+  } else if (e_is_selfless(left) && e_is_selfless(right)) {
+    int soFarther = eq_pushSoFar(self, left, right, soFar);
+    e_Ref spreadL = e_spread_uncall(left);
+    e_Ref spreadR = e_spread_uncall(right);
+    if (!(e_eq(spreadL, e_null) || e_eq(spreadR, e_null))) {
+      return _eq_optSame(self, spreadL, spreadR, soFarther);
+    }
   }
-  // XXX put in selfless checks
+
   return e_false;
 }
 

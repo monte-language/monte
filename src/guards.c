@@ -7,6 +7,7 @@ e_Ref e_ConstListGuard, e_FlexListGuard, e_BooleanGuard, e_CharGuard,
 static e_Script e__typeguard_script;
 
 e_Ref e_coerce(e_Ref guard, e_Ref specimen, e_Ref optEjector) {
+  // XXX selector pooling
   e_Selector do_coerce;
   e_make_selector(&do_coerce, "coerce", 2);
   return e_call_2(guard, &do_coerce, specimen, optEjector);
@@ -39,7 +40,15 @@ static e_Method typeguard_methods[] = {
   {NULL}
 };
 
-
+_Bool e_is_selfless(e_Ref obj) {
+  if (e_is_string(obj) || e_is_boolean(obj) || e_is_char(obj)
+      || e_is_integer(obj) || e_is_float64(obj) || e_is_constlist(obj)
+      || e_is_constmap(obj)) {
+    return true;
+      } else {
+    return false;
+  }
+}
 
 void e__guards_set_up() {
   e_make_script(&e__typeguard_script, NULL, typeguard_methods, "Guard");

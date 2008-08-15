@@ -304,6 +304,15 @@ static e_Ref flexmap_iterate(e_Ref self, e_Ref *args) {
     return e_null;
 }
 
+static e_Ref constmap_uncall(e_Ref self, e_Ref *args) {
+  Flexmap_data *map = self.data.other;
+  e_Ref keys = e_constlist_from_array(map->size, map->keys);
+  e_Ref values = e_constlist_from_array(map->size, map->values);
+  e_Ref uncallArgs[] = {keys, values};
+  e_Ref uncall[] = {e_makeMap, e_make_string("fromColumns"),
+                   e_constlist_from_array(2, uncallArgs)};
+  return e_constlist_from_array(3, uncall);
+}
 
 e_Ref e_make_flexmap(int initial_size) {
   e_Ref result;
@@ -365,5 +374,6 @@ e_Method constmap_methods[] = {
   {"with/2", flexmap_with},
   {"or/1", flexmap_or},
   {"iterate/1", flexmap_iterate},
+  {"__optUncall/0", constmap_uncall},
   {NULL}
 };

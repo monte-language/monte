@@ -226,6 +226,10 @@ static e_Ref miranda_conformTo(e_Ref self, e_Ref *args) {
   return self;
 }
 
+static e_Ref miranda_optUncall(e_Ref self, e_Ref *args) {
+  return e_null;
+}
+
 static e_Ref miranda_printOn(e_Ref self, e_Ref *args) {
   E_ERROR_CHECK(e_print(args[0], e_make_string("<a ")));
   E_ERROR_CHECK(e_print(args[0], e_make_string(self.script->typeName->str)));
@@ -238,6 +242,7 @@ e_Method e_miranda_methods[] = {
   {"__whenBroken/1", miranda_no_op},
   {"__reactToLostClient/1", miranda_no_op},
   {"__optSealedDispatch/2", miranda_no_op},
+  {"__optUncall/0", miranda_optUncall},
   {"__conformTo/1", miranda_conformTo},
   {"__printOn/1", miranda_printOn},
   {NULL}};

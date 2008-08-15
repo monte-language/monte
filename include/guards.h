@@ -7,8 +7,10 @@ e_Ref e_coerce(e_Ref guard, e_Ref specimen, e_Ref optEjector);
 /// Create a new guard object that only passes objects with the given script.
 e_Ref e_make_typeguard(e_Script *script);
 
+/// Returns whether an object has value semantics or not.
+_Bool e_is_selfless(e_Ref obj);
+
 /// Coercer to an integer.
-e_Ref intguard_coerce(e_Ref self, e_Ref *args);
 extern e_Ref e_IntGuard;
 extern e_Script intguard_script;
 extern e_Method intguard_methods[];
