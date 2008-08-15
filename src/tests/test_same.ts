@@ -114,7 +114,7 @@ static void test_unequal(e_Ref left, e_Ref right) {
   left = e_call_0(left, &snapshot);
   right = e_call_0(right, &snapshot);
   test_equal(left, left);
-  test_equal(right, right);
+  test_equal(right, left);
 }
 
 #test simple_circular_constlist
