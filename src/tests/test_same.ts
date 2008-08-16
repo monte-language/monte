@@ -31,11 +31,13 @@ static void cleanup_exits() {
   e_ejected_value_set(e_empty_ref);
 }
 
+/// Fail unless 'left' and 'right' are equivalent.
 static void test_equal(e_Ref left, e_Ref right) {
   fail_unless(e_eq(e_call_2(e_equalizer, &sameEver,
                             left, right), e_true));
 }
 
+/// Fail if 'left' and 'right' are equivalent.
 static void test_unequal(e_Ref left, e_Ref right) {
 
     fail_if(e_eq(e_call_2(e_equalizer, &sameEver,
@@ -43,13 +45,14 @@ static void test_unequal(e_Ref left, e_Ref right) {
 
 }
 
+/// Strings compare by value.
 #test string
 {
   test_equal(e_make_string("foo"),
              e_make_string("foo"));
 }
 
-
+/// Booleans compare by value.
 #test booleans
 {
   test_equal(e_true, e_true);
@@ -57,22 +60,26 @@ static void test_unequal(e_Ref left, e_Ref right) {
   test_equal(e_true, e_true);
 }
 
+/// Fixnums compare by value.
 #test fixnum
 {
   test_equal(e_make_fixnum(17),
              e_make_fixnum(17));
 }
 
+/// Characters compare by value.
 #test character
 {
   test_equal(e_make_char('q'), e_make_char('q'));
 }
 
+/// Floating-point numbers compare by value.
 #test float64
 {
   test_equal(e_make_float64(3.14159), e_make_float64(3.14159));
 }
 
+/// Big integers compare by value.
 #test bignum
 {
     mpz_t bignum, bignum2;
@@ -82,16 +89,19 @@ static void test_unequal(e_Ref left, e_Ref right) {
     test_equal(e_make_bignum(&bignum), e_make_bignum(&bignum2));
 }
 
+/// Null is equal to itself.
 #test null
 {
   test_equal(e_null, e_null);
 }
 
+/// Primitive objects of different types aren't equal.
 #test mismatch
 {
   test_unequal(e_make_fixnum(97), e_make_char('a'));
 }
 
+/// Immutable lists with identical contents are identical.
 #test constlist
 {
   e_Ref bits[] = {e_null, e_true, e_make_fixnum(1)};
@@ -101,6 +111,7 @@ static void test_unequal(e_Ref left, e_Ref right) {
   test_equal(left, right);
 }
 
+/// Immutable maps with identical contents are identical.
 #test constmap
 {
   e_Ref ks[] = {e_make_fixnum(3), e_make_fixnum(7)};
@@ -117,6 +128,7 @@ static void test_unequal(e_Ref left, e_Ref right) {
   test_equal(right, left);
 }
 
+/// Circular lists with the same content and structure are the same.
 #test simple_circular_constlist
 {
   e_Ref bits[] = {e_make_fixnum(1), e_make_fixnum(3), e_null};
@@ -130,6 +142,7 @@ static void test_unequal(e_Ref left, e_Ref right) {
   test_equal(left, right);
 }
 
+/// Self-referring maps with the same content and structure are the same.
 #test simple_circular_constmap
 {
   e_Ref ks[] = {e_make_fixnum(3), e_make_fixnum(7)};

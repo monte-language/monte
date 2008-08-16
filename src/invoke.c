@@ -226,6 +226,7 @@ static e_Ref miranda_conformTo(e_Ref self, e_Ref *args) {
   return self;
 }
 
+/// The default implementation of '__optUncall'.
 static e_Ref miranda_optUncall(e_Ref self, e_Ref *args) {
   return e_null;
 }
@@ -236,6 +237,8 @@ static e_Ref miranda_printOn(e_Ref self, e_Ref *args) {
   return e_print(args[0], e_make_string(">"));
 }
 
+/** The default implementation of auditor approval checking. This method cannot
+    be called from E, but is only invoked by Ecru internals. */
 static e_Ref miranda_auditedBy(e_Ref self, e_Ref *args) {
   GArray *approvals = self.script->optApprovals;
   if (approvals == NULL) {

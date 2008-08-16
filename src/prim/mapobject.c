@@ -304,6 +304,7 @@ static e_Ref flexmap_iterate(e_Ref self, e_Ref *args) {
     return e_null;
 }
 
+/// Return a representation of this map's contents.
 static e_Ref constmap_uncall(e_Ref self, e_Ref *args) {
   Flexmap_data *map = self.data.other;
   e_Ref keys = e_constlist_from_array(map->size, map->keys);

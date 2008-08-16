@@ -22,13 +22,11 @@ static void cleanup_exits() {
   e_ejected_value_set(e_empty_ref);
 }
 
-
+ /** Test that the type guard accepts only objects of that type, calling an
+     ejector on coercion failure if specified and throwing a problem if
+     not. */
 static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
                             e_Ref badSpecimen) {
-  /** Test that the type guard accepts only objects of that type, calling an
-      ejector on coercion failure if specified and throwing a problem if
-      not. */
-
   // coercion should work with a null ejector
   e_Ref res = e_coerce(guard, specimen, e_null);
   if (HAS_PROBLEM(res)) {
@@ -72,23 +70,27 @@ static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
   cleanup_exits();
 }
 
+/// The boolean guard only accepts boolean values.
 #test booleanguard
 {
   test_type_guard(e_BooleanGuard, "boolean", e_true, e_make_fixnum(1));
   test_type_guard(e_BooleanGuard, "boolean", e_false, e_make_fixnum(0));
 }
 
+/// The char guard only accepts characters.
 #test charguard
 {
   test_type_guard(e_CharGuard, "char", e_make_char('a'), e_make_fixnum(97));
 }
 
+/// The float64 guard only accepts float64s.
 #test float64guard
 {
   test_type_guard(e_Float64Guard, "float64", e_make_float64(3.1415),
                   e_make_char('a'));
 }
 
+/// The int guard only accepts fixnums and bignums.
 #test intguard
 {
   mpz_t bignum;
@@ -97,6 +99,7 @@ static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
   test_type_guard(e_IntGuard, "int", e_make_bignum(&bignum), e_null);
 }
 
+/// The List guard only accepts ConstLists and FlexLists.
 #test listguard
 {
   e_Ref bits[] = {e_true, e_null, e_make_fixnum(1)};
@@ -106,6 +109,7 @@ static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
   test_type_guard(e_ListGuard, "List", flexlist, e_null);
 }
 
+/// Objects that can be expressed as literals correctly check as Selfless.
 #test selfless_literals
 {
   mpz_t bignum;
@@ -121,7 +125,7 @@ static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
   fail_if(e_is_selfless(e_flexlist_from_array(0, NULL)));
 
 }
-
+/// Guard objects are Selfless.
 #test selfless_guards
 {
   fail_unless(e_is_selfless(e_IntGuard));

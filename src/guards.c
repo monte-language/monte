@@ -4,7 +4,7 @@
 e_Ref e_ConstListGuard, e_FlexListGuard, e_BooleanGuard, e_CharGuard,
       e_StringGuard, e_selfless_stamp;
 
-static e_Script e__typeguard_script, e__selfless_stamp_script;
+static e_Script e__typeguard_script, e__selfless_auditor_script;
 
 e_Ref e_coerce(e_Ref guard, e_Ref specimen, e_Ref optEjector) {
   // XXX selector pooling
@@ -20,7 +20,7 @@ e_Ref e_make_typeguard(e_Script *script) {
   return result;
 }
 
-e_Ref e_typeguard_coerce(e_Ref self, e_Ref *args) {
+static e_Ref e_typeguard_coerce(e_Ref self, e_Ref *args) {
   e_Script *typescript = self.data.other;
   e_Ref specimen = e_ref_target(args[0]);
   e_Ref optEjector = args[1];
@@ -46,7 +46,6 @@ _Bool e_is_selfless(e_Ref obj) {
   return e_approved_by(obj, e_selfless_stamp);
 }
 
-static e_Script e__selfless_auditor_script;
 static e_Method selfless_auditor_methods[] = {
   {NULL}
 };
