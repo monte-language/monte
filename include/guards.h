@@ -9,6 +9,7 @@ e_Ref e_make_typeguard(e_Script *script);
 
 /// Returns whether an object has value semantics or not.
 _Bool e_is_selfless(e_Ref obj);
+extern e_Ref e_selfless_stamp;
 
 /// Coercer to an integer.
 extern e_Ref e_IntGuard;

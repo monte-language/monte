@@ -955,13 +955,13 @@ void ecru_set_up() {
   if (!e__setup_done) {
     e_set_up();
     e_make_script(&e__rethrower_script, NULL, rethrower_methods,
-                  "vm_internal_rethrower");
+                  NULL, "vm_internal_rethrower");
     e_make_script(&e__returner_script, NULL, returner_methods,
-                  "vm_internal_returner");
+                  NULL, "vm_internal_returner");
     e_make_script(&e__reEjector_script, NULL, reEjector_methods,
-                  "vm_internal_reEjector");
+                  NULL, "vm_internal_reEjector");
     e_make_script(&e__vmObject_script, &ecru_object_call,
-                  no_methods, "vm_Object");
+                  no_methods, NULL, "vm_Object");
     e_make_selector(&do_run1, "run", 1);
     e_make_selector(&do_get0, "get", 0);
     e_make_selector(&do_get1, "get", 1);

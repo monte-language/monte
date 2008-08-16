@@ -106,7 +106,27 @@ static void test_type_guard(e_Ref guard, char *typeName, e_Ref specimen,
   test_type_guard(e_ListGuard, "List", flexlist, e_null);
 }
 
+#test selfless_literals
+{
+  mpz_t bignum;
+  mpz_init_set_str(bignum,  "4000000000", 10);
+  fail_unless(e_is_selfless(e_make_fixnum(1)));
+  fail_unless(e_is_selfless(e_make_boolean(true)));
+  fail_unless(e_is_selfless(e_make_bignum(&bignum)));
+  fail_unless(e_is_selfless(e_make_string("x")));
+  fail_unless(e_is_selfless(e_make_float64(1.5)));
+  fail_unless(e_is_selfless(e_constlist_from_array(0, NULL)));
+  fail_unless(e_is_selfless(e_make_constmap(0)));
+  fail_if(e_is_selfless(e_make_flexmap(0)));
+  fail_if(e_is_selfless(e_flexlist_from_array(0, NULL)));
 
+}
+
+#test selfless_guards
+{
+  fail_unless(e_is_selfless(e_IntGuard));
+  fail_unless(e_is_selfless(e_StringGuard));
+}
 
 #main-pre
 {

@@ -16,7 +16,7 @@ GStaticPrivate e_ejector_counter_key = G_STATIC_PRIVATE_INIT;
 
 e_Selector respondsTo, order, whenBroken, whenMoreResolved,
            optSealedDispatch, conformTo, printOn, optUncall,
-           getAllegedType, reactToLostClient;
+           getAllegedType, reactToLostClient, E_AUDITED_BY;
 
 /// Get the last thrown problem in the current thread.
 e_Ref e_thrown_problem() {
@@ -236,6 +236,21 @@ static e_Ref miranda_printOn(e_Ref self, e_Ref *args) {
   return e_print(args[0], e_make_string(">"));
 }
 
+static e_Ref miranda_auditedBy(e_Ref self, e_Ref *args) {
+  GArray *approvals = self.script->optApprovals;
+  if (approvals == NULL) {
+    return e_false;
+  } else {
+    e_Ref stamp = e_ref_target(args[0]);
+    for (int i = 0; i < approvals->len; i++) {
+      if (e_same(stamp, g_array_index(approvals, e_Ref, i))) {
+          return e_true;
+      }
+    }
+    return e_false;
+  }
+}
+
 e_Method e_miranda_methods[] = {
   {"__respondsTo/2", miranda_respondsTo},
   {"__order/2", miranda_order},
@@ -245,6 +260,7 @@ e_Method e_miranda_methods[] = {
   {"__optUncall/0", miranda_optUncall},
   {"__conformTo/1", miranda_conformTo},
   {"__printOn/1", miranda_printOn},
+  {"audited-by-magic-verb", miranda_auditedBy},
   {NULL}};
 
 /** Default behavior for an object with no 'otherwise' call func specified. */
@@ -265,12 +281,9 @@ e_Ref otherwise_miranda_methods(e_Ref receiver, e_Selector *selector,
 }
 //@}
 /// @ingroup object
-void
-e_make_script (e_Script *script,
-	       e_Call_Func *opt_otherwise,
-	       e_Method *methods,
-               const char *typeName)
-{
+void e_make_script (e_Script *script, e_Call_Func *opt_otherwise,
+                    e_Method *methods, e_Ref *optApprovals,
+                    const char *typeName) {
   int i;
   for (i = 0; NULL != methods[i].verb; ++i)
     methods[i].verb = e_intern (methods[i].verb);
@@ -279,7 +292,20 @@ e_make_script (e_Script *script,
   script->opt_otherwise =
     (NULL == opt_otherwise ? otherwise_miranda_methods : opt_otherwise);
   script->typeName = g_string_new(typeName);
+  script->optApprovals = NULL;
+  if (optApprovals != NULL) {
+    script->optApprovals = g_array_new(false, false, sizeof(e_Ref));
+    for (int i = 0; NULL != optApprovals[i].script; ++i) {
+      g_array_append_val(script->optApprovals, optApprovals[i]);
+    }
+  }
 }
+
+/// Returns whether an auditor has approved an object's script or not.
+_Bool e_approved_by(e_Ref specimen, e_Ref auditor) {
+  return e_eq(e_true, e_call_1(specimen, &E_AUDITED_BY, auditor));
+}
+
 /// @addtogroup messages
 //@{
 const char *
@@ -307,6 +333,8 @@ e_Ref e_selector_verb(e_Selector *selector) {
 //@}
 
 void e__miranda_set_up() {
+  E_AUDITED_BY.verb = e_intern("audited-by-magic-verb");
+  E_AUDITED_BY.arity = 1;
   e_make_selector(&respondsTo, "__respondsTo", 2);
   e_make_selector(&order, "__order", 2);
   e_make_selector(&whenBroken, "__whenBroken", 1);

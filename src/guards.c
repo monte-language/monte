@@ -2,9 +2,9 @@
 #include "string.h"
 
 e_Ref e_ConstListGuard, e_FlexListGuard, e_BooleanGuard, e_CharGuard,
-      e_StringGuard;
+      e_StringGuard, e_selfless_stamp;
 
-static e_Script e__typeguard_script;
+static e_Script e__typeguard_script, e__selfless_stamp_script;
 
 e_Ref e_coerce(e_Ref guard, e_Ref specimen, e_Ref optEjector) {
   // XXX selector pooling
@@ -40,24 +40,33 @@ static e_Method typeguard_methods[] = {
   {NULL}
 };
 
+
+
 _Bool e_is_selfless(e_Ref obj) {
-  if (e_is_string(obj) || e_is_boolean(obj) || e_is_char(obj)
-      || e_is_integer(obj) || e_is_float64(obj) || e_is_constlist(obj)
-      || e_is_constmap(obj)) {
-    return true;
-      } else {
-    return false;
-  }
+  return e_approved_by(obj, e_selfless_stamp);
 }
 
+static e_Script e__selfless_auditor_script;
+static e_Method selfless_auditor_methods[] = {
+  {NULL}
+};
+
 void e__guards_set_up() {
-  e_make_script(&e__typeguard_script, NULL, typeguard_methods, "Guard");
-  e_make_script(&intguard_script, NULL, intguard_methods, "IntGuard");
+  e_make_script(&e__selfless_auditor_script, NULL, selfless_auditor_methods,
+                NULL, "SelflessAuditor");
+  e_selfless_stamp.script = &e__selfless_auditor_script;
+  e_selfless_stamp.data.fixnum = 0;
+
+  e_Ref justSelfless[] = {e_selfless_stamp, {NULL}};
+  e_make_script(&e__typeguard_script, NULL, typeguard_methods,
+                justSelfless, "Guard");
+  e_make_script(&intguard_script, NULL, intguard_methods,
+                justSelfless, "IntGuard");
   e_IntGuard.data.fixnum = 0;
   e_IntGuard.script = &intguard_script;
 
   e_make_script(&listguard_script, NULL, listguard_methods,
-                "ListGuard");
+                justSelfless, "ListGuard");
   e_ListGuard.data.fixnum = 0;
   e_ListGuard.script = &listguard_script;
 
