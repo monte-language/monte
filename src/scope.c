@@ -5,10 +5,11 @@
 
 static e_Ref scopeLayout_getSynEnv(e_Ref self, e_Ref *args) {
   Scope_data *sc = self.data.other;
-  e_Ref map = e_make_flexmap(sc->size);
-  for (int i = 0; i < sc->size; i++) {
+  e_Ref map = e_make_flexmap(sc->names->len);
+  for (int i = 0; i < sc->names->len; i++) {
     // XXX later reference some AST nodes maybe? do we care?
-    e_Ref putArgs[] = {e_make_string(sc->names[i]), e_null};
+    char *name = g_array_index(sc->names, char *, i);
+    e_Ref putArgs[] = {e_make_string(name), e_null};
     e_flexmap_put(map, putArgs);
   }
   map.script = &e__constmap_script;
@@ -20,13 +21,61 @@ static e_Ref scope_getScopeLayout(e_Ref self, e_Ref *args) {
   return self;
 }
 
+/** Take a list of names and bind them in a new scope, shadowing existing
+    definitions. */
+static e_Ref scope_withOuterSlots(e_Ref self, e_Ref *args) {
+  Scope_data *oldsc = self.data.other;
+  e_Ref newScope = e_make_scope((char **)oldsc->names->data,
+                                (e_Ref *)oldsc->slots->data,
+                                oldsc->names->len);
+  Scope_data *sc = newScope.data.other;
+  GArray *newNames = sc->names, *newSlots = sc->slots;
+  e_Ref nameList = e_coerce(e_ListGuard, args[0], e_null);
+  E_ERROR_CHECK(nameList);
+  e_Ref slotList = e_coerce(e_ListGuard, args[1], e_null);
+  E_ERROR_CHECK(slotList);
+  Flexlist_data *nameData = nameList.data.other,*slotData = slotList.data.other;
+  if (nameData->size != slotData->size) {
+    return e_throw_cstring("Unequal numbers of names and slots provided");
+  }
+  e_Ref *extraNames = nameData->elements;
+  e_Ref *extraSlots = slotData->elements;
+  for (int i = 0; i < nameData->size; i++) {
+    e_Ref name = e_coerce(e_StringGuard, nameData->elements[i], e_null);
+    E_ERROR_CHECK(name);
+    for (int j = 0; j < sc->names->len; j++) {
+      if (strcmp((extraNames->data).gstring->str,
+                 g_array_index(sc->names, char *, j)) == 0) {
+        g_array_remove_index(sc->names, j);
+        g_array_remove_index(sc->slots, j);
+        j--; // rescan this index since there's a new element in it
+      }
+    }
+  }
+  for (int i = 0; i < nameData->size; i++) {
+    e_Ref newName = e_coerce(e_StringGuard, extraNames[i], e_null);
+    E_ERROR_CHECK(newName);
+    for (int j = 0; j < newName.data.gstring->len; j++) {
+      if (newName.data.gstring->str[j] == '\0') {
+        return e_throw_cstring("NULL characters are not allowed in"
+                               "variable names");
+      }
+    }
+    g_array_append_val(newNames, newName.data.gstring->str);
+    g_array_append_val(newSlots, extraSlots[i]);
+  }
+  return newScope;
+}
+
 static e_Method scopeLayout_methods[] = {
   {"getSynEnv/0", scopeLayout_getSynEnv},
   {NULL}};
 
 static e_Method scope_methods[] = {
   {"getScopeLayout/0", scope_getScopeLayout},
-  {NULL}};
+  {"withOuterSlots/2", scope_withOuterSlots},
+  {NULL}
+};
 
 e_Script e__scope_script;
 e_Script e__scopeLayout_script;
@@ -34,9 +83,10 @@ e_Script e__scopeLayout_script;
 e_Ref e_make_scope(char **names, e_Ref *slots, int size) {
     Scope_data *sc = e_malloc(sizeof *sc);
     e_Ref scopeObj;
-    sc->names = names;
-    sc->slots = slots;
-    sc->size = size;
+    sc->names = g_array_sized_new(false, false, sizeof (char *), size);
+    sc->slots = g_array_sized_new(false, false, sizeof (e_Ref), size);
+    g_array_append_vals(sc->names, names, size);
+    g_array_append_vals(sc->slots, slots, size);
     scopeObj.script = &e__scope_script;
     scopeObj.data.other = sc;
     return scopeObj;
@@ -44,12 +94,12 @@ e_Ref e_make_scope(char **names, e_Ref *slots, int size) {
 
 e_Ref *e_scope_getEvalContext(e_Ref self) {
     Scope_data *sc = self.data.other;
-    return sc->slots;
+    return (e_Ref *)sc->slots->data;
 }
 
 int e_scope_getSize(e_Ref self) {
     Scope_data *sc = self.data.other;
-    return sc->size;
+    return sc->names->len;
 }
 
 
@@ -134,10 +184,10 @@ void e__scope_set_up() {
                        e_make_finalslot(e_import__uriGetter),
                        e_make_finalslot(e_traceln)
   };
-  e_Ref *_safeScope = e_make_array(90);
-  memcpy(_safeScope, safeScope, 90 * sizeof(e_Ref));
-  e_safeScope = e_make_scope(safeScope_names, _safeScope, 90);
+
+  e_safeScope = e_make_scope(safeScope_names, safeScope, 90);
   // self-reference is awkward
+  e_Ref *_safeScope = (e_Ref *)((Scope_data *)e_safeScope.data.other)->slots;
   _safeScope[79] = e_make_finalslot(e_safeScope);
 
   e_Ref privilegedScope[] = {e_null, e_null, e_null,
@@ -155,15 +205,17 @@ void e__scope_set_up() {
                              e_null, e_null, e_null,
                              e_null, e_null, e_null, e_empty_ref,
   };
-  e_Ref *_privilegedScope = e_make_array(122);
-  char **_privilegedScope_names = e_malloc(122 * sizeof (char *));
-  memcpy(_privilegedScope, _safeScope, 90 * sizeof(e_Ref));
-  memcpy(_privilegedScope + 90, privilegedScope, 32 * sizeof(e_Ref));
-  memcpy(_privilegedScope_names, safeScope_names, 90 * sizeof(char *));
-  memcpy(_privilegedScope_names + 90, privilegedScope_names,
-         32 * sizeof(char *));
-  e_privilegedScope = e_make_scope(_privilegedScope_names, _privilegedScope,
-                                   122);
+  e_Ref psSlotsList = e_constlist_from_array(32, privilegedScope);
+  e_Ref psNamesList = e_flexlist_from_array(0, NULL);
+  e_Selector withOuterSlots, push;
+  e_make_selector(&withOuterSlots, "withOuterSlots", 2);
+  e_make_selector(&push, "push", 1);
+  for (int i = 0; i < 32; i++) {
+    e_call_1(psNamesList, &push, e_make_string(privilegedScope_names[i]));
+  }
+  e_privilegedScope = e_call_2(e_safeScope, &withOuterSlots,
+                             psNamesList, psSlotsList);
+  e_Ref *_privilegedScope = (e_Ref *)((Scope_data *)e_privilegedScope.data.other)->slots;
   _privilegedScope[121] = e_make_finalslot(e_privilegedScope);
 
 }

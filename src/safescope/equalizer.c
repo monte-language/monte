@@ -57,8 +57,8 @@ static e_Ref _eq_optSame(e_Ref self, e_Ref left, e_Ref right, int soFar) {
   if (e_same(left, right)) {
     return e_true;
   }
-  if (e_is_ref(left) && (e_same(e_ref_isResolved(left), e_false))
-      || e_is_ref(right) && (e_same(e_ref_isResolved(right), e_false))) {
+  if ((e_is_ref(left) && (e_same(e_ref_isResolved(left), e_false)))
+      || (e_is_ref(right) && (e_same(e_ref_isResolved(right), e_false)))) {
     return e_null;
   }
   left = e_ref_target(left);

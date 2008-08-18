@@ -2,9 +2,8 @@
 #define SCOPE_H
 
 typedef struct Scope_data {
-  char **names;
-  e_Ref *slots;
-  int size;
+  GArray *names; ///< Array of names, as C strings.
+  GArray *slots; ///< Array of slot objects.
 } Scope_data;
 
 #endif /* SCOPE_H */

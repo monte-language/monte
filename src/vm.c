@@ -504,8 +504,8 @@ e_Ref _ecru_vm_execute(ecru_stackframe *stackframe,
   frame = stackframe->frame;
   constants = module->constants;
   constantsLength = module->constantsLength;
-  scope = module->scope;
-  scopeLength = module->scopeLength;
+  scope = e_scope_getEvalContext(module->scope);
+  scopeLength = e_scope_getSize(module->scope);
   scripts = module->scripts;
   scriptsLength = module->scriptsLength;
   if (codeState == MATCHER_PATTERN) {
@@ -922,34 +922,6 @@ e_Ref ecru_vm_execute(unsigned char scriptNum,
                                                          NULL);
   return _ecru_vm_execute(stackframe, args, argLength, lastStackFrame);
 }
-
-/// Alternate entry point for VM loop, for use from an interactive session.
-e_Ref ecru_vm_execute_interactive(e_Ref *initials,
-                                   int initialLength,
-                                   unsigned char scriptNum,
-                                   unsigned char methodNum,
-                                   char codeState,
-                                   e_Ref *frame,
-                                   ecru_module *module,
-                                   e_Ref *args, int argLength,
-                                   ecru_stackframe **lastStackFrame) {
-  // XXX actually use stack depth computed at compile time
-  e_Ref *stack_pointer = e_malloc(sizeof(e_Ref) * 100);
-  ecru_stackframe *stackframe = ecru_create_stackframe(module,
-                                                         scriptNum,
-                                                         methodNum,
-                                                         codeState,
-                                                         stack_pointer,
-                                                         stack_pointer,
-                                                         frame,
-                                                         true,
-                                                         NULL);
-  for (int i = 0; i < initialLength; i++) {
-    stackframe->locals[i] = initials[i];
-  }
-  return _ecru_vm_execute(stackframe, args, argLength, lastStackFrame);
-}
-
 
 void ecru_set_up() {
   if (!e__setup_done) {

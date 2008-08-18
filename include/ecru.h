@@ -87,9 +87,7 @@ typedef struct ecru_module {
   /// The length of the selector pool.
   unsigned char selectorsLength;
   /// The outer scope for this module.
-  e_Ref *scope;
-  /// The number of variables in this module's scope.
-  unsigned char scopeLength;
+  e_Ref scope;
   /// The script pool for this module.
   ecru_script **scripts;
   /// The number of scripts in this module.
