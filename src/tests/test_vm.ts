@@ -357,7 +357,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   // OP_GUARDEDVARSLOT should take the top three items on the stack: specimen,
   // optional ejector, and guard. It should then coerce the specimen with the
   // guard, ejecting on failure. On success, a guarded slot goes on the stack.
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_LITERAL, 2, OP_GUARDEDVARSLOT};
+  char code[] = {OP_LITERAL, 2, OP_LITERAL, 1, OP_LITERAL, 0, OP_GUARDEDVARSLOT};
   e_Ref constants[] = {e_IntGuard, e_null, e_make_fixnum(7)};
   e_Ref ej = e_make_ejector();
   e_Ref constants2[] = {e_IntGuard, e_null, e_make_string("seven")};

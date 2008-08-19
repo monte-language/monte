@@ -689,9 +689,9 @@ e_Ref _ecru_vm_execute(ecru_stackframe *stackframe,
     case OP_GUARDEDVARSLOT:
       {
         e_Ref specimen, optEjector, guard;
-        POP_INTO(specimen);
-        POP_INTO(optEjector);
         POP_INTO(guard);
+        POP_INTO(optEjector);
+        POP_INTO(specimen);
         e_Ref slot = e_new_guardedslot(specimen, guard, optEjector);
         ECRU_ERROR_CHECK(slot);
         PUSH(slot);
