@@ -512,8 +512,7 @@ ecru_module *ecru_load_bytecode(e_Ref reader, e_Ref scope) {
     module->scripts[i] = script;
   }
 
-  module->scope = e_scope_getEvalContext(scope);
-  module->scopeLength = e_scope_getSize(scope);
+  module->scope = scope;
 
   module->stackDepth = 0; // currently not used
 

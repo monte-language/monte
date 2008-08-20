@@ -4,6 +4,7 @@ AM_INIT_AUTOMAKE([foreign])
 AC_PREREQ(2.60)
 AC_DEFINE([OLD_GIO], [], ["Whether to use the old GIO API or not"])
 AM_CONFIG_HEADER(config.h)
+AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
 AC_PROG_CC
 AC_PROG_CC_C99

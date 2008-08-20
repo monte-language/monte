@@ -24,10 +24,12 @@
 
 e_Selector do_get, do_run1;
 ecru_stackframe *lastStackFrame;
+e_Ref empty_scope;
 void setup(void) {
   ecru_set_up();
   e_make_selector(&do_get, "get", 0);
   e_make_selector(&do_run1, "run", 1);
+  empty_scope = e_make_scope(NULL, NULL, 0);
 }
 
 void teardown(void) {
@@ -40,7 +42,7 @@ void vm_fail_unless(e_Ref result) {
 // Convenience definitions for tests that don't need to reuse modules.
 e_Ref vm_exec_constants(unsigned char *code, int codelen,
                       e_Ref *constants, int constantslen, int localslen) {
-  ecru_module module = {NULL, 0, NULL, 0, NULL, 0, NULL, 0, 0};
+  ecru_module module = {NULL, 0, NULL, 0, empty_scope, NULL, 0, 0};
   ecru_method method = {e_intern("run/0"), code, codelen, localslen,
                          NULL, 0};
   ecru_script script = {1, &method, 0, NULL, 0};
@@ -57,7 +59,7 @@ e_Ref vm_exec_constants_sels_htable(unsigned char *code, int codelen,
                                     int localslen,
                                     e_Selector *sels, int selectorslen,
                                     ecru_handler_table_entry *ht, int htlen) {
-  ecru_module module = {NULL, 0, NULL, 0, NULL, 0, NULL, 0, 0};
+  ecru_module module = {NULL, 0, NULL, 0, empty_scope, NULL, 0, 0};
   ecru_method method = {e_intern("run/0"), code, codelen, localslen,
                          ht, htlen};
   ecru_script script = {1, &method, 0, NULL, 0};
@@ -83,15 +85,19 @@ e_Ref vm_exec_constants_sels(unsigned char *code, int codelen,
 e_Ref vm_exec_scope(char *code, int codelen,
                     e_Ref *constants, int constantslen,
                     e_Ref *globals, int globalslen) {
-  ecru_module module = {NULL, 0, NULL, 0, NULL, 0, NULL, 0, 0};
+  ecru_module module = {NULL, 0, NULL, 0, empty_scope, NULL, 0, 0};
   ecru_method method = {e_intern("run/0"), code, codelen, 0, NULL, 0};
   ecru_script script = {1, &method, 0, NULL, 0};
   ecru_script *scripts[] = {&script};
+  char **fakeNames = e_malloc(globalslen * sizeof(char *));
+  for (int i = 0; i < globalslen; i++) {
+    fakeNames[i] = "";
+  }
+  module.scope = e_make_scope(fakeNames, globals, globalslen);
   module.scripts = scripts;
   module.constants = constants;
   module.constantsLength = constantslen;
-  module.scope = globals;
-  module.scopeLength = globalslen;
+
   e_Ref res = ecru_vm_execute(0, 0, METHOD, false, &module, NULL, 0, &lastStackFrame);
   return res;
 }
@@ -101,13 +107,16 @@ e_Ref vm_exec_frame(char *code, int codelen,
                     e_Ref *globals, int globalslen,
                     ecru_script **scripts, int scriptslen,
                     e_Ref *frame, int framelen, int localslen) {
-  ecru_module module = {NULL, 0, NULL, 0, NULL, 0, NULL, 0, 0};
+  ecru_module module = {NULL, 0, NULL, 0, empty_scope, NULL, 0, 0};
   ecru_method method = {e_intern("run/0"), code, codelen, localslen, NULL, 0};
   ecru_script script = {1, &method, 0, NULL, 0};
+  char **fakeNames = e_malloc(globalslen * sizeof(char *));
+  for (int i = 0; i < globalslen; i++) {
+    fakeNames[i] = "";
+  }
+  module.scope = e_make_scope(fakeNames, globals, globalslen);
   module.constants = constants;
   module.constantsLength = constantslen;
-  module.scope = globals;
-  module.scopeLength = globalslen;
   module.scripts = scripts;
   fail_unless(module.scripts[0] == NULL,
               "must leave script0 empty to use vm_exec_frame");
@@ -125,14 +134,17 @@ e_Ref vm_exec_frame_sels_htable(char *code, int codelen,
                                 e_Ref *frame, int framelen, int localslen,
                                 e_Selector *sels, int selectorslen,
                                 ecru_handler_table_entry *ht, int htlen) {
-  ecru_module module = {NULL, 0, NULL, 0, NULL, 0, NULL, 0, 0};
+  ecru_module module = {NULL, 0, NULL, 0, empty_scope, NULL, 0, 0};
   ecru_method method = {e_intern("run/0"), code, codelen, localslen,
                          ht, htlen};
   ecru_script script = {1, &method, 0, NULL, 0};
+  char **fakeNames = e_malloc(globalslen * sizeof(char *));
+  for (int i = 0; i < globalslen; i++) {
+    fakeNames[i] = "";
+  }
+  module.scope = e_make_scope(fakeNames, globals, globalslen);
   module.constants = constants;
   module.constantsLength = constantslen;
-  module.scope = globals;
-  module.scopeLength = globalslen;
   module.scripts = scripts;
   fail_unless(module.scripts[0] == NULL,
               "must leave script0 empty to use vm_exec_frame_sels");
@@ -345,7 +357,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   // OP_GUARDEDVARSLOT should take the top three items on the stack: specimen,
   // optional ejector, and guard. It should then coerce the specimen with the
   // guard, ejecting on failure. On success, a guarded slot goes on the stack.
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_LITERAL, 2, OP_GUARDEDVARSLOT};
+  char code[] = {OP_LITERAL, 2, OP_LITERAL, 1, OP_LITERAL, 0, OP_GUARDEDVARSLOT};
   e_Ref constants[] = {e_IntGuard, e_null, e_make_fixnum(7)};
   e_Ref ej = e_make_ejector();
   e_Ref constants2[] = {e_IntGuard, e_null, e_make_string("seven")};
@@ -758,7 +770,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   e_make_selector(&do_run, "run", 0);
   ecru_object *obj;
   e_Ref localObj;
-  ecru_module module = {constants, 2, NULL, 0, NULL, 0, scripts, 2, 1};
+  ecru_module module = {constants, 2, NULL, 0, empty_scope, scripts, 2, 1};
   ecru_make_script(&script, methods, 1, NULL, 0, 1);
   e_Ref res = ecru_vm_execute(0, 0, false, NULL, &module, NULL, 0, &lastStackFrame);
   fail_unless(e_is_finalslot(res));
@@ -817,7 +829,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   ecru_method methods[] = {{e_intern("run/2"), runcode, 5, 0, NULL, 0}};
   ecru_script script;
   ecru_script *scripts[] = {NULL, &script};
-  e_Selector sels[] = {do_run1, NULL};
+  e_Selector sels[] = {do_run1, {NULL}};
   ecru_handler_table_entry ht[] = {{OP_EJECTOR, 0, 20, 7, 21}};
   e_make_selector(sels+1, "run", 2);
   ecru_make_script(&script, methods, 1, NULL, 0, 0);

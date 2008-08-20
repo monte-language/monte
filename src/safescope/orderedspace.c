@@ -64,7 +64,9 @@ e_Ref orderedSpace_descending(e_Ref self, e_Ref *args) {
 }
 
 e_Ref orderedSpace_getEdges(e_Ref self, e_Ref *args) {
-  return e_constlist_from_array(2, self.data.refs);
+  e_Ref edges[] = {self.data.refs[0], self.data.refs[1]};
+  edges[1].data.fixnum++;
+  return e_constlist_from_array(2, edges);
 }
 
 e_Ref orderedSpace_coerce(e_Ref self, e_Ref *args) {

@@ -3,7 +3,7 @@
 #include "ecru.h"
 #include "vm.h"
 #include "ref.h"
-#include <scope.h>
+#include "scope.h"
 #include <Python.h>
 #include <string.h>
 #include <gc/gc.h>
@@ -15,19 +15,18 @@ typedef struct monte_handle {
 
 e_Ref monte_wrap(PyObject *obj);
 PyObject *monte_unwrap(e_Ref obj);
-static PyObject *(*monte_makeEObjectWrapper)(e_Ref);
 static PyObject *monte_EObjectWrapper;
 static PyObject *monte_PythonCharacter;
+static e_Ref compiler, bytecodeDumper, debugDumper;
+e_Selector run, doWrite;
+
+e_Script e__python_object_script;
 
 /* XXX these are global variables because boehm GC needs to have a root for
 objects only otherwise referenced by Python's ctypes. These won't be necessary
 once we stop manipulating C structs from Python. */
 
-e_Ref saveset, e_interactiveScope;
-ecru_stackframe *lastStackFrame;
-
-e_Script e__python_object_script;
-
+e_Ref saveset;
 
 e_Ref throw_python_error() {
   PyObject *ptype, *pvalue, *ptraceback;
@@ -50,6 +49,18 @@ e_Ref throw_python_error() {
 }
 
 PyObject *e_to_py(e_Ref obj) {
+  if (obj.script == NULL) {
+    if (obj.data.fixnum != 0) {
+      PyErr_SetString(PyExc_SystemError, "wild ejection occurred!");
+    } else {
+      e_Ref prob = e_thrown_problem();
+      e_Ref w = e_make_string_writer();
+      e_print(w, prob);
+      PyErr_SetString(PyExc_RuntimeError,
+                      e_string_writer_get_string(w).data.gstring->str);
+    }
+    return NULL;
+  }
   if (e_is_ref(obj) && e_same(e_true, e_ref_isResolved(obj))) {
     return e_to_py(obj.data.refs[0]);
   } else if (e_is_null(obj)) {
@@ -99,8 +110,11 @@ PyObject *e_to_py(e_Ref obj) {
   } else if (obj.script == &e__python_object_script) {
     return monte_unwrap(obj);
   } else {
-    e_flexmap_put(saveset, &obj);
-    return monte_makeEObjectWrapper(obj);
+    e_Ref putargs[] = {obj, e_null};
+    e_flexmap_put(saveset, putargs);
+    PyObject *x = PyCObject_FromVoidPtrAndDesc(obj.data.other,
+                                               obj.script, NULL);
+    return PyObject_CallFunctionObjArgs(monte_EObjectWrapper, x);
   }
 }
 
@@ -149,13 +163,13 @@ e_Ref py_to_e(PyObject *obj) {
     PyObject *x = PyObject_GetAttrString(obj, "character");
     return e_make_char(PyString_AsString(x)[0]);
   } else if (PyObject_IsInstance(obj, monte_EObjectWrapper)) {
-    // kinda ghetto
     PyObject *x = PyObject_GetAttrString(obj, "_contents");
+    if (!PyCObject_Check(x)) {
+      return e_throw_cstring("Wrapped object not an ERef");
+    }
     e_Ref res;
-    const void *refbuf;
-    Py_ssize_t bufsize;
-    PyObject_AsReadBuffer(x, &refbuf, &bufsize);
-    memcpy(&res, refbuf,  sizeof(void *) * 2);
+    res.script = PyCObject_GetDesc(x);
+    res.data.other = PyCObject_AsVoidPtr(x);
     return res;
   } else {
     return monte_wrap(obj);
@@ -163,7 +177,9 @@ e_Ref py_to_e(PyObject *obj) {
 }
 
 e_Ref invoke_python_object(e_Ref self, e_Selector *sel, e_Ref *args) {
-
+  if (strcmp(sel->verb, "audited-by-magic-verb") == 0) {
+    return e_false;
+  }
   PyObject *obj = ((monte_handle *)self.data.other)->object;
   PyObject *py_args = PyTuple_New(sel->arity);
   e_Ref res;
@@ -198,32 +214,65 @@ e_Ref invoke_python_object(e_Ref self, e_Selector *sel, e_Ref *args) {
   return res;
 }
 
-void monte_bridge_set_up(PyObject *wrapper, PyObject *(*wrap)(e_Ref),
-                         PyObject *charClass) {
-  monte_makeEObjectWrapper = wrap;
+
+PyObject *bridge_set_up(PyObject *self, PyObject *args) {
+  PyObject *wrapper, *charClass;
+  if (!PyArg_ParseTuple(args, "OO", &wrapper, &charClass)) {
+    return NULL;
+  }
+  ecru_set_up();
   monte_EObjectWrapper = wrapper;
   monte_PythonCharacter = charClass;
   Py_INCREF(wrapper);
+  Py_INCREF(charClass);
   e_make_script(&e__python_object_script, invoke_python_object,
                 no_methods, NULL, "wrapped Python object");
   saveset = e_make_flexmap(0);
+  GString *cName = e_make_string("com.twistedmatrix.ecru.compiler"
+                                 ).data.gstring;
+  GString *bdName = e_make_string("com.twistedmatrix.ecru.bytecodeDumper"
+                               ).data.gstring;
+  GString *ddName = e_make_string("com.twistedmatrix.ecru.debugDump"
+                               ).data.gstring;
+  compiler = e_module_import(cName);
+  bytecodeDumper = e_module_import(bdName);
+  debugDumper = e_module_import(ddName);
+  e_make_selector(&run, "run", 2);
+  e_make_selector(&doWrite, "write", 2);
+  Py_INCREF(Py_None);
+  return Py_None;
+}
 
-  e_Ref *_interactiveScope = e_make_array(122);
-  char **_interactiveScope_names = e_malloc(122 * sizeof(char *));
-  e_Ref *oldSlots = ((Scope_data *)e_privilegedScope.data.other)->slots;
-  char **oldNames = ((Scope_data *)e_privilegedScope.data.other)->names;
-  memcpy(_interactiveScope, oldSlots, 122 * sizeof(e_Ref));
-  memcpy(_interactiveScope_names, oldNames, 122 * sizeof(char *));
-  e_interactiveScope = e_make_scope(_interactiveScope_names,
-                                    _interactiveScope,
-                                    122);
+PyObject *bridge_getPrivilegedScope(PyObject *self, PyObject *args) {
+  return e_to_py(e_privilegedScope);
+}
 
+PyObject *bridge_e_call(PyObject *self, PyObject *args) {
+  PyObject *obj, *pyargs;
+  char *verb;
+  e_Selector sel;
+  int siz = PyTuple_Size(args) - 2;
+  e_Ref *arglist;
+  pyargs = PyTuple_GetSlice(args, 0, 2);
+  if(!PyArg_ParseTuple(pyargs, "Os", &obj, &verb)) {
+    return NULL;
+  }
+
+  if (siz == 0) {
+    arglist = NULL;
+  } else {
+    arglist = e_malloc(siz * sizeof *arglist);
+    for (int i = 0; i < siz; i++) {
+      arglist[i] = py_to_e(PyTuple_GET_ITEM(args, i+2));
+    }
+  }
+  e_make_selector(&sel, verb, siz);
+  return e_to_py(e_call(py_to_e(obj), &sel, arglist));
 }
 
 void monte_handle_finalize(void *hptr, void *cd) {
   monte_handle *handle = hptr;
   Py_DECREF((PyObject *)cd);
-  //handle->object = NULL;
 }
 
 e_Ref monte_wrap(PyObject *obj) {
@@ -248,77 +297,181 @@ PyObject *monte_unwrap(e_Ref obj) {
   return x;
 }
 
-int extendInteractiveScope(PyObject *bindings, e_Ref *locals) {
-  if (!PySequence_Check(bindings)) {
-    return 0;
+/*
+ecru_module *monte_bridge_pack(e_Ref module, e_Ref scope) {
+  // XXX even less error checking than the Python version
+  ecru_module *m = e_malloc(sizeof *m);
+  e_Ref constants = e_call_0(module, &getConstants);
+  e_Ref selectors = e_call_0(module, &getSelectors);
+  e_Ref scripts = e_call_0(module, &getScripts);
+  int numScripts = ((Flexlist_data *)scripts.data.other)->size + 1;
+  e_Ref mainCode = e_call_0(module, &getCode);
+  e_Ref htable = e_call(module, &getToplevelHandlerTable);
+  ecru_method *mainMethod = e_malloc(sizeof *mainMethod);
+  ecru_script *mainScript = e_malloc(sizeof *mainScript);
+  ecru_script *scriptsArray = e_malloc(numScripts * sizeof *scriptsArray);
+
+  mainMethod->verb = e_intern("run/0");
+  mainMethod->code = ((Flexlist_data *)mainCode.data.other)->elements;
+  mainMethod->length = ((Flexlist_data *)mainCode.data.other)->size;
+  mainMethod->num_locals = e_call_0(e_call_0(module, &getBindings), &size);
+  mainMethod->handlerTable = packHandlerTable(htable);
+  mainMethod->handlerTableLength = ((Flexlist_data *)htable.data.other)->size;
+
+  mainScript->num_methods = 1;
+  mainScript->methods = mainMethod;
+  mainScript->num_matchers = 0;
+  mainScript->matchers = NULL;
+  mainScript->num_slots = 0;
+  scriptsArray[0] = mainScript;
+  for (int i = 1; i < numScripts; i++) {
+    e_Ref script = e_call_1(scripts, &get, e_make_fixnum(i));
+    e_Ref methods = e_call_1(script, &get, e_make_fixnum(0));
+    e_Ref matchers = e_call_1(script, &get, e_make_fixnum(1));
+    e_Ref numSlots = e_call_1(script, &get, e_make_fixnum(2));
+    int numMethods = ((Flexlist_data *)methods.data.other)->size;
+    int numMatchers = ((Flexlist_data *)matchers.data.other)->size;
+    ecru_method *methodArray = e_malloc(numMethods * sizeof *methodArray);
+    ecru_matcher *matcherArray = e_malloc(numMatchers * sizeof *matcherArray);
+    ecru_script *s = e_malloc(sizeof *s);
+    for (int j = 0; j < numMethods; j++) {
+      methodArray[j] = packMethod(e_call_0(methods, &get, e_make_fixnum(j)));
+    }
+    for (int j = 0; j < numMatchers; j++) {
+      matcherArray[j] = packMatcher(e_call_0(matchers, &get, e_make_fixnum(j)));
+    }
+    s->num_matchers = numMatchers;
+    s->num_methods = numMethods;
+    s->methods = methodArray;
+    s->matchers = matcherArray;
+    s->num_slots = numSlots.data.fixnum;
+    scriptsArray[i] = s;
   }
-  Scope_data *scopeContents = e_interactiveScope.data.other;
-  PyObject *bits = PySequence_Fast(bindings, "");
-  int len = PySequence_Fast_GET_SIZE(bindings);
-  int newSize = scopeContents->size + len;
-  char **newNames = e_malloc(newSize * sizeof(char *));
-  e_Ref *newSlots = e_malloc(newSize * sizeof(e_Ref));
-  memcpy(newNames, scopeContents->names, scopeContents->size * sizeof(char *));
-  memcpy(newSlots, scopeContents->slots, scopeContents->size * sizeof(e_Ref));
-  for (int i = 0; i < len; i++) {
-    PyObject *item = PySequence_Fast_GET_ITEM(bits, i);
-    if (!PySequence_Check(item)) {
-      return 0;
-    }
-    PyObject *name = PySequence_GetItem(item, 0);
-    PyObject *idx = PySequence_GetItem(item, 1);
-    char *n = PyString_AsString(name);
-    if (n == NULL) {
-      return 0;
-    }
-    int j = PyInt_AsLong(idx);
-    if (j == -1) {
-      return 0;
-    }
-    newNames[scopeContents->size + i] = n;
-    newSlots[scopeContents->size + i] = locals[j];
-  }
-  scopeContents->names = newNames;
-  scopeContents->slots = newSlots;
-  scopeContents->size = newSize;
-  return 1;
+
+  m.constants = ((Flexlist_data *)constants.data.other)->elements;
+  m.constantsLength = ((Flexlist_data *)constants.data.other)->size;
+
+  m.selectors = ((Flexlist_data *)selectors.data.other)->elements;
+  m.selectorsLength = ((Flexlist_data *)selectors.data.other)->size;
+
+  m.scripts = scriptsArray;
+  m.scriptsLength = numScripts;
+
+  m.scope = scope;
+  m.stackDepth = 0;
+}
+*/
+
+ecru_module *monte_bridge_pack(e_Ref module, e_Ref scope) {
+
 }
 
-PyObject *doModuleInteractive(ecru_module *m, PyObject *boundNames,
-                              ecru_stackframe **stackp) {
-  e_Ref *inits = NULL;
-  int numBoundNames = 0;
+e_Ref doModuleInteractive(ecru_module *m,  e_Ref compiledModule) {
+  ecru_stackframe *stackp;
+  e_Selector getToplevelLocals, size, withOuterSlots;
+  e_make_selector(&getToplevelLocals, "getToplevelLocals", 0);
+  e_make_selector(&size, "size", 0);
+  e_Ref nameList = e_call_0(compiledModule, &getToplevelLocals);
   e_Ref w = e_make_string_writer();
-  if (!PySequence_Check(boundNames)) {
-    PyErr_SetString(PyExc_TypeError, "boundNames must be a sequence");
-    return NULL;
-  }
-  numBoundNames = PySequence_Fast_GET_SIZE(boundNames);
-  e_Ref initials[numBoundNames];
-  if (numBoundNames > 0) {
-    for (int i = 0; i < numBoundNames; i++) {
-      PyObject *item = PySequence_Fast_GET_ITEM(boundNames, i);
-      PyObject *val = PySequence_GetItem(item, 1);
-      if (val == NULL) {
-        return NULL;
-      }
-      int idx = PyInt_AsLong(val);
-      if (idx == -1) {
-        return NULL;
-      }
-      initials[i] = (*stackp)->locals[idx];
-    }
-    inits = initials;
-  }
-  e_Ref res = ecru_vm_execute_interactive(inits, numBoundNames,
-                                          0, 0, 0, NULL, m,
-                                          NULL, 0, stackp);
-  lastStackFrame = *stackp;
+  e_Ref res = ecru_vm_execute(0, 0, 0, NULL, m,
+                              NULL, 0, &stackp);
   if (res.script != NULL) {
     e_println(w, res);
   } else {
     e_println(w, e_thrown_problem());
   }
-  e_Ref str = e_string_writer_get_string(w);
-  return e_to_py(str);
+  e_Ref result = e_string_writer_get_string(w);
+  e_Ref numLocals = e_call_0(nameList, &size);
+  E_ERROR_CHECK(numLocals);
+  int siz = numLocals.data.fixnum;
+  e_Ref newScope = m->scope;
+  if (siz != 0 && res.script != NULL) {
+    e_Ref slotsList = e_constlist_from_array(siz, stackp->locals);
+    e_make_selector(&withOuterSlots, "withOuterSlots", 2);
+    newScope = e_call_2(m->scope, &withOuterSlots, nameList, slotsList);
+  }
+  e_Ref out[] = {result, newScope};
+  return e_constlist_from_array(2, out);
+}
+
+
+static e_Ref dump_module(e_Ref module) {
+  e_Ref w = e_make_string_writer();
+  E_ERROR_CHECK(w);
+  e_Ref x = e_call_2(bytecodeDumper, &doWrite, module, w);
+  E_ERROR_CHECK(x);
+  return e_string_writer_get_string(w);
+}
+
+static e_Ref debug_dump(e_Ref module) {
+  e_Ref w = e_make_string_writer();
+  E_ERROR_CHECK(w);
+  e_Ref x = e_call_2(debugDumper, &run, module, w);
+  E_ERROR_CHECK(x);
+  return e_string_writer_get_string(w);
+}
+static e_Ref interactive_eval(e_Ref ktree, e_Ref scope) {
+  e_Ref module = e_call_2(compiler, &run, ktree, scope);
+  E_ERROR_CHECK(module);
+  e_Ref str = dump_module(module);
+  E_ERROR_CHECK(str);
+  e_Ref r = e_make_string_reader(str);
+  E_ERROR_CHECK(r);
+  ecru_module *m = ecru_load_bytecode(r, scope);
+  e_Ref out = doModuleInteractive(m, module);
+  return out;
+}
+
+static PyObject *bridge_dump_module(PyObject *self, PyObject *args) {
+  PyObject *ktree, *scope;
+  if (!PyArg_ParseTuple(args, "OO", &ktree, &scope)) {
+    return NULL;
+  }
+  e_Ref module = e_call_2(compiler, &run, py_to_e(ktree), py_to_e(scope));
+  if (module.script == NULL) {
+    return e_to_py(module);
+  }
+  return e_to_py(dump_module(module));
+}
+
+static PyObject *bridge_debug_dump(PyObject *self, PyObject *args) {
+  PyObject *ktree, *scope;
+  if (!PyArg_ParseTuple(args, "OO", &ktree, &scope)) {
+    return NULL;
+  }
+  e_Ref module = e_call_2(compiler, &run, py_to_e(ktree), py_to_e(scope));
+  if (module.script == NULL) {
+    return e_to_py(module);
+  }
+  return e_to_py(debug_dump(module));
+}
+
+
+static PyObject *bridge_interactive_eval(PyObject *self, PyObject *args) {
+  PyObject *ktree, *scope;
+  if (!PyArg_ParseTuple(args, "OO", &ktree, &scope)) {
+    return NULL;
+  }
+  return e_to_py(interactive_eval(py_to_e(ktree), py_to_e(scope)));
+}
+
+static PyMethodDef bridge_methods[] = {
+  {"setup", bridge_set_up, METH_VARARGS,
+   "Call this before using any other bridge functions. Takes the classes 'EObjectWrapper' and 'Character' as args."},
+  {"getPrivilegedScope", bridge_getPrivilegedScope, METH_VARARGS,
+   //   "Fetch a single E object by name from the privileged scope."},
+   "Fetch the E object representing the unsafe scope."},
+  {"e_call", bridge_e_call, METH_VARARGS,
+   "Call a method on an E object."},
+  {"dumpModule", bridge_dump_module, METH_VARARGS,
+   "Return a compiled emaker, serialized to a string."},
+  {"debugDump", bridge_debug_dump, METH_VARARGS,
+   "Print out a debug dump of compilation results."},
+  {"interactiveEval", bridge_interactive_eval, METH_VARARGS,
+   "Evaluate a Kernel-E tree in a given scope. Return the result and a new scope."},
+  {NULL, NULL, 0, NULL}
+};
+
+PyMODINIT_FUNC initbridge() {
+  Py_InitModule("bridge", bridge_methods);
 }

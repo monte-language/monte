@@ -73,8 +73,8 @@ ecru_module *load_testdata(char *data, int length) {
   }
   fail_unless(m->constants == NULL);
   fail_unless(m->constantsLength == 0);
-  fail_unless(m->scope == slots);
-  fail_unless(m->scopeLength == 1);
+  fail_unless(e_same(e_scope_getEvalContext(m->scope)[0], slots[0]));
+  fail_unless(e_scope_getSize(m->scope) == 1);
   fail_unless(m->scriptsLength == 1);
 }
 
