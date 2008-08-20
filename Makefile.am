@@ -4,7 +4,7 @@ ACLOCAL_AMFLAGS = -I build-aux/m4
 EXTRA_DIST = CREDITS DEPENDENCIES build-aux/checkmk
 ecrudir = $(libdir)/ecru
 AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"' -I$(top_srcdir)/include
-lib_LTLIBRARIES = libecru.la libmonte_bridge.la
+lib_LTLIBRARIES = libecru.la
 libecru_la_SOURCES = src/prim/null.c src/prim/stringobject.c		\
 	src/prim/boolobject.c src/prim/numberobject.c			\
 	src/prim/charobject.c src/prim/streamobject.c			\
@@ -40,11 +40,6 @@ dist_ecru_DATA = bootstrap/com.twistedmatrix.ecru.bytecodeDumper.ec	\
 	bootstrap/com.twistedmatrix.ecru.compiler.ec			\
 	bootstrap/com.twistedmatrix.ecru.bytecodes.ec			\
 	bootstrap/com.twistedmatrix.ecru.debugDump.ec
-
-libmonte_bridge_la_SOURCES = src/monte_bridge.c
-libmonte_bridge_la_CPPFLAGS = -I/usr/include/python2.5	\
-                              -I$(top_srcdir)/include $(GLIB_CFLAGS)
-libmonte_bridge_la_LIBADD = @GLIB_LIBS@ libecru.la
 
 test_elib_SOURCES = src/tests/test_elib.c
 test_elib_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
@@ -95,6 +90,12 @@ pymeta_PYTHON = pysrc/pymeta/__init__.py pysrc/pymeta/boot.py	\
 monte_PYTHON = pysrc/monte/__init__.py pysrc/monte/api.py	\
                pysrc/monte/eparser.py pysrc/monte/nodes.py	\
                pysrc/monte/structlike.py
+monte_LTLIBRARIES = bridge.la
+bridge_la_SOURCES = src/monte_bridge.c
+bridge_la_LDFLAGS = -avoid-version -module
+bridge_la_CPPFLAGS = -I/usr/include/python2.5	\
+                              -I$(top_srcdir)/include $(GLIB_CFLAGS)
+bridge_la_LIBADD = @GLIB_LIBS@ libecru.la
 
 .ts.c:
 	$(top_srcdir)/build-aux/checkmk $< > $@

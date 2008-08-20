@@ -21,6 +21,7 @@ static inline e_Ref e_make_reader(GInputStream *stream) {
 
 e_Ref e_make_string_writer();
 e_Ref e_string_writer_get_string(e_Ref writer);
+e_Ref e_make_string_reader(e_Ref string);
 
 extern e_Selector e_do_printOn;
 extern e_Selector e_do_print;

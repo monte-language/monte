@@ -17,7 +17,7 @@ First, some setup:
 
 
 ? def test(text) {
->  def p := rt.exec(["python", "-c", "import sys, monte.api; monte.api.do(sys.argv[1], True, scope=monte.api.e_privilegedScope)", text])
+>  def p := rt.exec(["python", "-c", "import sys, monte.api; print monte.api.eval(sys.argv[1], monte.api.e_privilegedScope)[0],", text])
 >  return p.getStderr().getText() + p.getStdout().getText()
 >}
 

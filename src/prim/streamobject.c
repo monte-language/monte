@@ -99,6 +99,27 @@ static e_Ref writer_indent(e_Ref self, e_Ref *args) {
   return new;
 }
 
+static e_Ref writer_write(e_Ref self, e_Ref *args) {
+  e_Ref val = e_ref_target(args[0]);
+  if (e_is_string(val)) {
+    return writer_print1(self, args);
+  } else if (e_is_constlist(val) || e_is_flexlist(val)) {
+    Flexlist_data *data = val.data.other;
+    GString *buf = g_string_new_len(NULL, data->size);
+    for (int i = 0; i < data->size; i++) {
+      e_Ref x = e_ref_target(data->elements[i]);
+      if (e_is_fixnum(x) && x.data.fixnum >= -128 && x.data.fixnum <= 127) {
+        g_string_append_c(buf, x.data.fixnum);
+      } else {
+        return e_throw_cstring("Argument is not a String or a List of integers of range -128..127");
+      }
+    }
+    e_Ref res = e_make_gstring(buf);
+    return writer_print1(self, &res);
+  }
+  return e_throw_cstring("Argument is not a String or a List of integers of range 0..255");
+}
+
 e_Ref e_make_writer(GOutputStream *stream) {
   e_Ref result;
   e_Ref *bits = e_malloc(2 * sizeof *bits);
@@ -122,6 +143,7 @@ e_Method writer_methods[] = {
   {"quote/1", writer_quotePrint},
   {"__printOn/1", writer_printOn},
   {"indent/1", writer_indent},
+  {"write/1", writer_write},
   {NULL}
 };
 e_Script e__writer_script;
@@ -150,6 +172,19 @@ e_Ref e_string_writer_get_string(e_Ref writer) {
              g_seekable_tell((GSeekable *)stream)));
 }
 
+
+e_Ref e_make_string_reader(e_Ref source) {
+  e_Ref string = e_coerce(e_StringGuard, source, e_null);
+  E_ERROR_CHECK(string);
+  GInputStream *input = g_memory_input_stream_new_from_data(
+                                                    string.data.gstring->str,
+                                                    string.data.gstring->len,
+#if !OLD_GIO
+                                                    NULL
+#endif
+                                                            );
+  return e_make_reader(input);
+}
 
 e_Script e__reader_script;
 e_Method reader_methods[] = {

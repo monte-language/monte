@@ -132,61 +132,80 @@ def dumpSelector(sel, target) {
 }
 
 def [INTEGER, STRING, HEXFLOAT64, BIGNUM, CHARACTER] := [0, 1, 2, 3, 4]
-def dump(bytecode) {
-  def constants := bytecode.getConstants()
-  def selectors := bytecode.getSelectors()
-  def code := bytecode.getCode()
-  def scripts := bytecode.getScripts()
-  def result := [].diverge()
+def dump {
+  to run(bytecode) {
+    def constants := bytecode.getConstants()
+    def selectors := bytecode.getSelectors()
+    def code := bytecode.getCode()
+    def scripts := bytecode.getScripts()
+    def result := [].diverge()
 
-  def dumpConstant(constant, target) {
-    switch (constant) {
-      match i :int {
-        if (i > (2**31-1)) {
-          dumpIntegerField(BIGNUM, 1, target)
-          dumpBignum(i, 3, target)
-        } else {
-          dumpIntegerField(INTEGER, 1, target)
-          dumpIntegerField(zze(i), 2, target)
+    def dumpConstant(constant, target) {
+      switch (constant) {
+        match i :int {
+          if (i > (2**31-1)) {
+            dumpIntegerField(BIGNUM, 1, target)
+            dumpBignum(i, 3, target)
+          } else {
+            dumpIntegerField(INTEGER, 1, target)
+            dumpIntegerField(zze(i), 2, target)
+          }
+        }
+        match s :String {
+          dumpIntegerField(STRING, 1, target)
+          dumpStringField(s, 3, target)
+        }
+        match f :float64 {
+          dumpIntegerField(HEXFLOAT64, 1, target)
+          dumpHexFloatField(f, 3, target)
+        }
+        match ch :char {
+          dumpIntegerField(CHARACTER, 1, target)
+          dumpIntegerField(zze(ch.asInteger()), 2, target)
         }
       }
-      match s :String {
-        dumpIntegerField(STRING, 1, target)
-        dumpStringField(s, 3, target)
-      }
-      match f :float64 {
-        dumpIntegerField(HEXFLOAT64, 1, target)
-        dumpHexFloatField(f, 3, target)
-      }
-      match ch :char {
-        dumpIntegerField(CHARACTER, 1, target)
-        dumpIntegerField(zze(ch.asInteger()), 2, target)
+    }
+
+
+    for c in constants {
+      dumpSubMessage(fn buf {
+                       dumpConstant(c, buf)
+                     }, 1, result)
+    }
+    for s in selectors {
+      dumpSubMessage(fn buf {
+                       dumpSelector(s, buf)
+                     }, 2, result)
+    }
+    for script in scripts {
+      dumpSubMessage(fn buf {
+                       dumpScript(script, buf)
+                     }, 3, result)
+    }
+    def htable := bytecode.getToplevelHandlerTable()
+    def numLocals := bytecode.getBindings().size()
+    if (code.size() > 0) {
+      dumpSubMessage(fn buf {
+                       dumpMethod([htable, code, numLocals], "run/0", buf)
+                     }, 4, result)
+    }
+    return result.snapshot()
+  }
+  to write(bytecode, out) {
+    def twist(b) {
+      return if (b > 127) {
+        b - 256
+      } else {
+        b
       }
     }
+    def twistList(bs) {
+      def sbs := [].diverge()
+      for x in bs {
+        sbs.push(twist(x))
+      }
+      return sbs.snapshot()
+    }
+    out.write(twistList(dump.run(bytecode)))
   }
-
-
-  for c in constants {
-    dumpSubMessage(fn buf {
-      dumpConstant(c, buf)
-    }, 1, result)
-  }
-  for s in selectors {
-    dumpSubMessage(fn buf {
-      dumpSelector(s, buf)
-    }, 2, result)
-  }
-  for script in scripts {
-    dumpSubMessage(fn buf {
-      dumpScript(script, buf)
-    }, 3, result)
-  }
-  def htable := bytecode.getToplevelHandlerTable()
-  def numLocals := bytecode.getBindings().size()
-  if (code.size() > 0) {
-    dumpSubMessage(fn buf {
-      dumpMethod([htable, code, numLocals], "run/0", buf)
-    }, 4, result)
-  }
-  return result.snapshot()
 }
