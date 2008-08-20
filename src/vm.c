@@ -102,8 +102,19 @@ ecru_stackframe *ecru_create_stackframe(ecru_module *module,
                                           _Bool keepLast,
                                           ecru_stackframe *parent) {
   ecru_stackframe *stackframe = e_malloc(sizeof *stackframe);
-  unsigned char numHandlers = module->scripts[scriptNum]->methods[methodNum].handlerTableLength;
-  int localsLength = module->scripts[scriptNum]->methods[methodNum].num_locals;
+  ecru_script *script = module->scripts[scriptNum];
+  unsigned char numHandlers;
+  int localsLength;
+  if (codeState == METHOD) {
+    numHandlers =  script->methods[methodNum].handlerTableLength;
+    localsLength = script->methods[methodNum].num_locals;
+  } else if (codeState == MATCHER_PATTERN) {
+    numHandlers =  script->matchers[methodNum].patternHandlerTableLength;
+    localsLength = script->matchers[methodNum].num_locals;
+  } else if (codeState == MATCHER_BODY) {
+    numHandlers =  script->matchers[methodNum].bodyHandlerTableLength;
+    localsLength = script->matchers[methodNum].num_locals;
+  }
   stackframe->module = module;
   stackframe->scriptNum = scriptNum;
   stackframe->methodNum = methodNum;
@@ -322,6 +333,7 @@ ecru_stackframe *ecru_error_check(e_Ref ref, ecru_stackframe *stackframe) {
           PUSH(res);                                                    \
         }                                                               \
       } else {                                                          \
+        e_Ref *stack_bottom = stack_pointer - sel.arity;                \
         if (codeState == MATCHER_PATTERN) {                             \
           e_Ref *_args;                                                 \
           ECRU_COLLECT_ARGS(sel, _args)                                 \
@@ -329,18 +341,19 @@ ecru_stackframe *ecru_error_check(e_Ref ref, ecru_stackframe *stackframe) {
           patternArg[0] = e_selector_verb(&sel);                        \
           patternArg[1] = e_constlist_from_array(sel.arity, _args);     \
           matchArgument = e_constlist_from_array(2, patternArg);        \
+          stack_bottom = stack_pointer;                                 \
         }                                                               \
         stackframe->pc = pc;                                            \
         frame = _obj->frame;                                            \
         stackframe = ecru_create_stackframe(_obj->module,               \
                                             _obj->scriptNum,            \
-                                             _methodNum,                \
-                                             codeState,                 \
-                                             stack_pointer - sel.arity, \
-                                             stack_pointer,             \
-                                             frame,                     \
-                                             keepLast,                  \
-                                             stackframe);               \
+                                            _methodNum,                 \
+                                            codeState,                  \
+                                            stack_bottom,               \
+                                            stack_pointer,              \
+                                            frame,                      \
+                                            keepLast,                   \
+                                            stackframe);                \
         module = _obj->module;                                          \
         scriptNum = _obj->scriptNum;                                    \
         methodNum = _methodNum;                                         \
