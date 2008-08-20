@@ -27,12 +27,11 @@ static e_Ref e_typeguard_coerce(e_Ref self, e_Ref *args) {
   if (specimen.script == typescript) {
     return specimen;
   }
-  char *errorTemplate = "Value doesn't coerce to a ";
   //XXX really need printf-style support for problem creation
-  char *errorMsg = e_malloc(sizeof(*errorTemplate) + typescript->typeName->len);
-  strcpy(errorMsg, errorTemplate);
-  strcat(errorMsg, typescript->typeName->str);
-  return e_ejectOrThrow(optEjector, errorMsg, specimen);
+  GString *errorMsg = g_string_new("Value doesn't coerce to a ");
+  g_string_append_len(errorMsg, typescript->typeName->str,
+                      typescript->typeName->len);
+  return e_ejectOrThrow(optEjector, errorMsg->str, specimen);
 }
 
 static e_Method typeguard_methods[] = {

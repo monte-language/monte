@@ -3,7 +3,7 @@
 #include "ecru.h"
 #include "vm.h"
 #include "ref.h"
-#include <scope.h>
+#include "scope.h"
 #include <Python.h>
 #include <string.h>
 #include <gc/gc.h>
@@ -50,6 +50,18 @@ e_Ref throw_python_error() {
 }
 
 PyObject *e_to_py(e_Ref obj) {
+  if (obj.script == NULL) {
+    if (obj.data.fixnum != 0) {
+      PyErr_SetString(PyExc_SystemError, "wild ejection occurred!");
+    } else {
+      e_Ref prob = e_thrown_problem();
+      e_Ref w = e_make_string_writer();
+      e_print(w, prob);
+      PyErr_SetString(PyExc_RuntimeError,
+                      e_string_writer_get_string(w).data.gstring->str);
+    }
+    return NULL;
+  }
   if (e_is_ref(obj) && e_same(e_true, e_ref_isResolved(obj))) {
     return e_to_py(obj.data.refs[0]);
   } else if (e_is_null(obj)) {
@@ -163,7 +175,9 @@ e_Ref py_to_e(PyObject *obj) {
 }
 
 e_Ref invoke_python_object(e_Ref self, e_Selector *sel, e_Ref *args) {
-
+  if (strcmp(sel->verb, "audited-by-magic-verb") == 0) {
+    return e_false;
+  }
   PyObject *obj = ((monte_handle *)self.data.other)->object;
   PyObject *py_args = PyTuple_New(sel->arity);
   e_Ref res;

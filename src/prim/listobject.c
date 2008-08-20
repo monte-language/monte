@@ -244,7 +244,7 @@ static e_Ref flexlist_append(e_Ref self, e_Ref *args) {
 }
 
 e_Ref flexlist_insert(e_Ref self, e_Ref *args) {
-  e_Ref idx = e_coerce(e_ListGuard, args[0], e_null);
+  e_Ref idx = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(idx);
   Flexlist_data *data = self.data.other;
   int originalSize = data->size;

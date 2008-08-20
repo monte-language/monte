@@ -187,7 +187,7 @@ void e__scope_set_up() {
 
   e_safeScope = e_make_scope(safeScope_names, safeScope, 90);
   // self-reference is awkward
-  e_Ref *_safeScope = (e_Ref *)((Scope_data *)e_safeScope.data.other)->slots;
+  e_Ref *_safeScope = (e_Ref *)((Scope_data *)e_safeScope.data.other)->slots->data;
   _safeScope[79] = e_make_finalslot(e_safeScope);
 
   e_Ref privilegedScope[] = {e_null, e_null, e_null,
@@ -215,7 +215,7 @@ void e__scope_set_up() {
   }
   e_privilegedScope = e_call_2(e_safeScope, &withOuterSlots,
                              psNamesList, psSlotsList);
-  e_Ref *_privilegedScope = (e_Ref *)((Scope_data *)e_privilegedScope.data.other)->slots;
+  e_Ref *_privilegedScope = (e_Ref *)((Scope_data *)e_privilegedScope.data.other)->slots->data;
   _privilegedScope[121] = e_make_finalslot(e_privilegedScope);
 
 }

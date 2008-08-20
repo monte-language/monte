@@ -128,7 +128,7 @@ First, some setup:
 #        "
 
 ?test(`(1..10).getEdges()[1]`)
-# value: "10
+# value: "11
 #        "
 
 ?test(`def i :int := 1`);
