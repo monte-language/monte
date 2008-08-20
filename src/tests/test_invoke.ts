@@ -89,7 +89,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   /// Test that e_def_type_predicate produces a function that correctly identifies objects with the given script.
   e_Method test_methods[] = {{"test/0", test_method}, {NULL}};
   e_Ref test_object;
-  e_make_script(&test_script, NULL, test_methods, "test");
+  e_make_script(&test_script, NULL, test_methods, NULL, "test");
   test_object.script = &test_script;
   fail_unless(e_is_testobject(test_object));
 }
@@ -111,7 +111,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   e_Method test_methods[] = {{"test/0", test_method}, {NULL}};
   e_Selector test_selector;
   e_Ref test_object;
-  e_make_script(&test_script, NULL, test_methods, "test");
+  e_make_script(&test_script, NULL, test_methods, NULL, "test");
   e_make_selector(&test_selector, "test", 0);
   test_object.script = &test_script;
   fail_unless(sentinel == 0);
@@ -126,7 +126,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   e_Method test_methods[] = {{NULL}};
   e_Selector test_selector0, test_selector1;
   e_Ref test_object;
-  e_make_script(&test_script, test_otherwise, test_methods, "test");
+  e_make_script(&test_script, test_otherwise, test_methods, NULL, "test");
   test_object.script = &test_script;
   test_object.data.fixnum = 1729;
   e_make_selector(&test_selector0, "hooray", 0);
@@ -150,7 +150,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   e_Selector do_wrong;
   e_Ref test_object, res;
   e_make_selector (&do_wrong, "wrong", 1);
-  e_make_script(&test_script, NULL, test_methods, "test");
+  e_make_script(&test_script, NULL, test_methods, NULL, "test");
   test_object.script = &test_script;
   test_object.data.fixnum = 1729;
   res = e_call_1(test_object, &do_wrong, e_make_string ("Hello, world!\n"));
@@ -255,15 +255,14 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   e_make_selector(&optSealedDispatch, "__optSealedDispatch", 2);
   e_make_selector(&conformTo, "__conformTo", 1);
   e_make_selector(&printOn, "__printOn", 1);
+  e_make_selector(&optUncall, "__optUncall", 0);
 
   //XXX needs send support
   // e_make_selector(&whenMoreResolved, "__whenMoreResolved", 1);
   //XXX needs type objects
   // e_make_selector(&getAllegedType, "__getAllegedType", 0);
-  //XXX needs Selfless and maybe auditors
-  // e_make_selector(&optUncall, "__optUncall", 0);
 
-  e_make_script(&test_script, NULL, test_methods, "testObject");
+  e_make_script(&test_script, NULL, test_methods, NULL, "testObject");
   e_Ref obj;
   obj.script = &test_script;
   fail_unless(e_same(e_call_2(obj, &respondsTo, e_make_string("three"),
@@ -290,6 +289,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   e_call_1(obj, &printOn, writer);
   fail_unless(e_same(e_string_writer_get_string(writer),
                      e_make_string("<a testObject>")));
+  fail_unless(e_same(e_call_0(obj, &optUncall), e_null));
 }
 
 

@@ -39,8 +39,7 @@ static e_Ref flexlist_put(e_Ref self, int index, e_Ref value) {
 }
 
 static e_Ref flexlist_put_2(e_Ref self, e_Ref *args) {
-  e_Ref intguard_args[] = {args[0], e_null};
-  e_Ref index = intguard_coerce(e_null, intguard_args);
+  e_Ref index = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(index);
   return flexlist_put(self, index.data.fixnum, args[1]);
 }
@@ -74,8 +73,7 @@ static e_Ref flexlist_printOn(e_Ref self, e_Ref *args) {
 
 static e_Ref flexlist_get_1(e_Ref self, e_Ref *args) {
   Flexlist_data *info = self.data.other;
-  e_Ref intguard_args[] = {args[0], e_null};
-  e_Ref index = intguard_coerce(e_null, intguard_args);
+  e_Ref index = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(index);
   int i = index.data.fixnum;
   if (i >= info->size) {
@@ -144,8 +142,7 @@ e_Ref flexlist_contains(e_Ref self, e_Ref *args) {
 
 static e_Ref flexlist_lastIndexOf1_2(e_Ref self, e_Ref *args) {
   Flexlist_data *list = self.data.other;
-  e_Ref intarg[] = {args[1], e_null};
-  e_Ref start = intguard_coerce(e_null, intarg);
+  e_Ref start = e_coerce(e_IntGuard, args[1], e_null);
   E_ERROR_CHECK(start);
   if (start.data.fixnum >= list->size) {
     return e_throw_pair("Index out of bounds", start);
@@ -173,8 +170,7 @@ e_Ref flexlist_with_1(e_Ref self, e_Ref *args) {
 
 static e_Ref flexlist_with_2(e_Ref self, e_Ref *args) {
   e_Ref newList = flexlist_snapshot(self, NULL);
-  e_Ref intguard_args[] = {args[0], e_null};
-  e_Ref idx = intguard_coerce(e_null, intguard_args);
+  e_Ref idx = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(idx);
   flexlist_put(newList, idx.data.fixnum, args[1]);
   return newList;
@@ -208,8 +204,7 @@ static e_Ref flexlist_last(e_Ref self, e_Ref *args) {
 
 static e_Ref flexlist_add(e_Ref self, e_Ref *args) {
   e_Ref result;
-  e_Ref listguardargs[] = {args[0], e_null};
-  e_Ref arg = elistguard_coerce(e_null, listguardargs);
+  e_Ref arg = e_coerce(e_ListGuard, args[0], e_null);
   E_ERROR_CHECK(arg);
   Flexlist_data *resData = e_malloc(sizeof *resData);
   Flexlist_data *selfData = self.data.other;
@@ -234,8 +229,7 @@ static e_Ref flexlist_add(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref flexlist_append(e_Ref self, e_Ref *args) {
-  e_Ref listguardargs[] = {args[0], e_null};
-  e_Ref arg = elistguard_coerce(e_null, listguardargs);
+  e_Ref arg = e_coerce(e_ListGuard, args[0], e_null);
   E_ERROR_CHECK(arg);
   Flexlist_data *selfData = self.data.other;
   Flexlist_data *otherData = arg.data.other;
@@ -250,8 +244,7 @@ static e_Ref flexlist_append(e_Ref self, e_Ref *args) {
 }
 
 e_Ref flexlist_insert(e_Ref self, e_Ref *args) {
-  e_Ref intguard_args[] = {args[0], e_null};
-  e_Ref idx = intguard_coerce(e_null, intguard_args);
+  e_Ref idx = e_coerce(e_ListGuard, args[0], e_null);
   E_ERROR_CHECK(idx);
   Flexlist_data *data = self.data.other;
   int originalSize = data->size;
@@ -265,12 +258,10 @@ e_Ref flexlist_insert(e_Ref self, e_Ref *args) {
 
 static e_Ref flexlist_run_2(e_Ref self, e_Ref *args) {
   Flexlist_data *selfData = self.data.other;
-  e_Ref start_args[] = {args[0], e_null};
-  e_Ref bound_args[] = {args[1], e_null};
-  e_Ref start = intguard_coerce(e_null, start_args);
+  e_Ref start = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(start);
   int startIdx = start.data.fixnum;
-  e_Ref bound = intguard_coerce(e_null, bound_args);
+  e_Ref bound = e_coerce(e_IntGuard, args[1], e_null);
   E_ERROR_CHECK(bound);
   int boundIdx = bound.data.fixnum;
   if (boundIdx > selfData->size || startIdx > selfData->size) {
@@ -290,8 +281,7 @@ static e_Ref flexlist_run_1(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref flexlist_multiply(e_Ref self, e_Ref *args) {
-  e_Ref times_args[] = {args[0], e_null};
-  e_Ref times = intguard_coerce(e_null, times_args);
+  e_Ref times = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(times);
   if (times.data.fixnum == 0) {
     return e_constlist_from_array(0, NULL);

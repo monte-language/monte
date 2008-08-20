@@ -6,7 +6,7 @@
 
 extern e_Selector respondsTo, order, whenBroken, whenMoreResolved,
                   optSealedDispatch, conformTo, printOn, optUncall,
-                  getAllegedType, reactToLostClient;
+                  getAllegedType, reactToLostClient, E_AUDITED_BY;
 
 extern char e__setup_done;
 

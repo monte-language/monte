@@ -12,48 +12,53 @@ e_Ref e_safeScope;
 
 
 void e__safescope_set_up() {
-  e_make_script(&e__equalizer_script, NULL, equalizer_methods, "Equalizer");
-  e_make_script(&e__comparer_script, NULL, comparer_methods, "Comparer");
-  e_make_script(&e__looper_script, NULL, looper_methods, "Loop");
+  e_make_script(&e__equalizer_script, NULL, equalizer_methods,
+                NULL, "Equalizer");
+  e_make_script(&e__comparer_script, NULL, comparer_methods,
+                NULL, "Comparer");
+  e_make_script(&e__looper_script, NULL, looper_methods,
+                NULL, "Loop");
   e_make_script(&e__makeList_script, makeList_dispatch, makeList_methods,
-                "ConstList__Maker");
+                NULL, "ConstList__Maker");
   e_make_script(&e__makeMap_script, NULL, makeMap_methods,
-                "ConstMap__Maker");
+                NULL, "ConstMap__Maker");
   e_make_script(&e__orderedSpace_script, NULL, orderedSpace_methods,
-                "OrderedRegion");
+                NULL, "OrderedRegion");
   e_make_script(&e__descender_script, NULL, descender_methods,
-                "descender");
+                NULL, "descender");
   e_make_script(&e__makeOrderedSpace_script, NULL, makeOrderedSpace_methods,
-                "makeOrderedRegion");
+                NULL, "makeOrderedRegion");
   e_make_script(&e__require_script, NULL, require_methods,
-                "require");
+                NULL, "require");
   e_make_script(&e__test_script, NULL, test_methods,
-                "__Test");
-  e_make_script(&viafunc1_script, NULL, viafunc1_methods, "viaFunc1");
-  e_make_script(&viafunc2_script, NULL, viafunc2_methods, "viaFunc2");
-  e_make_script(&e__bind_script, NULL, bind_methods, "__bind");
-  e_make_script(&isSameFunc_script, NULL, isSameFunc_methods, "__isSameFunc");
-  e_make_script(&e__is_script, NULL, is_methods, "__is");
+                NULL, "__Test");
+  e_make_script(&viafunc1_script, NULL, viafunc1_methods, NULL, "viaFunc1");
+  e_make_script(&viafunc2_script, NULL, viafunc2_methods, NULL, "viaFunc2");
+  e_make_script(&e__bind_script, NULL, bind_methods, NULL, "__bind");
+  e_make_script(&isSameFunc_script, NULL, isSameFunc_methods,
+                NULL, "__isSameFunc");
+  e_make_script(&e__is_script, NULL, is_methods, NULL, "__is");
   e_make_script(&verbFacet_script, verbFacet_dispatch, no_methods,
-                "verbFacet");
+                NULL, "verbFacet");
   e_make_script(&e__makeVerbFacet_script, NULL, makeVerbFacet_methods,
-                "__makeVerbFacet");
+                NULL, "__makeVerbFacet");
   e_make_script(&e__suchThat_script, NULL, suchThat_methods,
-                "__suchThat");
+                NULL, "__suchThat");
   e_make_script(&suchThatFuncFalse_script, NULL, suchThatFuncFalse_methods,
-                "suchThatFunc");
+                NULL, "suchThatFunc");
   e_make_script(&suchThatFuncTrue_script, NULL, suchThatFuncTrue_methods,
-                "suchThatFunc");
+                NULL, "suchThatFunc");
   e_make_script(&thrower_script, NULL, thrower_methods,
-                "thrower");
+                NULL, "thrower");
   e_make_script(&simple__quasiParser_script, NULL, simple__quasiParser_methods,
-                "simple__quasiParser");
+                NULL, "simple__quasiParser");
   e_make_script(&substituter_script, NULL, substituter_methods,
-                "textSubstituter");
+                NULL, "textSubstituter");
   e_make_script(&import__uriGetter_script, NULL, import__uriGetter_methods,
-                "import__uriGetter");
-  e_make_script(&THE_E_script, NULL, THE_E_methods, "E");
-  e_make_script(&e__traceln_script, NULL, e__traceln_methods, "traceln");
+                NULL, "import__uriGetter");
+  e_make_script(&THE_E_script, NULL, THE_E_methods, NULL, "E");
+  e_make_script(&e__traceln_script, NULL, e__traceln_methods,
+                NULL, "traceln");
   e_thrower.script = &thrower_script;
   e_equalizer.script = &e__equalizer_script;
   e_comparer.script = &e__comparer_script;

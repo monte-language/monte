@@ -231,14 +231,14 @@ e_Method refObject_methods[] = {{"promise/0", refObject_promise},
 
 void e__ref_set_up() {
   e_make_script(&e__SwitchableRef_script, sRef_dispatch,
-                SwitchableRef_methods, "SwitchableRef");
+                SwitchableRef_methods, NULL, "SwitchableRef");
   e_make_script(&e__LocalResolver_script, NULL, LocalResolver_methods,
-                "LocalResolver");
+                NULL, "LocalResolver");
   e_make_script(&e__UnconnectedRef_script, NULL, UnconnectedRef_methods,
-                "UnconnectedRef");
+                NULL, "UnconnectedRef");
   TheViciousRef = e_make_broken_promise(e_make_string("Caught in a forwarding loop"));
   e_make_script(&refObject_script, NULL, refObject_methods,
-                "Ref");
+                NULL, "Ref");
   THE_REF.script = &refObject_script;
 }
 

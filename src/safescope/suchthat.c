@@ -25,8 +25,7 @@ static e_Ref suchThat_run2(e_Ref self, e_Ref *args) {
 
 static e_Ref suchThat_run1(e_Ref self, e_Ref *args) {
   e_Ref func;
-  e_Ref boolguard_args[] = {args[0], e_null};
-  e_Ref flag = booleanguard_coerce(e_null, boolguard_args);
+  e_Ref flag = e_coerce(e_BooleanGuard, args[0], e_null);
   E_ERROR_CHECK(flag);
   if (e_same(flag, e_true)) {
     func.script = &suchThatFuncTrue_script;

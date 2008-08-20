@@ -3,8 +3,8 @@
 static e_Ref make_equalizer() {
   e_Ref result;
   e_Ref *bits = e_malloc(2 * sizeof(e_Ref));
-  bits[0] = e_constlist_from_array(0, NULL);
-  bits[1] = e_constlist_from_array(0, NULL);
+  bits[0] = e_flexlist_from_array(0, NULL);
+  bits[1] = e_flexlist_from_array(0, NULL);
   result.script = &e__equalizer_script;
   result.data.refs = bits;
   return result;
@@ -90,10 +90,15 @@ static e_Ref _eq_optSame(e_Ref self, e_Ref left, e_Ref right, int soFar) {
       }
     }
     return e_true;
-  } else if (e_is_constlist(left) || e_is_constlist(right)) {
-    return e_false;
+  } else if (e_is_selfless(left) && e_is_selfless(right)) {
+    int soFarther = eq_pushSoFar(self, left, right, soFar);
+    e_Ref spreadL = e_spread_uncall(left);
+    e_Ref spreadR = e_spread_uncall(right);
+    if (!(e_eq(spreadL, e_null) || e_eq(spreadR, e_null))) {
+      return _eq_optSame(self, spreadL, spreadR, soFarther);
+    }
   }
-  // XXX put in selfless checks
+
   return e_false;
 }
 

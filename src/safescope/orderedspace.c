@@ -72,7 +72,7 @@ e_Ref orderedSpace_coerce(e_Ref self, e_Ref *args) {
   e_Ref optEjector = args[1];
   e_Ref left = self.data.refs[0];
   e_Ref right = self.data.refs[1];
-  e_Ref intres = intguard_coerce(e_null, args);
+  e_Ref intres = e_coerce(e_IntGuard, args[0], args[1]);
   E_ERROR_CHECK(intres);
   if (intres.data.fixnum >= left.data.fixnum &&
       intres.data.fixnum <= right.data.fixnum) {

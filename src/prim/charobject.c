@@ -12,8 +12,7 @@
 
 static e_Ref char_add(e_Ref self, e_Ref *args)
 {
-  e_Ref intguard_args[] = {args[0], e_null};
-  e_Ref fval = intguard_coerce(e_null, intguard_args);
+  e_Ref fval = e_coerce(e_IntGuard, args[0], e_null);
   E_ERROR_CHECK(fval);
   int sum = self.data.chr + fval.data.fixnum;
   /* FIXME: check overflow */

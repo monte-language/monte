@@ -88,8 +88,8 @@ char *privilegedScope_names[] = {
 void e__scope_set_up() {
 
   e_make_script(&e__scopeLayout_script, NULL, scopeLayout_methods,
-                "ScopeLayout");
-  e_make_script(&e__scope_script, NULL, scope_methods, "Scope");
+                NULL, "ScopeLayout");
+  e_make_script(&e__scope_script, NULL, scope_methods, NULL, "Scope");
 
   e_Ref safeScope[] = {e_make_finalslot(e_null),
                        e_make_finalslot(e_false), e_make_finalslot(e_true),

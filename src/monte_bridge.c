@@ -205,7 +205,7 @@ void monte_bridge_set_up(PyObject *wrapper, PyObject *(*wrap)(e_Ref),
   monte_PythonCharacter = charClass;
   Py_INCREF(wrapper);
   e_make_script(&e__python_object_script, invoke_python_object,
-                no_methods, "wrapped Python object");
+                no_methods, NULL, "wrapped Python object");
   saveset = e_make_flexmap(0);
 
   e_Ref *_interactiveScope = e_make_array(122);

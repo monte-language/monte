@@ -50,6 +50,7 @@ struct e_Script {
   int num_methods;
   e_Method *methods;		/**< an array of length num_methods */
   e_Call_Func *opt_otherwise;
+  GArray *optApprovals; // an array of auditors this script passes
   GString *typeName;
   /** TODO: add a send function, etc?  check the enative code */
 };
@@ -90,7 +91,11 @@ struct e_Selector {
 void e_make_script (e_Script *script,
 		    e_Call_Func *opt_otherwise,
 		    e_Method *methods,
+                    e_Ref *optApprovals,
                     const char *typeName);
+
+/// Returns whether an auditor has approved an object's script or not.
+_Bool e_approved_by(e_Ref specimen, e_Ref auditor);
 
 /** @ingroup objects
     The default implementation of the Miranda methods. If you create a script
@@ -100,7 +105,7 @@ e_Ref otherwise_miranda_methods(e_Ref self, e_Selector *selector, e_Ref *args);
 
 /// The array of default Miranda method implementations.
 extern e_Method e_miranda_methods[];
-#define E_NUM_MIRANDA_METHODS 7
+#define E_NUM_MIRANDA_METHODS 9
 
 extern e_Ref e_empty_ref;
 
@@ -110,5 +115,7 @@ static inline _Bool e_eq(e_Ref ref1, e_Ref ref2) {
     ref1.data.fixnum == ref2.data.fixnum;
 }
 
+/// Returns the visible internal state of an object, or null.
+e_Ref e_spread_uncall(e_Ref obj);
 
 #endif
