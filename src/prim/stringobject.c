@@ -13,7 +13,7 @@ static e_Ref string_printOn(e_Ref self, e_Ref *args) {
 }
 
 static e_Ref string_append(e_Ref self, e_Ref *args) {
-  e_Ref otherString = e_coerce(e_null, args[0], args[1]);
+  e_Ref otherString = e_coerce(e_StringGuard, args[0], args[1]);
   E_ERROR_CHECK(otherString);
   GString *result = g_string_new_len(self.data.gstring->str,
                                      self.data.gstring->len);

@@ -63,13 +63,17 @@ void e__guards_set_up() {
   e_IntGuard.data.fixnum = 0;
   e_IntGuard.script = &intguard_script;
 
+  e_make_script(&float64guard_script, NULL, float64guard_methods,
+                justSelfless, "Float64Guard");
+  e_Float64Guard.data.fixnum = 0;
+  e_Float64Guard.script = &float64guard_script;
+
   e_make_script(&listguard_script, NULL, listguard_methods,
                 justSelfless, "ListGuard");
   e_ListGuard.data.fixnum = 0;
   e_ListGuard.script = &listguard_script;
 
   e_BooleanGuard = e_make_typeguard(&e__boolean_script);
-  e_Float64Guard = e_make_typeguard(&e__float64_script);
   e_CharGuard = e_make_typeguard(&e__char_script);
   e_StringGuard = e_make_typeguard(&e__string_script);
   e_ConstListGuard = e_make_typeguard(&e__constlist_script);

@@ -17,7 +17,10 @@ extern e_Script intguard_script;
 extern e_Method intguard_methods[];
 
 /// Coercer to a float.
+e_Ref float64guard_coerce(e_Ref self, e_Ref *args);
 extern e_Ref e_Float64Guard;
+extern e_Script float64guard_script;
+extern e_Method float64guard_methods[];
 
 /// Coercer to a character.
 extern e_Ref e_CharGuard;
