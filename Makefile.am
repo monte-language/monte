@@ -23,7 +23,7 @@ libecru_la_SOURCES = src/prim/null.c src/prim/stringobject.c		\
 	src/privilegedscope/printobject.c src/guards/numberguard.c	\
 	src/guards/listguard.c src/invoke.c src/prim.c src/intern.c	\
 	src/vm.c src/ref.c src/bytecode_loader.c src/scope.c		\
-	src/guards.c src/import.c
+	src/guards.c src/import.c src/vat.c
 
 include_HEADERS = include/boolobject.h include/bytecode_loader.h	\
 	include/bytecodes.h include/charobject.h include/ecru.h		\
@@ -70,9 +70,12 @@ test_guards_SOURCES = src/tests/test_guards.c
 test_guards_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
 test_guards_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
+test_vat_SOURCES = src/tests/test_vat.c
+test_vat_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la
+test_vat_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 check_PROGRAMS = test_vm test_elib test_invoke test_bytecode_loader	\
-                 test_ref test_same test_guards
+                 test_ref test_same test_guards test_vat
 
 ecru_SOURCES = src/driver.c
 ecru_LDADD = @GLIB_LIBS@ libecru.la

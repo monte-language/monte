@@ -137,6 +137,7 @@ void e_set_up(void) {
   g_mem_gc_friendly = 1;
 #endif
   g_type_init();
+  g_thread_init(NULL);
   e__set_up_interner();
   e__miranda_set_up();
   e__exit_set_up();
