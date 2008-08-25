@@ -9,7 +9,9 @@ typedef struct Vat_data {
   GAsyncQueue *messageQueue;
 } Vat_data;
 
-void e_vat_set_up();
+void e__vat_set_up();
 e_Ref e_make_vat(e_Ref runner, char *label);
+void e_vat_set_active(e_Ref vat);
+e_Ref e_current_vat();
 
 #endif

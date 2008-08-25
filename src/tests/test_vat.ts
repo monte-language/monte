@@ -28,6 +28,14 @@ void teardown(void) {
   fail_unless(g_async_queue_length(vat->messageQueue) == 0);
 }
 
+#test currency
+{
+  e_Ref v = e_make_vat(e_null, "bob");
+  fail_unless(e_same(e_current_vat(), e_null));
+  e_vat_set_active(v);
+  fail_unless(e_same(e_current_vat(), v));
+}
+
 //#test sendonly
 //{
 //  

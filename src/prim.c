@@ -141,6 +141,7 @@ void e_set_up(void) {
   e__set_up_interner();
   e__miranda_set_up();
   e__exit_set_up();
+  e__vat_set_up();
   e__guards_set_up();
   set_up_prims();
   e__ref_set_up();
