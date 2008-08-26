@@ -77,6 +77,32 @@ void fake_runnable(e_Ref vat, void *data) {
   fail_unless(e_same(msg->resolver, e_null));
 }
 
+#test send
+{
+  e_Ref v = e_make_vat(e_null, "bob");
+  e_Ref obj = e_make_fixnum(3);
+  e_Ref arg = e_make_fixnum(4);
+  Vat_data *vat = v.data.other;
+  e_Selector add, get;
+  e_make_selector(&add, "add", 1);
+  e_make_selector(&get, "get", 1);
+  e_PendingDelivery *msg;
+  e_Runnable_Item *item;
+  e_Ref ppair = e_make_promise_pair();
+  e_Ref result = e_call_1(ppair, &get, e_make_fixnum(0));
+  e_Ref resolver = e_call_1(ppair, &get, e_make_fixnum(1));
+  e_vat_set_active(v);
+  e_vat_send(v, obj, &add, &arg, v, resolver);
+  fail_unless(g_async_queue_length(vat->messageQueue) == 1);
+  item = g_async_queue_pop(vat->messageQueue);
+  msg = (e_PendingDelivery *)item->data;
+  fail_unless(e_same(msg->object, obj));
+  fail_unless(msg->selector == &add);
+  fail_unless(e_same(msg->args[0], arg));
+  fail_unless(e_same(msg->resolverVat, v));
+  fail_unless(e_same(msg->resolver, resolver));
+}
+
 
 #main-pre
 {

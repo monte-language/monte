@@ -55,3 +55,14 @@ void e_vat_sendOnly(e_Ref vat, e_Ref self, e_Selector *selector,
     pd->resolver = e_null;
     e_vat_enqueue(vat, e_vat_execute_send, pd);
 }
+
+void e_vat_send(e_Ref vat, e_Ref self, e_Selector *selector,
+                e_Ref *args, e_Ref resolverVat, e_Ref resolver) {
+    e_PendingDelivery *pd = e_malloc(sizeof *pd);
+    pd->object = self;
+    pd->selector = selector;
+    pd->args = args;
+    pd->resolverVat = resolverVat;
+    pd->resolver = resolver;
+    e_vat_enqueue(vat, e_vat_execute_send, pd);
+}
