@@ -41,3 +41,17 @@ void e_vat_enqueue(e_Ref vat, e_Runnable_Func *f, void *data) {
   item->data = data;
   g_async_queue_push(v->messageQueue, item);
 }
+
+void e_vat_execute_send(e_Ref vat, void *data) {
+}
+
+void e_vat_sendOnly(e_Ref vat, e_Ref self, e_Selector *selector,
+                       e_Ref *args) {
+    e_PendingDelivery *pd = e_malloc(sizeof *pd);
+    pd->object = self;
+    pd->selector = selector;
+    pd->args = args;
+    pd->resolverVat = e_null;
+    pd->resolver = e_null;
+    e_vat_enqueue(vat, e_vat_execute_send, pd);
+}
