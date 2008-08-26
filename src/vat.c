@@ -32,3 +32,12 @@ e_Ref e_current_vat() {
   e_Ref *current_vat = g_static_private_get(&current_vat_key);
   return *current_vat;
 }
+
+void e_vat_enqueue(e_Ref vat, e_Runnable_Func *f, void *data) {
+  Vat_data *v = vat.data.other;
+  e_Runnable_Item *item = e_malloc(sizeof *item);
+  item->vat = vat;
+  item->function = f;
+  item->data = data;
+  g_async_queue_push(v->messageQueue, item);
+}

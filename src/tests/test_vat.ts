@@ -18,6 +18,10 @@ void teardown(void) {
   }
 }
 
+void fake_runnable(e_Ref vat, void *data) {
+  return;
+}
+
 #test create
 {
   e_Ref v = e_make_vat(e_null, "bob");
@@ -36,10 +40,20 @@ void teardown(void) {
   fail_unless(e_same(e_current_vat(), v));
 }
 
-//#test sendonly
-//{
-//  
-//}
+#test enqueue
+{
+  e_Ref v = e_make_vat(e_null, "bob");
+  e_vat_set_active(v);
+  e_Ref val = e_make_fixnum(1);
+  Vat_data *vat = v.data.other;
+  e_Runnable_Item *item;
+  e_vat_enqueue(v, fake_runnable, &val);
+  fail_unless(g_async_queue_length(vat->messageQueue) == 1);
+  item = g_async_queue_pop(vat->messageQueue);
+  fail_unless((e_Ref *)(item->data) == &val);
+  fail_unless(item->function == &fake_runnable);
+  fail_unless(e_same(item->vat, v));
+}
 
 
 #main-pre
