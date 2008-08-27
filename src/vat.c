@@ -2,7 +2,8 @@
 #include "vm.h"
 
 GStaticPrivate current_vat_key = G_STATIC_PRIVATE_INIT;
-e_Script ecru_vat_script;
+GStaticPrivate resolve_selector_key = G_STATIC_PRIVATE_INIT;
+e_Script e__vat_script;
 
 e_Ref e_make_vat(e_Ref runner, char *label) {
   e_Ref vat;
@@ -12,15 +13,20 @@ e_Ref e_make_vat(e_Ref runner, char *label) {
   data->turncounter = 0;
   data->messageQueue = g_async_queue_new();
   vat.data.other = data;
-  vat.script = &ecru_vat_script;
+  vat.script = &e__vat_script;
   data->self = vat;
   return vat;
 }
 
 
 void e__vat_set_up() {
-  e_make_script(&ecru_vat_script, NULL, no_methods, NULL, "vat");
+  e_make_script(&e__vat_script, NULL, no_methods, NULL, "vat");
   g_static_private_set(&current_vat_key, &e_null, NULL);
+
+  //XXX move into thread-init function
+  e_Selector *resolve = e_malloc(sizeof *resolve);
+  e_make_selector(resolve, "resolve", 1);
+  g_static_private_set(&resolve_selector_key, resolve, NULL);
 }
 
 void e_vat_set_active(e_Ref vat) {
@@ -43,6 +49,16 @@ void e_vat_enqueue(e_Ref vat, e_Runnable_Func *f, void *data) {
 }
 
 void e_vat_execute_send(e_Ref vat, void *data) {
+  e_PendingDelivery *pd = data;
+  Vat_data *vatdata = vat.data.other;
+  e_Ref result = e_call(pd->object, pd->selector, pd->args);
+  if (!e_eq(pd->resolver, e_null)) {
+        e_Selector *resolve = g_static_private_get(&resolve_selector_key);
+    e_Ref *arg = e_malloc(sizeof *arg);
+    *arg = result;
+    e_vat_sendOnly(pd->resolverVat, pd->resolver, resolve, arg);
+  }
+  vatdata->turncounter++;
 }
 
 void e_vat_sendOnly(e_Ref vat, e_Ref self, e_Selector *selector,
@@ -65,4 +81,19 @@ void e_vat_send(e_Ref vat, e_Ref self, e_Selector *selector,
     pd->resolverVat = resolverVat;
     pd->resolver = resolver;
     e_vat_enqueue(vat, e_vat_execute_send, pd);
+}
+
+/** Execute one turn in this vat. Must be run in this vat's thread. Returns
+    whether further turns are currently pending. */
+_Bool e_vat_execute_turn(e_Ref vat) {
+  Vat_data *data = vat.data.other;
+  e_Runnable_Item *r;
+  if ((r = g_async_queue_try_pop(data->messageQueue)) != NULL) {
+    if (r->function != NULL) {
+      r->function(r->vat, r->data);
+    }
+    return true;
+  } else {
+    return false;
+  }
 }

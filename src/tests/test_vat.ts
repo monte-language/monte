@@ -103,6 +103,63 @@ void fake_runnable(e_Ref vat, void *data) {
   fail_unless(e_same(msg->resolver, resolver));
 }
 
+#test execute_send
+{
+  e_Ref v = e_make_vat(e_null, "bob");
+  e_Ref v2 = e_make_vat(e_null, "bob");
+  Vat_data *vat = v.data.other;
+  Vat_data *vat2 = v2.data.other;
+  e_Ref obj = e_make_fixnum(3);
+  e_Ref arg = e_make_fixnum(4);
+  e_PendingDelivery *msg;
+  e_Runnable_Item *item;
+  e_Selector add, get;
+  e_make_selector(&add, "add", 1);
+  e_make_selector(&get, "get", 1);
+  e_Ref ppair = e_make_promise_pair();
+  e_Ref result = e_call_1(ppair, &get, e_make_fixnum(0));
+  e_Ref resolver = e_call_1(ppair, &get, e_make_fixnum(1));
+
+  e_vat_set_active(v);
+  e_PendingDelivery pd = {.object = obj, .selector = &add,
+                           .args = &arg, .resolverVat = v2,
+                           .resolver = resolver};
+  e_vat_execute_send(v, &pd);
+  fail_unless(vat->turncounter == 1);
+  fail_unless(g_async_queue_length(vat2->messageQueue) == 1);
+  item = g_async_queue_pop(vat2->messageQueue);
+  msg = (e_PendingDelivery *)item->data;
+  fail_unless(e_same(msg->object, resolver));
+  fail_unless(strcmp(msg->selector->verb, "resolve/1") == 0);
+  fail_unless(e_same(msg->args[0], e_make_fixnum(7)));
+  fail_unless(e_same(msg->resolverVat, e_null));
+  fail_unless(e_same(msg->resolver, e_null));
+}
+
+#test turn_execute
+{
+  e_Ref v = e_make_vat(e_null, "bob");
+  e_Ref v2 = e_make_vat(e_null, "bob");
+  Vat_data *vat = v.data.other;
+  Vat_data *vat2 = v2.data.other;
+  e_Ref obj = e_make_fixnum(3);
+  e_Ref arg = e_make_fixnum(4);
+  e_Selector add, get;
+  e_make_selector(&add, "add", 1);
+  e_make_selector(&get, "get", 1);
+  e_Ref ppair = e_make_promise_pair();
+  e_Ref result = e_call_1(ppair, &get, e_make_fixnum(0));
+  e_Ref resolver = e_call_1(ppair, &get, e_make_fixnum(1));
+  e_vat_set_active(v);
+  e_vat_send(v, obj, &add, &arg, v2, resolver);
+  fail_unless(g_async_queue_length(vat->messageQueue) == 1);
+  fail_unless(e_vat_execute_turn(v));
+  fail_if(e_vat_execute_turn(v));
+  fail_unless(g_async_queue_length(vat2->messageQueue) == 1);
+  fail_unless(e_vat_execute_turn(v2));
+  fail_if(e_vat_execute_turn(v2));
+  fail_unless(e_same(e_ref_target(result), e_make_fixnum(7)));
+}
 
 #main-pre
 {
