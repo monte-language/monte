@@ -77,10 +77,10 @@ test_vat_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 check_PROGRAMS = test_vm test_elib test_invoke test_bytecode_loader	\
                  test_ref test_same test_guards test_vat
 
-ecru_SOURCES = src/driver.c
-ecru_LDADD = @GLIB_LIBS@ libecru.la
-bin_PROGRAMS = ecru
-dist_bin_SCRIPTS = scripts/compile.e scripts/monte
+ecru_driver_SOURCES = src/driver.c
+ecru_driver_LDADD = @GLIB_LIBS@ libecru.la
+bin_PROGRAMS = ecru_driver
+dist_bin_SCRIPTS = scripts/compile.e scripts/ecru
 CLEANFILES = src/tests/test_elib.c src/tests/test_vm.c			\
              src/tests/test_invoke.c src/tests/test_bytecode_loader.c
 TESTS = $(check_PROGRAMS)
