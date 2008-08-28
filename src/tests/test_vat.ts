@@ -24,6 +24,7 @@ void fake_runnable(e_Ref vat, void *data) {
 
 #test create
 {
+  // Vat creation sets up the initial parameters correctly.
   e_Ref v = e_make_vat(e_null, "bob");
   Vat_data *vat = v.data.other;
   fail_unless(e_same(vat->label, e_make_string("bob")));
@@ -34,6 +35,7 @@ void fake_runnable(e_Ref vat, void *data) {
 
 #test currency
 {
+  // Setting the current vat works.
   e_Ref v = e_make_vat(e_null, "bob");
   fail_unless(e_same(e_current_vat(), e_null));
   e_vat_set_active(v);
@@ -42,6 +44,7 @@ void fake_runnable(e_Ref vat, void *data) {
 
 #test enqueue
 {
+  // Enqueuing a runnable function works.
   e_Ref v = e_make_vat(e_null, "bob");
   e_vat_set_active(v);
   e_Ref val = e_make_fixnum(1);
@@ -57,6 +60,7 @@ void fake_runnable(e_Ref vat, void *data) {
 
 #test sendonly
 {
+  // Enqueuing a message send works.
   e_Ref v = e_make_vat(e_null, "bob");
   e_Ref obj = e_make_fixnum(3);
   e_Ref arg = e_make_fixnum(4);
@@ -79,6 +83,7 @@ void fake_runnable(e_Ref vat, void *data) {
 
 #test send
 {
+  // Enqueuing a message send with reply works.
   e_Ref v = e_make_vat(e_null, "bob");
   e_Ref obj = e_make_fixnum(3);
   e_Ref arg = e_make_fixnum(4);
@@ -105,6 +110,8 @@ void fake_runnable(e_Ref vat, void *data) {
 
 #test execute_send
 {
+  /* Executing an enqueued message send runs the call and
+     enqueues the send for the reply. */
   e_Ref v = e_make_vat(e_null, "bob");
   e_Ref v2 = e_make_vat(e_null, "bob");
   Vat_data *vat = v.data.other;
@@ -138,6 +145,7 @@ void fake_runnable(e_Ref vat, void *data) {
 
 #test turn_execute
 {
+  // Executing a turn runs the next enqueued message send.
   e_Ref v = e_make_vat(e_null, "bob");
   e_Ref v2 = e_make_vat(e_null, "bob");
   Vat_data *vat = v.data.other;

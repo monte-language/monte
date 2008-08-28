@@ -101,7 +101,7 @@ void teardown(void) {
 
 #test unresolved_fulfillment
 {
-  // Ref.fulfillment throws an error if its arg is unresolved.
+  // Ref.fulfillment/1 throws an error if its arg is unresolved.
   e_Ref p = e_call_1(THE_REF, &fulfillment, sRef);
   fail_unless(p.script == NULL);
   e_Ref prob = e_thrown_problem();
@@ -113,6 +113,7 @@ void teardown(void) {
 
 #test broken_fulfillment
 {
+  // Ref.fulfillment/1 throws the problem wrapped by a broken reference.
   e_Ref p = e_make_string("bad stuff happened");
   e_resolver_smash(resolver, p);
   e_Ref q = e_call_1(THE_REF, &fulfillment, sRef);
