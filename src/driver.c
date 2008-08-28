@@ -4,17 +4,6 @@
 #include "ecru.h"
 #include "vm.h"
 
-e_Ref e_make_vmobject(ecru_module *module, int scriptNum) {
-  e_Ref obj;
-  ecru_object *objdata = e_malloc(sizeof *objdata);
-  objdata->module = module;
-  objdata->scriptNum = scriptNum;
-  objdata->frame = NULL;
-  obj.script = &e__vmObject_script;
-  obj.data.other = objdata;
-  return obj;
-}
-
 int main(int argc, char **argv) {
   ecru_set_up();
 
@@ -26,7 +15,7 @@ int main(int argc, char **argv) {
   fclose(stdin);
   e_Ref vat = e_make_vat(e_null, "driver vat");
   e_vat_set_active(vat);
-  e_Ref obj = e_make_vmobject(module, 0);
+  e_Ref obj = e_make_vmobject(module, 0, NULL);
   e_Selector run, get;
   e_make_selector(&run, "run", 0);
   e_make_selector(&get, "get", 1);

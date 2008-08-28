@@ -6,13 +6,14 @@
 #include "ref_private.h"
 
 e_Ref sRef, resolver;
-e_Selector isResolved, resolve, size, get;
+e_Selector isResolved, resolve, size, get, fulfillment;
 void setup(void) {
   e_set_up();
   e_make_selector(&size, "size", 0);
   e_make_selector(&get, "get", 1);
   e_make_selector(&isResolved, "isResolved", 0);
   e_make_selector(&resolve, "resolve", 1);
+  e_make_selector(&fulfillment, "fulfillment", 1);
   e_Ref pair = e_make_promise_pair();
   fail_unless(e_is_constlist(pair));
   fail_unless(e_call_0(pair, &size).data.fixnum == 2);
@@ -41,6 +42,15 @@ void teardown(void) {
   fail_unless(e_same(e_ref_isResolved(sRef), e_true));
   fail_unless(e_ref_state(sRef) == NEAR);
 }
+
+#test broken_resolution
+{
+  // e_ref_state reports references that are broken.
+  e_Ref p = e_make_string("bad stuff happened");
+  e_resolver_smash(resolver, p);
+  fail_unless(e_ref_state(sRef) == BROKEN);
+}
+
 
 #test message
 {
@@ -80,6 +90,37 @@ void teardown(void) {
   e_resolver_smash(resolver, p);
   fail_unless(e_is_UnconnectedRef(e_ref_target(sRef)));
 }
+
+#test near_fulfillment
+{
+  // Ref.fulfillment/1 shortens a ref if it is near.
+  e_Ref x = e_make_fixnum(99);
+  e_call_1(resolver, &resolve, x);
+  fail_unless(e_same(e_call_1(THE_REF, &fulfillment, sRef), x));
+}
+
+#test unresolved_fulfillment
+{
+  // Ref.fulfillment throws an error if its arg is unresolved.
+  e_Ref p = e_call_1(THE_REF, &fulfillment, sRef);
+  fail_unless(p.script == NULL);
+  e_Ref prob = e_thrown_problem();
+  fail_unless(e_same(prob.data.refs[0],
+                     e_make_string("Failed: Not resolved")));
+  fail_unless(e_same(prob.data.refs[1],
+                     sRef));
+}
+
+#test broken_fulfillment
+{
+  e_Ref p = e_make_string("bad stuff happened");
+  e_resolver_smash(resolver, p);
+  e_Ref q = e_call_1(THE_REF, &fulfillment, sRef);
+  fail_unless(q.script == NULL);
+  e_Ref prob = e_thrown_problem();
+  fail_unless(e_same(prob, p));
+}
+
 #main-pre
 {
   tcase_add_checked_fixture(tc1_1, setup, teardown);

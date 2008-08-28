@@ -69,6 +69,9 @@ static e_Ref sRef_isResolved(e_Ref self) {
 e_Ref sRef_dispatch(e_Ref receiver, e_Selector *selector, e_Ref *args) {
   SwitchableRef_data *ref = receiver.data.other;
   if (ref->myIsSwitchable) {
+    if (selector->verb == printOn.verb) {
+      e_print(args[0], e_make_string("<Promise>"));
+    }
     return e_throw_cstring("not synchronously callable");
   } else {
     sRef_shorten(ref);
@@ -177,6 +180,9 @@ int e_ref_state(e_Ref ref) {
     if (data->myIsSwitchable) {
       return EVENTUAL;
     } else {
+      if ((data->myTarget).script == &e__UnconnectedRef_script) {
+        return BROKEN;
+      }
       return NEAR;
     }
   } else {
@@ -225,8 +231,22 @@ static e_Ref refObject_isResolved(e_Ref self, e_Ref *args) {
     return e_ref_isResolved(args[0]);
   }
 }
+
+static e_Ref refObject_fulfillment(e_Ref self, e_Ref *args) {
+  int state = e_ref_state(args[0]);
+  if (state == EVENTUAL) {
+    e_throw_pair("Failed: Not resolved", args[0]);
+  } else if (state == BROKEN) {
+    SwitchableRef_data *data = args[0].data.other;
+    return e_throw(data->myTarget.data.refs[0]);
+  } else {
+    return e_ref_target(args[0]);
+  }
+}
+
 e_Method refObject_methods[] = {{"promise/0", refObject_promise},
                                 {"isResolved/1", refObject_isResolved},
+                                {"fulfillment/1", refObject_fulfillment},
                                 {NULL, NULL}};
 
 void e__ref_set_up() {
