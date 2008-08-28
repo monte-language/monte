@@ -44,6 +44,8 @@ typedef struct ecru_object {
   int ejectorCounter;
 } ecru_object;
 
+
+e_Ref e_make_vmobject(ecru_module *module, int scriptIdx, e_Ref *frame);
 e_def_type_predicate(e_is_vmObject, e__vmObject_script);
 
 /// Create a bytecode script.

@@ -18,9 +18,12 @@ PyObject *monte_unwrap(e_Ref obj);
 static PyObject *monte_EObjectWrapper;
 static PyObject *monte_PythonCharacter;
 static e_Ref compiler, bytecodeDumper, debugDumper;
-e_Selector run, doWrite;
+static e_Selector run, doWrite, get, getToplevelLocals,
+  size, withOuterSlots, resolve, fulfillment;
 
 e_Script e__python_object_script;
+
+e_Ref python_vat;
 
 /* XXX these are global variables because boehm GC needs to have a root for
 objects only otherwise referenced by Python's ctypes. These won't be necessary
@@ -239,6 +242,15 @@ PyObject *bridge_set_up(PyObject *self, PyObject *args) {
   debugDumper = e_module_import(ddName);
   e_make_selector(&run, "run", 2);
   e_make_selector(&doWrite, "write", 2);
+  e_make_selector(&get, "get", 1);
+  e_make_selector(&getToplevelLocals, "getToplevelLocals", 0);
+  e_make_selector(&size, "size", 0);
+  e_make_selector(&resolve, "resolve", 1);
+  e_make_selector(&withOuterSlots, "withOuterSlots", 2);
+  e_make_selector(&fulfillment, "fulfillment", 1);
+  python_vat = e_make_vat(e_null, "python vat");
+  e_vat_set_active(python_vat);
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -366,34 +378,64 @@ ecru_module *monte_bridge_pack(e_Ref module, e_Ref scope) {
 
 }
 
-e_Ref doModuleInteractive(ecru_module *m,  e_Ref compiledModule) {
+typedef struct interactive_runnable {
+  ecru_module *module;
+  e_Ref nameList;
+  e_Ref resolverVat;
+  e_Ref resolver;
+} interactive_runnable;
+
+
+static void do_interactive_turn(e_Ref vat, void *x) {
   ecru_stackframe *stackp;
-  e_Selector getToplevelLocals, size, withOuterSlots;
-  e_make_selector(&getToplevelLocals, "getToplevelLocals", 0);
-  e_make_selector(&size, "size", 0);
-  e_Ref nameList = e_call_0(compiledModule, &getToplevelLocals);
+  e_Ref newScope;
+  interactive_runnable *data = x;
+  Vat_data *vatdata = vat.data.other;
+  e_Ref res = ecru_vm_execute(0, 0, 0, NULL, data->module,
+                                 NULL, 0, &stackp);
   e_Ref w = e_make_string_writer();
-  e_Ref res = ecru_vm_execute(0, 0, 0, NULL, m,
-                              NULL, 0, &stackp);
-  if (res.script != NULL) {
-    e_println(w, res);
-  } else {
+  e_Ref maybeVal = e_call_1(THE_REF, &fulfillment, res);
+  if (maybeVal.script == NULL) {
     e_println(w, e_thrown_problem());
+  } else {
+    e_println(w, maybeVal);
   }
   e_Ref result = e_string_writer_get_string(w);
-  e_Ref numLocals = e_call_0(nameList, &size);
-  E_ERROR_CHECK(numLocals);
-  int siz = numLocals.data.fixnum;
-  e_Ref newScope = m->scope;
-  if (siz != 0 && res.script != NULL) {
-    e_Ref slotsList = e_constlist_from_array(siz, stackp->locals);
-    e_make_selector(&withOuterSlots, "withOuterSlots", 2);
-    newScope = e_call_2(m->scope, &withOuterSlots, nameList, slotsList);
+  e_Ref numLocals = e_call_0(data->nameList, &size);
+  if (numLocals.script == NULL) {
+    result = numLocals;
+  } else {
+    int siz = numLocals.data.fixnum;
+    newScope = data->module->scope;
+    if (siz != 0 && res.script != NULL) {
+      e_Ref slotsList = e_constlist_from_array(siz, stackp->locals);
+      newScope = e_call_2(data->module->scope, &withOuterSlots,
+                          data->nameList, slotsList);
+    }
   }
   e_Ref out[] = {result, newScope};
-  return e_constlist_from_array(2, out);
+  e_Ref resultlist = e_constlist_from_array(2, out);
+  e_Ref *arg = e_malloc(sizeof *arg);
+  *arg = resultlist;
+  e_vat_sendOnly(data->resolverVat, data->resolver, &resolve, arg);
+  vatdata->turncounter++;
 }
 
+e_Ref doModuleInteractive(ecru_module *m,  e_Ref compiledModule) {
+  e_Ref nameList = e_call_0(compiledModule, &getToplevelLocals);
+  e_Ref obj = e_make_vmobject(m, 0, NULL);
+  e_Ref ppair = e_make_promise_pair();
+  e_Ref result = e_call_1(ppair, &get, e_make_fixnum(0));
+  e_Ref resolver = e_call_1(ppair, &get, e_make_fixnum(1));
+  interactive_runnable data = {.module = m, .nameList = nameList,
+                               .resolverVat = python_vat, .resolver = resolver};
+
+  e_vat_enqueue(python_vat, do_interactive_turn, &data);
+  e_vat_set_active(python_vat);
+
+  while (e_vat_execute_turn(python_vat)) {};
+  return result;
+}
 
 static e_Ref dump_module(e_Ref module) {
   e_Ref w = e_make_string_writer();

@@ -20,6 +20,8 @@
 #endif
 
 #include "ecruobject.h"
+#include "ecru.h"
+#include "vat.h"
 
 /** Initialize the E system. */
 /**  Must be called before any other e_foo()

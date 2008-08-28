@@ -15,6 +15,18 @@ e_Method *ecru_miranda_methods;
 
 static e_Selector do_run1, do_get0, do_get1, do_put1, do_size;
 
+
+e_Ref e_make_vmobject(ecru_module *module, int scriptNum, e_Ref *frame) {
+  e_Ref obj;
+  ecru_object *objdata = e_malloc(sizeof *objdata);
+  objdata->module = module;
+  objdata->scriptNum = scriptNum;
+  objdata->frame = frame;
+  obj.script = &e__vmObject_script;
+  obj.data.other = objdata;
+  return obj;
+}
+
 /// returners have no methods either.
 static e_Method *returner_methods = no_methods;
 
@@ -811,12 +823,7 @@ e_Ref _ecru_vm_execute(ecru_stackframe *stackframe,
         script = scripts[scriptIdx];
         frameSize = script->num_slots;
         newFrame = e_malloc(frameSize * sizeof *newFrame);
-        objdata->module = module;
-        objdata->scriptNum = scriptIdx;
-        objdata->frame = newFrame;
-        obj.script = &e__vmObject_script;
-        obj.data.other = objdata;
-
+        obj = e_make_vmobject(module, scriptIdx, newFrame);
         if (op == OP_BINDOBJECT) {
           int localIdx = NEXT_CODEBYTE();
           locals[localIdx] = e_make_finalslot(obj);
