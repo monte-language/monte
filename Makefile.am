@@ -1,7 +1,7 @@
 # -*- fill-column: 72 -*-
 AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = -I build-aux/m4
-EXTRA_DIST = CREDITS DEPENDENCIES build-aux/checkmk
+EXTRA_DIST = CREDITS DEPENDENCIES NEWS build-aux/checkmk
 ecrudir = $(libdir)/ecru
 AM_CPPFLAGS = $(GLIB_CFLAGS) -DECRU_BYTECODE_DIR='"$(ecrudir)"' -I$(top_srcdir)/include
 lib_LTLIBRARIES = libecru.la
@@ -34,7 +34,7 @@ include_HEADERS = include/boolobject.h include/bytecode_loader.h	\
 	include/problemobject.h include/ref.h include/ref_private.h	\
 	include/safescope.h include/scope.h include/setobject.h		\
 	include/slotobject.h include/streamobject.h			\
-	include/stringobject.h include/vm.h
+	include/stringobject.h include/vm.h include/vat.h
 
 dist_ecru_DATA = bootstrap/com.twistedmatrix.ecru.bytecodeDumper.ec	\
 	bootstrap/com.twistedmatrix.ecru.compiler.ec			\

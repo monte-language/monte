@@ -1,4 +1,4 @@
-Ecru 0.1.0
+Ecru 0.1.3
 
 What is this?
 =============
@@ -52,7 +52,7 @@ How can I try it out?
 =====================
 
   Ecru currently includes a frontend written in Python that provides a simple
-  REPL, located in scripts/ecru. 
+  REPL, located in scripts/ecru.
 
   The E script in scripts/compile.e accepts E source on stdin and outputs
   bytecode on stdout. The 'ecru_driver' executable compiled by the default make
