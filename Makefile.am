@@ -77,15 +77,16 @@ test_vat_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 check_PROGRAMS = test_vm test_elib test_invoke test_bytecode_loader	\
                  test_ref test_same test_guards test_vat
 
-ecru_SOURCES = src/driver.c
-ecru_LDADD = @GLIB_LIBS@ libecru.la
-bin_PROGRAMS = ecru
-dist_bin_SCRIPTS = scripts/compile.e scripts/monte
+ecru_driver_SOURCES = src/driver.c
+ecru_driver_LDADD = @GLIB_LIBS@ libecru.la
+bin_PROGRAMS = ecru_driver
+dist_bin_SCRIPTS = scripts/compile.e scripts/ecru
 CLEANFILES = src/tests/test_elib.c src/tests/test_vm.c			\
              src/tests/test_invoke.c src/tests/test_bytecode_loader.c
 TESTS = $(check_PROGRAMS)
 
 montedir = $(pythondir)/monte
+monte_testdir = $(pythondir)/monte/test
 pymetadir = $(pythondir)/pymeta
 pymeta_PYTHON = pysrc/pymeta/__init__.py pysrc/pymeta/boot.py	\
                 pysrc/pymeta/builder.py pysrc/pymeta/grammar.py	\
@@ -93,6 +94,11 @@ pymeta_PYTHON = pysrc/pymeta/__init__.py pysrc/pymeta/boot.py	\
 monte_PYTHON = pysrc/monte/__init__.py pysrc/monte/api.py	\
                pysrc/monte/eparser.py pysrc/monte/nodes.py	\
                pysrc/monte/structlike.py
+monte_test_PYTHON = pysrc/monte/test/__init__.py	\
+               pysrc/monte/test/test_api.py		\
+               pysrc/monte/test/test_expander.py	\
+               pysrc/monte/test/test_eparser.py
+
 monte_LTLIBRARIES = bridge.la
 bridge_la_SOURCES = src/monte_bridge.c
 bridge_la_LDFLAGS = -avoid-version -module

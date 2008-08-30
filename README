@@ -27,14 +27,13 @@ What is this?
   - All the objects required by 0.9 syntax expansion (except TypeDesc and
     MessageDesc).
 
-  Notable unimplemented features at this point include:
+  - Vats support message queuing and turn execution.
 
-  - Full Equalizer implementation, comparing Selfless objects (other than
-    ConstLists) properly.
+  Notable unimplemented features at this point include:
 
   - Message buffering on Promises.
 
-  - Vats. Currently everything effectively occurs within a single turn.
+  - Most of the methods on 'E' or 'Ref'.
 
   - Any quasiparser other than simple__quasiParser.
 
@@ -43,19 +42,21 @@ How do I install it?
 ====================
   First, install the packages named in DEPENDENCIES.  Ecru uses Autotools, so
   the standard './configure', 'make', 'make install' procedure should be all
-  you need. 'make check' will run the C unit tests.  See the included standard
-  Autotools INSTALL document for details.
+  you need. 'make check' will run the C unit tests.  'trial monte.test' (if you
+  have Twisted's "trial" unit test tool installed) will run the Python unit
+  tests. See the included standard Autotools INSTALL document for further
+  installation details.
 
 
 How can I try it out?
 =====================
 
   Ecru currently includes a frontend written in Python that provides a simple
-  REPL, located in scripts/monte.
+  REPL, located in scripts/ecru. 
 
   The E script in scripts/compile.e accepts E source on stdin and outputs
-  bytecode on stdout. The 'ecru' executable compiled by the default make rule
-  accepts bytecode on stdin and runs it.
+  bytecode on stdout. The 'ecru_driver' executable compiled by the default make
+  rule accepts bytecode on stdin and runs it.
 
 
 Where can I find more information?
