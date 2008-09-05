@@ -1,5 +1,7 @@
 #include "elib.h"
 
+e_Selector op__cmp, belowZero, atMostZero, isZero, atLeastZero, aboveZero;
+
 e_Ref e_compare(e_Ref self, e_Ref *args) {
   return e_call_1(args[0], &op__cmp, args[1]);
 }

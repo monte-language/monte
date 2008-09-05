@@ -243,7 +243,7 @@ static e_Ref refObject_fulfillment(e_Ref self, e_Ref *args) {
     return e_ref_target(args[0]);
   }
 }
-
+e_Script refObject_script;
 e_Method refObject_methods[] = {{"promise/0", refObject_promise},
                                 {"isResolved/1", refObject_isResolved},
                                 {"fulfillment/1", refObject_fulfillment},

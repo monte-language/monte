@@ -3,7 +3,7 @@
 extern e_Script e__SwitchableRef_script;
 extern e_Script e__LocalResolver_script;
 extern e_Script e__UnconnectedRef_script;
-e_Script refObject_script;
+extern e_Script refObject_script;
 e_def_type_predicate(e_is_SwitchableRef, e__SwitchableRef_script);
 e_def_type_predicate(e_is_LocalResolver, e__LocalResolver_script);
 e_def_type_predicate(e_is_UnconnectedRef, e__UnconnectedRef_script);

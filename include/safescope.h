@@ -9,7 +9,7 @@ extern e_Ref e_equalizer;
 extern e_Script e__equalizer_script;
 extern e_Method equalizer_methods[];
 
-e_Selector op__cmp, belowZero, atMostZero, isZero, atLeastZero, aboveZero;
+extern e_Selector op__cmp, belowZero, atMostZero, isZero, atLeastZero, aboveZero;
 
 /// The safe-scope object for performing comparisons.
 extern e_Ref e_comparer;
