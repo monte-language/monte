@@ -20,6 +20,7 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.14 gio-2.0 >= 0.1.2 gio-unix-2.0 >= 0.1
 PKG_CHECK_EXISTS([gio-2.0 >= 2.15 gio-unix-2.0 >= 2.15],
                            [AC_DEFINE([OLD_GIO], [0], [])],
                            [AC_DEFINE([OLD_GIO], [1], [])])
+AC_CHECK_HEADERS([python2.5/Python.h], [], [AC_MSG_ERROR([cannot find usable Python headers])])
 AM_PATH_PYTHON([2.5])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
