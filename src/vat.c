@@ -99,6 +99,8 @@ _Bool e_vat_execute_turn(e_Ref vat) {
     if (r->function != NULL) {
       r->function(r->vat, r->data);
     }
+  }
+  if (g_async_queue_length(data->messageQueue) > 0) {
     return true;
   } else {
     return false;

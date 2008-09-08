@@ -386,3 +386,26 @@ class EvalTest(unittest.TestCase):
        self.assertEvaluatesTo("stdout.indent(\"yay> \").println([1, 2])",
                               "null")
 
+    def test_esendonly(self):
+        """
+        C{E.sendOnly} delivers a message to an object, eventually.
+        """
+        [res, newScope] = api.eval("def x := [].diverge()",
+                                   api.e_privilegedScope)
+        [res2, scope2] = api.eval('E.sendOnly(x, "push", [1])',
+                                  newScope)
+        [res3, scope3] = api.eval('x', scope2)
+        self.assertEqual(res3.strip(), "[1].diverge()")
+
+
+    def test_esend(self):
+        """
+        C{E.send} delivers a message to an object, eventually, and returns a
+        promise which resolves to the result.
+        """
+        [res, newScope] = api.eval("def x := []",
+                                   api.e_privilegedScope)
+        [res2, scope2] = api.eval('def y := E.send(x, "with", [1])',
+                                  newScope)
+        [res3, scope3] = api.eval('y == [1]', scope2)
+        self.assertEqual(res3.strip(), "true")

@@ -161,10 +161,8 @@ void fake_runnable(e_Ref vat, void *data) {
   e_vat_set_active(v);
   e_vat_send(v, obj, &add, &arg, v2, resolver);
   fail_unless(g_async_queue_length(vat->messageQueue) == 1);
-  fail_unless(e_vat_execute_turn(v));
   fail_if(e_vat_execute_turn(v));
   fail_unless(g_async_queue_length(vat2->messageQueue) == 1);
-  fail_unless(e_vat_execute_turn(v2));
   fail_if(e_vat_execute_turn(v2));
   fail_unless(e_same(e_ref_target(result), e_make_fixnum(7)));
 }

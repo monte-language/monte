@@ -394,11 +394,15 @@ static void do_interactive_turn(e_Ref vat, void *x) {
   e_Ref res = ecru_vm_execute(0, 0, 0, NULL, data->module,
                                  NULL, 0, &stackp);
   e_Ref w = e_make_string_writer();
-  e_Ref maybeVal = e_call_1(THE_REF, &fulfillment, res);
-  if (maybeVal.script == NULL) {
-    e_println(w, e_thrown_problem());
+  if (e_ref_state(res) == EVENTUAL) {
+    e_println(w, e_make_string("<Promise>"));
   } else {
-    e_println(w, maybeVal);
+    e_Ref maybeVal = e_call_1(THE_REF, &fulfillment, res);
+    if (maybeVal.script == NULL) {
+      e_println(w, e_thrown_problem());
+    } else {
+      e_println(w, maybeVal);
+    }
   }
   e_Ref result = e_string_writer_get_string(w);
   e_Ref numLocals = e_call_0(data->nameList, &size);
