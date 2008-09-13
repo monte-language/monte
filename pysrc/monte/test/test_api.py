@@ -409,3 +409,24 @@ class EvalTest(unittest.TestCase):
                                   newScope)
         [res3, scope3] = api.eval('y == [1]', scope2)
         self.assertEqual(res3.strip(), "true")
+
+    def test_eSendOnlyBuffering(self):
+        """
+        C{E.sendOnly} messages get buffered until resolution.
+        """
+        [res, sc] = api.eval("def x", api.e_privilegedScope)
+        [res2, sc2] = api.eval("x <- push(3)", sc)
+        [res3, sc3] = api.eval("bind x := [].diverge()", sc2)
+        [res4, sc4] = api.eval("x.snapshot() == [3]", sc3)
+        self.assertEqual(res4.strip(), "true")
+
+    def test_eSendBuffering(self):
+        """
+        C{E.sendOnly} messages get buffered until resolution, and returns
+        promises for send results.
+        """
+        [res, sc] = api.eval("def x", api.e_privilegedScope)
+        [res2, sc2] = api.eval("def y := x <- with(3)", sc)
+        [res3, sc3] = api.eval("bind x := []", sc2)
+        [res4, sc4] = api.eval("y", sc3)
+        self.assertEqual(res4.strip(), "[3]")

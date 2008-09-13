@@ -75,13 +75,61 @@ void teardown(void) {
   e_call_1(resolver2, &resolve, obj);
   e_call_1(resolver, &resolve, sRef2);
   ref = sRef.data.other;
-  fail_unless(e_same(ref->myTarget, obj));
+  fail_unless(e_same(ref->target, obj));
 }
 
-#test buffering
+#test buffering_sendOnly
 {
   // Messages sent to unresolved refs should be buffered.
+  e_Selector sendOnly, size, get;
+  e_Ref arglist, ref2, target, val;
+  e_Ref v = e_make_vat(e_null, "test");
+  e_vat_set_active(v);
+  e_make_selector(&sendOnly, "sendOnly", 3);
+  e_make_selector(&size, "size", 0);
+  e_make_selector(&get, "get", 1);
+  val = e_make_fixnum(17);
+  arglist = e_constlist_from_array(1, &val);
+  target = e_flexlist_from_array(0, NULL);
+  e_Ref sendOnlyArgs[] = { sRef, e_make_string("push"), arglist};
+  ref2 = e_call(THE_E, &sendOnly, sendOnlyArgs);
+  fail_unless(e_eq(ref2, e_null));
+  e_call_1(resolver, &resolve, target);
+  fail_unless(e_eq(e_call_0(target, &size), e_make_fixnum(0)));
+  while (e_vat_execute_turn(v)) {};
+  fail_unless(e_eq(e_call_0(target, &size), e_make_fixnum(1)));
+  e_Ref val2 = e_call_1(arglist, &get, e_make_fixnum(0));
+  e_Ref eqargs[] = {val2, val};
+  fail_unless(e_eq(e_sameEver(e_equalizer, eqargs), e_true));
 }
+
+
+#test buffering_send
+{
+  /** Messages sent to unresolved refs should return promises that resolve to
+      the result of the send. */
+  e_Selector send, size, get;
+  e_Ref arglist, ref2, target, val;
+  e_Ref v = e_make_vat(e_null, "test");
+  e_vat_set_active(v);
+  e_make_selector(&send, "send", 3);
+  e_make_selector(&size, "size", 0);
+  e_make_selector(&get, "get", 1);
+  val = e_make_fixnum(17);
+  arglist = e_constlist_from_array(1, &val);
+  target = e_make_fixnum(21);
+  e_Ref sendArgs[] = { sRef, e_make_string("add"), arglist};
+  ref2 = e_call(THE_E, &send, sendArgs);
+  e_vat_execute_turn(v);
+  fail_unless(e_ref_state(ref2) == EVENTUAL);
+  e_call_1(resolver, &resolve, e_make_fixnum(4));
+  fail_unless(e_ref_state(ref2) == EVENTUAL);
+  while (e_vat_execute_turn(v)) {};
+  fail_unless(e_ref_state(ref2) == NEAR);
+  e_Ref eqargs[] = {ref2, target};
+  fail_unless(e_eq(e_sameEver(e_equalizer, eqargs), e_true));
+}
+
 
 #test smash
 {

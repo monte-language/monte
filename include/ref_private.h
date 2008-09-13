@@ -9,23 +9,21 @@ e_def_type_predicate(e_is_LocalResolver, e__LocalResolver_script);
 e_def_type_predicate(e_is_UnconnectedRef, e__UnconnectedRef_script);
 
 typedef struct bufferedMessage {
+  e_Ref vat;
+  e_Ref resolver;
   e_Selector *selector;
   e_Ref *args;
+  struct bufferedMessage *next;
 } bufferedMessage;
 
-typedef struct messageBuffer {
-  bufferedMessage *head;
-  bufferedMessage *tail;
-} messageBuffer;
-
 typedef struct SwitchableRef_data {
-  e_Ref myTarget;
-  _Bool myIsSwitchable;
+  e_Ref target;
+  _Bool switchable;
+  bufferedMessage *messages;
 } SwitchableRef_data;
 
 typedef struct LocalResolver_data {
   e_Ref myRef;
-  messageBuffer *buf;
 } LocalResolver_data;
 
 #endif

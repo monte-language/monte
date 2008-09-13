@@ -327,6 +327,7 @@ e_make_selector (e_Selector *selector, const char *verb, int arity)
 {
   selector->verb = e_mangle (verb, arity);
   selector->arity = arity;
+  selector->eventual = false;
 }
 /// Get the verb from this selector as an E string.
 e_Ref e_selector_verb(e_Selector *selector) {

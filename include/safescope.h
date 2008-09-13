@@ -8,7 +8,7 @@ _Bool e_same(e_Ref ref1, e_Ref ref2);
 extern e_Ref e_equalizer;
 extern e_Script e__equalizer_script;
 extern e_Method equalizer_methods[];
-
+extern e_Ref e_sameEver(e_Ref self, e_Ref *args);
 extern e_Selector op__cmp, belowZero, atMostZero, isZero, atLeastZero, aboveZero;
 
 /// The safe-scope object for performing comparisons.

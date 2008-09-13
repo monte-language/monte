@@ -80,6 +80,7 @@ extern e_Method no_methods[];
 struct e_Selector {
   const char *verb;
   int arity;			/**< Redundantly held for convenience */
+  _Bool eventual; /**< True if created by E.send/E.sendOnly */
   /** TODO: enative has stuff here for call-site caching, etc. */
 };
 

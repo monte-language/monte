@@ -40,6 +40,7 @@ static e_Ref e_sendOnly(e_Ref self, e_Ref *args) {
   Flexlist_data *arglist = newargs.data.other;
   e_Selector *sel = e_malloc(sizeof *sel);
   e_make_selector(sel, verb.data.gstring->str, arglist->size);
+  sel->eventual = true;
   e_vat_sendOnly(e_current_vat(), receiver, sel, arglist->elements);
   return e_null;
 }
@@ -53,6 +54,7 @@ static e_Ref e_send(e_Ref self, e_Ref *args) {
   Flexlist_data *arglist = newargs.data.other;
   e_Selector *sel = e_malloc(sizeof *sel), get;
   e_make_selector(sel, verb.data.gstring->str, arglist->size);
+  sel->eventual = true;
   e_make_selector(&get, "get", 1);
   e_Ref ppair = e_make_promise_pair();
   e_Ref result = e_call_1(ppair, &get, e_make_fixnum(0));
