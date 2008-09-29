@@ -84,6 +84,13 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   return e_make_fixnum(3);
 }
 
+
+e_Ref result = {.script = &e__null_script, .data.other = NULL};
+e_Ref stubreactor_run(e_Ref self, e_Ref *args) {
+  result = args[0];
+  return e_null;
+}
+
 #test type_predicate
 {
   /// Test that e_def_type_predicate produces a function that correctly identifies objects with the given script.
@@ -246,7 +253,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
 {
   // Tests basic methods that all objects respond to.
   e_Method test_methods[] = {{"three/0", test_method_three}, {NULL}};
-  e_Selector respondsTo, order, whenBroken, whenMoreResolved, optSealedDispatch,
+  e_Selector respondsTo, order, whenBroken, optSealedDispatch,
     conformTo, printOn, optUncall, getAllegedType, reactToLostClient;
   e_make_selector(&respondsTo, "__respondsTo", 2);
   e_make_selector(&order, "__order", 2);
@@ -256,9 +263,7 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   e_make_selector(&conformTo, "__conformTo", 1);
   e_make_selector(&printOn, "__printOn", 1);
   e_make_selector(&optUncall, "__optUncall", 0);
-
-  //XXX needs send support
-  // e_make_selector(&whenMoreResolved, "__whenMoreResolved", 1);
+ 
   //XXX needs type objects
   // e_make_selector(&getAllegedType, "__getAllegedType", 0);
 
@@ -292,6 +297,26 @@ e_Ref test_method_three(e_Ref self, e_Ref *args) {
   fail_unless(e_same(e_call_0(obj, &optUncall), e_null));
 }
 
+#test whenMoreResolved
+{
+  e_Script stubreactor_script;
+  e_Method stubreactor_methods[] = {{"run/1", stubreactor_run},  {NULL}};
+  e_Selector whenMoreResolved;
+  e_make_script(&stubreactor_script, NULL, stubreactor_methods, NULL,
+                "stubReactor");
+  e_make_selector(&whenMoreResolved, "__whenMoreResolved", 1);
+  e_make_script(&test_script, NULL, test_methods, NULL, "testObject");
+  e_Ref obj, callback;
+  callback.script = &stubreactor_script;
+  obj.script = &test_script;
+  e_Ref v = e_make_vat(e_null, "vat");
+  e_vat_set_active(v);
+  e_vat_sendOnly(v, obj, &whenMoreResolved, &callback);
+  fail_unless(e_vat_execute_turn(v));
+  fail_unless(e_eq(result, e_null));
+  fail_if(e_vat_execute_turn(v));
+  fail_unless(e_eq(result, obj));
+}
 
 #main-pre
 {
