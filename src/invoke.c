@@ -14,7 +14,7 @@ GStaticPrivate e_thrown_problem_key = G_STATIC_PRIVATE_INIT;
 GStaticPrivate e_ejected_value_key = G_STATIC_PRIVATE_INIT;
 GStaticPrivate e_ejector_counter_key = G_STATIC_PRIVATE_INIT;
 
-e_Selector respondsTo, order, whenBroken, whenMoreResolved,
+e_Selector respondsTo, order, whenBroken, whenMoreResolved, run1,
            optSealedDispatch, conformTo, printOn, optUncall,
            getAllegedType, reactToLostClient, E_AUDITED_BY;
 
@@ -87,12 +87,10 @@ e_Ref e_ejectOrThrow(e_Ref optEjector, const char *complaint, e_Ref irritant) {
 }
 
 e_Ref e_ejectOrThrow_problem(e_Ref optEjector, e_Ref problem) {
-  e_Selector do_run;
   if (e_is_null(optEjector)) {
     return e_throw(problem);
   }
-  e_make_selector(&do_run, "run", 1);
-  e_Ref val = e_call_1(optEjector, &do_run, problem);
+  e_Ref val = e_call_1(optEjector, &run1, problem);
   E_ERROR_CHECK(val);
   return e_throw_pair("optEjector returned:", e_null);//XXX printOn for ejectors
 }
@@ -237,6 +235,13 @@ static e_Ref miranda_printOn(e_Ref self, e_Ref *args) {
   return e_print(args[0], e_make_string(">"));
 }
 
+static e_Ref miranda_whenMoreResolved(e_Ref self, e_Ref *args) {
+  e_Ref *sendargs = e_malloc(sizeof *sendargs);
+  *sendargs = self;
+  e_vat_sendOnly(e_current_vat(), args[0], &run1, sendargs);
+  return e_null;
+}
+
 /** The default implementation of auditor approval checking. This method cannot
     be called from E, but is only invoked by Ecru internals. */
 static e_Ref miranda_auditedBy(e_Ref self, e_Ref *args) {
@@ -254,6 +259,8 @@ static e_Ref miranda_auditedBy(e_Ref self, e_Ref *args) {
   }
 }
 
+/* Remember that when you add miranda methods you have to change
+   E_NUM_MIRANDA_METHODS. */
 e_Method e_miranda_methods[] = {
   {"__respondsTo/2", miranda_respondsTo},
   {"__order/2", miranda_order},
@@ -263,6 +270,7 @@ e_Method e_miranda_methods[] = {
   {"__optUncall/0", miranda_optUncall},
   {"__conformTo/1", miranda_conformTo},
   {"__printOn/1", miranda_printOn},
+  {"__whenMoreResolved/1", miranda_whenMoreResolved},
   {"audited-by-magic-verb", miranda_auditedBy},
   {NULL}};
 
@@ -347,6 +355,7 @@ void e__miranda_set_up() {
   e_make_selector(&conformTo, "__conformTo", 1);
   e_make_selector(&printOn, "__printOn", 1);
   e_make_selector(&whenMoreResolved, "__whenMoreResolved", 1);
+  e_make_selector(&run1, "run", 1);
   e_make_selector(&getAllegedType, "__getAllegedType", 0);
   e_make_selector(&optUncall, "__optUncall", 0);
   for (int i = 0; i < E_NUM_MIRANDA_METHODS; i++) {

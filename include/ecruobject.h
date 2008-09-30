@@ -106,7 +106,7 @@ e_Ref otherwise_miranda_methods(e_Ref self, e_Selector *selector, e_Ref *args);
 
 /// The array of default Miranda method implementations.
 extern e_Method e_miranda_methods[];
-#define E_NUM_MIRANDA_METHODS 9
+#define E_NUM_MIRANDA_METHODS 10
 
 extern e_Ref e_empty_ref;
 
