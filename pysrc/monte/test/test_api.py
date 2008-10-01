@@ -430,3 +430,14 @@ class EvalTest(unittest.TestCase):
         [res3, sc3] = api.eval("bind x := []", sc2)
         [res4, sc4] = api.eval("y", sc3)
         self.assertEqual(res4.strip(), "[3]")
+
+    def test_whenResolved(self):
+        """
+        C{Ref.whenResolved(p, callback)} runs the callback when p resolves.
+        """
+        [res, sc] = api.eval("def x; def y := [0].diverge()", api.e_privilegedScope)
+        [res2, sc2] = api.eval("def r := Ref.whenResolved(x, fn z { y[0] := z})",
+                               sc)
+        [res3, sc3] = api.eval("bind x := 1", sc2)
+        [res4, sc4] = api.eval("[y[0], r]", sc3)
+        self.assertEqual(res4.strip(), "[1, 1]")

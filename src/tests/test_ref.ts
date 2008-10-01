@@ -5,7 +5,8 @@
 #include "ref.h"
 #include "ref_private.h"
 
-e_Ref sRef, resolver;
+e_Ref sRef, resolver, callback, callbackTarget;
+e_Script callbackScript;
 e_Selector isResolved, resolve, size, get, fulfillment;
 void setup(void) {
   e_set_up();
@@ -23,6 +24,17 @@ void setup(void) {
 
 void teardown(void) {
 }
+
+e_Ref callback_run(e_Ref self, e_Ref *args) {
+  callbackTarget = args[0];
+  return e_make_fixnum(17);
+}
+
+e_Method callback_methods[] = {
+  {"run/1", callback_run},
+  {NULL}
+};
+
 
 #test existence
 {
@@ -168,6 +180,30 @@ void teardown(void) {
   fail_unless(q.script == NULL);
   e_Ref prob = e_thrown_problem();
   fail_unless(e_same(prob, p));
+}
+
+#test whenResolved
+{
+  /** Ref.whenResolved/2 invokes the second arg as a callback when its first
+      arg changes resolution state. */
+  e_Selector whenResolved;
+  e_make_selector(&whenResolved, "whenResolved", 2);
+  e_make_script(&callbackScript, NULL, callback_methods, NULL,
+                "callbackObject");
+  callback.script = &callbackScript;
+  callbackTarget = e_null;
+  e_Ref v = e_make_vat(e_null, "test");
+  e_vat_set_active(v);
+  e_Ref p = e_call_2(THE_REF, &whenResolved, sRef, callback);
+  fail_if(p.script == NULL);
+  e_vat_execute_turn(v);
+  fail_unless(e_ref_state(p) == EVENTUAL);
+  e_call_1(resolver, &resolve, e_make_fixnum(1));
+  fail_if(e_same(callbackTarget, e_make_fixnum(1)));
+  e_vat_execute_turn(v);
+  e_vat_execute_turn(v);
+  fail_unless(e_same(e_ref_target(callbackTarget), e_make_fixnum(1)));
+  fail_unless(e_same(e_ref_target(p), e_make_fixnum(17)));
 }
 
 #main-pre

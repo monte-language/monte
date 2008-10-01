@@ -271,10 +271,71 @@ static e_Ref refObject_fulfillment(e_Ref self, e_Ref *args) {
     return e_ref_target(args[0]);
   }
 }
+
+static e_Script whenResolvedReactor_script;
+e_Ref make_whenResolvedReactor(e_Ref callback, e_Ref ref, e_Ref optResolver) {
+  e_Ref *wrData = e_malloc(4 * sizeof *wrData);
+  wrData[0] = callback;
+  wrData[1] = ref;
+  wrData[2] = optResolver;
+  wrData[3] = e_false;
+  e_Ref wr = {.script = &whenResolvedReactor_script, .data.refs = wrData};
+  return wr;
+}
+
+e_Ref whenResolvedReactor_run(e_Ref self, e_Ref *args) {
+  if (e_eq(self.data.refs[3], e_true)) {
+    return e_null;
+  }
+  e_Ref callback = self.data.refs[0], ref = self.data.refs[1],
+    optResolver = self.data.refs[2];
+  if (e_eq(e_ref_isResolved(ref), e_true)) {
+    e_Selector run1, resolve;
+    e_make_selector(&resolve, "resolve", 1);
+    e_make_selector(&run1, "run", 1);
+    e_Ref outcome = e_call_1(callback, &run1, ref);
+    if (outcome.script == NULL) {
+      outcome = e_make_broken_promise(e_thrown_problem());
+    }
+    if (!e_same(optResolver, e_null)) {
+      e_call_1(optResolver, &resolve, outcome);
+    }
+    self.data.refs[0] = e_null;
+    self.data.refs[1] = e_null;
+    self.data.refs[2] = e_null;
+    self.data.refs[3] = e_true;
+  } else {
+    e_Ref *newargs = e_malloc(sizeof *newargs);
+    *newargs = self;
+    e_vat_sendOnly(e_current_vat(), ref, &whenMoreResolved_ev, newargs);
+  }
+  return e_null;
+}
+
+static e_Method whenResolvedReactor_methods[] = {{"run/1", whenResolvedReactor_run},
+                                         {NULL},
+};
+
+
+static e_Ref refObject_whenResolved(e_Ref self, e_Ref *args) {
+  e_Selector get;
+  e_make_selector(&get, "get", 1);
+  e_Ref ppair = e_make_promise_pair();
+  e_Ref result = e_call_1(ppair, &get, e_make_fixnum(0));
+  e_Ref resolver = e_call_1(ppair, &get, e_make_fixnum(1));
+  e_Ref ref = args[0], callback = args[1];
+  e_Ref wrr = make_whenResolvedReactor(callback, ref, resolver);
+  e_Ref *newargs = e_malloc(sizeof *args);
+  *newargs = wrr;
+  e_vat_sendOnly(e_current_vat(), ref, &whenMoreResolved_ev, newargs);
+  return result;
+}
+
 e_Script refObject_script;
 e_Method refObject_methods[] = {{"promise/0", refObject_promise},
                                 {"isResolved/1", refObject_isResolved},
                                 {"fulfillment/1", refObject_fulfillment},
+                                {"whenResolved/2", refObject_whenResolved},
                                 {NULL, NULL}};
 
 void e__ref_set_up() {
@@ -284,6 +345,8 @@ void e__ref_set_up() {
                 NULL, "LocalResolver");
   e_make_script(&e__UnconnectedRef_script, NULL, UnconnectedRef_methods,
                 NULL, "UnconnectedRef");
+  e_make_script(&whenResolvedReactor_script, NULL, whenResolvedReactor_methods,
+                NULL, "WhenResolvedReactor");
   TheViciousRef = e_make_broken_promise(e_make_string("Caught in a forwarding loop"));
   e_make_script(&refObject_script, NULL, refObject_methods,
                 NULL, "Ref");

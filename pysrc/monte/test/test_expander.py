@@ -1,6 +1,6 @@
 from twisted.trial import unittest
 from monte.eparser import EParser
-from monte.nodes import KernelENodeCopier, ParseError, SubNode
+from monte.nodes import ParseError, SubNode
 
 class ExpanderTest(unittest.TestCase):
 
@@ -990,3 +990,4 @@ class ExpanderTest(unittest.TestCase):
                                     None],
                                    ["NounExpr", "z"]]]],
                                []]]]]])
+

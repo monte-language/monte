@@ -5,8 +5,9 @@
 #define ELIB_PRIVATE_H
 
 extern e_Selector respondsTo, order, whenBroken, whenMoreResolved,
-                  optSealedDispatch, conformTo, printOn, optUncall,
-                  getAllegedType, reactToLostClient, E_AUDITED_BY;
+                  whenMoreResolved_ev, optSealedDispatch, conformTo,
+                  printOn, optUncall, getAllegedType, reactToLostClient,
+                  E_AUDITED_BY;
 
 extern char e__setup_done;
 

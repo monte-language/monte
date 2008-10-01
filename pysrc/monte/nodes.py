@@ -1702,7 +1702,7 @@ class KernelTry(record("tryblock pattern catchblock"), Node):
     def computeStaticScope(self):
         s = self.tryblock.staticScope()
         p = self.pattern.staticScope()
-        c = self.catchblock().staticScope()
+        c = self.catchblock.staticScope()
         return s.hide().add(p.add(c)).hide()
 
     def expand(self):
