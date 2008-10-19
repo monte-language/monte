@@ -206,6 +206,33 @@ e_Method callback_methods[] = {
   fail_unless(e_same(e_ref_target(p), e_make_fixnum(17)));
 }
 
+#test whenBroken
+{
+  /** Ref.whenBroken/2 invokes its second arg as a callback when its
+      first arg becomes broken. */
+  e_Selector whenBroken;
+  e_make_selector(&whenBroken, "whenBroken", 2);
+
+  e_make_script(&callbackScript, NULL, callback_methods, NULL,
+                "callbackObject");
+  callback.script = &callbackScript;
+  callbackTarget = e_null;
+  e_Ref v = e_make_vat(e_null, "test");
+  e_vat_set_active(v);
+  e_Ref p = e_call_2(THE_REF, &whenBroken, sRef, callback);
+  fail_if(p.script == NULL);
+  e_vat_execute_turn(v);
+  fail_unless(e_ref_state(p) == EVENTUAL);
+  e_Ref s = e_make_string("uh oh");
+  e_resolver_smash(resolver, s);
+  fail_if(e_same(callbackTarget, s));
+  e_vat_execute_turn(v);
+  e_vat_execute_turn(v);
+  fail_unless(e_ref_target(callbackTarget).script == &e__UnconnectedRef_script);
+  fail_unless(e_same(e_ref_target(callbackTarget).data.refs[0], s));
+  fail_unless(e_same(e_ref_target(p), e_make_fixnum(17)));
+}
+
 #main-pre
 {
   tcase_add_checked_fixture(tc1_1, setup, teardown);

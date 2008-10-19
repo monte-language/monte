@@ -3,6 +3,7 @@
 #include "elib_private.h"
 
 e_Ref TheViciousRef, THE_REF;
+e_Selector run1;
 
 
 /** Produce a broken promise, i.e. one that throws its problem on every message
@@ -158,6 +159,15 @@ static e_Method LocalResolver_methods[] = {
   {NULL}
 };
 
+e_Ref brokenRef_dispatch(e_Ref self, e_Selector *sel, e_Ref *args) {
+  if (sel->verb == whenBroken.verb || sel->verb == whenMoreResolved.verb) {
+    e_Ref *sendargs = e_malloc(sizeof *sendargs);
+    *sendargs = self;
+    e_vat_sendOnly(e_current_vat(), args[0], &run1, sendargs);
+  }
+  return self;
+}
+
 e_Script e__UnconnectedRef_script;
 static e_Method UnconnectedRef_methods[] = {
   {NULL}
@@ -290,9 +300,8 @@ e_Ref whenResolvedReactor_run(e_Ref self, e_Ref *args) {
   e_Ref callback = self.data.refs[0], ref = self.data.refs[1],
     optResolver = self.data.refs[2];
   if (e_eq(e_ref_isResolved(ref), e_true)) {
-    e_Selector run1, resolve;
+    e_Selector resolve;
     e_make_selector(&resolve, "resolve", 1);
-    e_make_selector(&run1, "run", 1);
     e_Ref outcome = e_call_1(callback, &run1, ref);
     if (outcome.script == NULL) {
       outcome = e_make_broken_promise(e_thrown_problem());
@@ -331,11 +340,82 @@ static e_Ref refObject_whenResolved(e_Ref self, e_Ref *args) {
   return result;
 }
 
+static e_Script whenBrokenReactor_script;
+e_Ref make_whenBrokenReactor(e_Ref callback, e_Ref ref, e_Ref optResolver) {
+  e_Ref *wrData = e_malloc(4 * sizeof *wrData);
+  wrData[0] = callback;
+  wrData[1] = ref;
+  wrData[2] = optResolver;
+  wrData[3] = e_false;
+  e_Ref wr = {.script = &whenBrokenReactor_script, .data.refs = wrData};
+  return wr;
+}
+
+e_Ref whenBrokenReactor_run(e_Ref self, e_Ref *args) {
+  if (e_eq(self.data.refs[3], e_true)) {
+    return e_null;
+  }
+  e_Ref callback = self.data.refs[0], ref = self.data.refs[1],
+    optResolver = self.data.refs[2];
+  switch (e_ref_state(ref)) {
+  case BROKEN:
+    {
+      e_Selector resolve;
+      e_make_selector(&resolve, "resolve", 1);
+      e_Ref outcome = e_call_1(callback, &run1, ref);
+      if (outcome.script == NULL) {
+        outcome = e_make_broken_promise(e_thrown_problem());
+      }
+      if (!e_same(optResolver, e_null)) {
+        e_call_1(optResolver, &resolve, outcome);
+      }
+    }
+      // fallthru
+  case NEAR:
+    self.data.refs[0] = e_null;
+    self.data.refs[1] = e_null;
+    self.data.refs[2] = e_null;
+    self.data.refs[3] = e_true;
+    break;
+  case EVENTUAL:
+    {
+      e_Ref *newargs = e_malloc(sizeof *newargs);
+      *newargs = self;
+      e_vat_sendOnly(e_current_vat(), ref, &whenMoreResolved_ev, newargs);
+    }
+    break;
+  default:
+    break;
+  }
+  return e_null;
+}
+
+static e_Method whenBrokenReactor_methods[] = {
+  {"run/1", whenBrokenReactor_run},
+  {NULL},
+};
+
+
+static e_Ref refObject_whenBroken(e_Ref self, e_Ref *args) {
+  e_Selector get;
+  e_make_selector(&get, "get", 1);
+  e_Ref ppair = e_make_promise_pair();
+  e_Ref result = e_call_1(ppair, &get, e_make_fixnum(0));
+  e_Ref resolver = e_call_1(ppair, &get, e_make_fixnum(1));
+  e_Ref ref = args[0], callback = args[1];
+  e_Ref wbr = make_whenBrokenReactor(callback, ref, resolver);
+  e_Ref *newargs = e_malloc(sizeof *args);
+  *newargs = wbr;
+  e_vat_sendOnly(e_current_vat(), ref, &whenBroken_ev, newargs);
+  return result;
+}
+
 e_Script refObject_script;
 e_Method refObject_methods[] = {{"promise/0", refObject_promise},
                                 {"isResolved/1", refObject_isResolved},
                                 {"fulfillment/1", refObject_fulfillment},
                                 {"whenResolved/2", refObject_whenResolved},
+                                {"whenBroken/2", refObject_whenBroken},
                                 {NULL, NULL}};
 
 void e__ref_set_up() {
@@ -343,13 +423,16 @@ void e__ref_set_up() {
                 SwitchableRef_methods, NULL, "SwitchableRef");
   e_make_script(&e__LocalResolver_script, NULL, LocalResolver_methods,
                 NULL, "LocalResolver");
-  e_make_script(&e__UnconnectedRef_script, NULL, UnconnectedRef_methods,
+  e_make_script(&e__UnconnectedRef_script, brokenRef_dispatch, UnconnectedRef_methods,
                 NULL, "UnconnectedRef");
   e_make_script(&whenResolvedReactor_script, NULL, whenResolvedReactor_methods,
                 NULL, "WhenResolvedReactor");
+  e_make_script(&whenBrokenReactor_script, NULL, whenBrokenReactor_methods,
+                NULL, "WhenBrokenReactor");
   TheViciousRef = e_make_broken_promise(e_make_string("Caught in a forwarding loop"));
   e_make_script(&refObject_script, NULL, refObject_methods,
                 NULL, "Ref");
   THE_REF.script = &refObject_script;
+  e_make_selector(&run1, "run", 1);
 }
 

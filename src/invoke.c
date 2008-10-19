@@ -14,9 +14,9 @@ GStaticPrivate e_thrown_problem_key = G_STATIC_PRIVATE_INIT;
 GStaticPrivate e_ejected_value_key = G_STATIC_PRIVATE_INIT;
 GStaticPrivate e_ejector_counter_key = G_STATIC_PRIVATE_INIT;
 
-e_Selector respondsTo, order, whenBroken, whenMoreResolved,
-  whenMoreResolved_ev, run1, optSealedDispatch, conformTo,
-  printOn, optUncall, getAllegedType, reactToLostClient,
+e_Selector respondsTo, order, whenBroken, whenBroken_ev,
+  whenMoreResolved, whenMoreResolved_ev, run1, optSealedDispatch,
+  conformTo, printOn, optUncall, getAllegedType, reactToLostClient,
   E_AUDITED_BY;
 
 /// Get the last thrown problem in the current thread.
@@ -351,6 +351,8 @@ void e__miranda_set_up() {
   e_make_selector(&respondsTo, "__respondsTo", 2);
   e_make_selector(&order, "__order", 2);
   e_make_selector(&whenBroken, "__whenBroken", 1);
+  e_make_selector(&whenBroken_ev, "__whenBroken", 1);
+  whenBroken_ev.eventual = true;
   e_make_selector(&reactToLostClient, "__reactToLostClient", 1);
   e_make_selector(&optSealedDispatch, "__optSealedDispatch", 1);
   e_make_selector(&conformTo, "__conformTo", 1);
