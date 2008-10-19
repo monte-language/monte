@@ -253,6 +253,17 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   fail_unless((vm_exec_scope(code, 2, NULL, 0, scope, 1)).data.fixnum == 42);
 }
 
+#test op_assign_outer
+{
+  /// OP_ASSIGN_OUTER should effectively call put() on the indexed slot
+  /// in the outer scope.
+  e_Ref scope[] = { e_make_varslot(e_make_fixnum(42)) };
+  e_Ref constants[] = {e_make_fixnum(99), e_null};
+  char code[] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_ASSIGN_OUTER, 0};
+  fail_unless(e_same(vm_exec_scope(code, 6, constants, 2, scope, 1), e_null));
+  fail_unless(e_same(scope[0].data.refs[0], constants[0]));
+}
+
 #test op_slot_outer
 {
   // Test that OP_SLOT_OUTER retrieves the indexed slot from the outer scope

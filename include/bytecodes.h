@@ -31,5 +31,6 @@
 #define OP_NOUN_FRAME           28
 #define OP_ASSIGN_FRAME         29
 #define OP_SLOT_FRAME           30
+#define OP_ASSIGN_OUTER         31
 
 #endif /*BYTECODES_H_*/

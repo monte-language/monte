@@ -878,6 +878,17 @@ e_Ref _ecru_vm_execute(ecru_stackframe *stackframe,
         PUSH(frame[idx]);
       }
       break;
+
+    case OP_ASSIGN_OUTER:
+      {
+        idx = NEXT_CODEBYTE();
+        if (idx >= scopeLength) {
+          return e_throw_pair("idx > frameLength in OP_ASSIGN_OUTER at",
+                              e_make_fixnum(pc));
+        }
+        ECRU_CALL(scope[idx], do_put1, false);
+      }
+      break;
     default:
       return e_throw_pair("Unknown opcode at",
                           e_make_fixnum(pc));

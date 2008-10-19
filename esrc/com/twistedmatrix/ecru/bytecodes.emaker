@@ -30,7 +30,8 @@ def bytecodeInfo := ["OP_POP" => [0, 1, -1],
                      "OP_VAROBJECT" => [2, null, null],
                      "OP_NOUN_FRAME" => [1, 0, 1],
                      "OP_ASSIGN_FRAME" => [1, 0, -1],
-                     "OP_SLOT_FRAME" => [1, 0, 1]]
+                     "OP_SLOT_FRAME" => [1, 0, 1],
+                     "OP_ASSIGN_OUTER" => [1, 1, -1]]
 def bytecodeNames := bytecodeInfo.getKeys()
 def bytecodeMap := accum [].asMap() for i in 0..(bytecodeNames.size()-1) {
   _.with(bytecodeNames[i], i+1)
