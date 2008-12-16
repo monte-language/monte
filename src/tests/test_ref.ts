@@ -15,11 +15,15 @@ void setup(void) {
   e_make_selector(&isResolved, "isResolved", 0);
   e_make_selector(&resolve, "resolve", 1);
   e_make_selector(&fulfillment, "fulfillment", 1);
+}
+
+void setupPromisePair(void) {
   e_Ref pair = e_make_promise_pair();
   fail_unless(e_is_constlist(pair));
   fail_unless(e_call_0(pair, &size).data.fixnum == 2);
   sRef = e_call_1(pair, &get, e_make_fixnum(0));
   resolver = e_call_1(pair, &get, e_make_fixnum(1));
+
 }
 
 void teardown(void) {
@@ -40,6 +44,7 @@ e_Method callback_methods[] = {
 {
   // Test that make_promise_pair() at least creates objects of the
   // right type.
+  setupPromisePair();
   fail_unless(e_is_SwitchableRef(sRef));
   fail_unless(e_is_LocalResolver(resolver));
 
@@ -48,6 +53,7 @@ e_Method callback_methods[] = {
 #test resolution
 {
   // Ensure that Refs track their resolution state properly.
+  setupPromisePair();
   fail_if(e_same(e_ref_isResolved(sRef), e_true));
   fail_unless(e_ref_state(sRef) == EVENTUAL);
   fail_unless(e_same(e_call_1(resolver, &resolve, e_make_fixnum(99)), e_null));
@@ -58,6 +64,7 @@ e_Method callback_methods[] = {
 #test broken_resolution
 {
   // e_ref_state reports references that are broken.
+  setupPromisePair();
   e_Ref p = e_make_string("bad stuff happened");
   e_resolver_smash(resolver, p);
   fail_unless(e_ref_state(sRef) == BROKEN);
@@ -69,6 +76,7 @@ e_Method callback_methods[] = {
   // Messages sent to a SwitchableRef after resolution should forward
   // to its target.
   e_Selector add;
+  setupPromisePair();
   e_make_selector(&add, "add", 1);
   e_call_1(resolver, &resolve, e_make_fixnum(99));
   fail_unless(e_call_1(sRef, &add, e_make_fixnum(1)).data.fixnum == 100);
@@ -82,6 +90,7 @@ e_Method callback_methods[] = {
   e_Ref pair = e_make_promise_pair();
   e_Ref obj = e_make_fixnum(99);
   SwitchableRef_data *ref;
+  setupPromisePair();
   sRef2 = e_call_1(pair, &get, e_make_fixnum(0));
   resolver2 = e_call_1(pair, &get, e_make_fixnum(1));
   e_call_1(resolver2, &resolve, obj);
@@ -95,6 +104,7 @@ e_Method callback_methods[] = {
   // Messages sent to unresolved refs should be buffered.
   e_Selector sendOnly, size, get;
   e_Ref arglist, ref2, target, val;
+  setupPromisePair();
   e_Ref v = e_make_vat(e_null, "test");
   e_vat_set_active(v);
   e_make_selector(&sendOnly, "sendOnly", 3);
@@ -123,6 +133,7 @@ e_Method callback_methods[] = {
   e_Selector send, size, get;
   e_Ref arglist, ref2, target, val;
   e_Ref v = e_make_vat(e_null, "test");
+  setupPromisePair();
   e_vat_set_active(v);
   e_make_selector(&send, "send", 3);
   e_make_selector(&size, "size", 0);
@@ -147,6 +158,7 @@ e_Method callback_methods[] = {
 {
   // e_resolver_smash should convert a resolver's ref to a broken promise.
   e_Ref p = e_make_string("bad stuff happened");
+  setupPromisePair();
   e_resolver_smash(resolver, p);
   fail_unless(e_is_UnconnectedRef(e_ref_target(sRef)));
 }
@@ -155,6 +167,7 @@ e_Method callback_methods[] = {
 {
   // Ref.fulfillment/1 shortens a ref if it is near.
   e_Ref x = e_make_fixnum(99);
+  setupPromisePair();
   e_call_1(resolver, &resolve, x);
   fail_unless(e_same(e_call_1(THE_REF, &fulfillment, sRef), x));
 }
@@ -162,7 +175,9 @@ e_Method callback_methods[] = {
 #test unresolved_fulfillment
 {
   // Ref.fulfillment/1 throws an error if its arg is unresolved.
-  e_Ref p = e_call_1(THE_REF, &fulfillment, sRef);
+  setupPromisePair();
+  e_Ref p = e_null;
+  p = e_call_1(THE_REF, &fulfillment, sRef);
   fail_unless(p.script == NULL);
   e_Ref prob = e_thrown_problem();
   fail_unless(e_same(prob.data.refs[0],
@@ -174,6 +189,7 @@ e_Method callback_methods[] = {
 #test broken_fulfillment
 {
   // Ref.fulfillment/1 throws the problem wrapped by a broken reference.
+  setupPromisePair();
   e_Ref p = e_make_string("bad stuff happened");
   e_resolver_smash(resolver, p);
   e_Ref q = e_call_1(THE_REF, &fulfillment, sRef);
@@ -187,6 +203,7 @@ e_Method callback_methods[] = {
   /** Ref.whenResolved/2 invokes the second arg as a callback when its first
       arg changes resolution state. */
   e_Selector whenResolved;
+  setupPromisePair();
   e_make_selector(&whenResolved, "whenResolved", 2);
   e_make_script(&callbackScript, NULL, callback_methods, NULL,
                 "callbackObject");
@@ -211,8 +228,8 @@ e_Method callback_methods[] = {
   /** Ref.whenBroken/2 invokes its second arg as a callback when its
       first arg becomes broken. */
   e_Selector whenBroken;
+  setupPromisePair();
   e_make_selector(&whenBroken, "whenBroken", 2);
-
   e_make_script(&callbackScript, NULL, callback_methods, NULL,
                 "callbackObject");
   callback.script = &callbackScript;

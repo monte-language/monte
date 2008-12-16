@@ -273,7 +273,7 @@ static e_Ref refObject_isResolved(e_Ref self, e_Ref *args) {
 static e_Ref refObject_fulfillment(e_Ref self, e_Ref *args) {
   int state = e_ref_state(args[0]);
   if (state == EVENTUAL) {
-    e_throw_pair("Failed: Not resolved", args[0]);
+    return e_throw_pair("Failed: Not resolved", args[0]);
   } else if (state == BROKEN) {
     SwitchableRef_data *data = args[0].data.other;
     return e_throw(data->target.data.refs[0]);
