@@ -432,13 +432,10 @@ e_Ref doModuleInteractive(ecru_module *m,  e_Ref compiledModule) {
   e_Ref ppair = e_make_promise_pair();
   e_Ref result = e_call_1(ppair, &get, e_make_fixnum(0));
   e_Ref resolver = e_call_1(ppair, &get, e_make_fixnum(1));
-  interactive_runnable data = {.module = m, .nameList = nameList,
-                               .resolverVat = python_vat, .resolver = resolver};
-
-  e_vat_enqueue(python_vat, do_interactive_turn, &data);
-  e_vat_set_active(python_vat);
-
-  while (e_vat_execute_turn(python_vat)) {};
+  interactive_runnable data = {.module = m, .nameList = nameList, .resolverVat = python_vat, .resolver = resolver};
+  interactive_runnable *queueItem = e_malloc(sizeof *queueItem);
+  *queueItem = data;
+  e_vat_enqueue(python_vat, do_interactive_turn, queueItem);
   return result;
 }
 
@@ -457,7 +454,7 @@ static e_Ref debug_dump(e_Ref module) {
   E_ERROR_CHECK(x);
   return e_string_writer_get_string(w);
 }
-static e_Ref interactive_eval(e_Ref ktree, e_Ref scope) {
+static e_Ref synchronous_interactive_eval(e_Ref ktree, e_Ref scope) {
   e_Ref module = e_call_2(compiler, &run, ktree, scope);
   E_ERROR_CHECK(module);
   e_Ref str = dump_module(module);
@@ -466,6 +463,8 @@ static e_Ref interactive_eval(e_Ref ktree, e_Ref scope) {
   E_ERROR_CHECK(r);
   ecru_module *m = ecru_load_bytecode(r, scope);
   e_Ref out = doModuleInteractive(m, module);
+  e_vat_set_active(python_vat);
+  while (e_vat_execute_turn(python_vat)) {};
   return out;
 }
 
@@ -499,7 +498,7 @@ static PyObject *bridge_interactive_eval(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "OO", &ktree, &scope)) {
     return NULL;
   }
-  return e_to_py(interactive_eval(py_to_e(ktree), py_to_e(scope)));
+  return e_to_py(synchronous_interactive_eval(py_to_e(ktree), py_to_e(scope)));
 }
 
 static PyMethodDef bridge_methods[] = {
