@@ -168,9 +168,12 @@ ecru_module *load_testdata(char *data, int length) {
 {
   char *data = "\"!\x08\x00\x12\n\x08\x14\x10\x00\x18\x07 \x02(\x04\x1a\x05run/0\"\n\x14\x05\x05\x00\x15\x16\x03\x01\x05\x00";
   ecru_module *m = load_testdata(data, 35);
-  ecru_handler_table_entry htable = {20, 0, 7, 2, 4};
-  fail_unless(memcmp(m->scripts[0]->methods[0].handlerTable, &htable, sizeof htable));
-
+  ecru_handler_table_entry *htable = m->scripts[0]->methods[0].handlerTable;
+  fail_unless(htable->type == 20);
+  fail_unless(htable->stackLevel == 0);
+  fail_unless(htable->target == 7);
+  fail_unless(htable->start == 2);
+  fail_unless(htable->end == 4);
 }
 
 #main-pre
