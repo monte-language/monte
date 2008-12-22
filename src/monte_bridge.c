@@ -117,7 +117,7 @@ PyObject *e_to_py(e_Ref obj) {
     e_flexmap_put(saveset, putargs);
     PyObject *x = PyCObject_FromVoidPtrAndDesc(obj.data.other,
                                                obj.script, NULL);
-    return PyObject_CallFunctionObjArgs(monte_EObjectWrapper, x);
+    return PyObject_CallFunctionObjArgs(monte_EObjectWrapper, x, NULL);
   }
 }
 
