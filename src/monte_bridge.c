@@ -391,28 +391,15 @@ static void do_interactive_turn(e_Ref vat, void *x) {
   e_Ref newScope;
   interactive_runnable *data = x;
   Vat_data *vatdata = vat.data.other;
-  e_Ref res = ecru_vm_execute(0, 0, 0, NULL, data->module,
+  e_Ref result = ecru_vm_execute(0, 0, 0, NULL, data->module,
                                  NULL, 0, &stackp);
-  e_Ref result;
-  if (e_ref_state(res) == EVENTUAL) {
-    result = e_make_string("<Promise>");
-  } else {
-    e_Ref w = e_make_string_writer();
-    e_Ref maybeVal = e_call_1(THE_REF, &fulfillment, res);
-    if (maybeVal.script == NULL) {
-      e_println(w, e_thrown_problem());
-    } else {
-      e_println(w, maybeVal);
-    }
-    result = e_string_writer_get_string(w);
-  }
   e_Ref numLocals = e_call_0(data->nameList, &size);
   if (numLocals.script == NULL) {
     result = numLocals;
   } else {
     int siz = numLocals.data.fixnum;
     newScope = data->module->scope;
-    if (siz != 0 && res.script != NULL) {
+    if (siz != 0 && result.script != NULL) {
       e_Ref slotsList = e_constlist_from_array(siz, stackp->locals);
       newScope = e_call_2(data->module->scope, &withOuterSlots,
                           data->nameList, slotsList);
@@ -454,7 +441,7 @@ static e_Ref debug_dump(e_Ref module) {
   E_ERROR_CHECK(x);
   return e_string_writer_get_string(w);
 }
-static e_Ref synchronous_interactive_eval(e_Ref ktree, e_Ref scope) {
+static e_Ref eventual_interactive_eval(e_Ref ktree, e_Ref scope) {
   e_Ref module = e_call_2(compiler, &run, ktree, scope);
   E_ERROR_CHECK(module);
   e_Ref str = dump_module(module);
@@ -462,11 +449,16 @@ static e_Ref synchronous_interactive_eval(e_Ref ktree, e_Ref scope) {
   e_Ref r = e_make_string_reader(str);
   E_ERROR_CHECK(r);
   ecru_module *m = ecru_load_bytecode(r, scope);
-  e_Ref out = doModuleInteractive(m, module);
+  return doModuleInteractive(m, module);
+}
+
+static e_Ref synchronous_interactive_eval(e_Ref ktree, e_Ref scope) {
+  e_Ref out = eventual_interactive_eval(ktree, scope);
   e_vat_set_active(python_vat);
   while (e_vat_execute_turn(python_vat)) {};
   return out;
 }
+
 
 static PyObject *bridge_dump_module(PyObject *self, PyObject *args) {
   PyObject *ktree, *scope;
@@ -492,18 +484,71 @@ static PyObject *bridge_debug_dump(PyObject *self, PyObject *args) {
   return e_to_py(debug_dump(module));
 }
 
+static e_Ref _print(e_Ref obj) {
+  e_Ref result;
+  if (obj.script == NULL) {
+    obj = e_thrown_problem();
+  }
+  if (e_ref_state(obj) == EVENTUAL) {
+    result = e_make_string("<Promise>");
+  } else {
+    e_Ref w = e_make_string_writer();
+    e_Ref maybeVal = e_call_1(THE_REF, &fulfillment, obj);
+    e_println(w, maybeVal);
+    result = e_string_writer_get_string(w);
+  }
+  return result;
+}
 
 static PyObject *bridge_interactive_eval(PyObject *self, PyObject *args) {
+  PyObject *ktree, *scope;
+  _Bool printIt;
+  if (!PyArg_ParseTuple(args, "OOb", &ktree, &scope, &printIt)) {
+    return NULL;
+
+  }
+  e_Ref pair = synchronous_interactive_eval(py_to_e(ktree), py_to_e(scope));
+  if (printIt) {
+    // nobody else has acquired this object yet, right? we can still modify it
+    e_Ref *val = ((Flexlist_data *)((e_ref_target(pair)).data.other))->elements;
+    val[0] = _print(val[0]);
+  }
+  return e_to_py(pair);
+}
+
+static PyObject *bridge_incremental_eval(PyObject *self, PyObject *args) {
   PyObject *ktree, *scope;
   if (!PyArg_ParseTuple(args, "OO", &ktree, &scope)) {
     return NULL;
   }
-  return e_to_py(synchronous_interactive_eval(py_to_e(ktree), py_to_e(scope)));
+  return e_to_py(eventual_interactive_eval(py_to_e(ktree), py_to_e(scope)));
+}
+
+static PyObject *bridge_iterate(PyObject *self, PyObject *args) {
+  if (!PyArg_ParseTuple(args, "")) {
+    return NULL;
+  }
+  e_vat_set_active(python_vat);
+  return PyBool_FromLong(e_vat_execute_turn(python_vat));
+}
+
+static PyObject *bridge_toString(PyObject *self, PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args, "O", &obj)) {
+    return NULL;
+  }
+  if (!PyObject_IsInstance(obj, monte_EObjectWrapper)) {
+    PyErr_SetString(PyExc_TypeError, "only wrapped E objects accepted");
+    return NULL;
+  }
+  e_Ref unwrappedObj = py_to_e(obj);
+  return e_to_py(_print(unwrappedObj));
 }
 
 static PyMethodDef bridge_methods[] = {
   {"setup", bridge_set_up, METH_VARARGS,
-   "Call this before using any other bridge functions. Takes the classes 'EObjectWrapper' and 'Character' as args."},
+   "Call this before using any other bridge functions. Takes the classes"
+   " 'EObjectWrapper' and 'Character' as args."},
   {"getPrivilegedScope", bridge_getPrivilegedScope, METH_VARARGS,
    //   "Fetch a single E object by name from the privileged scope."},
    "Fetch the E object representing the unsafe scope."},
@@ -514,7 +559,16 @@ static PyMethodDef bridge_methods[] = {
   {"debugDump", bridge_debug_dump, METH_VARARGS,
    "Print out a debug dump of compilation results."},
   {"interactiveEval", bridge_interactive_eval, METH_VARARGS,
-   "Evaluate a Kernel-E tree in a given scope. Return the result and a new scope."},
+   "Evaluate a Kernel-E tree in a given scope. Return the result and a new"
+   " scope."},
+  {"incrementalEval", bridge_incremental_eval, METH_VARARGS,
+   "Evaluate a Kernel-E tree in a given scope, eventually. Immediately return"
+   " a promise for a  [result, newScope] pair."},
+  {"iterate", bridge_iterate, METH_VARARGS,
+   "Execute a single item in the Python vat's run queue. Returns whether more "
+   "items remain to execute or not."},
+  {"toString", bridge_toString, METH_VARARGS,
+   "Return a Python string representation of an E object."},
   {NULL, NULL, 0, NULL}
 };
 

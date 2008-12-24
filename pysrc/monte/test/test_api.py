@@ -435,9 +435,28 @@ class EvalTest(unittest.TestCase):
         """
         C{Ref.whenResolved(p, callback)} runs the callback when p resolves.
         """
-        [res, sc] = api.eval("def x; def y := [0].diverge()", api.e_privilegedScope)
-        [res2, sc2] = api.eval("def r := Ref.whenResolved(x, fn z { y[0] := z})",
+        [res, sc] = api.eval("def x; def y := [0].diverge()",
+                             api.e_privilegedScope)
+        [res2, sc2] = api.eval("def r := Ref.whenResolved(x, fn z {y[0] := z})",
                                sc)
         [res3, sc3] = api.eval("bind x := 1", sc2)
         [res4, sc4] = api.eval("[y[0], r]", sc3)
         self.assertEqual(res4.strip(), "[1, 1]")
+
+
+    def test_incrementalEval(self):
+        """
+        L{api.incrementalEval} enqueues the evaluation of an expression and
+        immediately returns a Promise.
+        """
+        value = [None]
+        def whenDone((v, s)):
+            value[0] = v
+        whenResolved, ns = api.eval("Ref.whenResolved", api.e_privilegedScope,
+                                    printIt=False)
+        p = api.incrementalEval("1 + 1", api.e_privilegedScope)
+        whenResolved.run(p, whenDone)
+        self.assertEqual(value[0], None)
+        while api.iterate():
+            pass
+        self.assertEqual(value[0], 2)

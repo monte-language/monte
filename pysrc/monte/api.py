@@ -1,5 +1,6 @@
 from monte.nodes import Character
 from monte import bridge
+from monte.bridge import iterate
 
 class EObjectWrapper(object):
     def __init__(self, val):
@@ -9,6 +10,11 @@ class EObjectWrapper(object):
         def wrapper(*args):
             return bridge.e_call(self,  name, *args)
         return wrapper
+
+
+    def __repr__(self):
+        return bridge.toString(self)
+
 
 bridge.setup(EObjectWrapper, Character)
 
@@ -24,13 +30,17 @@ def parse(source):
     return tree.forValue(None)
 
 
-def eval(expr, scope):
+def eval(expr, scope, printIt=True):
     try:
         ktree = parse(expr)
-        return bridge.interactiveEval(ktree, scope)
+        return bridge.interactiveEval(ktree, scope, printIt)
     except Exception, ex:
         return [repr(ex), scope]
 
+
+def incrementalEval(expr, scope):
+    ktree = parse(expr)
+    return bridge.incrementalEval(ktree, scope)
 
 def repl():
     import readline
