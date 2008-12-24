@@ -1,5 +1,5 @@
 from twisted.trial import unittest
-from monte.eparser import EParser
+from ecru.eparser import EParser
 
 class ParserTest(unittest.TestCase):
     """

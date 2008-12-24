@@ -85,21 +85,21 @@ CLEANFILES = src/tests/test_elib.c src/tests/test_vm.c			\
              src/tests/test_invoke.c src/tests/test_bytecode_loader.c
 TESTS = $(check_PROGRAMS)
 
-montedir = $(pythondir)/monte
-monte_testdir = $(pythondir)/monte/test
+pyecrudir = $(pythondir)/ecru
+pyecru_testdir = $(pythondir)/ecru/test
 pymetadir = $(pythondir)/pymeta
 pymeta_PYTHON = pysrc/pymeta/__init__.py pysrc/pymeta/boot.py	\
                 pysrc/pymeta/builder.py pysrc/pymeta/grammar.py	\
                 pysrc/pymeta/runtime.py
-monte_PYTHON = pysrc/monte/__init__.py pysrc/monte/api.py	\
-               pysrc/monte/eparser.py pysrc/monte/nodes.py	\
-               pysrc/monte/structlike.py
-monte_test_PYTHON = pysrc/monte/test/__init__.py	\
-               pysrc/monte/test/test_api.py		\
-               pysrc/monte/test/test_expander.py	\
-               pysrc/monte/test/test_eparser.py
+pyecru_PYTHON = pysrc/ecru/__init__.py pysrc/ecru/api.py	\
+               pysrc/ecru/eparser.py pysrc/ecru/nodes.py	\
+               pysrc/ecru/structlike.py
+pyecru_test_PYTHON = pysrc/ecru/test/__init__.py	\
+               pysrc/ecru/test/test_api.py		\
+               pysrc/ecru/test/test_expander.py	\
+               pysrc/ecru/test/test_eparser.py
 
-monte_LTLIBRARIES = bridge.la
+pyecru_LTLIBRARIES = bridge.la
 bridge_la_SOURCES = src/monte_bridge.c
 bridge_la_LDFLAGS = -avoid-version -module
 bridge_la_CPPFLAGS = -I/usr/include/python2.5	\

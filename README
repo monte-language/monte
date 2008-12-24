@@ -1,4 +1,4 @@
-Ecru 0.1.3
+Ecru 0.2.0
 
 What is this?
 =============
@@ -29,9 +29,9 @@ What is this?
 
   - Vats support message queuing and turn execution.
 
-  Notable unimplemented features at this point include:
-
   - Message buffering on Promises.
+
+  Notable unimplemented features at this point include:
 
   - Most of the methods on 'E' or 'Ref'.
 

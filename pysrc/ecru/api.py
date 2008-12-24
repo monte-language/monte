@@ -1,6 +1,6 @@
-from monte.nodes import Character
-from monte import bridge
-from monte.bridge import iterate
+from ecru.nodes import Character
+from ecru import bridge
+from ecru.bridge import iterate
 
 class EObjectWrapper(object):
     def __init__(self, val):

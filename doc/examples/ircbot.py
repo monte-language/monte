@@ -1,6 +1,6 @@
 import sys
-from monte.api import incrementalEval, e_privilegedScope, eval as eEval
-from monte.api import iterate as ecruIterate
+from ecru.api import incrementalEval, e_privilegedScope, eval as eEval
+from ecru.api import iterate as ecruIterate
 from twisted.words.protocols.irc import IRCClient
 from twisted.internet import reactor
 from twisted.python import log

@@ -2,7 +2,7 @@
 Tests for the E/Python bridge.
 """
 from twisted.trial import unittest
-from monte import api
+from ecru import api
 
 class EvalTest(unittest.TestCase):
     """

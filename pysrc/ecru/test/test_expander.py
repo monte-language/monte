@@ -1,6 +1,6 @@
 from twisted.trial import unittest
-from monte.eparser import EParser
-from monte.nodes import ParseError, SubNode
+from ecru.eparser import EParser
+from ecru.nodes import ParseError, SubNode
 
 class ExpanderTest(unittest.TestCase):
 
