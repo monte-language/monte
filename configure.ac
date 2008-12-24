@@ -1,6 +1,7 @@
-AC_INIT([Ecru], [0.1.3], [washort@divmod.com])
+AC_INIT([Ecru], [0.2.0], [washort@divmod.com])
 AC_CONFIG_AUX_DIR(build-aux)
 AM_INIT_AUTOMAKE([foreign])
+AC_CONFIG_MACRO_DIR([build-aux/m4])
 AC_PREREQ(2.60)
 AC_DEFINE([OLD_GIO], [], ["Whether to use the old GIO API or not"])
 AM_CONFIG_HEADER(config.h)
