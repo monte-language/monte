@@ -1,0 +1,127 @@
+pragma.syntax("0.9")
+def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>
+def makeTestResults := <import:com.twistedmatrix.eunit.makeTestResults>
+def makeTestSuite := <import:com.twistedmatrix.eunit.makeTestSuite>
+
+def makeWasRun() {
+    var log := []
+    def wasRun extends makeTestCase(wasRun) {
+        to setUp() {
+            log with= "setUp"
+        }
+        to tearDown() {
+            log with= "tearDown"
+        }
+        to test_method() {
+            log with= "testMethod"
+        }
+        to test_brokenMethod() {
+            throw("broken")
+        }
+        to getLog() {
+            return log
+        }
+    }
+    return wasRun
+}
+
+def makeSetUpFailure() {
+    def self extends makeTestCase(self) {
+        to setUp() {
+            throw("broken")
+        }
+        to test_method() {
+        }
+    }
+    return self
+}
+
+def exampleFailureStart := "===============================================================================
+[ERROR]: com.twistedmatrix.eunit.test.makeTestTest$makeWasRun$wasRun.test_brokenMethod"
+
+def exampleFailureEnd := "problem: broken"
+
+def makeTestTest() {
+    var results := null
+    def testTest extends makeTestCase(testTest) {
+
+        to setUp() {
+            results := makeTestResults()
+        }
+
+        to test_templateMethod() {
+            def test := makeWasRun()
+            test.run("test_method", results)
+            require(test.getLog() == ["setUp",  "testMethod", "tearDown"])
+        }
+
+        to test_result() {
+            def test := makeWasRun()
+            test.run("test_method", results)
+            require("PASSED (successes=1)" == results.summary())
+        }
+
+        to test_failedResult() {
+            def test := makeWasRun()
+            test.run("test_brokenMethod", results)
+            require("FAILED (failures=1)" == results.summary())
+        }
+
+        to test_failedResultFormatting() {
+            results.testFailed("", null)
+            require("FAILED (failures=1)" == results.summary())
+        }
+
+        to test_mixedResultFormatting() {
+            results.testSucceeded()
+            results.testFailed("", null)
+            require("FAILED (failures=1, successes=1)" == results.summary())
+        }
+
+        to test_failedSetUp() {
+            def test := makeSetUpFailure()
+            test.run("test_method", results)
+            require("FAILED (failures=1)" == results.summary())
+        }
+
+        to test_suite() {
+            def suite := makeTestSuite()
+            suite.add(makeWasRun(), "test_method")
+            suite.add(makeWasRun(), "test_brokenMethod")
+            suite.run(results)
+            require("FAILED (failures=1, successes=1)" == results.summary())
+        }
+
+        to test_methodCollection() {
+            def test := makeWasRun()
+            def testNames := test.collectTestMethods()
+            require(testNames.asSet() <=> ["test_method",
+                                           "test_brokenMethod"].asSet())
+        }
+
+        to test_failureReporting() {
+            def test := makeWasRun()
+            test.run("test_brokenMethod", results)
+            def report := results.reportFailures()
+            require(report.size() == 1)
+            require(report[0].startsWith(exampleFailureStart))
+            require(report[0].endsWith(exampleFailureEnd), report[0])
+        }
+
+        to test_assertEqualsSuccess() {
+            testTest.assertEqual(1, 1)
+        }
+        to test_assertEqualsFailure() {
+            var thrown := null
+            try {
+                testTest.assertEqual(1, 2)
+            } catch p {
+                thrown := p
+            }
+            if (thrown == null) {
+                throw("No problem thrown by false assertion")
+            }
+        }
+    }
+    return testTest
+}

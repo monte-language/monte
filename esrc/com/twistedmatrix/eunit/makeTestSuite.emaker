@@ -1,0 +1,17 @@
+def makeTestSuite() {
+ def tests := [].diverge()
+  def self {
+    to add(test, name) {
+      tests.push([test, name])
+    }
+    to setName(name) {}
+    to run(results) {
+        for [test, name] in tests {
+          test.setName(name)
+          test.run(results)
+        }
+      return results
+    }
+  }
+ return self
+}

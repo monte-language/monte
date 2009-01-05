@@ -1,0 +1,18 @@
+pragma.syntax("0.9");
+pragma.enable("accumulator");
+def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>;
+def makeTestResults := <import:com.twistedmatrix.eunit.makeTestResults>;
+def makeTestLoader := <import:com.twistedmatrix.eunit.makeTestLoader>;
+
+def makeTestTestLoader() {
+  def testTestLoader extends makeTestCase(testTestLoader) {
+    to test_loader() {
+      def testLoader := makeTestLoader(<file>)
+      def aTest := testLoader.loadTestCase(
+                               "com.twistedmatrix.eunit.test.testpackage.makeTestOne")[0]()
+      aTest.setName("test_foo")
+      aTest.run(makeTestResults())
+    }
+  }
+  return testTestLoader
+}

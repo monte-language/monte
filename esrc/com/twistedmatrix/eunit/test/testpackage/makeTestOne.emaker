@@ -1,0 +1,9 @@
+pragma.syntax("0.9");
+def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>;
+
+def makeTestOne() {
+  def testOne extends makeTestCase(testOne) {
+    to test_foo() { <file> }
+  }
+  return testOne
+}

@@ -1,0 +1,32 @@
+pragma.enable("accumulator")
+def makeTestResults() {
+  var successes := 0
+  var failures := 0
+  def failureReasons := [].asMap().diverge()
+  def testResults {
+    to testSucceeded() {
+      successes += 1
+    }
+    to testFailed(name, problem) {
+      failureReasons[name] := problem
+      failures += 1
+    }
+    to summary() {
+      if (failures == 0) {
+        return `PASSED (successes=$successes)`
+      }
+      if (successes == 0) {
+        return `FAILED (failures=$failures)`
+      }
+      return `FAILED (failures=$failures, successes=$successes)`
+    }
+    to reportFailures() {
+      return accum [] for name => problem in failureReasons {
+                      _.with(("=" * 79) + "\n[ERROR]: " + name + "\n" +
+                             problem.eStack() + "\nproblem: " +
+                             problem.leaf().getMessage())
+        }
+    }
+  }
+  return testResults
+}
