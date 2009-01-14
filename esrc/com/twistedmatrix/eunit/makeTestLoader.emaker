@@ -5,45 +5,49 @@ def makeTestSuite := <import:com.twistedmatrix.eunit.makeTestSuite>;
 
 
 def testFinder(fqn, <file>) {
-  def pathList := fqn.split(".")
-  try {
-    def path := <resource>["/".rjoin(pathList)]
-    def foundTests := [].asMap().diverge()
-    for x in <file>[path.getPath()] {
-      if (x.getName() =~ `makeTest@testName.emaker`) {
-        foundTests.put(".".rjoin(pathList.with("makeTest" + testName)), x)
-      #} else if (x.getName() =~ `@updocName.updoc`) {
-      #  foundTests.put(".".rjoin(pathList.with(updocName)), x)
-      }
-    }
-    return foundTests
-  } catch p {
+    def pathList := fqn.split(".")
+    try {
+        def path := <resource>["/".rjoin(pathList)]
+        def foundTests := [].asMap().diverge()
+        for x in <file>[path.getPath()] {
+            if (x.getName() =~ `makeTest@testName.emaker`) {
+                foundTests.put(".".rjoin(pathList.with("makeTest" + testName)),
+                               x)
+                #} else if (x.getName() =~ `@updocName.updoc`) {
+                #  foundTests.put(".".rjoin(pathList.with(updocName)), x)
+            }
+        }
+        return foundTests
+    } catch p {
         #NullPointerError, we hope
-  }
-  #<resource> only works with paths that exist, so anything
-  #beyond here is an incomplete filename
-  def pathEnd := pathList[pathList.size()-1]
-  def prepathRes := <resource>["/".rjoin(pathList(0, pathList.size()-1))]
-  def prepath := <file>[prepathRes.getPath()]
-  if ((def url := prepath[pathEnd+".emaker"]).exists() &&
-             url.getName().startsWith("makeTest")) {
-    return [fqn => url]
-  #} else if ((def url := prepath[pathEnd+".updoc"]).exists()) {
-  #  return [fqn => url]
-  } else {
-    return []
-  }
+    }
+    #<resource> only works with paths that exist, so anything
+    #beyond here is an incomplete filename
+    def pathEnd := pathList[pathList.size()-1]
+    def prepathRes := <resource>["/".rjoin(pathList(0, pathList.size()-1))]
+    def prepath := <file>[prepathRes.getPath()]
+    if ((def url := prepath[pathEnd+".emaker"]).exists() && url.getName().startsWith("makeTest")) {
+        return [fqn => url]
+        #} else if ((def url := prepath[pathEnd+".updoc"]).exists()) {
+        #  return [fqn => url]
+    } else {
+        return []
+    }
 }
 
 def makeTestLoader(<file>) {
-  def testScope := safeScope.with("file__uriGetter", <file:/>.shallowReadOnly())
-  def testLoader {
-    to loadTestCase(testFQN) {
-      def testFiles := testFinder(testFQN, <file>)
-      return accum [] for fqn => testFile in testFiles {
-        _.with(makeEParser(testFile.getTwine()).eval(testScope.withPrefix(fqn+"$")))
-      }
+    def testScope := safeScope.with("file__uriGetter",
+                                    #XXX Should be a readonly file of some kind
+                                    # but E-on-CL doesn't support that currently
+                                    <file:/>)
+    def testLoader {
+        to loadTestCase(testFQN) {
+            def testFiles := testFinder(testFQN, <file>)
+            return accum [] for fqn => testFile in testFiles {
+                _.with(makeEParser(testFile.getTwine()
+                                  ).eval(testScope.withPrefix(fqn+"$")))
+            }
+        }
     }
-  }
-  return testLoader
+    return testLoader
 }

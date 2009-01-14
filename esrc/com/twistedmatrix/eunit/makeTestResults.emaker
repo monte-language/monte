@@ -1,5 +1,4 @@
-pragma.enable("accumulator")
-def makeTestResults() {
+def makeTestResults(getProblemStackAndMessage) {
   var successes := 0
   var failures := 0
   def failureReasons := [].asMap().diverge()
@@ -21,11 +20,13 @@ def makeTestResults() {
       return `FAILED (failures=$failures, successes=$successes)`
     }
     to reportFailures() {
-      return accum [] for name => problem in failureReasons {
-                      _.with(("=" * 79) + "\n[ERROR]: " + name + "\n" +
-                             problem.eStack() + "\nproblem: " +
-                             problem.leaf().getMessage())
+        def result := [].diverge()
+        def nl := "\n"
+        for name => problem in failureReasons {
+            def [stack, message] := getProblemStackAndMessage(problem)
+          result.push(("=" * 79) + `$nl[ERROR]: $name$nl$stack${nl}problem: $message`)
         }
+      return result.snapshot()
     }
   }
   return testResults

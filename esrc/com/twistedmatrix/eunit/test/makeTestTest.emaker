@@ -7,13 +7,13 @@ def makeWasRun() {
     var log := []
     def wasRun extends makeTestCase(wasRun) {
         to setUp() {
-            log with= "setUp"
+            log with= ("setUp")
         }
         to tearDown() {
-            log with= "tearDown"
+            log with= ("tearDown")
         }
         to test_method() {
-            log with= "testMethod"
+            log with= ("testMethod")
         }
         to test_brokenMethod() {
             throw("broken")
@@ -38,15 +38,18 @@ def makeSetUpFailure() {
 
 def exampleFailureStart := "===============================================================================
 [ERROR]: com.twistedmatrix.eunit.test.makeTestTest$makeWasRun$wasRun.test_brokenMethod"
+#XXX Temporary hack for EoCL.
+def exampleFailureStart2 := "===============================================================================
+[ERROR]: com.twistedmatrix.eunit.test.makeTestTest$makeWasRun$wasRun__1.test_brokenMethod"
 
-def exampleFailureEnd := "problem: broken"
+def exampleFailureEnd := "problem: a message"
 
 def makeTestTest() {
     var results := null
     def testTest extends makeTestCase(testTest) {
 
         to setUp() {
-            results := makeTestResults()
+            results := makeTestResults(fn p { ["a stack", "a message"]})
         }
 
         to test_templateMethod() {
@@ -95,17 +98,22 @@ def makeTestTest() {
         to test_methodCollection() {
             def test := makeWasRun()
             def testNames := test.collectTestMethods()
-            require(testNames.asSet() <=> ["test_method",
-                                           "test_brokenMethod"].asSet())
+            require(testNames.size() == 2)
+            require(testNames.indexOf1("test_method") >= 0)
+            require(testNames.indexOf1("test_brokenMethod") >= 0)
         }
 
         to test_failureReporting() {
             def test := makeWasRun()
             test.run("test_brokenMethod", results)
             def report := results.reportFailures()
-            require(report.size() == 1)
-            require(report[0].startsWith(exampleFailureStart))
-            require(report[0].endsWith(exampleFailureEnd), report[0])
+            require(report.size() == 1, "more than one failure reported")
+            require((report[0].startsWith(exampleFailureStart) ||
+                     #XXX EoCL has different ideas about FQNs
+                     report[0].startsWith(exampleFailureStart2)),
+                    "failure report has wrong beginning")
+            require(report[0].endsWith(exampleFailureEnd), report[0],
+                   "failure report has wrong ending")
         }
 
         to test_assertEqualsSuccess() {

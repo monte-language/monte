@@ -11,7 +11,7 @@ def makeTestTestLoader() {
       def aTest := testLoader.loadTestCase(
                                "com.twistedmatrix.eunit.test.testpackage.makeTestOne")[0]()
       aTest.setName("test_foo")
-      aTest.run(makeTestResults())
+        aTest.run(makeTestResults(fn p {["a stack", "a message"]}))
     }
   }
   return testTestLoader
