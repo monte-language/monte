@@ -1,0 +1,159 @@
+pragma.syntax("0.9")
+
+def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>
+def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
+
+
+def makeTestOMetaBase() {
+    def self extends makeTestCase(self) {
+
+        /**
+         The 'anything' method matches the next item on the input and returns
+         it, or ejects if the input is empty.
+        */
+
+        to test_anything() {
+            def g := makeOMetaBase("xy", g)
+            self.assertEqual(g.anything(throw), 'x')
+            self.assertEqual(g.anything(throw), 'y')
+            escape e {
+                g.anything(e)
+                throw("'anything' did not eject on failure")
+            }
+        }
+        /**
+          The 'exactly' method returns the object passed to it if the
+          current item of the input matches. Otherwise, it invokes the
+          ejector provided, if any, or throws.
+        */
+        to test_exactly() {
+            def input := "foo"
+            def g := makeOMetaBase(input, g)
+            def result := g.exactly('f', throw)
+            self.assertEqual(result, 'f')
+            escape e {
+                g.exactly('x', e)
+                throw("'exactly' did not eject on failure")
+            }
+            self.assertEqual(g.exactly('o', throw), 'o')
+        }
+
+        /**
+         The '_apply' method takes a rule name as a string and calls the method
+         of that name.
+        */
+        to test_apply() {
+            def g := makeOMetaBase("x", g)
+            self.assertEqual(g._apply("anything", [], throw), 'x')
+            escape e {
+                g._apply("anything", [], e)
+                throw("'_apply' did not eject on failure")
+            }
+        }
+
+        /**
+         The '_pred' method ejects if the nullary function passed to it returns
+         false, and returns true otherwise.
+        */
+        to test_pred() {
+            def g := makeOMetaBase("", g)
+            escape e {
+                g._pred(fn { false }, e)
+                throw("_pred' didn't eject")
+            }
+            self.assertEqual(g._pred(fn { true }, throw), true)
+        }
+
+        /**
+         The '_not' method ejects if the function passed to it doesn't, and
+         returns 'true' if it does.
+        */
+        to test_not() {
+            def g := makeOMetaBase("", g)
+            escape e {
+                g._not(fn x { true }, e)
+                throw("'_not' didn't eject")
+            }
+            self.assertEqual(g._not(fn e { e("done") }, throw), true)
+        }
+
+        /**
+         The '_lookahead' method runs the given function and returns its result,
+         resetting the position in the input afterwards.
+        */
+        to test_lookahead() {
+            def g := makeOMetaBase("x", g)
+            self.assertEqual(g._lookahead(fn e { g.anything(e) }, throw),
+                             'x')
+            self.assertEqual(g.anything(throw), 'x')
+            escape e {
+                g._lookahead(fn e { g.anything(e) }, e)
+                throw("'_lookahead' did not eject")
+            }
+        }
+
+        /**
+           The '_or' method calls each function passed to it in turn until one
+           succeeds, returning the matched value.
+        */
+        to test_or() {
+            def attemptedMatches := [].diverge()
+            def input := "ab"
+            def g := makeOMetaBase(input, g)
+            def makeMatcher(ch) {
+                def doMatch(e) {
+                    attemptedMatches.push(ch)
+                    return g.exactly(ch, e)
+                }
+                return doMatch
+            }
+            def result := g._or([makeMatcher('x'), makeMatcher('y'),
+                                makeMatcher('a'), makeMatcher('z')],
+                               throw)
+            self.assertEqual(result, 'a')
+            self.assertEqual(attemptedMatches.snapshot(),
+                             ['x', 'y', 'a'])
+            escape e {
+                g._or([makeMatcher('w')], e)
+                throw("'_or' refused to fail")
+            } catch p {
+	        require(p == "No matches")
+            }
+        }
+
+        /**
+          The '_many' method calls the function passed to it until it fails to
+          match the input, collecting its return values into a list.
+        */
+        to test_many() {
+            def input := "xxxabc"
+            def g := makeOMetaBase(input, g)
+            def res := g._many(fn e { g.exactly('x', e) })
+            self.assertEqual(res, ['x', 'x', 'x'])
+            self.assertEqual(g.exactly('a', throw), 'a')
+
+            self.assertEquals(g._many(fn e { g.exactly('z', e) }), [])
+        }
+
+        /**
+
+         The '_many1' method calls the given function until it ejects. If the
+         function ejects on the first call, the method calls its
+         ejector. Otherwise, it collects the results into a list.
+        */
+        to test_many1() {
+            def input := "xxxabc"
+            def g := makeOMetaBase(input, g)
+            def res := g._many1(fn e { g.exactly('x', e) }, throw)
+            self.assertEqual(res, ['x', 'x', 'x'])
+            self.assertEqual(g.exactly('a', throw), 'a')
+
+            escape e {
+                g._many1(fn e { g.exactly('z', e) }, e)
+                throw("'_many1' did not eject on failure")
+            }
+        }
+
+    }
+    return self
+}
