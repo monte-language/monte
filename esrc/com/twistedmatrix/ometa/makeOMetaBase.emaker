@@ -1,0 +1,129 @@
+pragma.syntax("0.9")
+
+def makeOMetaBase(input, self) {
+    var current := input
+    def ometaBase {
+
+        /**
+         Match a single item from the input.
+        */
+        to anything(ejector) {
+            def i := current
+            if (current.size() == 0) {
+               ejector("at end of input")
+            }
+            def val := current[0]
+            current := current.run(1)
+            return val
+        }
+
+        /**
+         Match a single item from the input equal to the given specimen.
+        */
+        to exactly(wanted, ejector) {
+            def original := current
+            def val := ometaBase.anything(ejector)
+            if (wanted == val) {
+                return val
+            } else {
+                current := original
+                ejector(`$wanted does not match $val`)
+            }
+        }
+
+        /**
+         Apply the named method, memoizing the result and allowing for left
+         recursion.
+        */
+        to _apply(rule, args, ejector) {
+            return E.call(self, rule, args + [ejector])
+        }
+
+        /**
+         Call the given nullary function. Eject if it returns false.
+        */
+        to _pred(func, ejector) {
+            if (!func()) {
+                ejector("predicate was false")
+            } else {
+                return true
+            }
+        }
+
+        /**
+         Call the given function. Eject if it does not.
+        */
+        to _not(func, ejector) {
+            var lastInput := current
+            escape e {
+                func(e)
+                ejector("function in 'not' didn't eject")
+            } catch p {
+                current := lastInput
+            }
+            return true
+        }
+
+        /**
+         Call the given function, resetting the input position afterwards.
+         */
+        to _lookahead(func, ejector) {
+            def m := current
+            try {
+                return func(ejector)
+            } finally {
+                current := m
+            }
+        }
+
+        /**
+         Call each of a list of functions in sequence until one succeeds,
+         rewinding the input between each.
+        */
+        to _or(fns, ejector) {
+            var lastInput := current
+            for f in fns {
+                escape e {
+                    lastInput := current
+                    return f(e)
+                } catch p {
+                    current := lastInput
+                }
+            }
+            ejector("No matches")
+        }
+
+        /**
+         Common code for _many/1 and _many1/1.
+        */
+        to _many(func, initial) {
+            var lastInput := current
+            def ans := initial.diverge()
+            while (true) {
+                escape e {
+                    lastInput := current
+                    ans.push(func(e))
+                } catch p {
+                    current := lastInput
+                    return ans.snapshot()
+                }
+            }
+        }
+        /**
+         Call 'func' until it fails to match the input. Collect the resulting
+         values into a list.
+        */
+        to _many(func) {
+            return ometaBase._many(func, [])
+        }
+
+        /**
+         Call 'func' until it fails to match the input, collecting the result
+         into a list. Eject if it matches zero times.
+         */
+        to _many1(func, ejector) {
+            return ometaBase._many(func, [func(ejector)])
+        }
+    }
+    return ometaBase
+}
