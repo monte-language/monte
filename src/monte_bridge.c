@@ -25,12 +25,6 @@ e_Script e__python_object_script;
 
 e_Ref python_vat;
 
-/* XXX these are global variables because boehm GC needs to have a root for
-objects only otherwise referenced by Python's ctypes. These won't be necessary
-once we stop manipulating C structs from Python. */
-
-e_Ref saveset;
-
 e_Ref throw_python_error() {
   PyObject *ptype, *pvalue, *ptraceback;
   char *typeName, *valueString;
@@ -51,6 +45,21 @@ e_Ref throw_python_error() {
   }
 }
 
+/**
+    Given an E object, produce a corresponding Python object.
+
+    Numbers, booleans and strings are converted to the Python equivalent.
+    Characters are converted to strings.
+    ConstLists are converted to tuples, and each element is converted.
+    ConstMaps are converted to dicts, and each element is converted.
+    Wrapped Python objects are unwrapped.
+    'null' is converted to 'None'.
+    All other objects are wrapped.
+
+    Markers indicating an exception cause the raising of a Python exception
+    wrapped around the E exception.
+
+  */
 PyObject *e_to_py(e_Ref obj) {
   if (obj.script == NULL) {
     if (obj.data.fixnum != 0) {
@@ -113,14 +122,23 @@ PyObject *e_to_py(e_Ref obj) {
   } else if (obj.script == &e__python_object_script) {
     return monte_unwrap(obj);
   } else {
-    e_Ref putargs[] = {obj, e_null};
-    e_flexmap_put(saveset, putargs);
     PyObject *x = PyCObject_FromVoidPtrAndDesc(obj.data.other,
                                                obj.script, NULL);
     return PyObject_CallFunctionObjArgs(monte_EObjectWrapper, x, NULL);
   }
 }
 
+/**
+    Given a Python object, produce a corresponding E object.
+
+    Numbers, booleans and strings are converted to the E equivalent.
+    Tuples and lists are converted to ConstLists, and each element is converted.
+    Dictionaries are converted to ConstMaps, and each element is converted.
+    'PythonCharacter' instances are converted to characters.
+    Wrapped E objects are unwrapped.
+    'None' is converted to 'null'.
+    All other objects are wrapped.
+  */
 e_Ref py_to_e(PyObject *obj) {
   if (obj == Py_None) {
     return e_null;
@@ -179,6 +197,12 @@ e_Ref py_to_e(PyObject *obj) {
   }
 }
 
+/**
+   Handler for E method calls on Python objects. Converts each argument to a
+   Python object, calls the method, and converts the result to an E
+   object. Exceptions raised are converted to E exceptions. Calls to the 'run'
+   method on Python callable objects are converted to normal calls.
+ */
 e_Ref invoke_python_object(e_Ref self, e_Selector *sel, e_Ref *args) {
   if (strcmp(sel->verb, "audited-by-magic-verb") == 0) {
     return e_false;
@@ -217,7 +241,12 @@ e_Ref invoke_python_object(e_Ref self, e_Selector *sel, e_Ref *args) {
   return res;
 }
 
+/**
+   Create an Ecru vat accessible to Python and load the bytecode compiler.
 
+   Call this before using any other bridge functions. Takes the classes
+   'EObjectWrapper' and 'Character' as args.
+*/
 PyObject *bridge_set_up(PyObject *self, PyObject *args) {
   PyObject *wrapper, *charClass;
   if (!PyArg_ParseTuple(args, "OO", &wrapper, &charClass)) {
@@ -230,7 +259,6 @@ PyObject *bridge_set_up(PyObject *self, PyObject *args) {
   Py_INCREF(charClass);
   e_make_script(&e__python_object_script, invoke_python_object,
                 no_methods, NULL, "wrapped Python object");
-  saveset = e_make_flexmap(0);
   GString *cName = e_make_string("com.twistedmatrix.ecru.compiler"
                                  ).data.gstring;
   GString *bdName = e_make_string("com.twistedmatrix.ecru.bytecodeDumper"
@@ -255,10 +283,16 @@ PyObject *bridge_set_up(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
+/**
+   Fetch the E object representing the unsafe scope.
+*/
 PyObject *bridge_getPrivilegedScope(PyObject *self, PyObject *args) {
   return e_to_py(e_privilegedScope);
 }
 
+/**
+   Call a method on an E object.
+*/
 PyObject *bridge_e_call(PyObject *self, PyObject *args) {
   PyObject *obj, *pyargs;
   char *verb;
@@ -307,75 +341,6 @@ PyObject *monte_unwrap(e_Ref obj) {
   PyObject *x = ((monte_handle *)obj.data.other)->object;
   Py_INCREF(x);
   return x;
-}
-
-/*
-ecru_module *monte_bridge_pack(e_Ref module, e_Ref scope) {
-  // XXX even less error checking than the Python version
-  ecru_module *m = e_malloc(sizeof *m);
-  e_Ref constants = e_call_0(module, &getConstants);
-  e_Ref selectors = e_call_0(module, &getSelectors);
-  e_Ref scripts = e_call_0(module, &getScripts);
-  int numScripts = ((Flexlist_data *)scripts.data.other)->size + 1;
-  e_Ref mainCode = e_call_0(module, &getCode);
-  e_Ref htable = e_call(module, &getToplevelHandlerTable);
-  ecru_method *mainMethod = e_malloc(sizeof *mainMethod);
-  ecru_script *mainScript = e_malloc(sizeof *mainScript);
-  ecru_script *scriptsArray = e_malloc(numScripts * sizeof *scriptsArray);
-
-  mainMethod->verb = e_intern("run/0");
-  mainMethod->code = ((Flexlist_data *)mainCode.data.other)->elements;
-  mainMethod->length = ((Flexlist_data *)mainCode.data.other)->size;
-  mainMethod->num_locals = e_call_0(e_call_0(module, &getBindings), &size);
-  mainMethod->handlerTable = packHandlerTable(htable);
-  mainMethod->handlerTableLength = ((Flexlist_data *)htable.data.other)->size;
-
-  mainScript->num_methods = 1;
-  mainScript->methods = mainMethod;
-  mainScript->num_matchers = 0;
-  mainScript->matchers = NULL;
-  mainScript->num_slots = 0;
-  scriptsArray[0] = mainScript;
-  for (int i = 1; i < numScripts; i++) {
-    e_Ref script = e_call_1(scripts, &get, e_make_fixnum(i));
-    e_Ref methods = e_call_1(script, &get, e_make_fixnum(0));
-    e_Ref matchers = e_call_1(script, &get, e_make_fixnum(1));
-    e_Ref numSlots = e_call_1(script, &get, e_make_fixnum(2));
-    int numMethods = ((Flexlist_data *)methods.data.other)->size;
-    int numMatchers = ((Flexlist_data *)matchers.data.other)->size;
-    ecru_method *methodArray = e_malloc(numMethods * sizeof *methodArray);
-    ecru_matcher *matcherArray = e_malloc(numMatchers * sizeof *matcherArray);
-    ecru_script *s = e_malloc(sizeof *s);
-    for (int j = 0; j < numMethods; j++) {
-      methodArray[j] = packMethod(e_call_0(methods, &get, e_make_fixnum(j)));
-    }
-    for (int j = 0; j < numMatchers; j++) {
-      matcherArray[j] = packMatcher(e_call_0(matchers, &get, e_make_fixnum(j)));
-    }
-    s->num_matchers = numMatchers;
-    s->num_methods = numMethods;
-    s->methods = methodArray;
-    s->matchers = matcherArray;
-    s->num_slots = numSlots.data.fixnum;
-    scriptsArray[i] = s;
-  }
-
-  m.constants = ((Flexlist_data *)constants.data.other)->elements;
-  m.constantsLength = ((Flexlist_data *)constants.data.other)->size;
-
-  m.selectors = ((Flexlist_data *)selectors.data.other)->elements;
-  m.selectorsLength = ((Flexlist_data *)selectors.data.other)->size;
-
-  m.scripts = scriptsArray;
-  m.scriptsLength = numScripts;
-
-  m.scope = scope;
-  m.stackDepth = 0;
-}
-*/
-
-ecru_module *monte_bridge_pack(e_Ref module, e_Ref scope) {
-
 }
 
 typedef struct interactive_runnable {
@@ -441,6 +406,11 @@ static e_Ref debug_dump(e_Ref module) {
   E_ERROR_CHECK(x);
   return e_string_writer_get_string(w);
 }
+
+/**
+   Compile and load Kernel-E tree in the given scope. Submit it to the vat for
+   evaluation, returning a promise for the result.
+*/
 static e_Ref eventual_interactive_eval(e_Ref ktree, e_Ref scope) {
   e_Ref module = e_call_2(compiler, &run, ktree, scope);
   E_ERROR_CHECK(module);
@@ -452,6 +422,11 @@ static e_Ref eventual_interactive_eval(e_Ref ktree, e_Ref scope) {
   return doModuleInteractive(m, module);
 }
 
+/**
+   Submit a Kernel-E tree in the given scope for evaluation and run the vat
+   until its queue is exhausted. Return the results of evaluation.
+*/
+
 static e_Ref synchronous_interactive_eval(e_Ref ktree, e_Ref scope) {
   e_Ref out = eventual_interactive_eval(ktree, scope);
   e_vat_set_active(python_vat);
@@ -459,7 +434,10 @@ static e_Ref synchronous_interactive_eval(e_Ref ktree, e_Ref scope) {
   return out;
 }
 
-
+/**
+   Compile a Kernel-E tree in the given scope and return the resulting bytecode
+   as a string, serialized into Ecru's compiled-emaker format.
+*/
 static PyObject *bridge_dump_module(PyObject *self, PyObject *args) {
   PyObject *ktree, *scope;
   if (!PyArg_ParseTuple(args, "OO", &ktree, &scope)) {
@@ -472,6 +450,10 @@ static PyObject *bridge_dump_module(PyObject *self, PyObject *args) {
   return e_to_py(dump_module(module));
 }
 
+/**
+   Compile a Kernel-E tree in the given scope and print out a debug dump of
+   compilation results.
+*/
 static PyObject *bridge_debug_dump(PyObject *self, PyObject *args) {
   PyObject *ktree, *scope;
   if (!PyArg_ParseTuple(args, "OO", &ktree, &scope)) {
@@ -484,6 +466,9 @@ static PyObject *bridge_debug_dump(PyObject *self, PyObject *args) {
   return e_to_py(debug_dump(module));
 }
 
+/**
+   Call E printing routines on an E object, returning an E string.
+*/
 static e_Ref _print(e_Ref obj) {
   e_Ref result;
   if (obj.script == NULL) {
@@ -500,6 +485,10 @@ static e_Ref _print(e_Ref obj) {
   return result;
 }
 
+/**
+   Evaluate a Kernel-E tree in a given scope. Return the result and a new
+   scope.
+*/
 static PyObject *bridge_interactive_eval(PyObject *self, PyObject *args) {
   PyObject *ktree, *scope;
   _Bool printIt;
@@ -516,6 +505,10 @@ static PyObject *bridge_interactive_eval(PyObject *self, PyObject *args) {
   return e_to_py(pair);
 }
 
+/**
+   Evaluate a Kernel-E tree in a given scope, eventually. Immediately return a
+   promise for a [result, newScope] pair.
+ */
 static PyObject *bridge_incremental_eval(PyObject *self, PyObject *args) {
   PyObject *ktree, *scope;
   if (!PyArg_ParseTuple(args, "OO", &ktree, &scope)) {
@@ -524,6 +517,10 @@ static PyObject *bridge_incremental_eval(PyObject *self, PyObject *args) {
   return e_to_py(eventual_interactive_eval(py_to_e(ktree), py_to_e(scope)));
 }
 
+/**
+   Execute a single item in the vat's run queue. Returns whether more
+   items remain to execute or not.
+*/
 static PyObject *bridge_iterate(PyObject *self, PyObject *args) {
   if (!PyArg_ParseTuple(args, "")) {
     return NULL;
@@ -532,6 +529,9 @@ static PyObject *bridge_iterate(PyObject *self, PyObject *args) {
   return PyBool_FromLong(e_vat_execute_turn(python_vat));
 }
 
+/**
+   Returns a Python string representation of an E object.
+*/
 static PyObject *bridge_toString(PyObject *self, PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args, "O", &obj)) {
@@ -550,7 +550,6 @@ static PyMethodDef bridge_methods[] = {
    "Call this before using any other bridge functions. Takes the classes"
    " 'EObjectWrapper' and 'Character' as args."},
   {"getPrivilegedScope", bridge_getPrivilegedScope, METH_VARARGS,
-   //   "Fetch a single E object by name from the privileged scope."},
    "Fetch the E object representing the unsafe scope."},
   {"e_call", bridge_e_call, METH_VARARGS,
    "Call a method on an E object."},
@@ -565,7 +564,7 @@ static PyMethodDef bridge_methods[] = {
    "Evaluate a Kernel-E tree in a given scope, eventually. Immediately return"
    " a promise for a  [result, newScope] pair."},
   {"iterate", bridge_iterate, METH_VARARGS,
-   "Execute a single item in the Python vat's run queue. Returns whether more "
+   "Execute a single item in the vat's run queue. Returns whether more "
    "items remain to execute or not."},
   {"toString", bridge_toString, METH_VARARGS,
    "Return a Python string representation of an E object."},
