@@ -508,7 +508,7 @@ static PyObject *bridge_interactive_eval(PyObject *self, PyObject *args) {
 
   }
   e_Ref pair = synchronous_interactive_eval(py_to_e(ktree), py_to_e(scope));
-  if (printIt) {
+  if (printIt && pair.script != NULL) {
     // nobody else has acquired this object yet, right? we can still modify it
     e_Ref *val = ((Flexlist_data *)((e_ref_target(pair)).data.other))->elements;
     val[0] = _print(val[0]);
