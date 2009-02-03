@@ -62,7 +62,7 @@ class BootOMetaGrammar(OMetaBase):
         expr, endchar = self.pythonExpr(endChars="\r\n)]")
         if str(endchar) in ")]":
             self.input = self.input.prev()
-        return self.builder.compilePythonExpr(self.name, expr)
+        return self.builder.action(self.builder.compilePythonExpr(self.name, expr))
 
 
     def semanticActionExpr(self):
@@ -72,7 +72,7 @@ class BootOMetaGrammar(OMetaBase):
 
     def semanticPredicateExpr(self):
         expr = self.builder.compilePythonExpr(self.name, self.pythonExpr(')')[0])
-        return self.builder.pred(expr)
+        return self.builder.pred(self.builder.action(expr))
 
 
     def rule_number(self):

@@ -103,9 +103,9 @@ grammar ::= <rule>*:rs <spaces> => self.builder.makeGrammar(rs)
 """
 #don't be confused, emacs
 
-class OMetaGrammar(OMeta.makeGrammar(ometaGrammar, globals())):
+class GrammarInterfaceMixin(object):
     """
-    The base grammar for parsing grammar definitions.
+    Interface bits common to various OMeta permutations.
     """
     def parseGrammar(self, name, builder, *args):
         """
@@ -127,6 +127,15 @@ class OMetaGrammar(OMeta.makeGrammar(ometaGrammar, globals())):
             raise ParseError("Grammar parse failed. Leftover bits: %s" % (x,))
         return res
 
+
+
+_PythonActionGrammar = OMeta.makeGrammar(ometaGrammar, globals())
+
+class OMetaGrammar(GrammarInterfaceMixin,
+                   _PythonActionGrammar):
+    """
+    The base grammar for parsing grammar definitions.
+    """
 
     def applicationArgs(self):
         """
@@ -157,7 +166,7 @@ class OMetaGrammar(OMeta.makeGrammar(ometaGrammar, globals())):
         expr, endchar = self.pythonExpr(endChars="\r\n)]")
         if str(endchar) in ")]":
             self.input = self.input.prev()
-        return self.builder.compilePythonExpr(self.name, expr)
+        return self.builder.action(self.builder.compilePythonExpr(self.name, expr))
 
     def semanticActionExpr(self):
         """
@@ -174,7 +183,64 @@ class OMetaGrammar(OMeta.makeGrammar(ometaGrammar, globals())):
         it's in.
         """
         expr = self.builder.compilePythonExpr(self.name, self.pythonExpr(')')[0])
-        return self.builder.pred(expr)
+        return self.builder.pred(self.builder.action(expr))
+
+class ActionNoun(object):
+    """
+    A noun in a portable OMeta grammar action.
+    """
+    def __init__(self, name):
+        self.name = name
+
+
+    def visit(self, visitor):
+        return visitor.name(self.name)
+
+class ActionCall(object):
+    """
+    A call action in a portable OMeta grammar.
+    """
+    def __init__(self, verb, args):
+        self.verb = verb
+        self.args = args or []
+
+
+    def visit(self, visitor):
+        return visitor.call(self.verb.visit(visitor), [arg.visit(visitor) for arg in self.args])
+
+
+
+portableOMetaGrammar = """
+action ::= <spaces> (<actionCall> | <actionNoun>)
+actionCall ::= <actionNoun>:verb <token "("> <actionArgs>?:args <token ")"> => ActionCall(verb, args)
+actionArgs ::= <action>:a (<token ','> <action>)*:b => [a] + b
+actionNoun ::= <name>:n => ActionNoun(n)
+
+ruleValue ::= <token "=>"> <action>:a => self.result(a)
+semanticPredicate ::= <token "?("> <action>:a <token ")"> => self.predicate(a)
+semanticAction ::= <token "!("> <action>:a <token ")"> => self.action(a)
+"""
+
+
+_PortableActionGrammar = _PythonActionGrammar.makeGrammar(portableOMetaGrammar,
+                                                          globals(), "PortableOMeta")
+
+class PortableOMeta(GrammarInterfaceMixin, _PortableActionGrammar):
+    """
+    An OMeta variant with portable syntax for actions.
+    """
+
+    def result(self, action):
+        return self.builder.compilePortableAction(action)
+
+
+    def predicate(self, action):
+        return self.builder.pred(self.builder.compilePortableAction(action))
+
+
+    def action(self, action):
+        return self.builder.compilePortableAction(action)[:-1] + ["None"]
+
 
 OMeta.metagrammarClass = OMetaGrammar
 

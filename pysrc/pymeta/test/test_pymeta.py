@@ -1,5 +1,3 @@
-import sys, linecache
-from types import ModuleType as module
 from twisted.trial import unittest
 from pymeta.runtime import ParseError, OMetaBase
 from pymeta.boot import BootOMetaGrammar
@@ -377,6 +375,105 @@ class PyExtractorTest(unittest.TestCase):
         self.assertRaises(ParseError, o.pythonExpr)
         o = OMetaBase("foo(x[1]\nbaz ::= ...\n")
         self.assertRaises(ParseError, o.pythonExpr)
+
+
+class ActionExtractorTest(unittest.TestCase):
+    """
+    Tests for parsing portable action syntax.
+    """
+    def test_localNoun(self):
+        """
+        Simple variable access parses to an ActionNoun.
+        """
+        from pymeta.grammar import PortableOMeta, ActionNoun
+        o = PortableOMeta("foo\nbaz ::= ...\n")
+        na = o.apply("action")
+        self.assertIsInstance(na, ActionNoun)
+        self.assertEqual(na.name, "foo")
+
+
+    def test_call(self):
+        """
+        Call syntax produces a ActionCall.
+        """
+        from pymeta.grammar import PortableOMeta, ActionCall
+        o = PortableOMeta("foo(x, y)\nbaz ::= ...\n")
+        ca = o.apply("action")
+        self.assertIsInstance(ca, ActionCall)
+        self.assertEqual(ca.verb.name, "foo")
+        self.assertEqual(len(ca.args), 2)
+        self.assertEqual(ca.args[0].name, "x")
+        self.assertEqual(ca.args[1].name, "y")
+
+
+    def test_callNoArgs(self):
+        """
+        Calls with no args produce an empty args list in the ActionCall.
+        """
+        from pymeta.grammar import PortableOMeta
+        o = PortableOMeta("foo()\nbaz ::= ...\n")
+        ca = o.apply("action")
+        self.assertEqual(ca.args, [])
+
+
+class PortableOMetaTestCase(unittest.TestCase):
+    """
+    Tests of OMeta grammar compilation.
+    """
+
+    def compile(self, grammar, scope):
+        """
+        Produce an object capable of parsing via this grammar.
+
+        @param grammar: A string containing an OMeta grammar.
+        """
+        from pymeta.grammar import PortableOMeta
+        g = PortableOMeta(grammar)
+        result = g.parseGrammar('TestGrammar', PythonBuilder, OMetaBase, scope)
+        return HandyWrapper(result)
+
+
+    def test_predicate(self):
+        """
+        Action expressions can be used to determine the success or failure of a
+        parse.
+        """
+        g = self.compile("""
+              digit ::= '0' | '1'
+              double_bits ::= <digit>:a <digit>:b ?(eq(a, b)) => int(b)
+           """, {"eq": (lambda a, b: a == b),
+                 "int": int})
+        self.assertEqual(g.double_bits("00"), 0)
+        self.assertEqual(g.double_bits("11"), 1)
+        self.assertRaises(ParseError, g.double_bits, "10")
+        self.assertRaises(ParseError, g.double_bits, "01")
+
+
+    def test_action(self):
+        """
+        Action expressions can be run as actions with no effect on the result
+        of the parse.
+        """
+        g = self.compile("""
+                        foo ::= '1'*:ones !(False) !(insert(ones, zero, oh)) => join(ones)
+                        """, {"False": False,
+                              "insert": lambda a, b, c: a.insert(b, c),
+                              "join": lambda x: ''.join(x),
+                              "zero": 0,
+                              "oh": '0'})
+        self.assertEqual(g.foo("111"), "0111")
+
+
+    def test_ruleValue(self):
+        """
+        Productions can specify a action expression that provides the result
+        of the parse.
+        """
+        g = self.compile("foo ::= '1':x => foo(x, y)",
+                         {"foo": (lambda x, y: int(x) + y),
+                          "y": 6})
+        self.assertEqual(g.foo('1'), 7)
+
 
 
 class MakeGrammarTest(unittest.TestCase):

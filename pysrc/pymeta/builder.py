@@ -57,6 +57,8 @@ class TreeBuilder(object):
     def compilePythonExpr(self, name, expr):
         return ["Python", name, expr]
 
+
+
 class AstBuilder(object):
     """
     Builder of Python code objects via the 'compiler.ast' module.
@@ -68,6 +70,7 @@ class AstBuilder(object):
         """
         self.name = name
         self.grammar = grammar
+
 
     def _compileAstMethod(self, name, expr):
         """
@@ -98,6 +101,7 @@ class AstBuilder(object):
                               ast.Getattr(ast.Name("self"), "globals"),
                               ast.Name('__locals')])])
 
+
     def function(self, name, expr):
         """
         Create a function of one argument with the given name returning the
@@ -121,6 +125,7 @@ class AstBuilder(object):
         f.filename = self.name
         return f
 
+
     def makeGrammar(self, rules):
         """
         Collect a list of (name, ast) tuples into a dict suitable for use as a
@@ -132,6 +137,7 @@ class AstBuilder(object):
         methodDict = {'locals': {}}
         methodDict.update(ruleMethods)
         return methodDict
+
 
     def apply(self, ruleName, codeName='', *exprs):
         """
@@ -148,6 +154,7 @@ class AstBuilder(object):
                             [ast.Const(ruleName)] + args,
                         None, None)
 
+
     def exactly(self, expr):
         """
         Create a call to self.exactly(expr).
@@ -156,6 +163,7 @@ class AstBuilder(object):
                                         "exactly"),
                             [ast.Const(expr)],
                             None, None)
+
 
     def many(self, expr):
         """
@@ -168,6 +176,7 @@ class AstBuilder(object):
                             [f],
                             None, None)
 
+
     def many1(self, expr):
         """
         Create a call to self.many((lambda: expr), expr).
@@ -179,11 +188,13 @@ class AstBuilder(object):
                             [f, expr],
                             None, None)
 
+
     def optional(self, expr):
         """
         Try to parse an expr and continue if it fails.
         """
         return self._or([expr, ast.Const(None)])
+
 
     def _or(self, exprs):
         """
@@ -199,6 +210,7 @@ class AstBuilder(object):
                                         "_or"),
                             [ast.List(fs)],
                             None, None)
+
 
     def _not(self, expr):
         """
@@ -236,6 +248,7 @@ class AstBuilder(object):
         else:
             return ast.Const(None)
 
+
     def bind(self, expr, name):
         """
         Generates code for binding a name to a value in the rule's locals dict.
@@ -247,6 +260,7 @@ class AstBuilder(object):
                             expr),
                  ast.Subscript(ast.Name('__locals'),
                                'OP_APPLY', [ast.Const(name)])])
+
 
     def pred(self, expr):
         """
@@ -260,12 +274,14 @@ class AstBuilder(object):
                             [f],
                             None, None)
 
+
     def action(self, expr):
         """
         Compiled python code is not treated specially if its return value isn't
         important.
         """
         return expr
+
 
     def listpattern(self, exprs):
         """
@@ -279,6 +295,7 @@ class AstBuilder(object):
                             None, None)
 
 
+
 class GeneratedCodeLoader(object):
     """
     Object for use as a module's __loader__, to display generated
@@ -288,6 +305,32 @@ class GeneratedCodeLoader(object):
         self.source = source
     def get_source(self, name):
         return self.source
+
+
+class ActionVisitor:
+    gensymCounter = 0
+
+    def __init__(self, output):
+        self.output = output
+
+    def _gensym(self):
+        """
+        Produce a unique name for a variable in generated code.
+        """
+        ActionVisitor.gensymCounter += 1
+        return "_A_%s" % (self.gensymCounter)
+
+    def name(self, name):
+        result = self._gensym()
+        self.output.append('%s = self.lookupActionName(%r, _locals)' % (result, name))
+        return result
+
+    def call(self, verb, args):
+        result = self._gensym()
+        self.output.append('%s = %s(%s)' % (result, verb, ', '.join(args)))
+        return result
+
+
 
 class PythonBuilder(object):
     """
@@ -395,6 +438,16 @@ class PythonBuilder(object):
         return self._expr('eval(%r, self.globals, _locals)' %(expr,))
 
 
+    def compilePortableAction(self, action):
+        """
+        Generate Python code for an action expression.
+        """
+        output = []
+        av = ActionVisitor(output)
+        output.append(action.visit(av))
+        return output
+
+
     def apply(self, ruleName, codeName=None, *exprs):
         """
         Create a call to self.apply(ruleName, *args).
@@ -491,8 +544,8 @@ class PythonBuilder(object):
         """
         Generate a call to self.pred(lambda: expr).
         """
-
-        fn, fname = self._newThunkFor("pred", [expr])
+        assert(isinstance(expr, list))
+        fn, fname = self._newThunkFor("pred", expr)
         return self.sequence([fn, self._expr("self.pred(%s)" %(fname))])
 
     def action(self, expr):
@@ -500,6 +553,236 @@ class PythonBuilder(object):
         Generate this embedded Python expression on its own line.
         """
         return [expr]
+
+    def listpattern(self, expr):
+        """
+        Generate a call to self.listpattern(lambda: expr).
+        """
+        fn, fname = self._newThunkFor("listpattern", expr)
+        return self.sequence([fn, self._expr("self.listpattern(%s)" %(fname))])
+
+
+
+class EBuilder(object):
+    """
+    Generate E source for grammars.
+    """
+    def __init__(self, name, grammar, superclass, globals):
+        self.name = name
+        self.superclass = superclass
+        self.gensymCounter = 0
+        self.grammar = grammar
+        self.globals = globals
+
+
+    def _gensym(self, name):
+        """
+        Produce a unique name for a variable in generated code.
+        """
+        self.gensymCounter += 1
+        return "_G_%s_%s" % (name, self.gensymCounter)
+
+
+    def _newThunkFor(self, name, expr):
+        """
+        Define a new function of no arguments.
+        @param name: The name of the rule generating this thunk.
+        @param expr: A list of lines of E code.
+        """
+        fname = self._gensym(name)
+        return (self._function("def %s() { " % (fname,), expr), fname)
+
+
+    def _expr(self, e):
+        """
+        No unique handling of embedded E expressions, presently.
+        """
+        return e
+
+
+    def _indent(self, line):
+        """
+        Indent a line of code.
+        """
+        if line.isspace():
+            return '\n'
+        else:
+            return "    " + line
+
+
+    def _return(self, ex):
+        """
+        Generate a 'return' statement, if the given line does not contain one.
+        """
+        if ex.strip().startswith("return"):
+            return ex
+        else:
+            return 'return ' + ex
+
+
+    def _function(self, head, body):
+        """
+        Generate a function.
+        @param head: The initial line defining the function.
+        @param body: A list of lines for the function body.
+        """
+        body = list(body)
+        return ([head] + [self._indent(line) for line in body[:-1]] +
+                [self._indent(self._return(body[-1]))] + ['}'])
+
+
+    def _suite(self, head, body):
+        """
+        Generate a suite, indenting the body lines.
+        @param head: The initial line opening the suite.
+        @param body: A list of lines for the suite body.
+        """
+        body = list(body)
+        return [head] + [self._indent(line) for line in body]
+
+
+    def makeGrammar(self, rules):
+        """
+        Produce a class from a collection of rules.
+
+        @param rules: A mapping of names to rule bodies.
+        """
+        lines = list(itertools.chain(*[self._function(
+            "to rule_%s() {" % (name,),
+            ["def _locals := ['self' => self].diverge()",
+             "allLocals[%r] := _locals" % (name,)] + list(body))
+                                       for (name, body) in rules]))
+        source = '\n'.join(self._suite(
+                "def make%s {" % (self.name.capitalize(),),
+                ["def allLocals = [].asMap().diverge()"] + self._suite(
+            "def self extends %s {" %(self.superclass.__name__,),
+            lines)))
+        return source
+
+
+    def compilePythonExpr(self, name, expr):
+        """
+        Generate code for running embedded Python expressions.
+        """
+        return expr
+
+
+    def apply(self, ruleName, codeName=None, *exprs):
+        """
+        Create a call to self.apply(ruleName, *args).
+        """
+        args = [self.compilePythonExpr(codeName, arg) for arg in exprs]
+        if ruleName == 'super':
+            return [self._expr('self.superApply("%s", %s)' % (codeName,
+                                                              ', '.join(args)))]
+        return [self._expr('self.apply("%s", %s)' % (ruleName,
+                                                     ', '.join(args)))]
+
+
+    def exactly(self, literal):
+        """
+        Create a call to self.exactly(expr).
+        """
+        return [self._expr('self.exactly(%r)' % (literal,))]
+
+
+    def many(self, expr):
+        """
+        Create a call to self.many(lambda: expr).
+        """
+        fn, fname = self._newThunkFor("many", expr)
+        return self.sequence([fn, "self.many(%s)" %(fname,)])
+
+
+    def many1(self, expr):
+        """
+        Create a call to self.many((lambda: expr), expr).
+        """
+        fn, fname = self._newThunkFor("many", expr)
+        return self.sequence([fn, self._expr("self.many(%s, %s())" %(fname,
+                                                                     fname))])
+
+
+    def optional(self, expr):
+        """
+        Try to parse an expr and continue if it fails.
+        """
+        return self._or([expr, ["null"]])
+
+
+    def _or(self, exprs):
+        """
+        Create a call to
+        self._or([lambda: expr1, lambda: expr2, ... , lambda: exprN]).
+        """
+        if len(exprs) > 1:
+            fs, fnames = zip(*[self._newThunkFor("_or", expr)
+                               for expr in exprs])
+            return (self.sequence(list(fs) +
+                                  [self._expr("self._or([%s])" %
+                                              (', '.join(fnames)))]))
+        else:
+            return exprs[0]
+
+
+    def _not(self, expr):
+        """
+        Create a call to self._not(lambda: expr).
+        """
+        fn, fname = self._newThunkFor("_not", expr)
+        return self.sequence([fn, self._expr("self._not(%s)" %(fname))])
+
+
+    def lookahead(self, expr):
+        """
+        Create a call to self.lookahead(lambda: expr).
+        """
+        fn, fname = self._newThunkFor("lookahead", expr)
+        return self.sequence([fn, self._expr("self.lookahead(%s)" %(fname))])
+
+
+    def sequence(self, exprs):
+        """
+        Generate code for each statement in order.
+        """
+        for ex in exprs:
+            if not ex:
+                continue
+            elif isinstance(ex, str):
+                yield ex
+            else:
+                for subex in ex:
+                    yield subex
+
+
+    def bind(self, exprs, name):
+        """
+        Bind the value of the last expression in 'exprs' to a name in the
+        _locals dict.
+        """
+        bodyExprs = list(exprs)
+        finalExpr = bodyExprs[-1]
+        bodyExprs = bodyExprs[:-1]
+        return self.sequence(bodyExprs + ["_locals['%s'] := %s" %(name,
+                                                                  finalExpr),
+                                          self._expr("_locals['%s']" %(name,))])
+
+
+    def pred(self, expr):
+        """
+        Generate a call to self.pred(lambda: expr).
+        """
+
+        fn, fname = self._newThunkFor("pred", expr)
+        return self.sequence([fn, self._expr("self.pred(%s)" %(fname))])
+
+
+    def action(self, expr):
+        """
+        Generate this embedded Python expression on its own line.
+        """
+        return [expr]
+
 
     def listpattern(self, expr):
         """
