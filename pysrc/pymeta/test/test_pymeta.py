@@ -1,7 +1,7 @@
 from twisted.trial import unittest
 from pymeta.runtime import ParseError, OMetaBase
 from pymeta.boot import BootOMetaGrammar
-from pymeta.builder import TreeBuilder, AstBuilder, PythonBuilder
+from pymeta.builder import AstBuilder, PythonBuilder
 
 class HandyWrapper(object):
     """
@@ -476,6 +476,26 @@ class PortableOMetaTestCase(unittest.TestCase):
 
 
 
+    def test_applicationArgs(self):
+        """
+        Rules can be invoked with actions as arguments.
+        """
+        g = self.compile("""
+              digit ::= ('0' | '1' | '2'):d => int(d)
+              foo :x ::= (?(gt(x, one)) '9' | ?(lte(x, one)) '8'):d => int(d)
+              baz ::= <digit>:a <foo a>:b => makeList(a, b)
+           """,
+                         {"gt": lambda x, y: x > y,
+                          "lte": lambda x, y: x <= y,
+                          "int": int,
+                          "one": 1,
+                          "makeList": lambda *a: list(a)})
+        self.assertEqual(g.baz("18"), [1, 8])
+        self.assertEqual(g.baz("08"), [0, 8])
+        self.assertEqual(g.baz("29"), [2, 9])
+        self.assertRaises(ParseError, g.foo, "28")
+
+
 class MakeGrammarTest(unittest.TestCase):
     """
     Test the definition of grammars via the 'makeGrammar' method.
@@ -551,22 +571,3 @@ class SelfHostingTest(OMetaTestCase):
 
 
 
-class NullOptimizerTest(OMetaTestCase):
-    """
-    Tests of OMeta grammar compilation via the null optimizer.
-    """
-
-    def compile(self, grammar):
-        """
-        Produce an object capable of parsing via this grammar.
-
-        @param grammar: A string containing an OMeta grammar.
-        """
-        from pymeta.grammar import OMetaGrammar, NullOptimizer
-        g = OMetaGrammar(grammar)
-        tree = g.parseGrammar('TestGrammar', TreeBuilder)
-        opt = NullOptimizer([tree])
-        opt.builder = AstBuilder("<grammar>", opt)
-        methodDict = opt.apply("grammar")
-        grammarClass = type("<grammar>", (OMetaBase,), methodDict)
-        return HandyWrapper(grammarClass)

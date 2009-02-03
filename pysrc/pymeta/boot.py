@@ -53,7 +53,7 @@ class BootOMetaGrammar(OMetaBase):
             except ParseError:
                 break
         if args:
-            return args
+            return [[self.builder.compilePythonExpr(self.name, arg)] for arg in args]
         else:
             raise ParseError()
 
@@ -203,10 +203,10 @@ class BootOMetaGrammar(OMetaBase):
             self.exactly(' ')
             _locals['args'] = eval('self.applicationArgs()', self.globals, _locals)
             _locals['args']
-            return eval('self.builder.apply(name, self.name, *args)', self.globals, _locals)
+            return eval('self.builder.apply(name, self.name, args)', self.globals, _locals)
         def _G__or_18():
             self.apply("token", eval("'>'", self.globals, _locals))
-            return eval('self.builder.apply(name, self.name)', self.globals, _locals)
+            return eval('self.builder.apply(name, self.name, [])', self.globals, _locals)
         return self._or([_G__or_17, _G__or_18])
 
 
@@ -293,7 +293,7 @@ class BootOMetaGrammar(OMetaBase):
             self.apply("token", eval("':'", self.globals, _locals))
             _locals['n'] = self.apply("name", )
             _locals['n']
-            return eval('self.builder.bind(self.builder.apply("anything", self.name), n)', self.globals, _locals)
+            return eval('self.builder.bind(self.builder.apply("anything", self.name, []), n)', self.globals, _locals)
         return self._or([_G__or_38, _G__or_39])
 
 

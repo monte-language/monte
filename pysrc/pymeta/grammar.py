@@ -50,10 +50,11 @@ string ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c <token '"'> => sel
 name ::= <letter>:x <letterOrDigit>*:xs !(xs.insert(0, x)) => ''.join(xs)
 
 application ::= (<token '<'> <spaces> <name>:name
-                  (' ' !(self.applicationArgs()):args
-                     => self.builder.apply(name, self.name, *args)
+                  (<applicationArgs>:args
+                     => self.builder.apply(name, self.name, args)
                   |<token '>'>
-                     => self.builder.apply(name, self.name)))
+                     => self.builder.apply(name, self.name, [])))
+applicationArgs ::= <spaces> => self.applicationArgs(self.name)
 
 expr1 ::= (<application>
           |<ruleValue>
@@ -76,7 +77,7 @@ expr3 ::= ((<expr2>:e ('*' => self.builder.many(e)
            (':' <name>:n => self.builder.bind(r, n)
            | => r)
           |<token ':'> <name>:n
-           => self.builder.bind(self.builder.apply("anything", self.name), n))
+           => self.builder.bind(self.builder.apply("anything", self.name, []), n))
 
 expr4 ::= <expr3>*:es => self.builder.sequence(es)
 
@@ -137,7 +138,7 @@ class OMetaGrammar(GrammarInterfaceMixin,
     The base grammar for parsing grammar definitions.
     """
 
-    def applicationArgs(self):
+    def applicationArgs(self, codeName):
         """
         Collect rule arguments, a list of Python expressions separated by
         spaces.
@@ -154,7 +155,7 @@ class OMetaGrammar(GrammarInterfaceMixin,
             except ParseError:
                 break
         if args:
-            return args
+            return [[self.builder.compilePythonExpr(self.name, arg)] for arg in args]
         else:
             raise ParseError()
 
@@ -219,6 +220,7 @@ actionNoun ::= <name>:n => ActionNoun(n)
 ruleValue ::= <token "=>"> <action>:a => self.result(a)
 semanticPredicate ::= <token "?("> <action>:a <token ")"> => self.predicate(a)
 semanticAction ::= <token "!("> <action>:a <token ")"> => self.action(a)
+applicationArgs ::= (<spaces> <action>)+:args <token ">"> => [self.result(a) for a in args]
 """
 
 
@@ -243,27 +245,3 @@ class PortableOMeta(GrammarInterfaceMixin, _PortableActionGrammar):
 
 
 OMeta.metagrammarClass = OMetaGrammar
-
-nullOptimizationGrammar = """
-
-opt ::= ( ["Apply" :ruleName :codeName [<anything>*:exprs]] => self.builder.apply(ruleName, codeName, *exprs)
-        | ["Exactly" :expr] => self.builder.exactly(expr)
-        | ["Many" <opt>:expr] => self.builder.many(expr)
-        | ["Many1" <opt>:expr] => self.builder.many1(expr)
-        | ["Optional" <opt>:expr] => self.builder.optional(expr)
-        | ["Or" <opt>*:exprs] => self.builder._or(exprs)
-        | ["And" <opt>*:exprs] => self.builder.sequence(exprs)
-        | ["Not" <opt>:expr]  => self.builder._not(expr)
-        | ["Lookahead" <opt>:expr] => self.builder.lookahead(expr)
-        | ["Bind" :name <opt>:expr] => self.builder.bind(expr, name)
-        | ["Predicate" <opt>:expr] => self.builder.pred(expr)
-        | ["Action" <opt>:expr] => self.builder.action(expr)
-        | ["Python" :name :code] => self.builder.compilePythonExpr(name, code)
-        | ["List" <opt>:exprs] => self.builder.listpattern(exprs)
-        )
-grammar ::= ["Grammar" [<rulePair>*:rs]] => self.builder.makeGrammar(rs)
-rulePair ::= [:name <opt>:rule] => (name, rule)
-
-"""
-
-NullOptimizer = OMeta.makeGrammar(nullOptimizationGrammar, {})
