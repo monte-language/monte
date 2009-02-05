@@ -415,6 +415,18 @@ class ActionExtractorTest(unittest.TestCase):
         ca = o.apply("action")
         self.assertEqual(ca.args, [])
 
+    def test_literal(self):
+        """
+        Literal syntax produces ActionLiteral objects.
+        """
+        from pymeta.grammar import PortableOMeta, ActionLiteral
+        o = PortableOMeta("foo(\"1\", '1', 1)\nbaz ::= ...\n")
+        ca = o.apply("action")
+        for a in ca.args:
+            self.assertIsInstance(a, ActionLiteral)
+        self.assertEqual([a.value for a in ca.args], ["1", "1", 1])
+
+
 
 class PortableOMetaTestCase(unittest.TestCase):
     """
@@ -455,12 +467,11 @@ class PortableOMetaTestCase(unittest.TestCase):
         of the parse.
         """
         g = self.compile("""
-                        foo ::= '1'*:ones !(False) !(insert(ones, zero, oh)) => join(ones)
+                        foo ::= '1'*:ones !(False) !(insert(ones, 0, '0')) => join(ones)
                         """, {"False": False,
                               "insert": lambda a, b, c: a.insert(b, c),
-                              "join": lambda x: ''.join(x),
-                              "zero": 0,
-                              "oh": '0'})
+                              "join": lambda x: ''.join(x)
+                              })
         self.assertEqual(g.foo("111"), "0111")
 
 
@@ -494,6 +505,8 @@ class PortableOMetaTestCase(unittest.TestCase):
         self.assertEqual(g.baz("08"), [0, 8])
         self.assertEqual(g.baz("29"), [2, 9])
         self.assertRaises(ParseError, g.foo, "28")
+
+
 
 
 class MakeGrammarTest(unittest.TestCase):

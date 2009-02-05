@@ -26,8 +26,8 @@ class OMeta(OMetaBase):
     makeGrammar = classmethod(makeGrammar)
 
 ometaGrammar = r"""
-number ::= <spaces> ('-' <barenumber>:x => self.builder.exactly(-x)
-                    |<barenumber>:x => self.builder.exactly(x))
+number ::= <spaces> ('-' <barenumber>:x => -x
+                    |<barenumber>:x => x)
 barenumber ::= ('0' (('x'|'X') <hexdigit>*:hs => int(''.join(hs), 16)
                     |<octaldigit>*:ds => int('0'+''.join(ds), 8))
                |<digit>+:ds => int(''.join(ds)))
@@ -43,9 +43,9 @@ escapedChar ::= '\\' ('n' => "\n"
                      |'\'' => "'"
                      |'\\' => "\\")
 
-character ::= <token "'"> (<escapedChar> | <anything>):c <token "'"> => self.builder.exactly(c)
+character ::= <token "'"> (<escapedChar> | <anything>):c <token "'"> => c
 
-string ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c <token '"'> => self.builder.exactly(''.join(c))
+string ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c <token '"'> => ''.join(c)
 
 name ::= <letter>:x <letterOrDigit>*:xs !(xs.insert(0, x)) => ''.join(xs)
 
@@ -60,9 +60,7 @@ expr1 ::= (<application>
           |<ruleValue>
           |<semanticPredicate>
           |<semanticAction>
-          |<number>
-          |<character>
-          |<string>
+          |(<number> | <character> | <string>):lit => self.builder.exactly(lit)
           |<token '('> <expr>:e <token ')'> => e
           |<token '['> <expr>:e <token ']'> => self.builder.listpattern(e))
 
@@ -207,15 +205,28 @@ class ActionCall(object):
 
 
     def visit(self, visitor):
-        return visitor.call(self.verb.visit(visitor), [arg.visit(visitor) for arg in self.args])
+        return visitor.call(self.verb.visit(visitor),
+                            [arg.visit(visitor) for arg in self.args])
+
+
+class ActionLiteral(object):
+    """
+    A literal value in a portable OMeta action.
+    """
+    def __init__(self, value):
+        self.value = value
+
+    def visit(self, visitor):
+        return visitor.literal(self.value)
 
 
 
 portableOMetaGrammar = """
-action ::= <spaces> (<actionCall> | <actionNoun>)
+action ::= <spaces> (<actionCall> | <actionNoun> | <actionLiteral>)
 actionCall ::= <actionNoun>:verb <token "("> <actionArgs>?:args <token ")"> => ActionCall(verb, args)
 actionArgs ::= <action>:a (<token ','> <action>)*:b => [a] + b
 actionNoun ::= <name>:n => ActionNoun(n)
+actionLiteral ::=  (<number> | <character> | <string>):lit => ActionLiteral(lit)
 
 ruleValue ::= <token "=>"> <action>:a => self.result(a)
 semanticPredicate ::= <token "?("> <action>:a <token ")"> => self.predicate(a)

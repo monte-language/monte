@@ -275,6 +275,9 @@ class ActionVisitor:
         self.output.append('%s = %s(%s)' % (result, verb, ', '.join(args)))
         return result
 
+    def literal(self, value):
+        return repr(value)
+
 
 
 class PythonBuilder(object):
