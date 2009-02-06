@@ -26,6 +26,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("0755"), ["LiteralExpr", 0755])
         self.assertEqual(parse("3.14159E17"), ["LiteralExpr", 3.14159E17])
         self.assertEqual(parse("1e9"), ["LiteralExpr", 1e9])
+        self.assertEqual(parse("0"), ["LiteralExpr", 0])
         self.assertEqual(parse("7"), ["LiteralExpr", 7])
         self.assertEqual(parse("3_000"), ["LiteralExpr", 3000])
         self.assertEqual(parse("0.91"), ["LiteralExpr", 0.91])

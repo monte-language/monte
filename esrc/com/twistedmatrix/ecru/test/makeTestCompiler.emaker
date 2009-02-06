@@ -1,4 +1,4 @@
- def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>;
+def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>;
 def compile := <import:com.twistedmatrix.ecru.compiler>;
 def bytecodes := <import:com.twistedmatrix.ecru.bytecodes>;
 def safeScopeList := safeScope.getScopeLayout().getSynEnv().domain().getElements();

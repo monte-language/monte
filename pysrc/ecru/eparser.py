@@ -4,34 +4,6 @@ from pymeta.runtime import ParseError
 from ecru import nodes
 import string
 
-#first, make double quotes do tokens
-metagrammar = """
-string ::= <token '"'> (~('"') <anything>)*:c '"' => self.builder.apply("tokenBR", self.name, repr(''.join(c)))
-"""
-OMetaGrammarEx = PortableOMeta.makeGrammar(metagrammar, globals())
-
-class OMetaEx(OMeta):
-    metagrammarClass = OMetaGrammarEx
-
-    def rule_tokenBR(self):
-        """
-        Match and return the given string, consuming any preceding or trailing
-        whitespace.
-        """
-        tok = self.input.head()
-
-        m = self.input = self.input.tail()
-        try:
-            self.eatWhitespace()
-            for c in tok:
-                self.exactly(c)
-            self.apply("br")
-            return tok
-        except ParseError:
-            self.input = m
-            raise
-
-
 
 egrammar = r"""
 spaces ::= (' '|'\t'|'\f'|('#' (~<eol> <anything>)*))*
@@ -213,7 +185,7 @@ cond ::= <condAnd>:x (("||" <cond>):y => LogicalOr(x, y)
                      | => x)
 assign ::= (~<objectExpr> "def" (<pattern>:p ("exit" <order>)?:e ":=" <assign>:a => Def(p, e, a)
                   |<noun>:n (~~<seqSep> | <end>)=> Forward(n))
-           |<keywordPattern>:p ":=" <assign>:a => Def(p, None, a)
+           |<keywordPattern>:p ":=" <assign>:a => Def(p, null, a)
            |<cond>:x (":=" <assign>:y => Assign(x, y)
                     |<assignOp>:o <assign>:y => AugAssign(o, x, y)
                     |<identifier>:v '=' (<parenArgs>:y => VerbAssign(v, x, y)
@@ -236,7 +208,7 @@ assignOp ::= ("+=" => "Add"
 
 expr ::=  <ejector> | <assign>
 ejector ::= ((<token "break"> (=> Break) | <token "continue"> (=> Continue) | <token "return"> (=> Return)):ej
-             (("(" <token ")"> => None) | <assign>)?:val => ej(val))
+             (("(" <token ")"> => null) | <assign>)?:val => ej(val))
 
 guard ::= (<noun> | <parenExpr>):e ("[" <args>:x <token ']'> => x)*:xs => Guard(e, xs)
 optGuard ::= (":" <guard>)?
@@ -302,7 +274,7 @@ multiExtends ::= ((<token "extends"> <br> <order>:x ("," <order>)*:xs => cons(x,
 iscript ::= "{" (<messageDesc>:m <br> => m)*:ms <token "}"> => ms
 messageDesc ::= (<doco>?:doc (<token "to"> | <token "method">):t <verb>?:v <parenParamDescList>:ps <optGuard>:g
                 => MessageDesc(doc, t, v, ps, g))
-paramDesc ::= (<justNoun> | <token '_'> => None):n <optGuard>:g => ParamDesc(n, g)
+paramDesc ::= (<justNoun> | <token '_'> => null):n <optGuard>:g => ParamDesc(n, g)
 parenParamDescList ::= "(" <paramDesc>:p ("," <paramDesc>)*:ps <token ")"> => cons(p,  ps)
 
 accumExpr ::= <token "accum"> <call>:c <accumulator>:a => Accum(c, a)
@@ -323,9 +295,9 @@ escapeExpr ::= <token "escape"> <pattern>:p <block>:b <catcher>?:c => Escape(p, 
 forExpr ::= <token "for"> <forPattern>:p <token "in"> <br> <assign>:a <block>:b <catcher>?:c => For(p, a, b, c)
 
 forPattern ::= <pattern>:p (<br> "=>" <pattern>:px => makeList(p, px)
-                           | => makeList(None, p))
+                           | => makeList(null, p))
 
-ifExpr ::= <token "if"> <parenExpr>:p <br> <block>:b (<token "else"> (<ifExpr> | <block>) | => None):e => If(p, b, e)
+ifExpr ::= <token "if"> <parenExpr>:p <br> <block>:b (<token "else"> (<ifExpr> | <block>) | => null):e => If(p, b, e)
 
 lambdaExpr ::= <doco>?:doc <token "fn"> <patterns>:ps <block>:b => Lambda(doc, ps, b)
 
@@ -351,7 +323,8 @@ start ::= <updoc>? <br> <topSeq>?
 try:
     from eparser_generated import BaseEParser
 except ImportError:
-    BaseEParser = OMetaEx.makeGrammar(egrammar, globals(), "BaseEParser")
+    BaseEParser= PortableOMeta.makeGrammar(egrammar,  {}, "BaseEParser")
+
 
 class EParser(BaseEParser):
     """
@@ -408,6 +381,19 @@ class EParser(BaseEParser):
         except ValueError:
             raise ValueError("A literal @ is not meaningful in E source.")
 
+
+    def action_quasiHoleKeywordCheck(self, n):
+        if n in self.keywords:
+            raise ValueError("Unexpected keyword %r in quasi hole" % (n,))
+        else:
+            return None
+
+    def action_exprHoleKeywordCheck(self, n):
+        if n in self.keywords:
+            raise ValueError("Unexpected keyword %r in quasi hole" % (n,))
+        else:
+            return None
+
     def action_throwSemanticHere(self, arg):
         """
         Raise an error when invalid source is parsed.
@@ -436,8 +422,8 @@ class EParser(BaseEParser):
     def action_cons(self, first, rest):
         return [first] + rest
 
-    def action_concat(self, x, y, z=''):
-        return str(x) + str(y) + str(z)
+    def action_concat(self, *bits):
+        return ''.join(map(str, bits))
 
     def action_float(self, x):
         return float(x)
@@ -448,14 +434,14 @@ class EParser(BaseEParser):
         else:
             return float(ds+"."+fs
 )
-    def action_int(self, x):
-        return int(x)
+    def action_int(self, x, base=10):
+        return int(x, base)
 
     def action_join(self, x):
         return ''.join(x)
 
     def action_makeList(self, *bits):
-        return bits
+        return list(bits)
 
     def action_noIgnorePatternHole(self):
         raise RuntimeError()
@@ -476,7 +462,7 @@ class EParser(BaseEParser):
         return int(''.join(hs), 16)
 
     def action_makeOctal(self, ds):
-        return int(''.join(ds), 8)
+        return int('0'+''.join(ds), 8)
 
     def action_isDigit(self, x):
         return x in string.digits
@@ -495,5 +481,17 @@ class EParser(BaseEParser):
 
     def action_Interface(self, doc, i):
         return nodes.Interface(doc, *i)
+
+    def action_AccumFor(self, p, *args):
+        return nodes.AccumFor(*(p + list(args)))
+
+    def action_For(self, p, *args):
+        return nodes.For(*(p + list(args)))
+
+    def action_SeqExpr(self, xs):
+        return nodes.SeqExpr(filter(None, xs))
+
+    def action_Script(self, e, oi, s):
+        return nodes.Script(e, oi, *s)
 
     #noIgnoreExpressionHole nounExprFromSource valueHole

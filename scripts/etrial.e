@@ -4,8 +4,25 @@ def makeTestResults := <import:com.twistedmatrix.eunit.makeTestResults>;
 def makeTestLoader := <import:com.twistedmatrix.eunit.makeTestLoader>;
 def makeTestSuite := <import:com.twistedmatrix.eunit.makeTestSuite>;
 
+def getProblemStackAndMessage :=
+    if (privilegedScope.maps("lisp")) {
+        def getProblemStackAndMessage(p) {
+            #can't say 'lisp' because then this code wouldn't parse under EoJ
+            return [privilegedScope["lisp"]["E.ELIB",
+                         "FORMAT-BACKTRACE"].getFunction()(
+                             p:(<import:org.cubik.cle.prim.Throwable>)),
+                    privilegedScope["lisp"]["E.ELIB",
+                         "LOCAL-THROW-SEALED-BOX-VALUE"].getFunction()(
+                             p:(<import:org.cubik.cle.prim.Throwable>))]
+        }
+    } else {
+        def getProblemStackAndMessage(p) {
+            return [p.eStack(), p.leaf().getMessage()]
+        }
+    }
+
 def runTest(testRunnable) {
-  def results := makeTestResults()
+  def results := makeTestResults(getProblemStackAndMessage)
   def res := testRunnable.run(results)
   for report in res.reportFailures() {
     stdout.println()

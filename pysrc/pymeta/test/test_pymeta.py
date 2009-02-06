@@ -385,8 +385,8 @@ class ActionExtractorTest(unittest.TestCase):
         """
         Simple variable access parses to an ActionNoun.
         """
-        from pymeta.grammar import PortableOMeta, ActionNoun
-        o = PortableOMeta("foo\nbaz ::= ...\n")
+        from pymeta.grammar import PortableOMetaGrammar, ActionNoun
+        o = PortableOMetaGrammar("foo\nbaz ::= ...\n")
         na = o.apply("action")
         self.assertIsInstance(na, ActionNoun)
         self.assertEqual(na.name, "foo")
@@ -396,8 +396,8 @@ class ActionExtractorTest(unittest.TestCase):
         """
         Call syntax produces a ActionCall.
         """
-        from pymeta.grammar import PortableOMeta, ActionCall
-        o = PortableOMeta("foo(x, y)\nbaz ::= ...\n")
+        from pymeta.grammar import PortableOMetaGrammar, ActionCall
+        o = PortableOMetaGrammar("foo(x, y)\nbaz ::= ...\n")
         ca = o.apply("action")
         self.assertIsInstance(ca, ActionCall)
         self.assertEqual(ca.verb.name, "foo")
@@ -410,8 +410,8 @@ class ActionExtractorTest(unittest.TestCase):
         """
         Calls with no args produce an empty args list in the ActionCall.
         """
-        from pymeta.grammar import PortableOMeta
-        o = PortableOMeta("foo()\nbaz ::= ...\n")
+        from pymeta.grammar import PortableOMetaGrammar
+        o = PortableOMetaGrammar("foo()\nbaz ::= ...\n")
         ca = o.apply("action")
         self.assertEqual(ca.args, [])
 
@@ -419,8 +419,8 @@ class ActionExtractorTest(unittest.TestCase):
         """
         Literal syntax produces ActionLiteral objects.
         """
-        from pymeta.grammar import PortableOMeta, ActionLiteral
-        o = PortableOMeta("foo(\"1\", '1', 1)\nbaz ::= ...\n")
+        from pymeta.grammar import PortableOMetaGrammar, ActionLiteral
+        o = PortableOMetaGrammar("foo(\"1\", '1', 1)\nbaz ::= ...\n")
         ca = o.apply("action")
         for a in ca.args:
             self.assertIsInstance(a, ActionLiteral)
@@ -440,8 +440,7 @@ class PortableOMetaTestCase(unittest.TestCase):
         @param grammar: A string containing an OMeta grammar.
         """
         from pymeta.grammar import PortableOMeta
-        g = PortableOMeta(grammar)
-        result = g.parseGrammar('TestGrammar', PythonBuilder, OMetaBase, scope)
+        result = PortableOMeta.makeGrammar(grammar, scope, "TestGrammar")
         return HandyWrapper(result)
 
 

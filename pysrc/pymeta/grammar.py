@@ -45,7 +45,8 @@ escapedChar ::= '\\' ('n' => "\n"
 
 character ::= <token "'"> (<escapedChar> | <anything>):c <token "'"> => c
 
-string ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c <token '"'> => ''.join(c)
+bareString ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c <token '"'> => ''.join(c)
+string ::= <bareString>:s => self.builder.exactly(s)
 
 name ::= <letter>:x <letterOrDigit>*:xs !(xs.insert(0, x)) => ''.join(xs)
 
@@ -60,7 +61,8 @@ expr1 ::= (<application>
           |<ruleValue>
           |<semanticPredicate>
           |<semanticAction>
-          |(<number> | <character> | <string>):lit => self.builder.exactly(lit)
+          |<string>
+          |(<number> | <character>):lit => self.builder.exactly(lit)
           |<token '('> <expr>:e <token ')'> => e
           |<token '['> <expr>:e <token ']'> => self.builder.listpattern(e))
 
@@ -226,19 +228,20 @@ action ::= <spaces> (<actionCall> | <actionNoun> | <actionLiteral>)
 actionCall ::= <actionNoun>:verb <token "("> <actionArgs>?:args <token ")"> => ActionCall(verb, args)
 actionArgs ::= <action>:a (<token ','> <action>)*:b => [a] + b
 actionNoun ::= <name>:n => ActionNoun(n)
-actionLiteral ::=  (<number> | <character> | <string>):lit => ActionLiteral(lit)
+actionLiteral ::=  (<number> | <character> | <bareString>):lit => ActionLiteral(lit)
 
 ruleValue ::= <token "=>"> <action>:a => self.result(a)
 semanticPredicate ::= <token "?("> <action>:a <token ")"> => self.predicate(a)
 semanticAction ::= <token "!("> <action>:a <token ")"> => self.action(a)
 applicationArgs ::= (<spaces> <action>)+:args <token ">"> => [self.result(a) for a in args]
+string ::= <bareString>:s => self.builder.apply("tokenBR", self.name, [[repr(s)]])
 """
 
 
 _PortableActionGrammar = _PythonActionGrammar.makeGrammar(portableOMetaGrammar,
                                                           globals(), "PortableOMeta")
 
-class PortableOMeta(GrammarInterfaceMixin, _PortableActionGrammar):
+class PortableOMetaGrammar(GrammarInterfaceMixin, _PortableActionGrammar):
     """
     An OMeta variant with portable syntax for actions.
     """
@@ -255,4 +258,27 @@ class PortableOMeta(GrammarInterfaceMixin, _PortableActionGrammar):
         return self.builder.compilePortableAction(action)[:-1] + ["None"]
 
 
+
+
 OMeta.metagrammarClass = OMetaGrammar
+
+class PortableOMeta(OMeta):
+    metagrammarClass = PortableOMetaGrammar
+
+    def rule_tokenBR(self):
+        """
+        Match and return the given string, consuming any preceding or trailing
+        whitespace.
+        """
+        tok = self.input.head()
+
+        m = self.input = self.input.tail()
+        try:
+            self.eatWhitespace()
+            for c in tok:
+                self.exactly(c)
+            self.apply("br")
+            return tok
+        except ParseError:
+            self.input = m
+            raise
