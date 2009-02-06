@@ -6,38 +6,6 @@ def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
 
 def makeTestOMetaBase() {
     def self extends makeTestCase(self) {
-
-        /**
-         The 'anything' method matches the next item on the input and returns
-         it, or ejects if the input is empty.
-        */
-
-        to test_anything() {
-            def g := makeOMetaBase("xy", g)
-            self.assertEqual(g.anything(throw), 'x')
-            self.assertEqual(g.anything(throw), 'y')
-            escape e {
-                g.anything(e)
-                throw("'anything' did not eject on failure")
-            }
-        }
-        /**
-          The 'exactly' method returns the object passed to it if the
-          current item of the input matches. Otherwise, it invokes the
-          ejector provided, if any, or throws.
-        */
-        to test_exactly() {
-            def input := "foo"
-            def g := makeOMetaBase(input, g)
-            def result := g.exactly('f', throw)
-            self.assertEqual(result, 'f')
-            escape e {
-                g.exactly('x', e)
-                throw("'exactly' did not eject on failure")
-            }
-            self.assertEqual(g.exactly('o', throw), 'o')
-        }
-
         /**
          The '_apply' method takes a rule name as a string and calls the method
          of that name.
@@ -154,6 +122,48 @@ def makeTestOMetaBase() {
             }
         }
 
+        /**
+         The 'anything' method matches the next item on the input and returns
+         it, or ejects if the input is empty.
+        */
+
+        to test_anything() {
+            def g := makeOMetaBase("xy", g)
+            self.assertEqual(g.anything(throw), 'x')
+            self.assertEqual(g.anything(throw), 'y')
+            escape e {
+                g.anything(e)
+                throw("'anything' did not eject on failure")
+            }
+        }
+
+        /**
+          The 'exactly' method returns the object passed to it if the
+          current item of the input matches. Otherwise, it invokes the
+          ejector provided, if any, or throws.
+        */
+        to test_exactly() {
+            def input := "foo"
+            def g := makeOMetaBase(input, g)
+            def result := g.exactly('f', throw)
+            self.assertEqual(result, 'f')
+            escape e {
+                g.exactly('x', e)
+                throw("'exactly' did not eject on failure")
+            }
+            self.assertEqual(g.exactly('o', throw), 'o')
+        }
+
+        /**
+         The 'spaces' method consumes everything up to the next
+         non-whitespace character.
+        */
+        to test_spaces() {
+            def input := " \n\t\r   x"
+            def g := makeOMetaBase(input, g)
+            def result := g.spaces()
+            self.assertEqual(g.exactly('x', throw), 'x')
+        }
     }
     return self
 }

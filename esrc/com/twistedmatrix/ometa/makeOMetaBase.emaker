@@ -5,33 +5,6 @@ def makeOMetaBase(input, self) {
     def ometaBase {
 
         /**
-         Match a single item from the input.
-        */
-        to anything(ejector) {
-            def i := current
-            if (current.size() == 0) {
-               ejector("at end of input")
-            }
-            def val := current[0]
-            current := current.run(1)
-            return val
-        }
-
-        /**
-         Match a single item from the input equal to the given specimen.
-        */
-        to exactly(wanted, ejector) {
-            def original := current
-            def val := ometaBase.anything(ejector)
-            if (wanted == val) {
-                return val
-            } else {
-                current := original
-                ejector(`$wanted does not match $val`)
-            }
-        }
-
-        /**
          Apply the named method, memoizing the result and allowing for left
          recursion.
         */
@@ -123,6 +96,55 @@ def makeOMetaBase(input, self) {
          */
         to _many1(func, ejector) {
             return ometaBase._many(func, [func(ejector)])
+        }
+
+        /**
+         Match a single item from the input.
+        */
+        to anything(ejector) {
+            def i := current
+            if (current.size() == 0) {
+               ejector("at end of input")
+            }
+            def val := current[0]
+            current := current.run(1)
+            return val
+        }
+
+
+        /**
+         Match a single item from the input equal to the given specimen.
+        */
+        to exactly(wanted, ejector) {
+            def original := current
+            def val := ometaBase.anything(ejector)
+            if (wanted == val) {
+                return val
+            } else {
+                current := original
+                ejector(`$wanted does not match $val`)
+            }
+        }
+
+        /**
+         Match a single character.
+         */
+        to char(ejector) {
+            # 'fn' hack here due to EoJ unfortunateness
+            def r :char exit fn x {ejector(x)} := ometaBase.anything(ejector)
+            return r
+        }
+        /**
+         Consume input until a non-whitespace character is reached.
+         */
+        to spaces() {
+            def space(e) {
+                def r := ometaBase.char(e)
+                if (r > ' ') {
+                    e("not a space")
+                }
+            }
+            return ometaBase._many(space)
         }
     }
     return ometaBase
