@@ -164,6 +164,64 @@ def makeTestOMetaBase() {
             def result := g.spaces()
             self.assertEqual(g.exactly('x', throw), 'x')
         }
+
+        /**
+         'token' matches the given string plus any preceding whitespace.
+        */
+        to test_token() {
+            def input := "  foo baz"
+            def g := makeOMetaBase(input, g)
+            def result := g.token("foo", throw)
+            self.assertEqual(result, "foo")
+            escape e {
+                g.token("foo", e)
+                throw("'token' did not eject on failure")
+            }
+            self.assertEqual(g.token("baz", throw), "baz")
+        }
+        /**
+         'letter' matches letters.
+        */
+        to test_letter() {
+            def input := "x9"
+            def g := makeOMetaBase(input, g)
+            def result := g.letter(throw)
+            self.assertEqual(result, 'x')
+            escape e {
+                g.letter(e)
+                throw("'letter' did not eject on failure")
+            }
+            self.assertEqual(g.anything(throw), '9')
+        }
+        /**
+         'digit' matches digits.
+        */
+        to test_digit() {
+            def input := "9x"
+            def g := makeOMetaBase(input, g)
+            def result := g.digit(throw)
+            self.assertEqual(result, '9')
+            escape e {
+                g.digit(e)
+                throw("'digit' did not eject on failure")
+            }
+            self.assertEqual(g.anything(throw), 'x')
+        }
+        /**
+         'letterOrDigit' matches letters, digits, and '_'.
+        */
+        to test_letterOrDigit() {
+            def input := "9_x@"
+            def g := makeOMetaBase(input, g)
+            self.assertEqual(g.letterOrDigit(throw), '9')
+            self.assertEqual(g.letterOrDigit(throw), '_')
+            self.assertEqual(g.letterOrDigit(throw), 'x')
+            escape e {
+                g.letterOrDigit(e)
+                throw("'letterOrDigit' did not eject on failure")
+            }
+            self.assertEqual(g.anything(throw), '@')
+        }
     }
     return self
 }

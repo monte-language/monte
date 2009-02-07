@@ -146,6 +146,66 @@ def makeOMetaBase(input, self) {
             }
             return ometaBase._many(space)
         }
+
+        /**
+         Consume a given string plus any leading whitespace.
+        */
+        to token(tok, ejector) {
+            def original := current
+            ometaBase.spaces()
+            escape e {
+                for ch in tok {
+                    ometaBase.exactly(ch, e)
+                }
+            } catch err {
+                current := original
+                ejector(err)
+            }
+            return tok
+        }
+        /**
+         Match a single letter.
+        */
+        to letter(ejector) {
+            def original := current
+            def x := ometaBase.anything(ejector)
+            if ((x >= 'A' && x <= 'Z') ||
+                (x >= 'a' && x <= 'z')) {
+                return x
+            } else {
+                current := original
+                ejector("not a letter")
+            }
+        }
+        /**
+         Match a single digit.
+         */
+        to digit(ejector) {
+            def original := current
+            def x := ometaBase.anything(ejector)
+            if (x >= '0' && x <= '9') {
+                return x
+            } else {
+                current := original
+                ejector("not a digit")
+            }
+        }
+        /**
+         Match a single alphanumeric character. (and '_').
+        */
+        to letterOrDigit(ejector) {
+            def original := current
+            def x := ometaBase.anything(ejector)
+            if ((x >= 'A' && x <= 'Z') ||
+                (x >= 'a' && x <= 'z') ||
+                (x >= '0' && x <= '9') ||
+                (x == '_')) {
+                return x
+            } else {
+                current := original
+                ejector("not alphanumeric")
+            }
+        }
     }
     return ometaBase
 }
