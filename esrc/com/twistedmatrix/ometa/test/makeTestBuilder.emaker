@@ -1,0 +1,23 @@
+pragma.syntax("0.9")
+
+def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>
+def makeBuilder := <import:com.twistedmatrix.ometa.makeBuilder>
+
+
+def makeTestBuilder() {
+    def self extends makeTestCase(self) {
+
+        to test_makeGrammar() {
+            def fakeMakeRuntime {}
+            def actions := []
+            def b := makeBuilder("foo", fakeMakeRuntime, actions)
+            def wanted := e`def makeFoo(input) {
+                              def foo extends makeRuntime(input, foo) {
+                              }
+                              return foo
+                            }`
+            self.assertEqual(b.makeGrammarSource(), wanted)
+        }
+    }
+    return self
+}

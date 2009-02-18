@@ -1,0 +1,19 @@
+pragma.syntax("0.9")
+def makeNoun := <elang:evm.makeSimpleNounExpr>
+def makeFinalPattern := <elang:evm.makeFinalPattern>
+
+def makeBuilder(name, makeRuntime, actions) {
+    def builder {
+        to makeGrammarSource() {
+            def makerName := "make"+(name(0, 1).toUpperCase() + name(1))
+            return e__quasiParser.valueMaker(
+                   `def $makerName(input) {
+                        def $name extends makeRuntime(input, $name) {` +
+                        "\n".rjoin(actions) +
+                       `}
+                        return $name
+                     }`)
+        }
+    }
+    return builder
+}
