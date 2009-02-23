@@ -4,7 +4,7 @@ AM_INIT_AUTOMAKE([foreign])
 AC_CONFIG_MACRO_DIR([build-aux/m4])
 AC_PREREQ(2.60)
 AC_DEFINE([OLD_GIO], [], ["Whether to use the old GIO API or not"])
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
 AC_PROG_CC
@@ -28,5 +28,6 @@ PKG_CHECK_EXISTS([gio-2.0 >= 2.15 gio-unix-2.0 >= 2.15],
                            [AC_DEFINE([OLD_GIO], [0], [])],
                            [AC_DEFINE([OLD_GIO], [1], [])])
 AM_PATH_PYTHON([2.5])
-AC_CONFIG_FILES([Makefile])
+SHAVE_INIT([build-aux])
+AC_CONFIG_FILES([Makefile build-aux/shave build-aux/shave-libtool])
 AC_OUTPUT
