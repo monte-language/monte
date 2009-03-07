@@ -16,17 +16,25 @@ def makeTestBuilder() {
                             }`
             self.assertEqual(b.makeGrammarSource([].asMap()), wanted)
         }
+
         to test_buildMethod() {
            def b := makeBuilder("foo")
            def wanted := e`def makeFoo(input) {
                               def foo extends makeRuntime(input, foo) {
-                                  method action_baz() {
+                                  method rule_baz() {
                                       1 + 1
                                   }
                               }
                               return foo
                             }`
             self.assertEqual(b.makeGrammarSource(["baz" => e`1 + 1`]), wanted)
+        }
+
+        to test_apply() {
+            def b := makeBuilder("foo")
+            def wanted := e`foo._apply("baz", [one, two])`
+            self.assertEqual(b.apply("baz", ["one", "two"]),
+                             wanted)
         }
     }
     return self

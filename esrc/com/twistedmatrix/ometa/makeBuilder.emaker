@@ -2,13 +2,17 @@ pragma.syntax("0.9")
 def makeNoun := <elang:evm.makeSimpleNounExpr>
 def makeFinalPattern := <elang:evm.makeFinalPattern>
 
+def buildList(args :List[Twine]) {
+    return `[${", ".rjoin(args)}]`
+}
+
 def makeBuilder(name) {
     def builder {
-        to makeGrammarSource(actions) {
+        to makeGrammarSource(rules) {
             def makerName := "make"+(name(0, 1).toUpperCase() + name(1))
             def methodTexts := [].diverge()
-            for name => code in actions {
-                methodTexts.push(`method action_$name() {
+            for name => code in rules {
+                methodTexts.push(`method rule_$name() {
                     ${code.asText()}$\n}$\n`)
             }
             return e__quasiParser.valueMaker(
@@ -16,6 +20,11 @@ def makeBuilder(name) {
                         def $name extends makeRuntime(input, $name) {$\n` +
                         "\n".rjoin(methodTexts.snapshot()) +
                        `} $\n return $name $\n}`)
+        }
+
+        to apply(ruleName, args) {
+            return e__quasiParser.valueMaker(
+                `$name._apply("$ruleName", ${buildList(args)})`)
         }
     }
     return builder
