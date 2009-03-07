@@ -1,9 +1,13 @@
 pragma.syntax("0.9")
 def makeNoun := <elang:evm.makeSimpleNounExpr>
 def makeFinalPattern := <elang:evm.makeFinalPattern>
+def makeCallExpr := <elang:evm.makeCallExpr>
+def makeNounExpr := <elang:evm.makeNounExpr>
+def makeLiteralExpr := <elang:evm.makeLiteralExpr>
+def ENode := <type:org.erights.e.elang.evm.ENode>
 
-def buildList(args :List[Twine]) {
-    return `[${", ".rjoin(args)}]`
+def buildList(args :List[ENode]) {
+    return makeCallExpr(null, e`__makeList`, "run", args, null)
 }
 
 def makeBuilder(name) {
@@ -24,7 +28,13 @@ def makeBuilder(name) {
 
         to apply(ruleName, args) {
             return e__quasiParser.valueMaker(
-                `$name._apply("$ruleName", ${buildList(args)})`)
+                `$name._apply("$ruleName", $${0})`
+            ).substitute([buildList(args)])
+        }
+        to exactly(value) {
+            def expr := makeLiteralExpr(null, value, null)
+            def objname := makeNounExpr(null, name, null)
+            return e`$objname._exactly($expr)`
         }
     }
     return builder
