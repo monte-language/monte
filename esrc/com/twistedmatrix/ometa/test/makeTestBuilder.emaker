@@ -73,6 +73,20 @@ def makeTestBuilder() {
                             foo._or([_G_or_1, _G_or_2])`
             self.assertEqual(b.or([e`x + y`, e`a + b`]), wanted)
         }
+
+        to test_not() {
+            def b := makeBuilder("foo")
+            def wanted := e`def _G_not_1() { return x + y };
+                            foo._not(_G_not_1)`
+            self.assertEqual(b.not(e`x + y`), wanted)
+        }
+
+        to test_lookahead() {
+            def b := makeBuilder("foo")
+            def wanted := e`def _G_lookahead_1() { return x + y };
+                            foo._lookahead(_G_lookahead_1)`
+            self.assertEqual(b.lookahead(e`x + y`), wanted)
+        }
     }
     return self
 }

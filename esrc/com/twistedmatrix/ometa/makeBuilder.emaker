@@ -79,6 +79,24 @@ def makeBuilder(name) {
             funcs.push(e`$objname._or(${buildList(names.snapshot())})`)
             return makeSeqExpr(null, funcs.snapshot(), null)
         }
+
+        to not(expr) {
+            def name := gensym("not")
+            return makeSeqExpr(
+                null,
+                [newFunction(name, expr),
+                 e`$objname._not(${makeNounExpr(null, name, null)})`],
+            null)
+        }
+
+        to lookahead(expr) {
+            def name := gensym("lookahead")
+            return makeSeqExpr(
+                null,
+                [newFunction(name, expr),
+                 e`$objname._lookahead(${makeNounExpr(null, name, null)})`],
+            null)
+        }
     }
     return builder
 }
