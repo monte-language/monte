@@ -3,14 +3,28 @@ def makeNoun := <elang:evm.makeSimpleNounExpr>
 def makeFinalPattern := <elang:evm.makeFinalPattern>
 def makeCallExpr := <elang:evm.makeCallExpr>
 def makeNounExpr := <elang:evm.makeNounExpr>
+def makeSeqExpr := <elang:evm.makeSeqExpr>
 def makeLiteralExpr := <elang:evm.makeLiteralExpr>
 def ENode := <type:org.erights.e.elang.evm.ENode>
+def EExpr := <type:org.erights.e.elang.evm.EExpr>
 
 def buildList(args :List[ENode]) {
     return makeCallExpr(null, e`__makeList`, "run", args, null)
 }
 
+
+
 def makeBuilder(name) {
+    def objname := makeNounExpr(null, name, null)
+    var gensymCounter := 0
+    def gensym(name) {
+        gensymCounter += 1
+        return `_G_${name}_$gensymCounter`
+    }
+    def newFunction(name, expr) {
+        return e__quasiParser.valueMaker(
+            `def $name() { return $${0} }`).substitute([expr])
+    }
     def builder {
         to makeGrammarSource(rules) {
             def makerName := "make"+(name(0, 1).toUpperCase() + name(1))
@@ -33,8 +47,37 @@ def makeBuilder(name) {
         }
         to exactly(value) {
             def expr := makeLiteralExpr(null, value, null)
-            def objname := makeNounExpr(null, name, null)
             return e`$objname._exactly($expr)`
+        }
+        to many(expr) {
+            def funcname := gensym("many")
+            def funcnoun := makeNounExpr(null, funcname, null)
+            def func := e__quasiParser.valueMaker(
+                `def $funcname() { return $${0} }`).substitute([expr])
+            return e`$func; $objname._many($funcnoun)`
+        }
+
+        to many1(expr) {
+            def funcname := gensym("many1")
+            def funcnoun := makeNounExpr(null, funcname, null)
+            def func := newFunction(funcname, expr)
+            return e`$func; $objname._many1($funcnoun)`
+        }
+
+        to optional(expr) {
+            return builder.or([expr, e`null`])
+        }
+
+        to or(exprs) {
+            def funcs := [].diverge()
+            def names := [].diverge()
+            for expr in exprs {
+                def name := gensym("or")
+                names.push(makeNounExpr(null, name, null))
+                funcs.push(newFunction(name, expr))
+            }
+            funcs.push(e`$objname._or(${buildList(names.snapshot())})`)
+            return makeSeqExpr(null, funcs.snapshot(), null)
         }
     }
     return builder

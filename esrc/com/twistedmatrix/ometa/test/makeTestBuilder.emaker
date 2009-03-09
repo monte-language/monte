@@ -43,6 +43,36 @@ def makeTestBuilder() {
             self.assertEqual(b.exactly("x"),
                              wanted)
         }
+
+        to test_many() {
+            def b := makeBuilder("foo")
+            def wanted := e`def _G_many_1() { return x + y };
+                            foo._many(_G_many_1)`
+            self.assertEqual(b.many(e`x + y`), wanted)
+        }
+
+        to test_many1() {
+            def b := makeBuilder("foo")
+            def wanted := e`def _G_many1_1() { return x + y };
+                            foo._many1(_G_many1_1)`
+            self.assertEqual(b.many1(e`x + y`), wanted)
+        }
+
+        to test_optional() {
+            def b := makeBuilder("foo")
+            def wanted := e`def _G_or_1() { return 17 };
+                            def _G_or_2() { return null };
+                            foo._or([_G_or_1, _G_or_2])`
+            self.assertEqual(b.optional(e`17`), wanted)
+        }
+
+        to test_or() {
+            def b := makeBuilder("foo")
+            def wanted := e`def _G_or_1() { return x + y };
+                            def _G_or_2() { return a + b };
+                            foo._or([_G_or_1, _G_or_2])`
+            self.assertEqual(b.or([e`x + y`, e`a + b`]), wanted)
+        }
     }
     return self
 }
