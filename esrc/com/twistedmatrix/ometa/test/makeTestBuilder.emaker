@@ -87,6 +87,37 @@ def makeTestBuilder() {
                             foo._lookahead(_G_lookahead_1)`
             self.assertEqual(b.lookahead(e`x + y`), wanted)
         }
+
+        to test_sequence() {
+            def b := makeBuilder("foo")
+            def wanted := e`x; y`
+            self.assertEqual(b.sequence([e`x`, e`y`]), wanted)
+        }
+
+        to test_bindValue() {
+            def b := makeBuilder("foo")
+            def wanted := e`def baz := (12; 17)`
+            self.assertEqual(b.bindValue("baz", e`12; 17`), wanted)
+        }
+
+        to test_pred() {
+            def b := makeBuilder("foo")
+            def wanted := e`def _G_pred_1() { return true }; foo._pred(_G_pred_1)`;
+            self.assertEqual(b.pred(e`true`), wanted)
+        }
+
+        to test_action() {
+            def b := makeBuilder("foo")
+            def wanted := e`17`
+            self.assertEqual(b.action(e`17`), wanted)
+        }
+
+        to test_listpattern() {
+            def b := makeBuilder("foo")
+            def wanted := e`def _G_listpattern_1() { return x + y };
+                            foo._listpattern(_G_listpattern_1)`
+            self.assertEqual(b.listpattern(e`x + y`), wanted)
+        }
     }
     return self
 }

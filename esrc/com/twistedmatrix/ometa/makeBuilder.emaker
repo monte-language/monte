@@ -97,6 +97,32 @@ def makeBuilder(name) {
                  e`$objname._lookahead(${makeNounExpr(null, name, null)})`],
             null)
         }
+
+        to sequence(exprs) {
+            return makeSeqExpr(null, exprs, null)
+        }
+
+        to bindValue(name, expr) {
+            def namePatt := makeFinalPattern(null,
+                                             makeNounExpr(null, name, null),
+                                             null,
+                                             null)
+            return e`def $namePatt := $expr`
+        }
+
+        to pred(expr) {
+            def name := gensym("pred")
+            return e`${newFunction(name, expr)}; $objname._pred(${makeNounExpr(null, name, null)})`
+        }
+
+        to action(expr) {
+            return expr
+        }
+
+        to listpattern(expr) {
+            def name := gensym("listpattern")
+            return e`${newFunction(name, expr)}; $objname._listpattern(${makeNounExpr(null, name, null)})`
+        }
     }
     return builder
 }
