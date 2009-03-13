@@ -23,14 +23,14 @@ def makeBuilder(name) {
     }
     def newFunction(name, expr) {
         return e__quasiParser.valueMaker(
-            `def $name() { return $${0} }`).substitute([expr])
+            `def $name(ej) { return $${0} }`).substitute([expr])
     }
     def builder {
         to makeGrammarSource(rules) {
             def makerName := "make"+(name(0, 1).toUpperCase() + name(1))
             def methodTexts := [].diverge()
             for name => code in rules {
-                methodTexts.push(`method rule_$name() {
+                methodTexts.push(`method rule_$name(ej) {
                     ${code.asText()}$\n}$\n`)
             }
             return e__quasiParser.valueMaker(
@@ -42,18 +42,18 @@ def makeBuilder(name) {
 
         to apply(ruleName, args) {
             return e__quasiParser.valueMaker(
-                `$name._apply("$ruleName", $${0})`
+                `$name._apply("$ruleName", $${0}, ej)`
             ).substitute([buildList(args)])
         }
         to exactly(value) {
             def expr := makeLiteralExpr(null, value, null)
-            return e`$objname._exactly($expr)`
+            return e`$objname.exactly($expr, ej)`
         }
         to many(expr) {
             def funcname := gensym("many")
             def funcnoun := makeNounExpr(null, funcname, null)
             def func := e__quasiParser.valueMaker(
-                `def $funcname() { return $${0} }`).substitute([expr])
+                `def $funcname(ej) { return $${0} }`).substitute([expr])
             return e`$func; $objname._many($funcnoun)`
         }
 
@@ -61,7 +61,7 @@ def makeBuilder(name) {
             def funcname := gensym("many1")
             def funcnoun := makeNounExpr(null, funcname, null)
             def func := newFunction(funcname, expr)
-            return e`$func; $objname._many1($funcnoun)`
+            return e`$func; $objname._many1($funcnoun, ej)`
         }
 
         to optional(expr) {
@@ -76,7 +76,7 @@ def makeBuilder(name) {
                 names.push(makeNounExpr(null, name, null))
                 funcs.push(newFunction(name, expr))
             }
-            funcs.push(e`$objname._or(${buildList(names.snapshot())})`)
+            funcs.push(e`$objname._or(${buildList(names.snapshot())}, ej)`)
             return makeSeqExpr(null, funcs.snapshot(), null)
         }
 
@@ -85,7 +85,7 @@ def makeBuilder(name) {
             return makeSeqExpr(
                 null,
                 [newFunction(name, expr),
-                 e`$objname._not(${makeNounExpr(null, name, null)})`],
+                 e`$objname._not(${makeNounExpr(null, name, null)}, ej)`],
             null)
         }
 
@@ -94,7 +94,7 @@ def makeBuilder(name) {
             return makeSeqExpr(
                 null,
                 [newFunction(name, expr),
-                 e`$objname._lookahead(${makeNounExpr(null, name, null)})`],
+                 e`$objname._lookahead(${makeNounExpr(null, name, null)}, ej)`],
             null)
         }
 
@@ -112,7 +112,8 @@ def makeBuilder(name) {
 
         to pred(expr) {
             def name := gensym("pred")
-            return e`${newFunction(name, expr)}; $objname._pred(${makeNounExpr(null, name, null)})`
+            return e`${newFunction(name, expr)};
+                     $objname._pred(${makeNounExpr(null, name, null)}, ej)`
         }
 
         to action(expr) {
@@ -121,7 +122,9 @@ def makeBuilder(name) {
 
         to listpattern(expr) {
             def name := gensym("listpattern")
-            return e`${newFunction(name, expr)}; $objname._listpattern(${makeNounExpr(null, name, null)})`
+            return e`${newFunction(name, expr)};
+                     $objname._listpattern(${makeNounExpr(null, name, null)},
+                     ej)`
         }
     }
     return builder

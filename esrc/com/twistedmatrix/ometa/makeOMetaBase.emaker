@@ -98,6 +98,12 @@ def makeOMetaBase(input, self) {
             return ometaBase._many(func, [func(ejector)])
         }
 
+#        /**
+#         Pattern-match the contents of the next item from the input as its own
+#         stream.
+         */
+#        to _listpattern(subinput, ejector) {
+#        }
         /**
          Match a single item from the input.
         */

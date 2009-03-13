@@ -21,7 +21,7 @@ def makeTestBuilder() {
            def b := makeBuilder("foo")
            def wanted := e`def makeFoo(input) {
                               def foo extends makeRuntime(input, foo) {
-                                  method rule_baz() {
+                                  method rule_baz(ej) {
                                       1 + 1
                                   }
                               }
@@ -32,59 +32,59 @@ def makeTestBuilder() {
 
         to test_apply() {
             def b := makeBuilder("foo")
-            def wanted := e`foo._apply("baz", [one, two])`
+            def wanted := e`foo._apply("baz", [one, two], ej)`
             self.assertEqual(b.apply("baz", [e`one`, e`two`]),
                              wanted)
         }
 
         to test_exactly() {
             def b := makeBuilder("foo")
-            def wanted := e`foo._exactly("x")`
+            def wanted := e`foo.exactly("x", ej)`
             self.assertEqual(b.exactly("x"),
                              wanted)
         }
 
         to test_many() {
             def b := makeBuilder("foo")
-            def wanted := e`def _G_many_1() { return x + y };
+            def wanted := e`def _G_many_1(ej) { return x + y };
                             foo._many(_G_many_1)`
             self.assertEqual(b.many(e`x + y`), wanted)
         }
 
         to test_many1() {
             def b := makeBuilder("foo")
-            def wanted := e`def _G_many1_1() { return x + y };
-                            foo._many1(_G_many1_1)`
+            def wanted := e`def _G_many1_1(ej) { return x + y };
+                            foo._many1(_G_many1_1, ej)`
             self.assertEqual(b.many1(e`x + y`), wanted)
         }
 
         to test_optional() {
             def b := makeBuilder("foo")
-            def wanted := e`def _G_or_1() { return 17 };
-                            def _G_or_2() { return null };
-                            foo._or([_G_or_1, _G_or_2])`
+            def wanted := e`def _G_or_1(ej) { return 17 };
+                            def _G_or_2(ej) { return null };
+                            foo._or([_G_or_1, _G_or_2], ej)`
             self.assertEqual(b.optional(e`17`), wanted)
         }
 
         to test_or() {
             def b := makeBuilder("foo")
-            def wanted := e`def _G_or_1() { return x + y };
-                            def _G_or_2() { return a + b };
-                            foo._or([_G_or_1, _G_or_2])`
+            def wanted := e`def _G_or_1(ej) { return x + y };
+                            def _G_or_2(ej) { return a + b };
+                            foo._or([_G_or_1, _G_or_2], ej)`
             self.assertEqual(b.or([e`x + y`, e`a + b`]), wanted)
         }
 
         to test_not() {
             def b := makeBuilder("foo")
-            def wanted := e`def _G_not_1() { return x + y };
-                            foo._not(_G_not_1)`
+            def wanted := e`def _G_not_1(ej) { return x + y };
+                            foo._not(_G_not_1, ej)`
             self.assertEqual(b.not(e`x + y`), wanted)
         }
 
         to test_lookahead() {
             def b := makeBuilder("foo")
-            def wanted := e`def _G_lookahead_1() { return x + y };
-                            foo._lookahead(_G_lookahead_1)`
+            def wanted := e`def _G_lookahead_1(ej) { return x + y };
+                            foo._lookahead(_G_lookahead_1, ej)`
             self.assertEqual(b.lookahead(e`x + y`), wanted)
         }
 
@@ -102,7 +102,7 @@ def makeTestBuilder() {
 
         to test_pred() {
             def b := makeBuilder("foo")
-            def wanted := e`def _G_pred_1() { return true }; foo._pred(_G_pred_1)`;
+            def wanted := e`def _G_pred_1(ej) { return true }; foo._pred(_G_pred_1, ej)`;
             self.assertEqual(b.pred(e`true`), wanted)
         }
 
@@ -114,8 +114,8 @@ def makeTestBuilder() {
 
         to test_listpattern() {
             def b := makeBuilder("foo")
-            def wanted := e`def _G_listpattern_1() { return x + y };
-                            foo._listpattern(_G_listpattern_1)`
+            def wanted := e`def _G_listpattern_1(ej) { return x + y };
+                            foo._listpattern(_G_listpattern_1, ej)`
             self.assertEqual(b.listpattern(e`x + y`), wanted)
         }
     }
