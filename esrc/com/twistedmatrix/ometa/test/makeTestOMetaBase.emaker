@@ -143,7 +143,7 @@ def makeTestOMetaBase() {
         to test_end() {
             def g := makeOMetaBase("x", g)
             escape e {
-                self.assertEqual(g._end(e), null)
+                g._end(e)
                 throw("'end' matched before end of input")
             }
             g.anything(throw)
