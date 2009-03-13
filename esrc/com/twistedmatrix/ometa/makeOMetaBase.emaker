@@ -27,14 +27,17 @@ def makeOMetaBase(input, self) {
          Call the given function. Eject if it does not.
         */
         to _not(func, ejector) {
-            var lastInput := current
+            def lastInput := current
             escape e {
-                func(e)
-                ejector("function in 'not' didn't eject")
+                try {
+                    func(e)
+                } finally {
+                    current := lastInput
+                }
             } catch p {
-                current := lastInput
+                return true
             }
-            return true
+            ejector("function in 'not' didn't eject")
         }
 
         /**
@@ -98,12 +101,23 @@ def makeOMetaBase(input, self) {
             return ometaBase._many(func, [func(ejector)])
         }
 
-#        /**
-#         Pattern-match the contents of the next item from the input as its own
-#         stream.
-         */
-#        to _listpattern(subinput, ejector) {
-#        }
+        /**
+         Pattern-match the contents of the next item from the input as its own
+         stream.
+        */
+        to _listpattern(subpattern, ejector) {
+            def boringEjector := fn x { ejector(x)}
+            # this is overly restrictive but I don't know a better spelling
+            def v :any[List, String] exit boringEjector := (
+                ometaBase.anything(ejector))
+            def oldInput := current
+            current := v
+            subpattern(ejector)
+            ometaBase._end(ejector)
+            current := oldInput
+            return v
+        }
+
         /**
          Match a single item from the input.
         */
@@ -117,6 +131,13 @@ def makeOMetaBase(input, self) {
             return val
         }
 
+
+        /**
+         Match the end of the input stream.
+        */
+        to _end(ejector) {
+            return ometaBase._not(ometaBase.anything, ejector)
+        }
 
         /**
          Match a single item from the input equal to the given specimen.

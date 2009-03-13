@@ -138,6 +138,37 @@ def makeTestOMetaBase() {
         }
 
         /**
+         'end' matches the end of the input stream.
+        */
+        to test_end() {
+            def g := makeOMetaBase("x", g)
+            escape e {
+                self.assertEqual(g._end(e), null)
+                throw("'end' matched before end of input")
+            }
+            g.anything(throw)
+            self.assertEqual(g._end(throw), true)
+        }
+
+
+        /**
+         'listpattern' consumes the next item of input and treats it as an
+         input stream, matching the subpattern specified against it.
+        */
+        to test_listpattern() {
+            def input := ["fu", "fuzz"]
+            def g := makeOMetaBase(input, g)
+            def submatcher(ej) { g.exactly('f', ej);g.exactly('u', ej) }
+            def result := g._listpattern(submatcher, throw)
+            self.assertEqual(result, "fu")
+            escape e {
+                g._listpattern(submatcher, e)
+                throw("'listpattern' did not eject on failure")
+            }
+
+        }
+
+        /**
           The 'exactly' method returns the object passed to it if the
           current item of the input matches. Otherwise, it invokes the
           ejector provided, if any, or throws.
