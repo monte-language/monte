@@ -1,0 +1,411 @@
+pragma.syntax("0.9")
+pragma.enable("accumulator")
+
+def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
+
+def octdigits := "01234567"
+def hexdigits := "0123456789abcdefABCDEF"
+
+def ActionLiteral(lit) {}
+def ActionNoun(n) {}
+def ActionCall(verb, args) {}
+
+def makeGrammar(input, builder) {
+    var name := null
+    def self extends makeOMetaBase(input, self) {
+        to rule_number(ej) {
+            self.apply("spaces", [], ej)
+            def _G__or_1(ej) {
+                self.exactly('-')
+                def x := (self.apply("barenumber", [], ej))
+                return -x
+            }
+            def _G__or_2(ej) {
+                def x := (self.apply("barenumber", [], ej))
+                return x
+            }
+            return self._or([_G__or_1, _G__or_2], ej)
+        }
+        to rule_barenumber(ej) {
+            def _G__or_10(ej) {
+                self.exactly('0')
+                def _G__or_7(ej) {
+                    def _G__or_3(ej) {
+                        return self.exactly('x')
+                    }
+                    def _G__or_4(ej) {
+                        return self.exactly('X')
+                    }
+                    self._or([_G__or_3, _G__or_4], ej)
+                    def _G_many_5(ej) {
+                        return self.apply("hexdigit", [], ej)
+                    }
+                    def hs := (self._many(_G_many_5))
+                    return __makeInt("".rjoin(hs), 16)
+                }
+                def _G__or_8(ej) {
+                    def _G_many_6(ej) {
+                        return self.apply("octaldigit", [], ej)
+                    }
+                    def ds := (self._many(_G_many_6))
+                    return __makeInt("".rjoin(ds), 8)
+                }
+                return self._or([_G__or_7, _G__or_8], ej)
+            }
+            def _G__or_11(ej) {
+                def _G_many_9(ej) {
+                    return self.apply("digit", [], ej)
+                }
+                def ds := (self._many1(_G_many_9, ej))
+                return __makeInt("".rjoin(ds))
+            }
+            return self._or([_G__or_10, _G__or_11], ej)
+        }
+        to rule_octaldigit(ej) {
+            def x := (self.apply("anything", [], ej))
+            def _G_pred_12(ej) {
+                return octdigits.contains(x)
+            }
+            self._pred(_G_pred_12, ej)
+            return x
+        }
+        to rule_hexdigit(ej) {
+            def x := (self.apply("anything", [], ej))
+            def _G_pred_13(ej) {
+                return hexdigits.contains(x)
+            }
+            self._pred(_G_pred_13, ej)
+            return x
+        }
+        to rule_escapedChar(ej) {
+            self.exactly('\\')
+            def _G__or_14(ej) {
+                self.exactly('n')
+                return '\n'
+            }
+            def _G__or_15(ej) {
+                self.exactly('r')
+                return '\r'
+            }
+            def _G__or_16(ej) {
+                self.exactly('t')
+                return '\t'
+            }
+            def _G__or_17(ej) {
+                self.exactly('b')
+                return '\b'
+            }
+            def _G__or_18(ej) {
+                self.exactly('f')
+                return '\f'
+            }
+            def _G__or_19(ej) {
+                self.exactly('"')
+                return '"'
+            }
+            def _G__or_20(ej) {
+                self.exactly("'")
+                return '\''
+            }
+            def _G__or_21(ej) {
+                self.exactly('\\')
+                return '\\'
+            }
+            return self._or([_G__or_14, _G__or_15, _G__or_16, _G__or_17, _G__or_18, _G__or_19, _G__or_20, _G__or_21], ej)
+        }
+        to rule_character(ej) {
+            self.apply("token", ["'"], ej)
+            def _G__or_22(ej) {
+                return self.apply("escapedChar", [], ej)
+            }
+            def _G__or_23(ej) {
+                return self.apply("anything", [], ej)
+            }
+            def c := (self._or([_G__or_22, _G__or_23], ej))
+            self.apply("token", ["'"], ej)
+            return c
+        }
+        to rule_bareString(ej) {
+            self.apply("token", ["\""], ej)
+            def _G_many_27(ej) {
+                def _G__or_25(ej) {
+                    return self.apply("escapedChar", [], ej)
+                }
+                def _G__or_26(ej) {
+                    def _G__not_24(ej) {
+                        return self.exactly('"')
+                    }
+                    self._not(_G__not_24, ej)
+                    return self.apply("anything", [], ej)
+                }
+                return self._or([_G__or_25, _G__or_26], ej)
+            }
+            def c := (self._many(_G_many_27))
+            self.apply("token", ["\""], ej)
+            return "".rjoin(c)
+        }
+        to rule_name(ej) {
+            def x := (self.apply("letter", [], ej))
+            def _G_many_28(ej) {
+                return self.apply("letterOrDigit", [], ej)
+            }
+            def xs := (self._many(_G_many_28))
+            return "".rjoin([x] + xs)
+        }
+        to rule_application(ej) {
+            self.apply("token", ["<"], ej)
+            self.apply("spaces", [], ej)
+            def name := (self.apply("name", [], ej))
+            def _G__or_29(ej) {
+                def args := (self.apply("applicationArgs", [], ej))
+                return builder.apply(name, self.name, args)
+            }
+            def _G__or_30(ej) {
+                self.apply("token", [">"], ej)
+                return builder.apply(name, self.name, [])
+            }
+            return self._or([_G__or_29, _G__or_30], ej)
+        }
+        to rule_expr1(ej) {
+            def _G__or_33(ej) {
+                return self.apply("application", [], ej)
+            }
+            def _G__or_34(ej) {
+                return self.apply("ruleValue", [], ej)
+            }
+            def _G__or_35(ej) {
+                return self.apply("semanticPredicate", [], ej)
+            }
+            def _G__or_36(ej) {
+                return self.apply("semanticAction", [], ej)
+            }
+            def _G__or_37(ej) {
+                return self.apply("string", [], ej)
+            }
+            def _G__or_38(ej) {
+                def _G__or_31(ej) {
+                    return self.apply("number", [], ej)
+                }
+                def _G__or_32(ej) {
+                    return self.apply("character", [], ej)
+                }
+                def lit := (self._or([_G__or_31, _G__or_32], ej))
+                return builder.exactly(lit)
+            }
+            def _G__or_39(ej) {
+                self.apply("token", ['('], ej)
+                def e := (self.apply("expr", [], ej))
+                self.apply("token", [')'], ej)
+                return e
+            }
+            def _G__or_40(ej) {
+                self.apply("token", ['['], ej)
+                def e := (self.apply("expr", [], ej))
+                self.apply("token", [']'], ej)
+                return builder.listpattern(e)
+            }
+            return self._or([_G__or_33, _G__or_34, _G__or_35, _G__or_36, _G__or_37, _G__or_38, _G__or_39, _G__or_40], ej)
+        }
+        to rule_expr2(ej) {
+            def _G__or_43(ej) {
+                self.apply("token", ['~'], ej)
+                def _G__or_41(ej) {
+                    self.apply("token", ['~'], ej)
+                    def e := (self.apply("expr2", [], ej))
+                    return builder.lookahead(e)
+                }
+                def _G__or_42(ej) {
+                    def e := (self.apply("expr2", [], ej))
+                    return builder._not(e)
+                }
+                return self._or([_G__or_41, _G__or_42], ej)
+            }
+            def _G__or_44(ej) {
+                return self.apply("expr1", [], ej)
+            }
+            return self._or([_G__or_43, _G__or_44], ej)
+        }
+        to rule_expr3(ej) {
+            def _G__or_51(ej) {
+                def e := (self.apply("expr2", [], ej))
+                def _G__or_45(ej) {
+                    self.exactly('*')
+                    return builder.many(e)
+                }
+                def _G__or_46(ej) {
+                    self.exactly('+')
+                    return builder.many1(e)
+                }
+                def _G__or_47(ej) {
+                    self.exactly('?')
+                    return builder.optional(e)
+                }
+                def _G__or_48(ej) {
+                    return e
+                }
+                def r := (self._or([_G__or_45, _G__or_46, _G__or_47, _G__or_48], ej))
+                def _G__or_49(ej) {
+                    self.exactly(':')
+                    def n := (self.apply("name", [], ej))
+                    return builder.bindValue(r, n)
+                }
+                def _G__or_50(ej) {
+                    return r
+                }
+                return self._or([_G__or_49, _G__or_50], ej)
+            }
+            def _G__or_52(ej) {
+                self.apply("token", [':'], ej)
+                def n := (self.apply("name", [], ej))
+                return builder.bindValue(builder.apply("anything", self.name, []), n)
+            }
+            return self._or([_G__or_51, _G__or_52], ej)
+        }
+        to rule_expr4(ej) {
+            def _G_many_53(ej) {
+                return self.apply("expr3", [], ej)
+            }
+            def es := (self._many(_G_many_53))
+            return builder.sequence(es)
+        }
+        to rule_expr(ej) {
+            def e := (self.apply("expr4", [], ej))
+            def _G_many_54(ej) {
+                self.apply("token", ['|'], ej)
+                return self.apply("expr4", [], ej)
+            }
+            def es := (self._many(_G_many_54))
+            return builder._or([e] + es)
+        }
+        to rule_action(ej) {
+            self.apply("spaces", [], ej)
+            def _G__or_55(ej) {
+                return self.apply("actionCall", [], ej)
+            }
+            def _G__or_56(ej) {
+                return self.apply("actionNoun", [], ej)
+            }
+            def _G__or_57(ej) {
+                return self.apply("actionLiteral", [], ej)
+            }
+            return self._or([_G__or_55, _G__or_56, _G__or_57], ej)
+        }
+        to rule_actionCall(ej) {
+            def verb := (self.apply("actionNoun", [], ej))
+            self.apply("token", ["("], ej)
+            def _G__or_58(ej) {
+                return self.apply("actionArgs", [], ej)
+            }
+            def _G__or_59(ej) {
+                return null
+            }
+            def args := (self._or([_G__or_58, _G__or_59], ej))
+            self.apply("token", [")"], ej)
+            return ActionCall(verb, args)
+        }
+        to rule_actionArgs(ej) {
+            def a := (self.apply("action", [], ej))
+            def _G_many_60(ej) {
+                self.apply("token", [','], ej)
+                return self.apply("action", [], ej)
+            }
+            def b := (self._many(_G_many_60))
+            return [a] + b
+        }
+        to rule_actionNoun(ej) {
+            def n := (self.apply("name", [], ej))
+            return ActionNoun(n)
+        }
+        to rule_actionLiteral(ej) {
+            def _G__or_61(ej) {
+                return self.apply("number", [], ej)
+            }
+            def _G__or_62(ej) {
+                return self.apply("character", [], ej)
+            }
+            def _G__or_63(ej) {
+                return self.apply("bareString", [], ej)
+            }
+            def lit := (self._or([_G__or_61, _G__or_62, _G__or_63], ej))
+            return ActionLiteral(lit)
+        }
+        to rule_ruleValue(ej) {
+            self.apply("token", ["=>"], ej)
+            def a := (self.apply("action", [], ej))
+            return self.result(a)
+        }
+        to rule_semanticPredicate(ej) {
+            self.apply("token", ["?("], ej)
+            def a := (self.apply("action", [], ej))
+            self.apply("token", [")"], ej)
+            return self.predicate(a)
+        }
+        to rule_semanticAction(ej) {
+            self.apply("token", ["!("], ej)
+            def a := (self.apply("action", [], ej))
+            self.apply("token", [")"], ej)
+            return self.action(a)
+        }
+        to rule_applicationArgs(ej) {
+            def _G_many_64(ej) {
+                self.apply("spaces", [], ej)
+                return self.apply("action", [], ej)
+            }
+            def args := (self._many1(_G_many_64, ej))
+            self.apply("token", [">"], ej)
+            return accum [] for a in args { _.with(self.result(a)) }
+        }
+        to rule_string(ej) {
+            def s := (self.apply("bareString", [], ej))
+            return builder.apply("tokenBR", self.name, [[s.quote()]])
+        }
+        to rule_rulePart(ej) {
+            def requiredName := (self.apply("anything", [], ej))
+            self.apply("spaces", [], ej)
+            def n := (self.apply("name", [], ej))
+            def _G_pred_65(ej) {
+                return n == requiredName
+            }
+            self._pred(_G_pred_65, ej)
+            name := n
+            def args := (self.apply("expr4", [], ej))
+            def _G__or_66(ej) {
+                self.apply("token", ["::="], ej)
+                def e := (self.apply("expr", [], ej))
+                return builder.sequence([args, e])
+            }
+            def _G__or_67(ej) {
+                return args
+            }
+            return self._or([_G__or_66, _G__or_67], ej)
+        }
+        to rule_rule(ej) {
+            def n
+            self.apply("spaces", [], ej)
+            def _G_lookahead_68(ej) {
+                return bind n := (self.apply("name", [], ej))
+            }
+            self._lookahead(_G_lookahead_68, ej)
+            def r := (self.apply("rulePart", [n], ej))
+            def _G__or_70(ej) {
+                def _G_many_69(ej) {
+                    return self.apply("rulePart", [n], ej)
+                }
+                def rs := (self._many1(_G_many_69, ej))
+                return [n, builder._or([r] + rs)]
+            }
+            def _G__or_71(ej) {
+                return [n, r]
+            }
+            return self._or([_G__or_70, _G__or_71], ej)
+        }
+        to rule_grammar(ej) {
+            def _G_many_72(ej) {
+                return self.apply("rule", [], ej)
+            }
+            def rs := (self._many(_G_many_72))
+            self.apply("spaces", [], ej)
+            return builder.makeGrammar(rs)
+        }
+    }
+}

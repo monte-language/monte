@@ -544,7 +544,7 @@ class EBuilder(object):
         @param expr: A list of lines of E code.
         """
         fname = self._gensym(name)
-        return (self._function("def %s() { " % (fname,), expr), fname)
+        return (self._function("def %s(ej) {" % (fname,), expr), fname)
 
 
     def _expr(self, e):
@@ -591,7 +591,7 @@ class EBuilder(object):
         @param head: The initial line opening the suite.
         @param body: A list of lines for the suite body.
         """
-        body = list(body)
+        body = list(body) + ["}"]
         return [head] + [self._indent(line) for line in body]
 
 
@@ -602,14 +602,12 @@ class EBuilder(object):
         @param rules: A mapping of names to rule bodies.
         """
         lines = list(itertools.chain(*[self._function(
-            "to rule_%s() {" % (name,),
-            ["def _locals := ['self' => self].diverge()",
-             "allLocals[%r] := _locals" % (name,)] + list(body))
+                        "to rule_%s(ej) {" % (name,), list(body))
                                        for (name, body) in rules]))
         source = '\n'.join(self._suite(
                 "def make%s {" % (self.name.capitalize(),),
-                ["def allLocals = [].asMap().diverge()"] + self._suite(
-            "def self extends %s {" %(self.superclass.__name__,),
+                self._suite(
+                    "def self extends %s {" %(self.superclass.__name__,),
             lines)))
         return source
 
@@ -625,11 +623,13 @@ class EBuilder(object):
         """
         Create a call to self.apply(ruleName, *args).
         """
-        args = [self.compilePythonExpr(codeName, arg) for arg in exprs]
+        args = []
+        for arg in exprs:
+            args.extend(self.compilePythonExpr(codeName, arg))
         if ruleName == 'super':
-            return [self._expr('self.superApply("%s", %s)' % (codeName,
+            return [self._expr('self.superApply("%s", [%s], ej)' % (codeName,
                                                               ', '.join(args)))]
-        return [self._expr('self.apply("%s", %s)' % (ruleName,
+        return [self._expr('self.apply("%s", [%s], ej)' % (ruleName,
                                                      ', '.join(args)))]
 
 
@@ -645,7 +645,7 @@ class EBuilder(object):
         Create a call to self.many(lambda: expr).
         """
         fn, fname = self._newThunkFor("many", expr)
-        return self.sequence([fn, "self.many(%s)" %(fname,)])
+        return self.sequence([fn, "self._many(%s)" %(fname,)])
 
 
     def many1(self, expr):
@@ -653,8 +653,7 @@ class EBuilder(object):
         Create a call to self.many((lambda: expr), expr).
         """
         fn, fname = self._newThunkFor("many", expr)
-        return self.sequence([fn, self._expr("self.many(%s, %s())" %(fname,
-                                                                     fname))])
+        return self.sequence([fn, self._expr("self._many1(%s, ej)" %(fname,))])
 
 
     def optional(self, expr):
@@ -673,7 +672,7 @@ class EBuilder(object):
             fs, fnames = zip(*[self._newThunkFor("_or", expr)
                                for expr in exprs])
             return (self.sequence(list(fs) +
-                                  [self._expr("self._or([%s])" %
+                                  [self._expr("self._or([%s], ej)" %
                                               (', '.join(fnames)))]))
         else:
             return exprs[0]
@@ -684,7 +683,7 @@ class EBuilder(object):
         Create a call to self._not(lambda: expr).
         """
         fn, fname = self._newThunkFor("_not", expr)
-        return self.sequence([fn, self._expr("self._not(%s)" %(fname))])
+        return self.sequence([fn, self._expr("self._not(%s, ej)" %(fname))])
 
 
     def lookahead(self, expr):
@@ -692,7 +691,7 @@ class EBuilder(object):
         Create a call to self.lookahead(lambda: expr).
         """
         fn, fname = self._newThunkFor("lookahead", expr)
-        return self.sequence([fn, self._expr("self.lookahead(%s)" %(fname))])
+        return self.sequence([fn, self._expr("self._lookahead(%s, ej)" %(fname))])
 
 
     def sequence(self, exprs):
@@ -717,9 +716,7 @@ class EBuilder(object):
         bodyExprs = list(exprs)
         finalExpr = bodyExprs[-1]
         bodyExprs = bodyExprs[:-1]
-        return self.sequence(bodyExprs + ["_locals['%s'] := %s" %(name,
-                                                                  finalExpr),
-                                          self._expr("_locals['%s']" %(name,))])
+        return self.sequence(bodyExprs + ["def %s := (%s)" %(name, finalExpr)])
 
 
     def pred(self, expr):
@@ -728,7 +725,7 @@ class EBuilder(object):
         """
 
         fn, fname = self._newThunkFor("pred", expr)
-        return self.sequence([fn, self._expr("self.pred(%s)" %(fname))])
+        return self.sequence([fn, self._expr("self._pred(%s, ej)" %(fname))])
 
 
     def action(self, expr):
@@ -743,4 +740,4 @@ class EBuilder(object):
         Generate a call to self.listpattern(lambda: expr).
         """
         fn, fname = self._newThunkFor("listpattern", expr)
-        return self.sequence([fn, self._expr("self.listpattern(%s)" %(fname))])
+        return self.sequence([fn, self._expr("self._listpattern(%s, ej)" %(fname))])
