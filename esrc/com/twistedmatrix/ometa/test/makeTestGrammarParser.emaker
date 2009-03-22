@@ -1,0 +1,38 @@
+def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>
+
+def <ometa> := <import:com.twistedmatrix.ometa.*>
+def makeGrammar := <ometa:makeGrammar>
+def makeBuilder := <ometa:makeBuilder>
+
+
+def makeTestGrammarParser() {
+    def self extends makeTestCase(self) {
+
+        to compile(grammar) {
+            def b := makeBuilder("TestGrammar", false)
+            def g := makeGrammar(grammar, b)
+            return g._apply("grammar", [], throw)
+        }
+
+        /**
+         Input matches can be made on literal characters.
+        */
+        to test_literal() {
+            def g := self.compile("digit ::= '1'")
+            self.assertEqual(g("1")._apply("digit", [], throw), '1')
+            escape e {
+                g("4")._apply("digit", [], e)
+                throw("literal mismatch did not eject")
+            }
+        }
+
+        to test_escapedLiterals() {
+            def g := self.compile("newline ::= '\\n'")
+            self.assertEqual(g("\n")._apply("newline", [], throw), '\n')
+        }
+
+
+        
+    }
+    return self
+}
