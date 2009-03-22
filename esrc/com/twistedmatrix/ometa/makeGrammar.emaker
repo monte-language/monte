@@ -163,11 +163,11 @@ def makeGrammar(input, builder) {
             def name := (self._apply("name", [], ej))
             def _G__or_29(ej) {
                 def args := (self._apply("applicationArgs", [], ej))
-                return builder.apply(name, self.name, args)
+                return builder.apply(name, args)
             }
             def _G__or_30(ej) {
                 self._apply("token", [">"], ej)
-                return builder.apply(name, self.name, [])
+                return builder.apply(name, [])
             }
             return self._or([_G__or_29, _G__or_30], ej)
         }
@@ -221,7 +221,7 @@ def makeGrammar(input, builder) {
                 }
                 def _G__or_42(ej) {
                     def e := (self._apply("expr2", [], ej))
-                    return builder._not(e)
+                    return builder.not(e)
                 }
                 return self._or([_G__or_41, _G__or_42], ej)
             }
@@ -262,7 +262,7 @@ def makeGrammar(input, builder) {
             def _G__or_52(ej) {
                 self._apply("token", [":"], ej)
                 def n := (self._apply("name", [], ej))
-                return builder.bindValue(builder.apply("anything", self.name, []), n)
+                return builder.bindValue(builder.apply("anything", []), n)
             }
             return self._or([_G__or_51, _G__or_52], ej)
         }
@@ -362,7 +362,7 @@ def makeGrammar(input, builder) {
         }
         to string(ej) {
             def s := (self._apply("bareString", [], ej))
-            return builder.apply("tokenBR", self.name, [[s.quote()]])
+            return builder.apply("tokenBR", [[s.quote()]])
         }
         to rulePart(requiredName, ej) {
             self._apply("spaces", [], ej)

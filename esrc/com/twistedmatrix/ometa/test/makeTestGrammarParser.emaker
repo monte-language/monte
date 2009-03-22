@@ -48,9 +48,10 @@ def makeTestGrammarParser() {
         to test_star() {
             def g := self.compile("xs ::= 'x'*")
             for input in ["", "x", "xxxxx"] {
-                self.assertEquiv(g(input)._apply("xs", [], throw), input)
+                self.assertEqual(g(input)._apply("xs", [], throw),
+                                 input.getArray().snapshot())
             }
-            self.assertEquiv(g("yx")._apply("xs", [], throw), "")
+            self.assertEqual(g("yx")._apply("xs", [], throw), [])
         }
 
         /**
@@ -95,7 +96,37 @@ def makeTestGrammarParser() {
             }
         }
 
+        /**
+         Subpatterns can be made optional.
+        */
+        to test_optional() {
+            def g := self.compile("foo ::= 'x' 'y'? 'z'")
+            self.assertEqual(g("xyz")._apply("foo", [], throw), 'z')
+            self.assertEqual(g("xz")._apply("foo", [], throw), 'z')
+        }
 
+        /**
+         Other productions can be invoked from within a production.
+        */
+        to test_apply() {
+            def g := self.compile("digit ::= '0' | '1'
+                                   bits ::= <digit>+")
+            def input := "0110110"
+            self.assertEqual(g(input)._apply("bits", [], throw),
+                             input.getArray().snapshot())
+        }
+
+        /**
+         Input can be matched based on its failure to match a pattern.
+        */
+        to test_negate() {
+            def g := self.compile("foo ::= ~'0' <anything>")
+            self.assertEqual(g("1")._apply("foo", [], throw), '1')
+            escape e {
+                g("01")._apply("foo", [], e)
+                throw("Negation mismatch did not eject")
+            }
+        }
     }
     return self
 }
