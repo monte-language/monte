@@ -26,13 +26,76 @@ def makeTestGrammarParser() {
             }
         }
 
+        /**
+         Input matches can be made on escaped literal characters.
+        */
         to test_escapedLiterals() {
             def g := self.compile("newline ::= '\\n'")
             self.assertEqual(g("\n")._apply("newline", [], throw), '\n')
         }
 
+        /**
+        Input matches can be made on literal integers.
+        */
+        to test_integers() {
+            def g := self.compile("stuff ::= 17 0x1F -2")
+            self.assertEqual(g([17, 0x1f, -2 ])._apply("stuff", [], throw), -2)
+        }
 
-        
+        /**
+         Input matches can be made on zero or more repetitions of a pattern.
+         */
+        to test_star() {
+            def g := self.compile("xs ::= 'x'*")
+            for input in ["", "x", "xxxxx"] {
+                self.assertEquiv(g(input)._apply("xs", [], throw), input)
+            }
+            self.assertEquiv(g("yx")._apply("xs", [], throw), "")
+        }
+
+        /**
+         Input matches can be made on one or more repetitions of a pattern.
+         */
+        to test_plus() {
+            def g := self.compile("xs ::= 'x'+")
+            self.assertEqual(g("x")._apply("xs", [], throw), ['x'])
+            self.assertEqual(g("xxx")._apply("xs", [], throw), ['x', 'x', 'x'])
+
+            escape e {
+                g("yx")._apply("xs", [], e)
+                throw("plus mismatch did not eject")
+                g("")._apply("xs", [], e)
+                throw("plus mismatch did not eject")
+            }
+
+        }
+        /**
+         Input matches can be made on a sequence of patterns.
+        */
+        to test_sequencing() {
+            def g := self.compile("twelve ::= '1' '2'")
+            self.assertEqual(g("12")._apply("twelve", [], throw), '2');
+            escape e {
+                g("1")._apply("twelve", [], e)
+                throw("sequence mismatch did not eject")
+            }
+        }
+
+        /**
+         Input matches can be made on one of a set of alternatives.
+        */
+        to test_alternatives() {
+            def g := self.compile("digit ::= '0' | '1' | '2'")
+            self.assertEqual(g("0")._apply("digit", [], throw), '0')
+            self.assertEqual(g("1")._apply("digit", [], throw), '1')
+            self.assertEqual(g("2")._apply("digit", [], throw), '2')
+            escape e {
+                g("3")._apply("digit", [], e)
+                throw("Alternative mismatch did not eject")
+            }
+        }
+
+
     }
     return self
 }

@@ -68,7 +68,7 @@ def makeGrammar(input, builder) {
         }
         to octaldigit(ej) {
             def x := (self._apply("anything", [], ej))
-            def _G_pred_12(ej) {
+            def _G_pred_12() {
                 return octdigits.contains(x)
             }
             self._pred(_G_pred_12, ej)
@@ -76,7 +76,7 @@ def makeGrammar(input, builder) {
         }
         to hexdigit(ej) {
             def x := (self._apply("anything", [], ej))
-            def _G_pred_13(ej) {
+            def _G_pred_13() {
                 return hexdigits.contains(x)
             }
             self._pred(_G_pred_13, ej)
