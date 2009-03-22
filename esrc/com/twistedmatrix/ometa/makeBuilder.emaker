@@ -14,7 +14,7 @@ def buildList(args :List[ENode]) {
 
 
 
-def makeBuilder(name) {
+def makeBuilder(name, sourceForm) {
     def objname := makeNounExpr(null, name, null)
     var gensymCounter := 0
     def gensym(name) {
@@ -26,18 +26,31 @@ def makeBuilder(name) {
             `def $name(ej) { return $${0} }`).substitute([expr])
     }
     def builder {
+
+        to makeGrammar(rules) {
+            def source := builder.makeGrammarSource(rules)
+            if (sourceForm) {
+                return source
+            } else {
+                return source.eval(safeScope)
+            }
+        }
+
         to makeGrammarSource(rules) {
             def makerName := "make"+(name(0, 1).toUpperCase() + name(1))
             def methodTexts := [].diverge()
+            var i := 0
             for name => code in rules {
-                methodTexts.push(`method rule_$name(ej) {
-                    ${code.asText()}$\n}$\n`)
+                methodTexts.push(`method $name(ej) {
+                    $$$i$\n}$\n`)
+                i += 1
             }
             return e__quasiParser.valueMaker(
-                   `def $makerName(input) {
-                        def $name extends makeRuntime(input, $name) {$\n` +
+                   `def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
+                    def $makerName(input) {
+                        def $name extends makeOMetaBase(input, $name) {$\n` +
                         "\n".rjoin(methodTexts.snapshot()) +
-                       `} $\n return $name $\n}`)
+                       `} $\n return $name $\n}`).substitute(rules.getValues())
         }
 
         to apply(ruleName, args) {
@@ -112,7 +125,9 @@ def makeBuilder(name) {
 
         to pred(expr) {
             def name := gensym("pred")
-            return e`${newFunction(name, expr)};
+            def func := e__quasiParser.valueMaker(
+                `def $name() { return $${0} }`).substitute([expr])
+            return e`$func;
                      $objname._pred(${makeNounExpr(null, name, null)}, ej)`
         }
 

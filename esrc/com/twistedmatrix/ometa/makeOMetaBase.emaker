@@ -17,7 +17,7 @@ def makeOMetaBase(input, self) {
         */
         to _pred(func, ejector) {
             if (!func()) {
-                ejector("predicate was false")
+                ejector(`predicate was false at ${current.getOptSpan()}`)
             } else {
                 return true
             }
@@ -164,7 +164,7 @@ def makeOMetaBase(input, self) {
         /**
          Consume input until a non-whitespace character is reached.
          */
-        to spaces() {
+        to spaces(ejector) {
             def space(e) {
                 def r := ometaBase.char(e)
                 if (r > ' ') {
@@ -179,7 +179,7 @@ def makeOMetaBase(input, self) {
         */
         to token(tok, ejector) {
             def original := current
-            ometaBase.spaces()
+            ometaBase.spaces(ejector)
             escape e {
                 for ch in tok {
                     ometaBase.exactly(ch, e)
@@ -201,7 +201,7 @@ def makeOMetaBase(input, self) {
                 return x
             } else {
                 current := original
-                ejector("not a letter")
+                ejector(`not a letter: ${x.quote()}`)
             }
         }
         /**

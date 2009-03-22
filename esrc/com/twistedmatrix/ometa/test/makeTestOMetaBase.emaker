@@ -192,7 +192,7 @@ def makeTestOMetaBase() {
         to test_spaces() {
             def input := " \n\t\r   x"
             def g := makeOMetaBase(input, g)
-            def result := g.spaces()
+            def result := g.spaces(throw)
             self.assertEqual(g.exactly('x', throw), 'x')
         }
 
