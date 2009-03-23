@@ -7,8 +7,11 @@ def makeBuilder := <import:com.twistedmatrix.ometa.makeBuilder>
 def makeTestBuilder() {
     def self extends makeTestCase(self) {
 
+        to makeBuilder() {
+            return makeBuilder("foo", false, null, safeScope)
+        }
         to test_makeGrammar() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
                             def makeFoo(input) {
                               def foo extends makeOMetaBase(input, foo) {
@@ -19,11 +22,12 @@ def makeTestBuilder() {
         }
 
         to test_buildMethod() {
-           def b := makeBuilder("foo", false)
+           def b := self.makeBuilder()
            def wanted := e`def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
                            def makeFoo(input) {
                               def foo extends makeOMetaBase(input, foo) {
                                   method baz(ej) {
+                                      def ruleLocals := [].asMap().diverge()
                                       1 + 1
                                   }
                               }
@@ -33,35 +37,35 @@ def makeTestBuilder() {
         }
 
         to test_apply() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`foo._apply("baz", [one, two], ej)`
             self.assertEqual(b.apply("baz", [e`one`, e`two`]),
                              wanted)
         }
 
         to test_exactly() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`foo.exactly("x", ej)`
             self.assertEqual(b.exactly("x"),
                              wanted)
         }
 
         to test_many() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def _G_many_1(ej) { return x + y };
                             foo._many(_G_many_1)`
             self.assertEqual(b.many(e`x + y`), wanted)
         }
 
         to test_many1() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def _G_many1_1(ej) { return x + y };
                             foo._many1(_G_many1_1, ej)`
             self.assertEqual(b.many1(e`x + y`), wanted)
         }
 
         to test_optional() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def _G_or_1(ej) { return 17 };
                             def _G_or_2(ej) { return null };
                             foo._or([_G_or_1, _G_or_2], ej)`
@@ -69,7 +73,7 @@ def makeTestBuilder() {
         }
 
         to test_or() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def _G_or_1(ej) { return x + y };
                             def _G_or_2(ej) { return a + b };
                             foo._or([_G_or_1, _G_or_2], ej)`
@@ -77,45 +81,45 @@ def makeTestBuilder() {
         }
 
         to test_not() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def _G_not_1(ej) { return x + y };
                             foo._not(_G_not_1, ej)`
             self.assertEqual(b.not(e`x + y`), wanted)
         }
 
         to test_lookahead() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def _G_lookahead_1(ej) { return x + y };
                             foo._lookahead(_G_lookahead_1, ej)`
             self.assertEqual(b.lookahead(e`x + y`), wanted)
         }
 
         to test_sequence() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`x; y`
             self.assertEqual(b.sequence([e`x`, e`y`]), wanted)
         }
 
         to test_bindValue() {
-            def b := makeBuilder("foo", false)
-            def wanted := e`def baz := (12; 17)`
-            self.assertEqual(b.bindValue("baz", e`12; 17`), wanted)
+            def b := self.makeBuilder()
+            def wanted := e`ruleLocals.put("baz", 12; 17)`
+            self.assertEqual(b.bindValue(e`12; 17`, "baz"), wanted)
         }
 
         to test_pred() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def _G_pred_1() { return true }; foo._pred(_G_pred_1, ej)`;
             self.assertEqual(b.pred(e`true`), wanted)
         }
 
         to test_action() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`17`
-            self.assertEqual(b.action(e`17`), wanted)
+            self.assertEqual(b.compileAction(e`17`), wanted)
         }
 
         to test_listpattern() {
-            def b := makeBuilder("foo", false)
+            def b := self.makeBuilder()
             def wanted := e`def _G_listpattern_1(ej) { return x + y };
                             foo._listpattern(_G_listpattern_1, ej)`
             self.assertEqual(b.listpattern(e`x + y`), wanted)

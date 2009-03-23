@@ -1,3 +1,6 @@
+pragma.syntax("0.9")
+pragma.enable("exporter")
+
 def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>
 
 def <ometa> := <import:com.twistedmatrix.ometa.*>
@@ -8,10 +11,17 @@ def makeBuilder := <ometa:makeBuilder>
 def makeTestGrammarParser() {
     def self extends makeTestCase(self) {
 
-        to compile(grammar) {
-            def b := makeBuilder("TestGrammar", false)
+        to compile(grammar, optActions, scope) {
+            def b := makeBuilder("TestGrammar", false, optActions, scope)
             def g := makeGrammar(grammar, b)
             return g._apply("grammar", [], throw)
+        }
+
+        to compile(grammar, optActions) {
+            return self.compile(grammar, optActions, safeScope)
+        }
+        to compile(grammar) {
+            return self.compile(grammar, null, safeScope)
         }
 
         /**
@@ -126,6 +136,146 @@ def makeTestGrammarParser() {
                 g("01")._apply("foo", [], e)
                 throw("Negation mismatch did not eject")
             }
+        }
+
+        /**
+         Productions can specify an expression that provides the result
+         of the parse.
+        */
+        to test_ruleValue() {
+            def g := self.compile("foo ::= '1' => 7")
+            self.assertEqual(g("1")._apply("foo", [], throw), 7)
+        }
+
+        /**
+         Actions can be specified when compiling the grammar, and invoked from
+         rules in it.
+        */
+
+        to test_actionVerb() {
+            def actions {
+                to seven() {
+                    return 7
+                }
+            }
+            def g := self.compile("foo ::= '1' => seven()", actions)
+            self.assertEqual(g("1")._apply("foo", [], throw), 7)
+        }
+
+
+        /**
+         Nouns can be accessed from the scope specified at compile time.
+        */
+        to test_actionNoun() {
+            def scope := safeScope.with("x", 7)
+            def g := self.compile("foo ::= '1' => x", null, scope)
+            self.assertEqual(g("1")._apply("foo", [], throw), 7)
+        }
+
+        /**
+         If an action verb doesn't name a method on the actions object, it's
+         looked up as a callable object in the scope.
+        */
+        to test_actionVerbFallthrough() {
+            def scope := safeScope.with("seven", fn {7})
+            def g := self.compile("foo ::= '1' => seven()", null, scope)
+            self.assertEqual(g("1")._apply("foo", [], throw), 7)
+        }
+
+        /**
+         Actions can be invoked with arguments.
+        */
+        to test_actionCallArgs() {
+            def actions {
+                to plusSeven(x) {
+                    return x + 7
+                }
+            }
+            def g := self.compile("foo ::= '1' => plusSeven(1)", actions)
+            self.assertEqual(g("1")._apply("foo", [], throw), 8)
+        }
+
+        /**
+         The result of a parsing expression can be bound to a name.
+        */
+        to test_binding() {
+            def scope := safeScope.with("intFromChar",
+                                        fn x { x.asInteger() - 48})
+            def g := self.compile("foo ::= '3':x => intFromChar(x)",
+                                  null, scope)
+            self.assertEqual(g("3")._apply("foo", [], throw), 3)
+        }
+
+
+        /**
+         Parens can be used to group subpatterns.
+         */
+        to test_parens() {
+            def g := self.compile("foo ::= 'a' ('b' | 'c')")
+            self.assertEqual(g("ab")._apply("foo", [], throw), 'b')
+            self.assertEqual(g("ac")._apply("foo", [], throw), 'c')
+        }
+
+        /**
+         A pattern consisting of only a bind name matches a single element and
+         binds it to that name.
+        */
+        to test_bindNameOnly() {
+            def g := self.compile("foo ::= '1' :x '2' => x")
+            self.assertEqual(g("132")._apply("foo", [], throw), '3')
+        }
+
+        /**
+         Expressions can be used to determine the success or failure of a
+         parse.
+         */
+        to test_predicate() {
+            def g := self.compile(
+                "digit ::= '0' | '1'
+                 double_bits ::= <digit>:a <digit>:b ?(eq(a, b)) => int(b)",
+                def _ { to eq(a, b) { return a == b }
+                        to int(x) { return x.asInteger() - 48}})
+            self.assertEqual(g("00")._apply("double_bits", [], throw), 0)
+            self.assertEqual(g("11")._apply("double_bits", [], throw), 1)
+            escape e {
+                g("10")._apply("double_bits", [], e)
+                g("01")._apply("double_bits", [], e)
+                throw("predicate mismatch failed to eject")
+            }
+        }
+
+        /**
+         Productions can take arguments.
+        */
+        to test_args() {
+            def actions {
+                to int(d) { return d.asInteger() - 48 }
+                to gt(x, y) { return x > y }
+                to lte(x, y) { return x <= y }
+                to list(x, y) { return [x, y] }
+            }
+            def g := self.compile("
+              digit ::= ('0' | '1' | '2'):d => int(d)
+              baz ::= <digit>:a <foo a>:b => list(a, b)
+              foo :x ::= (?(gt(x, 1)) '9' | ?(lte(x, 1)) '8'):d => int(d)
+            ", actions)
+            self.assertEqual(g("18")._apply("baz", [], throw), [1, 8])
+            self.assertEqual(g("08")._apply("baz", [], throw), [0, 8])
+            self.assertEqual(g("29")._apply("baz", [], throw), [2, 9])
+        }
+
+
+
+         /**
+          Doubled negation does lookahead.
+         */
+        to test_lookahead() {
+            def g := self.compile(
+                "foo ::= ~~(:x) <bar x>
+                 bar :x ::= :a :b ?(eq(x, a, b)) => x",
+                def _ { to eq(x, a, b) { return x == a && x == b} })
+            self.assertEqual(g("11")._apply("foo", [], throw), '1')
+            self.assertEqual(g("22")._apply("foo", [], throw), '2')
         }
     }
     return self

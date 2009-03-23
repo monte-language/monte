@@ -202,13 +202,13 @@ def makeTestOMetaBase() {
         to test_token() {
             def input := "  foo baz"
             def g := makeOMetaBase(input, g)
-            def result := g.token("foo", throw)
+            def result := g._apply("token", ["foo"], throw)
             self.assertEqual(result, "foo")
             escape e {
-                g.token("foo", e)
+                g._apply("token", ["foo"], e)
                 throw("'token' did not eject on failure")
             }
-            self.assertEqual(g.token("baz", throw), "baz")
+            self.assertEqual(g._apply("token", ["baz"], throw), "baz")
         }
         /**
          'letter' matches letters.

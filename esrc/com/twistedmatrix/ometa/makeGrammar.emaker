@@ -11,9 +11,6 @@ def makeString(chars) {
 def octdigits := "01234567"
 def hexdigits := "0123456789abcdefABCDEF"
 
-def ActionLiteral(lit) {}
-def ActionNoun(n) {}
-def ActionCall(verb, args) {}
 
 def makeGrammar(input, builder) {
     var name := null
@@ -296,17 +293,17 @@ def makeGrammar(input, builder) {
             return self._or([_G__or_55, _G__or_56, _G__or_57], ej)
         }
         to actionCall(ej) {
-            def verb := (self._apply("actionNoun", [], ej))
+            def verb := def n := (self._apply("name", [], ej))
             self._apply("token", ["("], ej)
             def _G__or_58(ej) {
                 return self._apply("actionArgs", [], ej)
             }
             def _G__or_59(ej) {
-                return null
+                return []
             }
             def args := (self._or([_G__or_58, _G__or_59], ej))
             self._apply("token", [")"], ej)
-            return ActionCall(verb, args)
+            return builder.makeActionCall(verb, args)
         }
         to actionArgs(ej) {
             def a := (self._apply("action", [], ej))
@@ -319,7 +316,7 @@ def makeGrammar(input, builder) {
         }
         to actionNoun(ej) {
             def n := (self._apply("name", [], ej))
-            return ActionNoun(n)
+            return builder.makeActionNoun(n)
         }
         to actionLiteral(ej) {
             def _G__or_61(ej) {
@@ -332,24 +329,24 @@ def makeGrammar(input, builder) {
                 return self._apply("bareString", [], ej)
             }
             def lit := (self._or([_G__or_61, _G__or_62, _G__or_63], ej))
-            return ActionLiteral(lit)
+            return builder.makeActionLiteral(lit)
         }
         to ruleValue(ej) {
             self._apply("token", ["=>"], ej)
             def a := (self._apply("action", [], ej))
-            return self.result(a)
+            return builder.compileAction(a)
         }
         to semanticPredicate(ej) {
             self._apply("token", ["?("], ej)
             def a := (self._apply("action", [], ej))
             self._apply("token", [")"], ej)
-            return self.predicate(a)
+            return builder.pred(builder.compileAction(a))
         }
         to semanticAction(ej) {
             self._apply("token", ["!("], ej)
             def a := (self._apply("action", [], ej))
             self._apply("token", [")"], ej)
-            return self.action(a)
+            return self.compileAction(a)
         }
         to applicationArgs(ej) {
             def _G_many_64(ej) {
@@ -358,13 +355,14 @@ def makeGrammar(input, builder) {
             }
             def args := (self._many1(_G_many_64, ej))
             self._apply("token", [">"], ej)
-            return accum [] for a in args { _.with(self.result(a)) }
+            return accum [] for a in args { _.with(builder.compileAction(a)) }
         }
         to string(ej) {
             def s := (self._apply("bareString", [], ej))
             return builder.apply("tokenBR", [[s.quote()]])
         }
-        to rulePart(requiredName, ej) {
+        to rulePart(ej) {
+            def requiredName := self._apply("anything", [], ej)
             self._apply("spaces", [], ej)
             def n := (self._apply("name", [], ej))
             def _G_pred_65() {

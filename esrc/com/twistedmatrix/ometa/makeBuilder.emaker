@@ -14,7 +14,7 @@ def buildList(args :List[ENode]) {
 
 
 
-def makeBuilder(name, sourceForm) {
+def makeBuilder(name, sourceForm, optActions, grammarScope) {
     def objname := makeNounExpr(null, name, null)
     var gensymCounter := 0
     def gensym(name) {
@@ -32,7 +32,18 @@ def makeBuilder(name, sourceForm) {
             if (sourceForm) {
                 return source
             } else {
-                return source.eval(safeScope)
+                def __actionObj {
+                    match [verb, args] {
+                        if (optActions != null &&
+                            optActions.__respondsTo(verb, args.size())) {
+                                E.call(optActions, verb, args)
+                        } else {
+                            E.call(grammarScope.get(verb), "run", args)
+                        }
+                    }
+                }
+                def scope := grammarScope.with("__actionObj", __actionObj)
+                return source.eval(scope)
             }
         }
 
@@ -42,6 +53,7 @@ def makeBuilder(name, sourceForm) {
             var i := 0
             for name => code in rules {
                 methodTexts.push(`method $name(ej) {
+                    def ruleLocals := [].asMap().diverge()
                     $$$i$\n}$\n`)
                 i += 1
             }
@@ -49,6 +61,7 @@ def makeBuilder(name, sourceForm) {
                    `def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
                     def $makerName(input) {
                         def $name extends makeOMetaBase(input, $name) {$\n` +
+
                         "\n".rjoin(methodTexts.snapshot()) +
                        `} $\n return $name $\n}`).substitute(rules.getValues())
         }
@@ -115,12 +128,9 @@ def makeBuilder(name, sourceForm) {
             return makeSeqExpr(null, exprs, null)
         }
 
-        to bindValue(name, expr) {
-            def namePatt := makeFinalPattern(null,
-                                             makeNounExpr(null, name, null),
-                                             null,
-                                             null)
-            return e`def $namePatt := $expr`
+        to bindValue(expr, name) {
+            def nameString := makeLiteralExpr(null, name, null)
+            return e`ruleLocals.put($nameString, $expr)`
         }
 
         to pred(expr) {
@@ -131,8 +141,26 @@ def makeBuilder(name, sourceForm) {
                      $objname._pred(${makeNounExpr(null, name, null)}, ej)`
         }
 
-        to action(expr) {
+        to compileAction(expr) {
             return expr
+        }
+
+        to makeActionLiteral(a) {
+            return makeLiteralExpr(null, a, null)
+        }
+
+        to makeActionNoun(a) {
+            def name := makeLiteralExpr(null, a, null)
+            if (grammarScope.maps(a)) {
+                return e`ruleLocals.fetch($name,
+                         fn { ${makeNounExpr(null, a, null) }})`
+            } else {
+                return e`ruleLocals[$name]`
+            }
+        }
+
+        to makeActionCall(verb, args) {
+            return makeCallExpr(null, e`__actionObj`, verb, args, null)
         }
 
         to listpattern(expr) {

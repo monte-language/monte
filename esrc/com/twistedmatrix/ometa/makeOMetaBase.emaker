@@ -9,7 +9,10 @@ def makeOMetaBase(input, self) {
          recursion.
         */
         to _apply(rule, args, ejector) {
-            return E.call(self, rule, args + [ejector])
+            for arg in args {
+                current := [arg] + current
+            }
+            return E.call(self, rule, [ejector])
         }
 
         /**
@@ -17,7 +20,7 @@ def makeOMetaBase(input, self) {
         */
         to _pred(func, ejector) {
             if (!func()) {
-                ejector(`predicate was false at ${current.getOptSpan()}`)
+                ejector(`predicate was false`)
             } else {
                 return true
             }
@@ -177,7 +180,8 @@ def makeOMetaBase(input, self) {
         /**
          Consume a given string plus any leading whitespace.
         */
-        to token(tok, ejector) {
+        to token(ejector) {
+            def tok := ometaBase.anything(ejector)
             def original := current
             ometaBase.spaces(ejector)
             escape e {
@@ -197,7 +201,8 @@ def makeOMetaBase(input, self) {
             def original := current
             def x := ometaBase.anything(ejector)
             if ((x >= 'A' && x <= 'Z') ||
-                (x >= 'a' && x <= 'z')) {
+                (x >= 'a' && x <= 'z') ||
+                x == '_') {
                 return x
             } else {
                 current := original
