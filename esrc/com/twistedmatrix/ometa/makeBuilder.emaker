@@ -52,7 +52,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             def methodTexts := [].diverge()
             var i := 0
             for name => code in rules {
-                methodTexts.push(`method $name(ej) {
+                methodTexts.push(`method rule_$name(ej) {
                     def ruleLocals := [].asMap().diverge()
                     $$$i$\n}$\n`)
                 i += 1

@@ -26,7 +26,7 @@ def makeTestBuilder() {
            def wanted := e`def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
                            def makeFoo(input) {
                               def foo extends makeOMetaBase(input, foo) {
-                                  method baz(ej) {
+                                  method rule_baz(ej) {
                                       def ruleLocals := [].asMap().diverge()
                                       1 + 1
                                   }

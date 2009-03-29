@@ -76,27 +76,28 @@ def makeOMetaBase(input, self) {
          recursion.
         */
         to _apply(rule, args, ejector) {
+            def name := "rule_" + rule
             if (args.size() > 0) {
                 for arg in args {
                     current := makeArg(arg, current)
                 }
-                def result := E.call(self, rule, [ejector])
+                def result := E.call(self, name, [ejector])
                 return result
             }
-            var memoRec := current.getMemo(rule)
+            var memoRec := current.getMemo(name)
             if (memoRec == null) {
                 def origInput := current
                 def failer := makeFailer()
-                memoRec := current.setMemo(rule, failer)
+                memoRec := current.setMemo(name, failer)
 
-                memoRec := current.setMemo(rule,
-                                           makeMemo(E.call(self, rule, [ejector]),
+                memoRec := current.setMemo(name,
+                                           makeMemo(E.call(self, name, [ejector]),
                                                     current))
                 if (failer.used()) {
                     def sentinel := current
                      while (true) {
                          current := origInput
-                         def ans := E.call(self, rule, [ejector])
+                         def ans := E.call(self, name, [ejector])
                          if (current == sentinel) {
                              break
                         }
@@ -350,6 +351,10 @@ def makeOMetaBase(input, self) {
         }
 
         to br(ejector) {}
+
+        match [`rule_@name`, args] {
+             E.call(ometaBase, name, args)
+        }
     }
     return ometaBase
 }

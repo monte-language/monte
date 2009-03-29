@@ -15,7 +15,7 @@ def hexdigits := "0123456789abcdefABCDEF"
 def makeGrammar(input, builder) {
     var name := null
     def self extends makeOMetaBase(input, self) {
-        to number(ej) {
+        to rule_number(ej) {
             self._apply("spaces", [], ej)
             def _G__or_1(ej) {
                 self.exactly('-', ej)
@@ -28,7 +28,7 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_1, _G__or_2], ej)
         }
-        to barenumber(ej) {
+        to rule_barenumber(ej) {
             def _G__or_10(ej) {
                 self.exactly('0', ej)
                 def _G__or_7(ej) {
@@ -63,7 +63,7 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_10, _G__or_11], ej)
         }
-        to octaldigit(ej) {
+        to rule_octaldigit(ej) {
             def x := (self._apply("anything", [], ej))
             def _G_pred_12() {
                 return octdigits.contains(x)
@@ -71,7 +71,7 @@ def makeGrammar(input, builder) {
             self._pred(_G_pred_12, ej)
             return x
         }
-        to hexdigit(ej) {
+        to rule_hexdigit(ej) {
             def x := (self._apply("anything", [], ej))
             def _G_pred_13() {
                 return hexdigits.contains(x)
@@ -79,7 +79,7 @@ def makeGrammar(input, builder) {
             self._pred(_G_pred_13, ej)
             return x
         }
-        to escapedChar(ej) {
+        to rule_escapedChar(ej) {
             self.exactly('\\', ej)
             def _G__or_14(ej) {
                 self.exactly('n', ej)
@@ -106,16 +106,16 @@ def makeGrammar(input, builder) {
                 return '"'
             }
             def _G__or_20(ej) {
-                self.exactly("'")
+                self.exactly('\'', ej)
                 return '\''
             }
             def _G__or_21(ej) {
-                self.exactly('\\')
+                self.exactly('\\', ej)
                 return '\\'
             }
             return self._or([_G__or_14, _G__or_15, _G__or_16, _G__or_17, _G__or_18, _G__or_19, _G__or_20, _G__or_21], ej)
         }
-        to character(ej) {
+        to rule_character(ej) {
             self._apply("token", ["'"], ej)
             def _G__or_22(ej) {
                 return self._apply("escapedChar", [], ej)
@@ -127,7 +127,7 @@ def makeGrammar(input, builder) {
             self._apply("token", ["'"], ej)
             return c
         }
-        to bareString(ej) {
+        to rule_bareString(ej) {
             self._apply("token", ["\""], ej)
             def _G_many_27(ej) {
                 def _G__or_25(ej) {
@@ -146,7 +146,7 @@ def makeGrammar(input, builder) {
             self.exactly('"', ej)
             return makeString(c)
         }
-        to name(ej) {
+        to rule_name(ej) {
             def x := (self._apply("letter", [], ej))
             def _G_many_28(ej) {
                 return self._apply("letterOrDigit", [], ej)
@@ -154,7 +154,7 @@ def makeGrammar(input, builder) {
             def xs := (self._many(_G_many_28))
             return makeString([x] + xs)
         }
-        to application(ej) {
+        to rule_application(ej) {
             self._apply("token", ["<"], ej)
             self._apply("spaces", [], ej)
             def name := (self._apply("name", [], ej))
@@ -168,7 +168,7 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_29, _G__or_30], ej)
         }
-        to expr1(ej) {
+        to rule_expr1(ej) {
             def _G__or_33(ej) {
                 return self._apply("application", [], ej)
             }
@@ -208,7 +208,7 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_33, _G__or_34, _G__or_35, _G__or_36, _G__or_37, _G__or_38, _G__or_39, _G__or_40], ej)
         }
-        to expr2(ej) {
+        to rule_expr2(ej) {
             def _G__or_43(ej) {
                 self._apply("token", ["~"], ej)
                 def _G__or_41(ej) {
@@ -227,7 +227,7 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_43, _G__or_44], ej)
         }
-        to expr3(ej) {
+        to rule_expr3(ej) {
             def _G__or_51(ej) {
                 def e := (self._apply("expr2", [], ej))
                 def _G__or_45(ej) {
@@ -263,14 +263,14 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_51, _G__or_52], ej)
         }
-        to expr4(ej) {
+        to rule_expr4(ej) {
             def _G_many_53(ej) {
                 return self._apply("expr3", [], ej)
             }
             def es := (self._many(_G_many_53))
             return builder.sequence(es)
         }
-        to expr(ej) {
+        to rule_expr(ej) {
             def e := (self._apply("expr4", [], ej))
             def _G_many_54(ej) {
                 self._apply("token", ["|"], ej)
@@ -279,7 +279,7 @@ def makeGrammar(input, builder) {
             def es := (self._many(_G_many_54))
             return builder.or([e] + es)
         }
-        to action(ej) {
+        to rule_action(ej) {
             self._apply("spaces", [], ej)
             def _G__or_55(ej) {
                 return self._apply("actionCall", [], ej)
@@ -292,7 +292,7 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_55, _G__or_56, _G__or_57], ej)
         }
-        to actionCall(ej) {
+        to rule_actionCall(ej) {
             def verb := def n := (self._apply("name", [], ej))
             self._apply("token", ["("], ej)
             def _G__or_58(ej) {
@@ -305,7 +305,7 @@ def makeGrammar(input, builder) {
             self._apply("token", [")"], ej)
             return builder.makeActionCall(verb, args)
         }
-        to actionArgs(ej) {
+        to rule_actionArgs(ej) {
             def a := (self._apply("action", [], ej))
             def _G_many_60(ej) {
                 self._apply("token", [","], ej)
@@ -314,11 +314,11 @@ def makeGrammar(input, builder) {
             def b := (self._many(_G_many_60))
             return [a] + b
         }
-        to actionNoun(ej) {
+        to rule_actionNoun(ej) {
             def n := (self._apply("name", [], ej))
             return builder.makeActionNoun(n)
         }
-        to actionLiteral(ej) {
+        to rule_actionLiteral(ej) {
             def _G__or_61(ej) {
                 return self._apply("number", [], ej)
             }
@@ -331,24 +331,24 @@ def makeGrammar(input, builder) {
             def lit := (self._or([_G__or_61, _G__or_62, _G__or_63], ej))
             return builder.makeActionLiteral(lit)
         }
-        to ruleValue(ej) {
+        to rule_ruleValue(ej) {
             self._apply("token", ["=>"], ej)
             def a := (self._apply("action", [], ej))
             return builder.compileAction(a)
         }
-        to semanticPredicate(ej) {
+        to rule_semanticPredicate(ej) {
             self._apply("token", ["?("], ej)
             def a := (self._apply("action", [], ej))
             self._apply("token", [")"], ej)
             return builder.pred(builder.compileAction(a))
         }
-        to semanticAction(ej) {
+        to rule_semanticAction(ej) {
             self._apply("token", ["!("], ej)
             def a := (self._apply("action", [], ej))
             self._apply("token", [")"], ej)
             return builder.compileAction(a)
         }
-        to applicationArgs(ej) {
+        to rule_applicationArgs(ej) {
             def _G_many_64(ej) {
                 self._apply("spaces", [], ej)
                 return self._apply("action", [], ej)
@@ -357,11 +357,11 @@ def makeGrammar(input, builder) {
             self._apply("token", [">"], ej)
             return accum [] for a in args { _.with(builder.compileAction(a)) }
         }
-        to string(ej) {
+        to rule_string(ej) {
             def s := (self._apply("bareString", [], ej))
             return builder.apply("tokenBR", [makeLiteralExpr(null, s, null)])
         }
-        to rulePart(ej) {
+        to rule_rulePart(ej) {
             def requiredName := self._apply("anything", [], ej)
             self._apply("spaces", [], ej)
             def n := (self._apply("name", [], ej))
@@ -381,7 +381,7 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_66, _G__or_67], ej)
         }
-        to rule(ej) {
+        to rule_rule(ej) {
             def n
             self._apply("spaces", [], ej)
             def _G_lookahead_68(ej) {
@@ -401,7 +401,7 @@ def makeGrammar(input, builder) {
             }
             return self._or([_G__or_70, _G__or_71], ej)
         }
-        to grammar(ej) {
+        to rule_grammar(ej) {
             def _G_many_72(ej) {
                 return self._apply("rule", [], ej)
             }
