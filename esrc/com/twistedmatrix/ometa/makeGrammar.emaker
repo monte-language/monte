@@ -2,7 +2,7 @@ pragma.syntax("0.9")
 pragma.enable("accumulator")
 
 def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
-
+def makeLiteralExpr := <elang:evm.makeLiteralExpr>
 def makeString(chars) {
     return <import:org.erights.e.elib.tables.makeTwine>.fromChars(chars,
                                                                   null)
@@ -50,7 +50,7 @@ def makeGrammar(input, builder) {
                         return self._apply("octaldigit", [], ej)
                     }
                     def ds := (self._many(_G_many_6))
-                    return __makeInt(makeString(ds), 8)
+                    return __makeInt("0"+makeString(ds), 8)
                 }
                 return self._or([_G__or_7, _G__or_8], ej)
             }
@@ -143,7 +143,7 @@ def makeGrammar(input, builder) {
                 return self._or([_G__or_25, _G__or_26], ej)
             }
             def c := (self._many(_G_many_27))
-            self._apply("token", ["\""], ej)
+            self.exactly('"', ej)
             return makeString(c)
         }
         to name(ej) {
@@ -346,7 +346,7 @@ def makeGrammar(input, builder) {
             self._apply("token", ["!("], ej)
             def a := (self._apply("action", [], ej))
             self._apply("token", [")"], ej)
-            return self.compileAction(a)
+            return builder.compileAction(a)
         }
         to applicationArgs(ej) {
             def _G_many_64(ej) {
@@ -359,7 +359,7 @@ def makeGrammar(input, builder) {
         }
         to string(ej) {
             def s := (self._apply("bareString", [], ej))
-            return builder.apply("tokenBR", [[s.quote()]])
+            return builder.apply("tokenBR", [makeLiteralExpr(null, s, null)])
         }
         to rulePart(ej) {
             def requiredName := self._apply("anything", [], ej)
@@ -394,7 +394,7 @@ def makeGrammar(input, builder) {
                     return self._apply("rulePart", [n], ej)
                 }
                 def rs := (self._many1(_G_many_69, ej))
-                return [n, builder._or([r] + rs)]
+                return [n, builder.or([r] + rs)]
             }
             def _G__or_71(ej) {
                 return [n, r]

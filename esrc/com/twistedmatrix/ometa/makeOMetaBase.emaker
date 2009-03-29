@@ -1,7 +1,74 @@
 pragma.syntax("0.9")
 
+def makeFailer() {
+    var used := false
+    def failer {
+        to setUsed() { used := true }
+        to used() { return used }
+        to isFailure() { return true }
+    }
+    return failer
+}
+
+def makeMemo(var ans, var input) {
+    def memo {
+        to update(newAns, newInput) { ans := newAns; input := newInput }
+        to ans() { return ans }
+        to input() { return input }
+        to isFailure() { return false }
+    }
+    return memo
+}
+
+def makeInputStream(input, position) {
+    def memo := [].asMap().diverge()
+    var tail := null
+    def inputStream {
+        to head(ej) {
+            if (input.size() == position) {
+                ej("at end of input")
+            }
+            return input[position]
+        }
+        to tail() {
+            if (tail == null) {
+                tail := makeInputStream(input, position+1)
+            }
+            return tail
+        }
+        to getMemo(name) {
+            return memo.fetch(name, fn { null })
+        }
+        to setMemo(name, rec) {
+            memo[name] := rec
+            return rec
+        }
+    }
+    return inputStream
+}
+
+def makeArg(arg, current) {
+    def memo := [].asMap().diverge()
+    def argument {
+        to head(ej) {
+            return arg
+        }
+        to tail() {
+            return current
+        }
+        to getMemo(name) {
+            return memo.fetch(name, fn { null })
+        }
+        to setMemo(name, rec) {
+            memo[name] := rec
+            return rec
+        }
+    }
+    return argument
+}
+
 def makeOMetaBase(input, self) {
-    var current := input
+    var current := makeInputStream(input, 0)
     def ometaBase {
 
         /**
@@ -9,10 +76,41 @@ def makeOMetaBase(input, self) {
          recursion.
         */
         to _apply(rule, args, ejector) {
-            for arg in args {
-                current := [arg] + current
+            if (args.size() > 0) {
+                for arg in args {
+                    current := makeArg(arg, current)
+                }
+                def result := E.call(self, rule, [ejector])
+                return result
             }
-            return E.call(self, rule, [ejector])
+            var memoRec := current.getMemo(rule)
+            if (memoRec == null) {
+                def origInput := current
+                def failer := makeFailer()
+                memoRec := current.setMemo(rule, failer)
+
+                memoRec := current.setMemo(rule,
+                                           makeMemo(E.call(self, rule, [ejector]),
+                                                    current))
+                if (failer.used()) {
+                    def sentinel := current
+                     while (true) {
+                         current := origInput
+                         def ans := E.call(self, rule, [ejector])
+                         if (current == sentinel) {
+                             break
+                        }
+                        memoRec.update(ans, current)
+                    }
+                }
+                #current := origInput
+            } else if (memoRec.isFailure()) {
+                memoRec.setUsed()
+                ejector("application failed")
+            }
+            current := memoRec.input()
+            return memoRec.ans()
+
         }
 
         /**
@@ -114,7 +212,7 @@ def makeOMetaBase(input, self) {
             def v :any[List, String] exit boringEjector := (
                 ometaBase.anything(ejector))
             def oldInput := current
-            current := v
+            current := makeInputStream(v, 0)
             subpattern(ejector)
             ometaBase._end(ejector)
             current := oldInput
@@ -125,12 +223,8 @@ def makeOMetaBase(input, self) {
          Match a single item from the input.
         */
         to anything(ejector) {
-            def i := current
-            if (current.size() == 0) {
-               ejector("at end of input")
-            }
-            def val := current[0]
-            current := current.run(1)
+            def val := current.head(ejector)
+            current := current.tail()
             return val
         }
 
@@ -238,6 +332,24 @@ def makeOMetaBase(input, self) {
                 ejector("not alphanumeric")
             }
         }
+
+        to tokenBR(ejector) {
+            def token := ometaBase.anything(ejector)
+            def oldInput := current
+            escape e {
+                ometaBase.spaces(e)
+                for ch in token {
+                    ometaBase.exactly(ch, e)
+                }
+                ometaBase._apply("br", [], e)
+                return token
+            } catch p {
+                current := oldInput
+                ejector(p)
+            }
+        }
+
+        to br(ejector) {}
     }
     return ometaBase
 }

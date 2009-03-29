@@ -277,6 +277,101 @@ def makeTestGrammarParser() {
             self.assertEqual(g("11")._apply("foo", [], throw), '1')
             self.assertEqual(g("22")._apply("foo", [], throw), '2')
         }
+
+        /**
+         Python expressions can be run as actions with no effect on the result
+         of the parse.
+        */
+        to test_action() {
+
+            def g := self.compile("foo ::= ('1'*:ones !(false) '2' => 3)")
+            self.assertEqual(g("1112")._apply("foo", [], throw), 3)
+        }
+
+        /**
+         Productions can pattern-match on arguments.
+         Also, multiple definitions of a rule can be done in sequence.
+        */
+        to test_patternMatch() {
+            def g := self.compile(
+                "fact 0                        => 1
+                 fact :n ::= <fact decr(n)>:m => mult(n, m)",
+                def _ { to decr(n) { return n - 1}
+                        to mult(x, y) { return x * y }})
+            self.assertEqual(g([3])._apply("fact", [], throw), 6)
+    }
+
+        /**
+         Brackets can be used to match contents of lists.
+        */
+        to test_listpattern() {
+            def g := self.compile(
+                "digit  ::= :x ?(isDigit(x))          => makeInt(x)
+                 interp ::= [<digit>:x '+' <digit>:y] => add(x, y)",
+                def _ { to isDigit(x) { return x >= '0' && x <= '9' }
+                        to makeInt(x) { return x.asInteger() - 48 }
+                        to add(x, y) { return x + y }})
+            self.assertEqual(g([['3', '+', '5']])._apply("interp", [], throw),
+                             8)
+        }
+
+        /**
+         The result of a list pattern is the entire list.
+        */
+        to test_listpatternresult() {
+            def g := self.compile(
+                "digit  ::= :x ?(isDigit(x))          => makeInt(x)
+                 interp ::= [<digit>:x '+' <digit>:y]:z => __makeList(z, add(x, y))",
+                def _ { to isDigit(x) { return x >= '0' && x <= '9' }
+                        to makeInt(x) { return x.asInteger() - 48 }
+                        to add(x, y) { return x + y }})
+            def e := ['3', '+', '5']
+            self.assertEqual(g([e])._apply("interp", [], throw),
+                             [e, 8])
+        }
+
+        /**
+         Rules can call themselves.
+         */
+        to test_recursion() {
+            def g := self.compile("
+             interp ::= (['+' <interp>:x <interp>:y] => add(x, y)
+                       | ['*' <interp>:x <interp>:y] => mult(x, y)
+                       | :x ?(isDigit(x)) => makeInt(x))",
+                def _ { to isDigit(x) { char.coerce(x, fn _ { return false});
+                                        return x >= '0' && x <= '9' }
+                        to makeInt(x) { return x.asInteger() - 48 }
+                        to add(x, y) { return x + y }
+                        to mult(x, y) { return x * y}})
+            self.assertEqual(g([['+', '3', ['*', '5', '2']]])._apply("interp", [], throw), 13)
+        }
+
+        /**
+         Left-recursion is detected and compiled appropriately.
+        */
+        to test_leftrecursion() {
+            def g := self.compile("
+               num ::= (<num>:n <digit>:d   => decimalize(n, d)
+                      | <digit>)
+               digit ::= :x ?(isDigit(x)) => makeInt(x)",
+               def _ {to isDigit(x) { char.coerce(x, fn _ { return false});
+                                      return x >= '0' && x <= '9' }
+                      to makeInt(x) { return x.asInteger() - 48 }
+                      to decimalize(n, d) { return n * 10 + d }})
+            self.assertEqual(g("3")._apply("num", [], throw), 3)
+            self.assertEqual(g("32767")._apply("num", [], throw), 32767)
+
+        }
+
+        /**
+         Strings in double quotes match tokens with breaks afterwards.
+        */
+        to test_string() {
+        def g := self.compile(`interp ::= "Foo" "baz" "boz" => 3
+                               br ::= '-'`)
+        self.assertEqual(g("Foo-baz-boz-")._apply("interp", [], throw), 3)
+        }
+
     }
     return self
 }
