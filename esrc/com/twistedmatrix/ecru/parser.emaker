@@ -1,0 +1,214 @@
+pragma.syntax("0.9")
+
+def makeFloat64 := <elib:atom.makeFloat64>
+def makeString := <elib:atom.makeString>
+
+
+def parserGrammar ::= <resource:com/twistedmatrix/ecru/eparser.g>.getText()
+
+def <ometa> := <import:com.twistedmatrix.ometa.*>
+def makeGrammar := <ometa:makeGrammar>
+def makeBuilder := <ometa:makeBuilder>
+
+def reserved = ["delegate", "module", "abstract", "an", "as", "assert", "attribute",
+               "be", "begin", "behalf", "belief", "believe", "believes", "case",
+               "class", "const", "constructor", "declare", "default", "define",
+               "defmacro", "delicate", "deprecated", "dispatch", "do", "encapsulate",
+               "encapsulated", "encapsulates", "end", "ensure", "enum", "eventual",
+               "eventually", "export", "facet", "forall", "function", "given",
+               "hidden", "hides", "inline", "is", "know", "knows", "lambda", "let",
+               "methods", "namespace", "native", "obeys", "octet", "oneway",
+               "operator", "package", "private", "protected", "public",
+               "raises", "reliance", "reliant", "relies", "rely", "reveal", "sake",
+               "signed", "static", "struct", "suchthat", "supports", "suspect",
+               "suspects", "synchronized", "this", "transient", "truncatable",
+               "typedef", "unsigned", "unum", "uses", "using", "utf8", "utf16",
+               "virtual", "volatile", "wstring"].asSet()
+ def basicKeywords := ["bind", "break", "catch", "continue", "def", "else", "escape", "exit",
+               "extends", "finally", "fn", "for", "guards", "if", "implements", "in",
+               "interface", "match", "meta", "method", "pragma", "return", "switch",
+               "to", "try", "var", "via", "when", "while", "accum", "module", "on",
+               "select", "throws", "thunk"].asSet()
+def keywords := reserved | basicKeywords
+
+
+def tempSep(name) {
+    def lastSEP := name.lastIndexOf1("__")
+    if (-1 == lastSEP) {
+        return -1
+    }
+    def len := name.size()
+    if (lastSEP == len - 2) {
+        # ends with "__"
+        return -1
+    }
+    for i in (lastSEP + 2)..len {
+        if (name[i] < '0' || name[i] > '9') {
+            return -1
+        }
+    }
+    return lastSEP
+}
+
+def hilbertHotelRename(name) {
+    def i := tempSep(name)
+    if (-1 == i) {
+        return name
+    }
+    def base := name.run(0, i)
+    def suffix := __makeInt(name.run(i + 2))
+    return `${base}__${suffix * 2}`
+}
+def makeEParser(source) {
+    def valueHoles := [].diverge()
+    def parser
+    def actions {
+        /**
+         Ensure an identifier isn't a keyword or reserved word.
+        */
+        to keywordCheck(ident, ej) {
+            if reserved.contains(ident) {
+                throw(`$ident is a reserved word`)
+            } else if basicKeywords.contains(ident) {
+                throw(`$ident is a keyword`)
+            } else {
+                return ident
+            }
+        }
+
+        /**
+         Look up a value hole in the table and return its position.
+        */
+        to valueHole() {
+            def pos := parser.getCurrent().getPosition()
+            if (pos != null) {
+                def hole := valueHoles.lastIndexOf1(pos - 1)
+                if (hole == -1) {
+                    throw("A literal $ is not meaningful in E source.")
+                }
+            }
+        }
+
+        /**
+         Look up a pattern hole in the table and return its position.
+        */
+        to patternHole() {
+            def pos := parser.getCurrent().getPosition()
+            if (pos != null) {
+                def hole := patternHoles.lastIndexOf1(pos - 1)
+                if (hole == -1) {
+                    throw("A literal @ is not meaningful in E source.")
+                }
+            }
+        }
+
+        to quasiHoleKeywordCheck(n) {
+            if (keywords.contains(n)) {
+                throw(`Unexpected keyword $n in quasi hole`)
+            }
+        }
+
+        to exprHoleKeywordCheck(n) {
+            if (keywords.contains(n)) {
+                throw(`Unexpected keyword $n in quasi hole`)
+            }
+        }
+
+        to throwSemanticHere(arg) {
+            throw(arg)
+        }
+
+        to cons(first, rest) {
+            return [first] + rest
+        }
+
+        to float(x) {
+            return makeFloat64(x)
+        }
+
+        to makeFloat(ds, fs, e) {
+            if (e != null) {
+                return makeFloat64(ds+"."+fs+e)
+            } else {
+                return makeFloat64(ds+"."+fs)
+            }
+        }
+
+        to int(x, base) {
+            return __makeInt(x, base)
+        }
+
+        to int(x) {
+            return __makeInt(x)
+        }
+
+        to join(x) {
+            return "".rjoin(x)
+        }
+
+        to noIgnorePatternHole() {
+            throw("An ignore pattern is not allowed as a pattern hole")
+        }
+        to noIgnoreExpressionHole() {
+            throw("An ignore pattern is not allowed as a expression hole")
+        }
+        to nounExprFromSource(n) {
+            return makeNounExpr(null,
+                                hilbertHotelRename(n),
+                                null)
+        }
+
+        to strip(x) {
+            var limit := 0
+            for i in (0..!x.size()).descending() {
+                if (x[i] > ' ') {
+                    limit := i+1
+                    break
+                }
+            }
+            def rstripped := x(0, limit)
+            for i in (0..x.size()) {
+                if (x[i] > ' ') {
+                    limit := i
+                    break
+                }
+            }
+            return rstripped(limit)
+        }
+
+        to unichr(x) {
+            return '\u0000' + x
+        }
+
+        to makeHex(hs) {
+            return __makeInt(makeString(hs), 16)
+        }
+
+        to contains(container, value) {
+            return container.contains(value)
+        }
+
+        to Object(doc, o) {
+        }
+
+        to Interface(doc, i) {
+        }
+
+        to SeqExpr(xs) {
+        }
+
+        to Script(e, oi, s) {
+        }
+
+        match ["AccumFor", [p] + args] {
+        }
+
+        match ["For", [p] + args] {
+        }
+
+        match ["makeList", bits] {
+            __makeList(bits)
+        }
+        match ["concat", args] {
+            "".rjoin(accum [] for x in args { _.with(`$x`) })
+        }

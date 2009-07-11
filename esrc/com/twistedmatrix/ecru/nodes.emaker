@@ -1,0 +1,23 @@
+
+pragma.syntax("0.9")
+pragma.enable("exporter")
+
+
+[=> Pragma, => When, => While, => Finally, => KernelTry, => Try, => Switch,
+=> Meta, => Lambda, => If, => For, => Escape, => AccumCall, => AccumOp,
+=> AccumWhile, => AccumIf, => AccumFor, => Accum, => Catch, => Method, => To,
+=> Matcher, => Function, => Script, => Object, => ParamDesc, => MessageDesc,
+=> InterfaceFunction, => Interface, => MapPatternRequired, => MapPatternOptional,
+=> MapPatternImport, => MapPatternAssoc, => Guard, => Return, => Continue,
+=> Break, => VerbAssign, => Assign, => Forward, => Def, => LogicalOr,
+=> LogicalAnd, => BinaryXor, => BinaryAnd, => BinaryOr, => ButNot, => NotSame,
+=> Same, => Mismatch, => MatchBind, => Coerce, => LessThan, => LessThanEqual,
+=> AsBigAs, => GreaterThanEqual, => GreaterThan, => Thru, => Till, => ShiftRight,
+=> ShiftLeft, => Subtract, => Add, => Mod, => Remainder, => FloorDivide,
+=> Divide, => Multiply, => Pow, => OpNode, => BinaryNot, => LogicalNot, => Minus,
+=> SendCurryExpr, => MethodSendExpr, => FunctionSendExpr, => FunctionCallExpr,
+=> GetExpr, => VerbCurryExpr, => MethodCallExpr, => SeqExpr, => HideExpr,
+=> QuasiExpr, => MapExprExport, => MapExprAssoc, => ListExpr, => MapExpr, => Slot,
+=> QuasiPatternHole, => QuasiExprHole, => QuasiText, => QuasiPatternExpr,
+=> QuasiLiteralExpr, => NounExpr, => URIGetter, => URIExpr, => LiteralExpr,
+=> Character]
