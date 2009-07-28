@@ -1,16 +1,33 @@
 pragma.syntax("0.9")
+pragma.enable("accumulator")
 
 def makeFloat64 := <elib:atom.makeFloat64>
-def makeString := <elib:atom.makeString>
+def makeTextWriter := <elib:oldeio.makeTextWriter>
+
+def makeString(bits) {
+  def [tw, sb] := makeTextWriter.makeBufferingPair()
+  for c in bits {
+    tw.print(c)
+  }
+  return sb.snapshot()
+}
 
 
-def parserGrammar ::= <resource:com/twistedmatrix/ecru/eparser.g>.getText()
+def parserGrammar := <resource:com/twistedmatrix/ecru/eparser.g>.getText()
 
 def <ometa> := <import:com.twistedmatrix.ometa.*>
 def makeGrammar := <ometa:makeGrammar>
 def makeBuilder := <ometa:makeBuilder>
 
-def reserved = ["delegate", "module", "abstract", "an", "as", "assert", "attribute",
+def makeAstroTag := <import:org.quasiliteral.astro.makeAstroTag>
+def makeTerm := <import:org.quasiliteral.term.makeTerm>
+def Term := makeTerm.asType()
+def makeTermBuilder := <import:org.quasiliteral.term.makeTermBuilder>
+#XXX fix this EoCL/EoJ discrepancy
+def termBuilder := try { makeTermBuilder() } catch p { makeTermBuilder(null) }
+
+
+def reserved := ["delegate", "module", "abstract", "an", "as", "assert", "attribute",
                "be", "begin", "behalf", "belief", "believe", "believes", "case",
                "class", "const", "constructor", "declare", "default", "define",
                "defmacro", "delicate", "deprecated", "dispatch", "do", "encapsulate",
@@ -59,49 +76,48 @@ def hilbertHotelRename(name) {
     def suffix := __makeInt(name.run(i + 2))
     return `${base}__${suffix * 2}`
 }
-def makeEParser(source) {
-    def valueHoles := [].diverge()
+def makeEParser(source, valueHoles, patternHoles) {
     def parser
     def actions {
-        /**
+      /**
          Ensure an identifier isn't a keyword or reserved word.
-        */
-        to keywordCheck(ident, ej) {
-            if reserved.contains(ident) {
-                throw(`$ident is a reserved word`)
-            } else if basicKeywords.contains(ident) {
-                throw(`$ident is a keyword`)
-            } else {
-                return ident
-            }
-        }
-
-        /**
+      */
+      to keywordCheck(ident, ej) {
+	if (reserved.contains(ident)) {
+	  throw(`$ident is a reserved word`)
+	} else if (basicKeywords.contains(ident)) {
+	    throw(`$ident is a keyword`)
+	  } else {
+	  return ident
+	}
+      }
+      
+      /**
          Look up a value hole in the table and return its position.
-        */
-        to valueHole() {
-            def pos := parser.getCurrent().getPosition()
-            if (pos != null) {
-                def hole := valueHoles.lastIndexOf1(pos - 1)
-                if (hole == -1) {
-                    throw("A literal $ is not meaningful in E source.")
-                }
-            }
-        }
-
-        /**
+      */
+      to valueHole() {
+	def pos := parser.getCurrent().getPosition()
+	if (pos != null) {
+	  def hole := valueHoles.lastIndexOf1(pos - 1)
+	  if (hole == -1) {
+	    throw("A literal $ is not meaningful in E source.")
+	  }
+	}
+      }
+      
+      /**
          Look up a pattern hole in the table and return its position.
-        */
-        to patternHole() {
-            def pos := parser.getCurrent().getPosition()
-            if (pos != null) {
-                def hole := patternHoles.lastIndexOf1(pos - 1)
-                if (hole == -1) {
-                    throw("A literal @ is not meaningful in E source.")
-                }
-            }
-        }
-
+      */
+      to patternHole() {
+	def pos := parser.getCurrent().getPosition()
+	if (pos != null) {
+	  def hole := patternHoles.lastIndexOf1(pos - 1)
+	  if (hole == -1) {
+	    throw("A literal @ is not meaningful in E source.")
+	  }
+	}
+      }
+      
         to quasiHoleKeywordCheck(n) {
             if (keywords.contains(n)) {
                 throw(`Unexpected keyword $n in quasi hole`)
@@ -153,9 +169,9 @@ def makeEParser(source) {
             throw("An ignore pattern is not allowed as a expression hole")
         }
         to nounExprFromSource(n) {
-            return makeNounExpr(null,
-                                hilbertHotelRename(n),
-                                null)
+            return term`NounExpr(null,
+	      	                 $hilbertHotelRename(n),
+                                null)`
         }
 
         to strip(x) {
@@ -191,7 +207,7 @@ def makeEParser(source) {
         to Object(doc, o) {
         }
 
-        to Interface(doc, i) {
+        to "Interface"(doc, i) {
         }
 
         to SeqExpr(xs) {
@@ -200,15 +216,37 @@ def makeEParser(source) {
         to Script(e, oi, s) {
         }
 
-        match ["AccumFor", [p] + args] {
+        match [=="AccumFor", [p] + args] {
         }
 
-        match ["For", [p] + args] {
+        match [=="For", [p] + args] {
         }
 
-        match ["makeList", bits] {
+        match [=="makeList", bits] {
             __makeList(bits)
         }
-        match ["concat", args] {
+        match [=="concat", args] {
             "".rjoin(accum [] for x in args { _.with(`$x`) })
         }
+	match [verb, args] {
+	  def argTerms := [].diverge()
+	  for arg in args {
+	    switch (arg) {
+	      match ==null {
+		argTerms.append(term`null`)
+	      }
+	      match _ :Term {
+		argTerms.append(arg)
+	      }
+	      match _ :any[int, float64, String] {
+		argTerms.append(termBuilder.leafData(arg, null))
+	      }
+	      match _ {
+		throw(`$arg is not a valid AST value.`)
+	      }
+	    }
+	  }
+	  return makeTerm(makeAstroTag(null, verb, any), null, null, argTerms.snapshot())
+	}
+    }
+}
