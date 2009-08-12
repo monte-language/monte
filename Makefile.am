@@ -85,9 +85,9 @@ CLEANFILES = src/tests/test_elib.c src/tests/test_vm.c			\
              src/tests/test_invoke.c src/tests/test_bytecode_loader.c
 TESTS = $(check_PROGRAMS)
 
-pyecrudir = $(PYTHON_SITE_PKG)/ecru
-pyecru_testdir = $(PYTHON_SITE_PKG)/ecru/test
-pymetadir = $(PYTHON_SITE_PKG)/pymeta
+pyecrudir = $(pythondir)/ecru
+pyecru_testdir = $(pythondir)/ecru/test
+pymetadir = $(pythondir)/pymeta
 pymeta_PYTHON = pysrc/pymeta/__init__.py pysrc/pymeta/boot.py	\
                 pysrc/pymeta/builder.py pysrc/pymeta/grammar.py	\
                 pysrc/pymeta/runtime.py

@@ -36,6 +36,8 @@ PYTHON_CFLAGS=`$PYTHON -c "import distutils.sysconfig; \
 AC_MSG_RESULT([$PYTHON_CFLAGS])
 AC_SUBST([PYTHON_CFLAGS])
 
+AM_PATH_PYTHON([2.5])
+
 SHAVE_INIT([build-aux])
 AC_CONFIG_FILES([Makefile build-aux/shave build-aux/shave-libtool])
 AC_OUTPUT
