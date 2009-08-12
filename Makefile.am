@@ -104,7 +104,7 @@ bridge_la_SOURCES = src/monte_bridge.c
 bridge_la_LDFLAGS = -avoid-version -module $(PYTHON_LDFLAGS)
 bridge_la_CPPFLAGS = $(PYTHON_CPPFLAGS) -I$(top_srcdir)/include $(GLIB_CFLAGS)
 bridge_la_CFLAGS = $(PYTHON_CFLAGS) $(AM_CFLAGS)
-bridge_la_LIBADD = @GLIB_LIBS@ libecru.la
+bridge_la_LIBADD = @GLIB_LIBS@ libecru.la -lgc -lgmp
 
 .ts.c:
 	$(top_srcdir)/build-aux/checkmk $< > $@
