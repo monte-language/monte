@@ -16,6 +16,14 @@
 ./configure
 ./libtool
 ./stamp-h1
+./build-aux/compile
+./build-aux/config.guess
+./build-aux/config.sub
+./build-aux/depcomp
+./build-aux/install-sh
+./build-aux/ltmain.sh
+./build-aux/missing
+./build-aux/py-compile
 ./build-aux/shave
 ./build-aux/shave-libtool
 ./build-aux/m4/libtool.m4
