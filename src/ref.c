@@ -3,7 +3,7 @@
 #include "elib_private.h"
 
 e_Ref TheViciousRef, THE_REF;
-e_Selector run1;
+static e_Selector run1;
 
 
 /** Produce a broken promise, i.e. one that throws its problem on every message
