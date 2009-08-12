@@ -16,8 +16,8 @@ AC_DEFUN([SHAVE_INIT],
   dnl enable/disable shave
   AC_ARG_ENABLE([shave],
     AS_HELP_STRING([--enable-shave],
-                   [use shave to make the build pretty [[default=no]]]),,
-    [enable_shave=no])
+                   [use shave to make the build pretty [[default=yes]]]),,
+    [enable_shave=yes])
 
   if test x"$enable_shave" = xyes; then
     dnl where can we find the shave scripts?

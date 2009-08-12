@@ -6,6 +6,6 @@ srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 cd $srcdir
 
-autoreconf
+autoreconf -vis
 
 exec $srcdir/configure "$@"

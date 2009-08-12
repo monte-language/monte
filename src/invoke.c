@@ -15,9 +15,11 @@ GStaticPrivate e_ejected_value_key = G_STATIC_PRIVATE_INIT;
 GStaticPrivate e_ejector_counter_key = G_STATIC_PRIVATE_INIT;
 
 e_Selector respondsTo, order, whenBroken, whenBroken_ev,
-  whenMoreResolved, whenMoreResolved_ev, run1, optSealedDispatch,
+  whenMoreResolved, whenMoreResolved_ev, optSealedDispatch,
   conformTo, printOn, optUncall, getAllegedType, reactToLostClient,
   E_AUDITED_BY;
+
+static e_Selector run1;
 
 /// Get the last thrown problem in the current thread.
 e_Ref e_thrown_problem() {
