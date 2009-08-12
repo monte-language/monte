@@ -13,7 +13,6 @@ AM_PROG_CC_C_O
 AC_TYPE_INT64_T
 
 AC_CONFIG_SRCDIR([src/vm.c])
-AC_CHECK_HEADERS([python2.5/Python.h], [], [AC_MSG_ERROR([No header files for Python found. (You may need to install a 'python-dev' or 'python-devel' package, if your OS packages Python's header files separately from the main Python package.)])])
 AC_CHECK_HEADERS([gc/gc.h], [],
                 [AC_MSG_ERROR([No header files for Boehm GC found.])])
 AC_CHECK_HEADERS([gmp.h], [],
@@ -27,7 +26,16 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.14 gio-2.0 >= 0.1.2 gio-unix-2.0 >= 0.1
 PKG_CHECK_EXISTS([gio-2.0 >= 2.15 gio-unix-2.0 >= 2.15],
                            [AC_DEFINE([OLD_GIO], [0], [])],
                            [AC_DEFINE([OLD_GIO], [1], [])])
-AM_PATH_PYTHON([2.5])
+
+AC_PYTHON_DEVEL([>= '2.5'])
+# Directly based on code in ac_python_devel.m4. Gets us -fno-strict-aliasing.
+AC_MSG_CHECKING([for flags required for compiling Python code])
+PYTHON_CFLAGS=`$PYTHON -c "import distutils.sysconfig; \
+		       conf = distutils.sysconfig.get_config_var; \
+		       print conf('BASECFLAGS')"`
+AC_MSG_RESULT([$PYTHON_CFLAGS])
+AC_SUBST([PYTHON_CFLAGS])
+
 SHAVE_INIT([build-aux])
 AC_CONFIG_FILES([Makefile build-aux/shave build-aux/shave-libtool])
 AC_OUTPUT

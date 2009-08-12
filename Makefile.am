@@ -42,43 +42,43 @@ dist_ecru_DATA = bootstrap/com.twistedmatrix.ecru.bytecodeDumper.ec	\
 	bootstrap/com.twistedmatrix.ecru.debugDump.ec
 
 test_elib_SOURCES = src/tests/test_elib.c
-test_elib_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
+test_elib_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp -lgc -lm
 test_elib_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_vm_SOURCES = src/tests/test_vm.c
-test_vm_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
+test_vm_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp -lgc -lm
 test_vm_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_invoke_SOURCES = src/tests/test_invoke.c
-test_invoke_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
+test_invoke_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp -lgc -lm
 test_invoke_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_bytecode_loader_SOURCES = src/tests/test_bytecode_loader.c
-test_bytecode_loader_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
+test_bytecode_loader_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp -lgc -lm
 test_bytecode_loader_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS)	\
                                 $(GLIB_CFLAGS)
 
 test_ref_SOURCES = src/tests/test_ref.c
-test_ref_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
+test_ref_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp -lgc -lm
 test_ref_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_same_SOURCES = src/tests/test_same.c
-test_same_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
+test_same_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp -lgc -lm
 test_same_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_guards_SOURCES = src/tests/test_guards.c
-test_guards_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
+test_guards_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp -lgc -lm
 test_guards_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 test_vat_SOURCES = src/tests/test_vat.c
-test_vat_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp
+test_vat_LDADD = @CHECK_LIBS@ @GLIB_LIBS@ libecru.la -lgmp -lgc -lm
 test_vat_CPPFLAGS = -I$(top_srcdir)/include $(CHECK_CFLAGS) $(GLIB_CFLAGS)
 
 check_PROGRAMS = test_vm test_elib test_invoke test_bytecode_loader	\
                  test_ref test_same test_guards test_vat
 
 ecru_driver_SOURCES = src/driver.c
-ecru_driver_LDADD = @GLIB_LIBS@ libecru.la
+ecru_driver_LDADD = @GLIB_LIBS@ libecru.la -lgmp -lm -lgc
 bin_PROGRAMS = ecru_driver
 dist_bin_SCRIPTS = scripts/compile.e scripts/ecru
 CLEANFILES = src/tests/test_elib.c src/tests/test_vm.c			\
@@ -101,9 +101,9 @@ pyecru_test_PYTHON = pysrc/ecru/test/__init__.py	\
 
 pyecru_LTLIBRARIES = bridge.la
 bridge_la_SOURCES = src/monte_bridge.c
-bridge_la_LDFLAGS = -avoid-version -module
-bridge_la_CPPFLAGS = -I/usr/include/python2.5	\
-                              -I$(top_srcdir)/include $(GLIB_CFLAGS)
+bridge_la_LDFLAGS = -avoid-version -module $(PYTHON_LDFLAGS)
+bridge_la_CPPFLAGS = $(PYTHON_CPPFLAGS) -I$(top_srcdir)/include $(GLIB_CFLAGS)
+bridge_la_CFLAGS = $(PYTHON_CFLAGS) $(AM_CFLAGS)
 bridge_la_LIBADD = @GLIB_LIBS@ libecru.la
 
 .ts.c:
