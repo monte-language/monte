@@ -18,7 +18,7 @@ decdigits ::= <digit>:d ((:x ?(isDigit(x)) => x) | '_' => "")*:ds => concat(d, j
 octaldigit ::= :x ?(isOctDigit(x)) => x
 hexdigit ::= :x ?(isHexDigit(x)) => x
 
-string ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c '"' => join(c)
+string ::= <token "\""> (<escapedChar> | ~('"') <anything>)*:c '"' => join(c)
 character ::= <token "'"> (<escapedChar> | ~('\''|'\n'|'\r'|'\\') <anything>):c '\'' => Character(c)
 escapedUnicode ::= ('u' <hexdigit>:a <hexdigit>:b <hexdigit>:c <hexdigit>:d => unichr(int(concat(a, b, c, d), 16))
                    |'U' (<hexdigit>:a <hexdigit>:b <hexdigit>:c <hexdigit>:d
@@ -98,19 +98,19 @@ prim ::= ( <literal>
          | <listAndMap>
          )
 
-parenExpr ::= "(" <seq>:s <token ')'> => s
-block ::= "{" (<seq> |=> SeqExpr(makeList())):s <token '}'> => s
+parenExpr ::= "(" <seq>:s <token ")"> => s
+block ::= "{" (<seq> |=> SeqExpr(makeList())):s <token "}"> => s
 
 seqSep ::= (";"| <linesep>)+
 seq ::= <expr>:e ((<seqSep> <expr>)+:es <seqSep>? => SeqExpr(cons(e, es))
                  |<seqSep>? => e)
-parenArgs ::= "(" <args>:a <token ')'> => a
+parenArgs ::= "(" <args>:a <token ")"> => a
 args ::= (<seq>:s ("," <seq>)*:ss => cons(s, ss)
          |=> makeList())
 
 call ::= (<call>:c ("." <verb>:v (<parenArgs>:x => MethodCallExpr(c, v, x)
                                   | => VerbCurryExpr(c, v))
-                    |"[" <args>:a <token ']'> => GetExpr(c, a)
+                    |"[" <args>:a <token "]"> => GetExpr(c, a)
                     |<parenArgs>:x => FunctionCallExpr(c, x)
                     | "<-" (<parenArgs>:x => FunctionSendExpr(c, x)
                            |<verb>:v (<parenArgs>:x => MethodSendExpr(c, v, x)
@@ -199,12 +199,12 @@ assignOp ::= ("+=" => "Add"
              |"^=" => "BinaryXor")
 
 expr ::=  <ejector> | <assign>
-ejector ::= ((<token "break"> (=> Break) | <token "continue"> (=> Continue) | <token "return"> (=> Return)):ej
+ejector ::= ((<token "break"> (=> Break()) | <token "continue"> (=> Continue()) | <token "return"> (=> Return())):ej
              (("(" <token ")"> => null) | <assign>)?:val => ej(val))
 
-guard ::= (<noun> | <parenExpr>):e ("[" <args>:x <token ']'> => x)*:xs => Guard(e, xs)
+guard ::= (<noun> | <parenExpr>):e ("[" <args>:x <token "]"> => x)*:xs => Guard(e, xs)
 optGuard ::= (":" <guard>)?
-eqPattern ::= (<token '_'> <optGuard>:e => IgnorePattern(e)
+eqPattern ::= (<token "_"> <optGuard>:e => IgnorePattern(e)
               |<identifier>?:n <quasiString>:q => QuasiPattern(n, q)
               |<namePattern>
               |"==" <prim>:p => SamePattern(p)
@@ -228,8 +228,8 @@ mapPattern ::= <mapPatternAddressing>:a (":=" <order>:d => MapPatternOptional(a,
                                         | => MapPatternRequired(a))
 mapPatts ::= <mapPattern>:m ("," <mapPattern>)*:ms => cons(m, ms)
 
-listPatternInner ::= (<mapPatts>:ms <br> <token ']'> ("|" <listPattern>)?:t => MapPattern(ms, t)
-                     |<patterns>:ps <br> <token ']'> ("+" <listPattern>)?:t => ListPattern(ps, t))
+listPatternInner ::= (<mapPatts>:ms <br> <token "]"> ("|" <listPattern>)?:t => MapPattern(ms, t)
+                     |<patterns>:ps <br> <token "]"> ("+" <listPattern>)?:t => ListPattern(ps, t))
 listPattern ::= (
                 "via" <parenExpr>:e <listPattern>:p => ViaPattern(e, p)
                 | <eqPattern>
@@ -243,7 +243,7 @@ docoDef ::= <doco>?:doc (<objectExpr>:o => Object(doc, o)
                        |<interfaceExpr>:i => Interface(doc, i))
 doco ::= <token "/**"> (~('*' '/') <anything>)*:doc '*' '/' => strip(join(doc))
 objectExpr ::= ((<token "def"> <objectName>:n) | <keywordPattern>:n) <objectTail>:t => makeList(n, t)
-objectName ::= (<token '_'> <optGuard>:e => IgnorePattern(e)
+objectName ::= (<token "_"> <optGuard>:e => IgnorePattern(e)
                |<namePattern>)
 objectTail ::= (<functionTail>
                |((<token "extends"> <br> <order>)?:e <oImplements>:oi <scriptPair>:s
@@ -266,7 +266,7 @@ multiExtends ::= ((<token "extends"> <br> <order>:x ("," <order>)*:xs => cons(x,
 iscript ::= "{" (<messageDesc>:m <br> => m)*:ms <token "}"> => ms
 messageDesc ::= (<doco>?:doc (<token "to"> | <token "method">):t <verb>?:v <parenParamDescList>:ps <optGuard>:g
                 => MessageDesc(doc, t, v, ps, g))
-paramDesc ::= (<justNoun> | <token '_'> => null):n <optGuard>:g => ParamDesc(n, g)
+paramDesc ::= (<justNoun> | <token "_"> => null):n <optGuard>:g => ParamDesc(n, g)
 parenParamDescList ::= "(" <paramDesc>:p ("," <paramDesc>)*:ps <token ")"> => cons(p,  ps)
 
 accumExpr ::= <token "accum"> <call>:c <accumulator>:a => Accum(c, a)
@@ -274,7 +274,7 @@ accumulator ::= (((<token "for"> <forPattern>:p <token "in"> <logical>:a <accumB
                 |(<token "if"> <parenExpr>:e <accumBody>:a => AccumIf(e, a))
                 |(<token "while"> <parenExpr>:e <accumBody>:a <catcher>?:c => AccumWhile(e, a, c)))
 
-accumBody ::= "{" (<token '_'> (<accumOp>:op <assign>:a => AccumOp(op, a)
+accumBody ::= "{" (<token "_"> (<accumOp>:op <assign>:a => AccumOp(op, a)
                                |"." <verb>:v <parenArgs>:ps => AccumCall(v, ps))
                   | <accumulator>):ab <br> <token "}"> => ab
 accumOp ::= ("+" => "Add"
@@ -307,5 +307,5 @@ whenExpr ::= <token "when"> <parenArgs>:a <br> "->" <block>:b <catcher>*:cs (<to
 
 topSeq ::= <topExpr>:x (<seqSep> <topExpr>)*:xs <seqSep>? => SeqExpr(cons(x, xs))
 pragma ::= <token "pragma"> "." <verb>:v "(" <string>:s <token ")"> => Pragma(v, s)
-topExpr ::= (<pragma> => NounExpr("null")) | <expr>
+topExpr ::= <pragma> | <expr>
 start ::= <updoc>? <br> <topSeq>?

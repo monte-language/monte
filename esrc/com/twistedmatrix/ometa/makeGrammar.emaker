@@ -3,9 +3,14 @@ pragma.enable("accumulator")
 
 def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
 def makeLiteralExpr := <elang:evm.makeLiteralExpr>
-def makeString(chars) {
-    return <import:org.erights.e.elib.tables.makeTwine>.fromChars(chars,
-                                                                  null)
+def makeTextWriter := <elib:oldeio.makeTextWriter>
+
+def makeString(bits) {
+  def [tw, sb] := makeTextWriter.makeBufferingPair()
+  for c in bits {
+    tw.print(c)
+  }
+  return sb.snapshot()
 }
 
 def octdigits := "01234567"

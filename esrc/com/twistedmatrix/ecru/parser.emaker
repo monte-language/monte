@@ -13,11 +13,8 @@ def makeString(bits) {
 }
 
 
-def parserGrammar := <resource:com/twistedmatrix/ecru/eparser.g>.getText()
+def makeBase := <import:com.twistedmatrix.ecru.makeEBaseParser>
 
-def <ometa> := <import:com.twistedmatrix.ometa.*>
-def makeGrammar := <ometa:makeGrammar>
-def makeBuilder := <ometa:makeBuilder>
 
 def makeAstroTag := <import:org.quasiliteral.astro.makeAstroTag>
 def makeTerm := <import:org.quasiliteral.term.makeTerm>
@@ -82,7 +79,7 @@ def makeEParser(source, valueHoles, patternHoles) {
       /**
          Ensure an identifier isn't a keyword or reserved word.
       */
-      to keywordCheck(ident, ej) {
+      to keywordCheck(ident) {
 	if (reserved.contains(ident)) {
 	  throw(`$ident is a reserved word`)
 	} else if (basicKeywords.contains(ident)) {
@@ -150,6 +147,10 @@ def makeEParser(source, valueHoles, patternHoles) {
             }
         }
 
+	to isDigit(x) {
+            return (x >= '0' && x <= '9')
+	}
+
         to int(x, base) {
             return __makeInt(x, base)
         }
@@ -159,7 +160,11 @@ def makeEParser(source, valueHoles, patternHoles) {
         }
 
         to join(x) {
-            return "".rjoin(x)
+            if (x =~ _ :List[char]) {
+	        return makeString(x)
+            } else {
+                return "".rjoin(x)
+            }
         }
 
         to noIgnorePatternHole() {
@@ -169,9 +174,7 @@ def makeEParser(source, valueHoles, patternHoles) {
             throw("An ignore pattern is not allowed as a expression hole")
         }
         to nounExprFromSource(n) {
-            return term`NounExpr(null,
-	      	                 $hilbertHotelRename(n),
-                                null)`
+            return term`NounExpr(${hilbertHotelRename(n)})`
         }
 
         to strip(x) {
@@ -216,10 +219,16 @@ def makeEParser(source, valueHoles, patternHoles) {
         to Script(e, oi, s) {
         }
 
+	to _Return() {
+	    return term`Return`
+        }
+
         match [=="AccumFor", [p] + args] {
+            term`AccumFor($p, $args)`
         }
 
         match [=="For", [p] + args] {
+            term`For($p, $args)`
         }
 
         match [=="makeList", bits] {
@@ -233,20 +242,21 @@ def makeEParser(source, valueHoles, patternHoles) {
 	  for arg in args {
 	    switch (arg) {
 	      match ==null {
-		argTerms.append(term`null`)
+		argTerms.push(term`null`)
 	      }
 	      match _ :Term {
-		argTerms.append(arg)
+		argTerms.push(arg)
 	      }
 	      match _ :any[int, float64, String] {
-		argTerms.append(termBuilder.leafData(arg, null))
+		argTerms.push(termBuilder.leafData(arg, null))
 	      }
-	      match _ {
-		throw(`$arg is not a valid AST value.`)
+	      match _ {	
+                throw(`$arg is not a valid AST value.`)
 	      }
 	    }
 	  }
-	  return makeTerm(makeAstroTag(null, verb, any), null, null, argTerms.snapshot())
+	  makeTerm(makeAstroTag(-1, verb, String), null, null, argTerms.snapshot())
 	}
     }
+    return makeBase(source, actions)
 }

@@ -3,7 +3,15 @@ def makeNoun := <elang:evm.makeSimpleNounExpr>
 def makeFinalPattern := <elang:evm.makeFinalPattern>
 def makeCallExpr := <elang:evm.makeCallExpr>
 def makeNounExpr := <elang:evm.makeNounExpr>
-def makeSeqExpr := <elang:evm.makeSeqExpr>
+def realMakeSeqExpr := <elang:evm.makeSeqExpr>
+#XXX EoJ accepts empty SeqExprs, EoCL does not
+def makeSeqExpr(x, seqs, y) {
+    if (seqs.size() == 0) {
+       return e`null`
+    } else {
+      return realMakeSeqExpr(x, seqs, y)
+    }
+}
 def makeLiteralExpr := <elang:evm.makeLiteralExpr>
 def ENode := <type:org.erights.e.elang.evm.ENode>
 def EExpr := <type:org.erights.e.elang.evm.EExpr>
@@ -54,12 +62,12 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             for name => code in rules {
                 methodTexts.push(`method rule_$name(ej) {
                     def ruleLocals := [].asMap().diverge()
-                    $$$i$\n}$\n`)
+                    $${$i}$\n}$\n`)
                 i += 1
             }
             return e__quasiParser.valueMaker(
                    `def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
-                    def $makerName(input) {
+                    def $makerName(input, _grammarName) {
                         def $name extends makeOMetaBase(input, $name) {$\n` +
 
                         "\n".rjoin(methodTexts.snapshot()) +
