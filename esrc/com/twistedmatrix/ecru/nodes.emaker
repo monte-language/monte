@@ -2,22 +2,870 @@
 pragma.syntax("0.9")
 pragma.enable("exporter")
 
+var tempCounter := 1
+def makeNode(self, fields) {
+  var scope := null
+  def serializeList(items) {
+    for i => item in items {
+      switch (item) {
+	match x :list {
+	  items[i] := serializeList(x)
+	}
+	match x {
+	  items[i] := item.serialize()
+	}
+      }
+    }
+  }
+  def node {
+    to newTemp(name) {
+      #XXX wrong but expedient
+      def x := `$name__$tempCounter`
+      tempCounter += 2
+      return makeNounExpr(x)
+    }
+    to serialize() {
+      def items := [].diverge()
+      for it in node {
+	items.push(it)
+      }
+      serializeList(items)
+      return items.snapshot()
+    }
 
-[=> Pragma, => When, => While, => Finally, => KernelTry, => Try, => Switch,
-=> Meta, => Lambda, => If, => For, => Escape, => AccumCall, => AccumOp,
-=> AccumWhile, => AccumIf, => AccumFor, => Accum, => Catch, => Method, => To,
-=> Matcher, => Function, => Script, => Object, => ParamDesc, => MessageDesc,
-=> InterfaceFunction, => Interface, => MapPatternRequired, => MapPatternOptional,
-=> MapPatternImport, => MapPatternAssoc, => Guard, => Return, => Continue,
-=> Break, => VerbAssign, => Assign, => Forward, => Def, => LogicalOr,
-=> LogicalAnd, => BinaryXor, => BinaryAnd, => BinaryOr, => ButNot, => NotSame,
-=> Same, => Mismatch, => MatchBind, => Coerce, => LessThan, => LessThanEqual,
-=> AsBigAs, => GreaterThanEqual, => GreaterThan, => Thru, => Till, => ShiftRight,
-=> ShiftLeft, => Subtract, => Add, => Mod, => Remainder, => FloorDivide,
-=> Divide, => Multiply, => Pow, => OpNode, => BinaryNot, => LogicalNot, => Minus,
-=> SendCurryExpr, => MethodSendExpr, => FunctionSendExpr, => FunctionCallExpr,
-=> GetExpr, => VerbCurryExpr, => MethodCallExpr, => SeqExpr, => HideExpr,
-=> QuasiExpr, => MapExprExport, => MapExprAssoc, => ListExpr, => MapExpr, => Slot,
-=> QuasiPatternHole, => QuasiExprHole, => QuasiText, => QuasiPatternExpr,
-=> QuasiLiteralExpr, => NounExpr, => URIGetter, => URIExpr, => LiteralExpr,
-=> Character]
+    to iterate(f) {
+      node.asList().iterate(f)
+    }
+
+    to asList() {
+      return [self.__getAllegedType().getFQName().split("$").last()].with(fields)
+    }
+
+    to staticScope() {
+      if (scope == null) {
+        scope := self.computeStaticScope() 
+      }
+      return scope 
+    }
+
+    to isDelayed() {
+      return false
+    }
+
+    to forControl(ej, scope) {
+      return makeDef(makeIgnorePattern(makeNounExpr("__Test")), ej, self.expand())
+    }
+
+    to forValue(scope) {
+      return self.expand()
+    }
+
+    to forFxOnly(scope) {
+      return self.expand()
+    }
+  }
+  return node
+}
+
+def makeDelayedNode(self, fields) {
+  def delayedNode extends makeNode(self, fields) {
+
+    to isDelayed() {
+      return true
+    }
+
+    to expand() {
+      return self.forValue(null)
+    }
+
+    to forValue(used) {
+      def ej := self.newTemp("ej")
+      def exports := getExports(self.staticScope(), used)
+      if (exports.size() > 0) {
+	def [ex, br, rs] := [self.newTemp("ex"), self.newTemp("br"),
+			     self.newTemp("rs")]
+	def [slots, slotpatts] := [[].diverge(), [].diverge()]
+	for ex in exports {
+	  slots.push(makeSlot(ex))
+	  slotpatts.push(makeSlotPattern(makeNounExpr(ex), null))
+	}
+	def escExpr := makeEscape(makeFinalPattern(ej, null),
+				  SeqExpr([self.forControl(ej, used),
+					   makeList([makeNounExpr("true")] + 
+						    slots.snapshot())]),
+				  makeCatch(makeFinalPattern(ex, null), null,
+					    makeSeqExpr(catchBody)))
+	def catchBody := makeSeqExpr([makeDef(makeFinalPattern(br, null),
+					      null,
+					      makeMethodCallExpr(makeNounExpr("Ref"),
+								 "broken",
+								 [ex])),
+				      makeList([makeNounExpr("false")] + [br] * exports.size())])
+	return SeqExpr([makeDef(makeListPattern([makeFinalPattern(rs, null)] + slotpatts, null),
+				null, escExpr), rs])
+      } else {
+	return makeEscape(makeFinalPattern(ej, null),
+			  makeSeqExpr([self.forControl(ej, makeStaticScope()),
+				       makeNounExpr("true")]),
+			  makeCatch(makeIgnorePattern(null),
+				    makeNounExpr("false")))
+      }
+    }
+
+    to forFxOnly(used) {
+      def ej := self.newTemp("ej")
+      def exports := getExports(self.staticScope(), used)
+      def [slots, slotpatts] := [[].diverge(), [].diverge()]
+      for ex in exports {
+	slots.push(makeSlot(ex))
+	slotpatts.push(makeSlotPattern(makeNounExpr(ex), null))
+      }
+      if (exports.size() > 0) {
+	def [ex, br] := [self.newTemp("ex"), self.newTemp("br")]
+	def escExpr := makeEscape(makeFinalPattern(ej, null),
+				  makeSeqExpr([self.forControl(ej, used),
+					       makeList(slots)]),
+				  makeCatch(makeFinalPattern(ex, null),
+					    makeSeqExpr([makeDef(makeFinalPattern(br, null),
+								 null,
+								 makeMethodCallExpr(makeNounExpr("Ref"),
+										    "broken",
+										    [ex])),
+							 makeList([br] * exports.size())])))
+	return makeSeqExpr([makeDef(makeListPattern(slottpatts, null),
+				    null, escExpr)])
+      } else {
+	return makeEscape(makeFinalPattern(ej, null),
+			  self.forControl(ej, makeStaticScope()),
+			  null)
+      }	  
+    }
+  }
+  return delayedNode
+}
+
+def makeCharacter(character) {
+  def Character extends makeNode(Character, [character]) {
+    to __printOn(f) {
+      f.print(character)
+    }
+    to fields() { return [character] }
+  }
+  return Character
+}
+
+def makeLiteralExpr(value) {
+  def LiteralExpr extends makeNode(LiteralExpr, [value]) {
+    to computeStaticScope() {
+      return makeStaticScope()
+    }
+    to expand() {
+      return self
+    }
+
+    to welcome(visitor) {
+      return visitor.visitLiteralExpr(LiteralExpr, value)
+    }
+  }
+  return LiteralExpr
+}
+
+def makeURIExpr(scheme, body) {
+  def URIExpr extends makeNode(URIExpr, [scheme, body]) {
+    to expand() {
+      return makeMethodCallExpr(makeNounExpr(scheme + "__uriGetter"),
+				"get",
+				[makeLiteralExpr(body)])
+    }
+  }
+return URIExpr
+}
+
+def makeURIGetter(scheme) {
+  def URIGetter extends makeNode(URIGetter, [scheme]) {
+    to expand() {
+      return makeNounExpr(scheme + "__uriGetter")
+    }
+  }
+  return URIGetter
+}
+
+def makeNounExpr {
+  to run(name) {
+    def NounExpr extends makeNode(NounExpr, [name]) {
+      to getName() { return name }
+      to asText() { return name }
+      to mangle(suffix) { return makeNounExpr(name + suffix) }
+      to expand() { return NounExpr}
+      to welcome(visitor) { return visitor.visitNounExpr(name) }
+
+      to computeStaticScope() {
+	return makeStaticScope(["namesRead" => [name]])
+      }
+    }
+    return NounExpr
+  }
+  to fromSource(name) {
+    return makeNounExpr(hilbertHotelRename(name))
+  }
+
+  to getName() {
+    return name
+  }
+}
+
+def makeQuasiLiteralExpr(value) {
+  def QuasiLiteralExpr extends makeNode(QuasiLiteralExpr, [value]) {
+    to computeStaticScope() { return makeStaticScope() }
+    to expand() { return QuasiLiteralExpr }
+  }
+  return QuasiLiteralExpr
+}
+
+def makeQuasiText(pieces) {
+  def QuasiText extends makeNode(QuasiText, [pieces]) {
+    to getPieces() { return pieces }
+  }
+  return QuasiText
+}
+
+def makeQuasiExprHole(expr) {
+  def QuasiExprHole extends makeNode(QuasiExprHole, [expr]) {}
+  return QuasiExprHole
+}
+
+def makeQuasiPatternHole(pattern) {
+  def QuasiPatternHole extends makeNode(QuasiPatternHole, [pattern]) {}
+  return QuasiPatternHole
+}
+
+def makeSlot(name) {
+  def Slot extends makeNode(Slot, [name]) {
+    to getName() { return `&$name`}
+    to computeStaticScope() { return makeStaticScope(["namesRead" => [name]]) }
+    to expand() { return self }
+    to welcome(visitor) { return visitor.visitSlotExpr(Slot, name) }
+  }
+  return Slot
+}
+
+def makeMapExpr(assocs) {
+  def MapExpr extends makeNode(MapExpr, [assocs]) {
+    to expand() { 
+      def assocExprs := [].diverge()
+      for a in assocs {
+	assocExprs.push(a.forValue(null))
+      }
+      return makeMethodCallExpr(makeNounExpr("__makeMap"), "fromPairs",
+				[makeList(assocExprs.snapshot())])
+    }
+  }
+  return MapExpr
+}
+
+def makeListExpr(items) {
+  def ListExpr extends makeNode(ListExpr, [items]) {
+    to expand() {
+      def itemExprs := [].diverge()
+      for i in items {
+	itemExprs.push(i.forValue(null))
+      }
+      return makeMethodCallExpr(makeNounExpr("__makeList"), "run",
+				[itemExprs.snapshot()])
+    }
+  }
+  return ListExpr
+}
+
+def makeMapExprAssoc(key, value) {
+  def MapExprAssoc extends makeNode(MapExprAssoc, [key, value]) {
+    to expand() { return makeList([key.expand(), value.forValue(null)]) }
+  }
+  return MapExprAssoc
+}
+
+def makeMapExprExport(name) {
+  def MapExprExport extends makeNode(MapExprExport, [name]) {
+    to expand() { return makeList([name.forValue(null).getName(), name]) }
+  }
+  return MapExprExport
+}
+
+
+def QuasiTextType := makeQuasiText([]).__getAllegedType()
+def QuasiExprHoleType := makeQuasiExprHole(null).__getAllegedType()
+
+def makeQuasiExpr(name, quasis) {
+  def QuasiExpr extends makeNode(QuasiExpr, [name, quasis]) {
+    to expand() {
+      def bits := [].diverge()
+      def exprs := [].diverge()
+      for q in quasis {
+	# XXX fix this when interfaces can be relied upon
+	if (q.__getAllegedType() == QuasiTextType) {
+	  bits.push(q.getPieces())
+	} else if (q.__getAllegedType() == QuasiExprHoleType) {
+	  bits.push(`$${${exprs.size()}}`)
+	  exprs.push(q.getExpr().forValue(null))
+	} else {
+	  throw(`Couldn't parse $q in a QuasiExpr`)
+	}
+      }
+      def nameExpr := makeNounExpr(if (name == null) {
+	  "simple__quasiParser"
+	} else {
+	  name + "__quasiParser"
+	})
+      return makeMethodCallExpr(makeMethodCallExpr(nameExpr, 
+						   "valueMaker",
+						   [makeLiteralExpr("".rjoin(bits))]),
+				"substitute",
+				[makeListExpr(exprs.snapshot()).forValue(null)])
+    }
+  }
+  return QuasiExpr
+}
+
+def makeHideExpr(block) {
+  def HideExpr extends makeNode(HideExpr, [block]) {
+    to computeStaticScope() { return block.staticScope().hide() }
+    to expand() { return makeHideExpr(block.forValue(null)) }
+    to welcome(visitor) { return visitor.visitHideExpr(self, block) }
+  }
+  return HideExpr
+}
+
+def makeSeqExpr(exprs) {
+  def SeqExpr extends makeNode(SeqExpr, [exprs]) {
+    to computeStaticScope() {
+      var r := exprs[0].staticScope()
+      for e in exprs(1) {
+        r := r.add(e.staticScope())
+      }
+      return r
+    }
+    to expand() {
+      if (exprs.size() == 0) {
+	return makeSeqExpr([makeNounExpr("null")])
+      }
+      def results := [].diverge()
+      for e in exprs(0,exprs.size()-1) {
+	results.push(e.forFxOnly(null))
+      }
+      results.push(exprs.last().forValue(null))
+      return SeqExpr(results.snapshot())
+    }
+    to welcome(visitor) {
+      return visitor.visitSeqExpr(self, exprs)
+    }
+  }
+  return SeqExpr
+}
+
+def makeMethodCallExpr(receiver, verb, args) {
+  def MethodCallExpr extends makeNode(MethodCallExpr, [receiver, verb, args]) {
+    to computeStaticScope() { 
+      var s := receiver.staticScope()
+      for arg in args {
+        s := s.add(arg.staticScope())
+      }
+      return s
+    }
+    to expand() {
+      def argValues := [].diverge()
+      for a in args { argValues.push(a.forValue(null)) }
+      return makeMethodCallExpr(receiver.forValue(null), verb, argValues.snapshot())
+    }
+    to welcome(visitor) {
+      return visitor.visitCallExpr(MethodCallExpr, receiver, verb, args)
+    }
+  }
+  return MethodCallExpr
+}
+
+def makeVerbCurryExpr(receiver, verb) {
+  def VerbCurryExpr extends makeNode(VerbCurryExpr, [receiver, verb]) {
+    to expand() {
+      return makeMethodCallExpr(makeNounExpr("__makeVerbFacet"),
+				"curryCall",
+				[receiver.forValue(null),
+				 makeLiteralExpr(verb)])
+    }
+  }
+  return VerbCurryExpr
+}
+
+def makeGetExpr(receiver, index) {
+  def GetExpr extends makeNode(GetExpr, [receiver, index]) {
+    to expand() {
+      return makeMethodCallExpr(receiver, "get", index).forValue(null)
+    }
+  }
+  return GetExpr
+}
+
+def makeFunctionCallExpr(receiver, args) {
+  def FunctionCallExpr extends makeNode(FunctionCallExpr, [receiver, args]) {
+    to expand() {
+      return makeMethodCallExpr(receiver, "run", args).forValue(null)
+    }
+  }
+  return FunctionCallExpr
+}
+
+def makeFunctionSendExpr(receiver, args) {
+  def FunctionSendExpr extends makeNode(FunctionSendExpr, [receiver, args]) {
+    to expand() {
+      return makeMethodCallExpr(makeNounExpr("E"), "send",
+				[receiver.forValue(None),
+				 makeLiteralExpr("run"),
+				 makeList(args)])
+    }
+  }
+  return FunctionSendExpr
+}
+
+def makeMethodSendExpr(receiver, verb, args) {
+  def MethodSendExpr extends makeNode(MethodSendExpr, [receiver, verb, args]) {
+    to expand() {
+      return makeMethodCallExpr(makeNounExpr("E"), "send",
+				[receiver.forValue(None),
+				 makeLiteralExpr(verb),
+				 makeList(args)])
+    }
+  }
+  return MethodSendExpr
+}
+
+def makeSendCurryExpr(receiver, verb) {
+  def SendCurryExpr extends makeNode(SendCurryExpr, [receiver, verb]) {
+    to expand() {
+      return makeMethodCallExpr(makeNounExpr("__makeVerbFacet"), "currySend",
+				receiver.forValue(null),
+				makeLiteralExpr(verb))
+    }
+  }
+  return SendCurryExpr
+}
+
+def makeMinus(receiver) {
+  def Minus extends makeNode(Minus, [receiver]) {
+    to expand() { 
+      return makeMethodCallExpr(receiver.forValue(null), "negate", [])
+    }
+  }
+  return Minus
+}
+
+def makeLogicalNot(receiver) {
+  def LogicalNot extends makeNode(LogicalNot, [receiver]) {
+    to expand() {
+      return makeMethodCallExpr(receiver.forValue(null), "not", [])
+    }
+  }
+  return LogicalNot
+}
+
+def makeBinaryNot(receiver) {
+  def BinaryNot extends makeNode(BinaryNot, [receiver]) {
+    to expand() {
+      return makeMethodCallExpr(receiver.forValue(null), "complement", [])
+    }
+  }
+  return BinaryNot
+}
+
+def makeOpNodeMaker(opname) {
+  def makeOpNode(receiver, argument) {
+    def OpNode extends makeNode(OpNode, []) {
+      to expand() {
+	return makeMethodCallExpr(receiver.forValue(null),
+				  opname,
+				  [argument.forValue(null)])
+      }
+
+      to iterate(f) {
+	[opname, receiver, argument].iterate(f)
+      }
+    }
+    return OpNode
+  }
+  return makeOpNode
+}
+
+def Pow := makeOpNodeMaker("Pow")
+def Multiply := makeOpNodeMaker("Multiply")
+def Divide := makeOpNodeMaker("Divide")
+def FloorDivide := makeOpNodeMaker("FloorDivide")
+def Remainder := makeOpNodeMaker("Remainder")
+def Add := makeOpNodeMaker("Add")
+def Subtract := makeOpNodeMaker("Subtract")
+def ShiftLeft := makeOpNodeMaker("ShiftLeft")
+def ShiftRight := makeOpNodeMaker("ShiftRight")
+
+def makeMod(receiver, argument) {
+  def Mod extends makeNode(Mod, [receiver, argument]) {
+    to expand() {
+      def rec := receiver.forValue(null)
+      def arg := argument.forValue(null)
+      if (rec.asList() =~ [=="MethodCallExpr", mrec, =="pow", [x]]) {
+	return makeMethodCallExpr(mrec, "modPow", [x, arg])
+      } else {
+	return makeMethodCallExpr(rec, "mod", [arg])
+      }
+    }
+  }
+  return Mod
+}
+
+def makeTill(left, right) {
+  def Till extends makeNode(Till, [left, right]) {
+    to expand() {
+      return makeMethodCallExpr(makeNounExpr("__makeOrderedSpace"),
+				"op__till",
+				[left.forValue(null),
+				 right.forValue(null)])
+    }
+  }
+  return Till
+}
+def makeThru(left, right) {
+  def Thru extends makeNode(Thru, [left, right]) {
+    to expand() {
+      return makeMethodCallExpr(makeNounExpr("__makeOrderedSpace"),
+				"op__thru",
+				[left.forValue(null),
+				 right.forValue(null)])
+    }
+  }
+  return Thru
+}
+
+def makeComparerNodeMaker(opname) {
+  def makeComparerNode(left, right) {
+    def ComparerNode extends makeNode(ComparerNode, []) {
+      to expand() {
+	return makeMethodCallExpr(makeNounExpr("__comparer"),
+				  opname,
+				  [left.forValue(null),
+				   right.forValue(null)])
+      }
+
+      to iterate(f) {
+	[opname, left, right].iterate(f)
+      }
+    }
+    return ComparerNode
+  }
+  return makeComparerNode
+}
+
+def GreaterThan := makeComparerNodeMaker("greaterThan");
+def GreaterThanEqual := makeComparerNodeMaker("geq");
+def AsBigAs := makeComparerNodeMaker("asBigAs")
+def LessThanEqual := makeComparerNodeMaker("leq")
+def LessThan := makeComparerNodeMaker("lessThan")
+
+def makeMatchBind(specimen, pattern) {
+  var expandedBits := null
+
+  def expandSubnodes() {
+    if (expandedBits == null) {
+      expandedBits := [specimen.forValue(),
+		       pattern.expand()]
+    }
+    return expandedBits
+  }
+
+  def delayedNode := makeDelayedNode(MatchBind, [specimen, pattern])
+  def MatchBind extends delayedNode {
+    to computeStaticScope() {
+      def [var spec, patt] := expandSubnodes()
+      if (spec.isDelayed()) {
+        spec := specimen
+      }
+      return spec.staticScope().add(patt.staticScope())
+    }
+
+    to forControl(ej, scope) {
+      def [spec, patt] := expandSubnodes()
+      return makeDef(patt, ej, spec)
+    }
+
+    to forValue(scope) {
+      def [spec, patt] := expandSubnodes()
+      def exports := getExports(spec.staticScope(), scope)
+      if (1 <= exports.size()) {
+	def sp := MatchBind.newTemp("sp")
+	def mbe := makeMatchBind(sp, patt)
+	return makeSeqExpr([makeDef(makeFinalPattern(sp, null), null,
+				    spec),
+			    mbe.forValue(scope)])
+      } else {
+	return delayedNode.forValue(scope)
+      }
+    }
+ 
+    to forFxOnly(scope) {
+      def [spec, patt] := expandSubnodes()
+      def exports := getExports(spec.staticScope(), scope)
+      if (exports.size() > 0) {
+	def mbe := makeMatchBind(sp, patt)
+	return makeSeqExpr([makeDef(makeFinalPattern(sp, null), null,
+				    spec),
+			    mbe.forFxOnly(scope)])
+      } else {
+	return delayedNode.forFxOnly(scope)
+      }
+    }
+  }
+  return MatchBind
+}
+
+def makeMismatch(specimen, pattern) {
+  def Mismatch extends makeNode(Mismatch, [specimen, pattern]) {
+    to expand() {
+      return makeMethodCallExpr(makeNounExpr("__equalizer"),
+				"sameEver",
+				[left.forValue(null),
+				 right.forValue(null)])
+    }
+  }
+  return Mismatch
+}
+
+def makeNotSame(left, right) {
+  def NotSame extends makeNode(NotSame, [left, right]) {
+    to expand() {
+      return makeMethodCallExpr(
+				makeMethodCallExpr(makeNounExpr("__equalizer"),
+						   "sameEver",
+						   [left.forValue(null),
+						    right.forValue(null)]),
+				"not", [])
+    }
+  }
+  return NotSame
+}
+
+def makeButNot := makeOpNodeMaker("ButNot")
+def makeBinaryOr := makeOpNodeMaker("BinaryOr")
+def makeBinaryAnd := makeOpNodeMaker("BinaryAnd")
+def makeBinaryXor := makeOpNodeMaker("BinaryXor")
+
+def makeBinaryExpander(left, right) {
+  var expandedLeft := null
+  var expandedRight := null
+  
+  def expander {
+    to staticScopeLeft() {
+	if (left.isDelayed()) {
+	  return left.staticScope()
+	} else {
+	  return expander.expandLeft().staticScope()
+	}
+    }
+    
+    to staticScopeRight() {
+	if (right.isDelayed()) {
+	  return right.staticScope()
+	} else {
+	  return expander.expandRight().staticScope()
+	}
+    }
+    
+    to expandLeft() {
+	if (expandedLeft == null) {
+      expandedLeft := left.forValue(null)
+	}
+	return expandedLeft
+    }
+    
+    to expandRight() {
+	if (expandedRight == null) {
+      expandedRight := right.expand()
+	}
+	return expandedRight
+    }
+  }
+  return expander
+}
+
+
+def makeLogicalAnd(left, right) {
+  def exp := makeBinaryExpander(left, right)
+  def LogicalAnd extends makeDelayedNode(LogicalAnd, [left, right]) {
+    to computeStaticScope() {
+	return exp.staticScopeLeft().add(exp.staticScopeRight())
+    }
+
+    to forControl(ej, scope) {
+      def leftUsed := (if (scope == null) {
+		 	 null
+		       } else {
+			 exp.staticScopeRight().add(scope)
+		       })
+      return makeSeqExpr([left.forControl(ej, leftUsed),
+			  right.forControl(ej, scope)])
+    }
+  }
+  return LogicalAnd
+}
+
+def makeLogicalOr(left, right) {
+  def exp := makeBinaryExpander(left, right)
+  def LogicalOr extends makeDelayedNode(LogicalOr, [left, right]) {
+    
+    to computeStaticScope() {
+      def leftScope := exp.staticScopeLeft()
+      def rightScope := exp.staticScopeRight()
+      return makeStaticScope(leftScope.namesRead() | rightScope.namesRead(),
+			     leftScope.namesSet() | rightScope.namesSet(),
+			     (leftScope.metaStateExprFlag() ||
+			      rightScope.metaStateExprFlag()),
+			     leftScope.defNames() | rightScope.defNames(),
+			     leftScope.varNames() | rightScope.varNames())
+    }
+
+    to forControl(ej, scope) {
+      def ej2 := LogicalOr.newTemp("ej2")
+      def exports := getExports(LogicalOr.staticScope(), scope)
+      if (exports.size() > 0) {
+	def [br, ex, br2] := [LogicalOr.newTemp("br"), LogicalOr.newTemp("ex"),
+			      LogicalOr.newTemp("br2")]
+	def leftSlots := [].diverge()
+	for x in exports + exp.staticScopeLeft().getElements() {
+	  leftSlots.push(makeSlot(x, null))
+	}
+	leftSlots.push(br)
+	def rightSlots := exports + exp.staticScopeRight().outNames().getElements() + [br2]
+	def slotpatts := [].diverge()
+	for x in exports {
+	  slotpatts.push(makeSlotPattern(makeNounExpr(x), null))
+	}
+	return makeDef(makeListPattern(slotpatts.snapshot(), null),
+		       null,
+		       makeEscape(makeFinalPattern(ej2, null),
+				  makeSeqExpr([left.forControl(ej2, scope),
+					      makeMethodCallExpr(
+								 makeNounExpr("Ref"),
+								 "broken",
+								 [makeNounExpr("Right side skipped")]),
+					       makeList(leftSlots.snapshot())]),
+				  makeCatch(makeFinalPattern(ex),
+					    makeSeqExpr([right.forControl(ej, scope),
+							 makeMethodCallExpr(makeNounExpr("Ref"),
+									    "broken", [ex]),
+							 makeList(rightSlots)]))))
+      } else {
+	return makeEscape(makeFinalPattern(ej2, null),
+			  left.forControl(ej2, makeStaticScope()),
+			  makeCatch(makeIgnorePattern(null),
+				    right.forControl(ej, makeStaticScope())))
+      }
+    }
+  }
+  return makeLogicalOr
+}
+
+def makeDef(pattern, exit_, scope) {
+  def Def extends makeNode(Def, [pattern, exit_, scope]) {
+    to computeStaticScope() {
+      var result := pattern.staticScope()
+      if (exit == null) {
+        result := result.add(exit_.staticScope())
+      }
+      return result.add(expr.staticScope())
+    }
+
+    to expand() {
+      def patt := pattern.expand()
+      def pattScope := patt.staticScope()
+      def defPatts := pattScope.defNames()
+      def varPatts := pattScope.varNames()
+      def rval := expr.forValue(null)
+      var rvalScope := rval.staticScope()
+      var optEj := null
+      if (exit != null) {
+        optEj := exit.forValue(null)
+	rvalScope := optEj.staticScope().add(rvalScope)
+      }
+      def rvalUsed := rvalScope.namesUsed()
+      if ((varPatts & rvalused).size() != 0) {
+	throw("Parse error: circular 'var' definition not allowed")
+      }
+      if ((pattScope.namesUsed() & rvalScope.outNames()).size() != 0) {
+	throw("Parse error: Pattern may not use var defined on the right")
+      }
+      def conflicts := defPatts & rvalUsed
+      if (conflicts.size() == 0) {
+	return makeDef(patt, optEj, rval)
+      } else {
+	def promises := [].diverge()
+	def resolves := [].diverge()
+	def renamings := [].asMap().diverge()
+
+	for oldNameStr in conflicts {
+	  def newName := Def.newTemp(oldNameStr)
+	  def newNameR := Def.newTemp(oldNameStr + "R")
+	  renamings[oldNameStr] := newName.getName()
+	  def pair := [makeFinalPattern(newName, null),
+		       makeFinalPattern(newNameR, null)]
+	  promises.push(makeDef(makeListPattern(pair, null), null,
+				makeMethodCallExpr(makeNounExpr("Ref"),
+						   "promise", [])))
+	  resolves.append(makeMethodCallExpr(newNameR, "resolve",
+					     [makeNounExpr(oldNameStr)]))
+	}
+	def resName := Def.newTemp("res")
+	resolves.appends(resName)
+	if (optEj != null) {
+	  optEj := Renamer.rename(optEj, renamings)
+	}
+	def renamedRval := Renamer.rename(rval, renamings)
+	def resPatt := makeFinalPattern(resName, null)
+	def resDef := makeDef(resPatt, null, makeDef(patt, optEj, renamedRval))
+	return makeSeqExpr(promises + [resDef] + resolves)
+      }
+    }
+  }
+  return Def
+}
+
+def makeForward(name) {
+  def Forward extends makeNode(Forward, [name]) {
+    to expand() {
+      def rname := name.mangle("__Resolver")
+      return makeSeqExpr([makeDef(makeListPattern([makeFinalPattern(name.expand(), null)], null),
+				  null,
+				  makeMethodCallExpr(makeNounExpr("Ref"), "promise", [])),
+			  rname])
+    }
+  }
+  return Forward
+}
+
+[=> makePragma, => makeWhen, => makeWhile, => makeFinally, => makeKernelTry,
+=> makeTry, => makeSwitch, => makeMeta, => makeLambda, => makeIf, => makeFor,
+=> makeEscape, => makeAccumCall, => makeAccumOp, => makeAccumWhile,
+=> makeAccumIf, => makeAccumFor, => makeAccum, => makeCatch, => makeMethod,
+=> makeTo, => makeMatcher, => makeFunction, => makeScript, => makeObject,
+=> makeParamDesc, => makeMessageDesc,=> makeInterfaceFunction,
+=> makeInterface, => makeMapPatternRequired, => makeMapPatternOptional, 
+=> makeMapPatternImport, => makeMapPatternAssoc, => makeGuard,
+=> makeReturn, => makeContinue, => makeBreak, => makeVerbAssign, => makeAssign,
+=> makeForward, => makeDef, => makeLogicalOr, => makeLogicalAnd,
+=> makeBinaryXor, => makeBinaryAnd, => makeBinaryOr, => makeButNot,
+=> makeNotSame, => makeSame, => makeMismatch, => makeMatchBind, => makeCoerce,
+=> makeLessThan, => makeLessThanEqual, => makeAsBigAs, => makeGreaterThanEqual,
+=> makeGreaterThan, => makeThru, => makeTill, => makeShiftRight,
+=> makeShiftLeft, => makeSubtract, => makeAdd, => makeMod, => makeRemainder,
+=> makeFloorDivide, => makeDivide, => makeMultiply, => makePow, => makeOpNode,
+=> makeBinaryNot, => makeLogicalNot, => makeMinus, => makeSendCurryExpr,
+=> makeMethodSendExpr, => makeFunctionSendExpr, => makeFunctionCallExpr,
+=> makeGetExpr, => makeVerbCurryExpr, => makeMethodCallExpr, => makeSeqExpr,
+=> makeHideExpr, => makeQuasiExpr, => makeMapExprExport, => makeMapExprAssoc,
+=> makeListExpr, => makeMapExpr, => makeSlot, => makeQuasiPatternHole,
+=> makeQuasiExprHole, => makeQuasiText, => makeQuasiPatternExpr,
+=> makeQuasiLiteralExpr, => makeNounExpr, => makeURIGetter, => makeURIExpr,
+=> makeLiteralExpr, => makeCharacter]
