@@ -7,6 +7,7 @@ def <ometa> := <import:com.twistedmatrix.ometa.*>
 def makeGrammar := <ometa:makeGrammar>
 def makeBuilder := <ometa:makeBuilder>
 
+def fail(e) { throw(`$e`) }
 
 def makeTestGrammarParser() {
     def self extends makeTestCase(self) {
@@ -14,7 +15,7 @@ def makeTestGrammarParser() {
         to compile(grammar, optActions, scope) {
             def b := makeBuilder("TestGrammar", false, optActions, scope)
             def g := makeGrammar(grammar, b)
-            return g._apply("grammar", [], throw)
+            return g._apply("grammar", [], fail)
         }
 
         to compile(grammar, optActions) {
@@ -29,10 +30,10 @@ def makeTestGrammarParser() {
         */
         to test_literal() {
             def g := self.compile("digit ::= '1'")
-            self.assertEqual(g("1")._apply("digit", [], throw), '1')
+            self.assertEqual(g("1")._apply("digit", [], fail), '1')
             escape e {
                 g("4")._apply("digit", [], e)
-                throw("literal mismatch did not eject")
+                fail("literal mismatch did not eject")
             }
         }
 
@@ -41,7 +42,7 @@ def makeTestGrammarParser() {
         */
         to test_escapedLiterals() {
             def g := self.compile("newline ::= '\\n'")
-            self.assertEqual(g("\n")._apply("newline", [], throw), '\n')
+            self.assertEqual(g("\n")._apply("newline", [], fail), '\n')
         }
 
         /**
@@ -49,7 +50,7 @@ def makeTestGrammarParser() {
         */
         to test_integers() {
             def g := self.compile("stuff ::= 17 0x1F -2")
-            self.assertEqual(g([17, 0x1f, -2 ])._apply("stuff", [], throw), -2)
+            self.assertEqual(g([17, 0x1f, -2 ])._apply("stuff", [], fail), -2)
         }
 
         /**
@@ -58,10 +59,10 @@ def makeTestGrammarParser() {
         to test_star() {
             def g := self.compile("xs ::= 'x'*")
             for input in ["", "x", "xxxxx"] {
-                self.assertEqual(g(input)._apply("xs", [], throw),
+                self.assertEqual(g(input)._apply("xs", [], fail),
                                  input.getArray().snapshot())
             }
-            self.assertEqual(g("yx")._apply("xs", [], throw), [])
+            self.assertEqual(g("yx")._apply("xs", [], fail), [])
         }
 
         /**
@@ -69,14 +70,14 @@ def makeTestGrammarParser() {
          */
         to test_plus() {
             def g := self.compile("xs ::= 'x'+")
-            self.assertEqual(g("x")._apply("xs", [], throw), ['x'])
-            self.assertEqual(g("xxx")._apply("xs", [], throw), ['x', 'x', 'x'])
+            self.assertEqual(g("x")._apply("xs", [], fail), ['x'])
+            self.assertEqual(g("xxx")._apply("xs", [], fail), ['x', 'x', 'x'])
 
             escape e {
                 g("yx")._apply("xs", [], e)
-                throw("plus mismatch did not eject")
+                fail("plus mismatch did not eject")
                 g("")._apply("xs", [], e)
-                throw("plus mismatch did not eject")
+                fail("plus mismatch did not eject")
             }
 
         }
@@ -85,10 +86,10 @@ def makeTestGrammarParser() {
         */
         to test_sequencing() {
             def g := self.compile("twelve ::= '1' '2'")
-            self.assertEqual(g("12")._apply("twelve", [], throw), '2');
+            self.assertEqual(g("12")._apply("twelve", [], fail), '2');
             escape e {
                 g("1")._apply("twelve", [], e)
-                throw("sequence mismatch did not eject")
+                fail("sequence mismatch did not eject")
             }
         }
 
@@ -97,12 +98,12 @@ def makeTestGrammarParser() {
         */
         to test_alternatives() {
             def g := self.compile("digit ::= '0' | '1' | '2'")
-            self.assertEqual(g("0")._apply("digit", [], throw), '0')
-            self.assertEqual(g("1")._apply("digit", [], throw), '1')
-            self.assertEqual(g("2")._apply("digit", [], throw), '2')
+            self.assertEqual(g("0")._apply("digit", [], fail), '0')
+            self.assertEqual(g("1")._apply("digit", [], fail), '1')
+            self.assertEqual(g("2")._apply("digit", [], fail), '2')
             escape e {
                 g("3")._apply("digit", [], e)
-                throw("Alternative mismatch did not eject")
+                fail("Alternative mismatch did not eject")
             }
         }
 
@@ -111,8 +112,8 @@ def makeTestGrammarParser() {
         */
         to test_optional() {
             def g := self.compile("foo ::= 'x' 'y'? 'z'")
-            self.assertEqual(g("xyz")._apply("foo", [], throw), 'z')
-            self.assertEqual(g("xz")._apply("foo", [], throw), 'z')
+            self.assertEqual(g("xyz")._apply("foo", [], fail), 'z')
+            self.assertEqual(g("xz")._apply("foo", [], fail), 'z')
         }
 
         /**
@@ -122,7 +123,7 @@ def makeTestGrammarParser() {
             def g := self.compile("digit ::= '0' | '1'
                                    bits ::= <digit>+")
             def input := "0110110"
-            self.assertEqual(g(input)._apply("bits", [], throw),
+            self.assertEqual(g(input)._apply("bits", [], fail),
                              input.getArray().snapshot())
         }
 
@@ -131,10 +132,10 @@ def makeTestGrammarParser() {
         */
         to test_negate() {
             def g := self.compile("foo ::= ~'0' <anything>")
-            self.assertEqual(g("1")._apply("foo", [], throw), '1')
+            self.assertEqual(g("1")._apply("foo", [], fail), '1')
             escape e {
                 g("01")._apply("foo", [], e)
-                throw("Negation mismatch did not eject")
+                fail("Negation mismatch did not eject")
             }
         }
 
@@ -144,7 +145,7 @@ def makeTestGrammarParser() {
         */
         to test_ruleValue() {
             def g := self.compile("foo ::= '1' => 7")
-            self.assertEqual(g("1")._apply("foo", [], throw), 7)
+            self.assertEqual(g("1")._apply("foo", [], fail), 7)
         }
 
         /**
@@ -159,7 +160,7 @@ def makeTestGrammarParser() {
                 }
             }
             def g := self.compile("foo ::= '1' => seven()", actions)
-            self.assertEqual(g("1")._apply("foo", [], throw), 7)
+            self.assertEqual(g("1")._apply("foo", [], fail), 7)
         }
 
 
@@ -169,7 +170,7 @@ def makeTestGrammarParser() {
         to test_actionNoun() {
             def scope := safeScope.with("x", 7)
             def g := self.compile("foo ::= '1' => x", null, scope)
-            self.assertEqual(g("1")._apply("foo", [], throw), 7)
+            self.assertEqual(g("1")._apply("foo", [], fail), 7)
         }
 
         /**
@@ -179,7 +180,7 @@ def makeTestGrammarParser() {
         to test_actionVerbFallthrough() {
             def scope := safeScope.with("seven", fn {7})
             def g := self.compile("foo ::= '1' => seven()", null, scope)
-            self.assertEqual(g("1")._apply("foo", [], throw), 7)
+            self.assertEqual(g("1")._apply("foo", [], fail), 7)
         }
 
         /**
@@ -192,7 +193,7 @@ def makeTestGrammarParser() {
                 }
             }
             def g := self.compile("foo ::= '1' => plusSeven(1)", actions)
-            self.assertEqual(g("1")._apply("foo", [], throw), 8)
+            self.assertEqual(g("1")._apply("foo", [], fail), 8)
         }
 
         /**
@@ -203,7 +204,7 @@ def makeTestGrammarParser() {
                                         fn x { x.asInteger() - 48})
             def g := self.compile("foo ::= '3':x => intFromChar(x)",
                                   null, scope)
-            self.assertEqual(g("3")._apply("foo", [], throw), 3)
+            self.assertEqual(g("3")._apply("foo", [], fail), 3)
         }
 
 
@@ -212,8 +213,8 @@ def makeTestGrammarParser() {
          */
         to test_parens() {
             def g := self.compile("foo ::= 'a' ('b' | 'c')")
-            self.assertEqual(g("ab")._apply("foo", [], throw), 'b')
-            self.assertEqual(g("ac")._apply("foo", [], throw), 'c')
+            self.assertEqual(g("ab")._apply("foo", [], fail), 'b')
+            self.assertEqual(g("ac")._apply("foo", [], fail), 'c')
         }
 
         /**
@@ -222,7 +223,7 @@ def makeTestGrammarParser() {
         */
         to test_bindNameOnly() {
             def g := self.compile("foo ::= '1' :x '2' => x")
-            self.assertEqual(g("132")._apply("foo", [], throw), '3')
+            self.assertEqual(g("132")._apply("foo", [], fail), '3')
         }
 
         /**
@@ -235,12 +236,12 @@ def makeTestGrammarParser() {
                  double_bits ::= <digit>:a <digit>:b ?(eq(a, b)) => int(b)",
                 def _ { to eq(a, b) { return a == b }
                         to int(x) { return x.asInteger() - 48}})
-            self.assertEqual(g("00")._apply("double_bits", [], throw), 0)
-            self.assertEqual(g("11")._apply("double_bits", [], throw), 1)
+            self.assertEqual(g("00")._apply("double_bits", [], fail), 0)
+            self.assertEqual(g("11")._apply("double_bits", [], fail), 1)
             escape e {
                 g("10")._apply("double_bits", [], e)
                 g("01")._apply("double_bits", [], e)
-                throw("predicate mismatch failed to eject")
+                fail("predicate mismatch failed to eject")
             }
         }
 
@@ -259,9 +260,9 @@ def makeTestGrammarParser() {
               baz ::= <digit>:a <foo a>:b => list(a, b)
               foo :x ::= (?(gt(x, 1)) '9' | ?(lte(x, 1)) '8'):d => int(d)
             ", actions)
-            self.assertEqual(g("18")._apply("baz", [], throw), [1, 8])
-            self.assertEqual(g("08")._apply("baz", [], throw), [0, 8])
-            self.assertEqual(g("29")._apply("baz", [], throw), [2, 9])
+            self.assertEqual(g("18")._apply("baz", [], fail), [1, 8])
+            self.assertEqual(g("08")._apply("baz", [], fail), [0, 8])
+            self.assertEqual(g("29")._apply("baz", [], fail), [2, 9])
         }
 
 
@@ -274,8 +275,8 @@ def makeTestGrammarParser() {
                 "foo ::= ~~(:x) <bar x>
                  bar :x ::= :a :b ?(eq(x, a, b)) => x",
                 def _ { to eq(x, a, b) { return x == a && x == b} })
-            self.assertEqual(g("11")._apply("foo", [], throw), '1')
-            self.assertEqual(g("22")._apply("foo", [], throw), '2')
+            self.assertEqual(g("11")._apply("foo", [], fail), '1')
+            self.assertEqual(g("22")._apply("foo", [], fail), '2')
         }
 
         /**
@@ -285,7 +286,7 @@ def makeTestGrammarParser() {
         to test_action() {
 
             def g := self.compile("foo ::= ('1'*:ones !(false) '2' => 3)")
-            self.assertEqual(g("1112")._apply("foo", [], throw), 3)
+            self.assertEqual(g("1112")._apply("foo", [], fail), 3)
         }
 
         /**
@@ -298,7 +299,7 @@ def makeTestGrammarParser() {
                  fact :n ::= <fact decr(n)>:m => mult(n, m)",
                 def _ { to decr(n) { return n - 1}
                         to mult(x, y) { return x * y }})
-            self.assertEqual(g([3])._apply("fact", [], throw), 6)
+            self.assertEqual(g([3])._apply("fact", [], fail), 6)
     }
 
         /**
@@ -311,7 +312,7 @@ def makeTestGrammarParser() {
                 def _ { to isDigit(x) { return x >= '0' && x <= '9' }
                         to makeInt(x) { return x.asInteger() - 48 }
                         to add(x, y) { return x + y }})
-            self.assertEqual(g([['3', '+', '5']])._apply("interp", [], throw),
+            self.assertEqual(g([['3', '+', '5']])._apply("interp", [], fail),
                              8)
         }
 
@@ -326,7 +327,7 @@ def makeTestGrammarParser() {
                         to makeInt(x) { return x.asInteger() - 48 }
                         to add(x, y) { return x + y }})
             def e := ['3', '+', '5']
-            self.assertEqual(g([e])._apply("interp", [], throw),
+            self.assertEqual(g([e])._apply("interp", [], fail),
                              [e, 8])
         }
 
@@ -343,7 +344,7 @@ def makeTestGrammarParser() {
                         to makeInt(x) { return x.asInteger() - 48 }
                         to add(x, y) { return x + y }
                         to mult(x, y) { return x * y}})
-            self.assertEqual(g([['+', '3', ['*', '5', '2']]])._apply("interp", [], throw), 13)
+            self.assertEqual(g([['+', '3', ['*', '5', '2']]])._apply("interp", [], fail), 13)
         }
 
         /**
@@ -358,8 +359,8 @@ def makeTestGrammarParser() {
                                       return x >= '0' && x <= '9' }
                       to makeInt(x) { return x.asInteger() - 48 }
                       to decimalize(n, d) { return n * 10 + d }})
-            self.assertEqual(g("3")._apply("num", [], throw), 3)
-            self.assertEqual(g("32767")._apply("num", [], throw), 32767)
+            self.assertEqual(g("3")._apply("num", [], fail), 3)
+            self.assertEqual(g("32767")._apply("num", [], fail), 32767)
 
         }
 
@@ -369,7 +370,7 @@ def makeTestGrammarParser() {
         to test_string() {
         def g := self.compile(`interp ::= "Foo" "baz" "boz" => 3
                                br ::= '-'`)
-        self.assertEqual(g("Foo-baz-boz-")._apply("interp", [], throw), 3)
+        self.assertEqual(g("Foo-baz-boz-")._apply("interp", [], fail), 3)
         }
 
     }

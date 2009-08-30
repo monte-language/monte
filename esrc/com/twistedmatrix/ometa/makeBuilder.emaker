@@ -138,7 +138,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
 
         to bindValue(expr, name) {
             def nameString := makeLiteralExpr(null, name, null)
-            return e`ruleLocals.put($nameString, $expr)`
+            return e`ruleLocals.put($nameString, $expr[0])`
         }
 
         to pred(expr) {

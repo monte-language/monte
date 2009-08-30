@@ -72,7 +72,30 @@ def makeArg(arg, current) {
     return argument
 }
 
-def joinErrors(errs) { return term`oneOf(${errs.snapshot()})` }
+def joinErrors(errs) { 
+    def bestErrs := [].asMap().diverge()
+    for err in errs {
+    	switch (err) {
+	    match term`expected(@_, input(@_, @where))` {
+	    	bestErrs.fetch(where, fn { bestErrs[where] := [].diverge() }).push(err)
+            }
+	    match term`oneOf(@suberrs)` {
+	        def where := suberrs[0].getArgs()[1]
+	    	bestErrs.fetch(where, fn { bestErrs[where] := [].diverge() }).append(suberrs)
+	    }
+	    match x {
+	        throw(`Unknown error structure: $x`)
+	    }
+	}
+    }
+    def idx := bestErrs.getKeys().sort().last()
+    traceln(`${bestErrs[idx].size()}`)
+    if (bestErrs[idx].size() == 1) {
+        return bestErrs[idx][0]
+    } else {
+        return term`oneOf(${bestErrs[idx]})`
+    }
+}   
 
 def makeOMetaBase(input, self) {
     var current := makeInputStream(input, 0)

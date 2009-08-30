@@ -13,7 +13,7 @@ def makeTestBuilder() {
         to test_makeGrammar() {
             def b := self.makeBuilder()
             def wanted := e`def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
-                            def makeFoo(input) {
+                            def makeFoo(input, _grammarName) {
                               def foo extends makeOMetaBase(input, foo) {
                               }
                               return foo
@@ -24,7 +24,7 @@ def makeTestBuilder() {
         to test_buildMethod() {
            def b := self.makeBuilder()
            def wanted := e`def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
-                           def makeFoo(input) {
+                           def makeFoo(input, _grammarName) {
                               def foo extends makeOMetaBase(input, foo) {
                                   method rule_baz(ej) {
                                       def ruleLocals := [].asMap().diverge()
@@ -102,7 +102,7 @@ def makeTestBuilder() {
 
         to test_bindValue() {
             def b := self.makeBuilder()
-            def wanted := e`ruleLocals.put("baz", 12; 17)`
+            def wanted := e`ruleLocals.put("baz", (12; 17)[0])`
             self.assertEqual(b.bindValue(e`12; 17`, "baz"), wanted)
         }
 
