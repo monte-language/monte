@@ -26,9 +26,14 @@ def makeInputStream(input, position) {
     def inputStream {
         to head(ej) {
             if (input.size() == position) {
-                ej("at end of input")
+              if ((def span := input.getOptSpan()) != null) {
+                ej(term`endOfInput(${span.getUrl()})`)
+              } else {
+                ej(term`endOfInput("*string*")`)
+              }
             }
-            return input[position]
+            def value := input[position]
+            return [value, term`input($value, $position)`]
         }
         to tail() {
             if (tail == null) {
@@ -51,7 +56,7 @@ def makeArg(arg, current) {
     def memo := [].asMap().diverge()
     def argument {
         to head(ej) {
-            return arg
+          return [arg, null]
         }
         to tail() {
             return current
@@ -67,9 +72,18 @@ def makeArg(arg, current) {
     return argument
 }
 
+def joinErrors(errs) { return term`oneOf(${errs.snapshot()})` }
+
 def makeOMetaBase(input, self) {
     var current := makeInputStream(input, 0)
     def ometaBase {
+        /**
+	 Version of _apply that strips error info for successes.
+	*/
+        to _run(rule, args, ejector) {
+          def [val, err] := self._apply(rule, args, ejector)
+          return val
+        }
 
         /**
          Apply the named method, memoizing the result and allowing for left
@@ -81,8 +95,7 @@ def makeOMetaBase(input, self) {
                 for arg in args {
                     current := makeArg(arg, current)
                 }
-                def result := E.call(self, name, [ejector])
-                return result
+                return E.call(self, name, [ejector])
             }
             var memoRec := current.getMemo(name)
             if (memoRec == null) {
@@ -104,10 +117,9 @@ def makeOMetaBase(input, self) {
                         memoRec.update(ans, current)
                     }
                 }
-                #current := origInput
             } else if (memoRec.isFailure()) {
                 memoRec.setUsed()
-                ejector("application failed")
+                ejector(term`recursionErrorIGuess`)
             }
             current := memoRec.input()
             return memoRec.ans()
@@ -119,9 +131,9 @@ def makeOMetaBase(input, self) {
         */
         to _pred(func, ejector) {
             if (!func()) {
-                ejector(`predicate was false`)
+                ejector(term`predicateFailed`)
             } else {
-                return true
+              return [true, null]
             }
         }
 
@@ -130,16 +142,17 @@ def makeOMetaBase(input, self) {
         */
         to _not(func, ejector) {
             def lastInput := current
+            def err
             escape e {
                 try {
-                    func(e)
+                  def [_, bind err] := func(e)
                 } finally {
                     current := lastInput
                 }
             } catch p {
-                return true
+                return [true, null]
             }
-            ejector("function in 'not' didn't eject")
+            ejector(term`unexpected($err)`)
         }
 
         /**
@@ -160,30 +173,35 @@ def makeOMetaBase(input, self) {
         */
         to _or(fns, ejector) {
             var lastInput := current
+            def errs := [].diverge()
             for f in fns {
                 escape e {
                     lastInput := current
                     return f(e)
                 } catch p {
                     current := lastInput
+                    errs.push(p)
                 }
             }
-            ejector("No matches")
+            ejector(joinErrors(errs))
         }
 
         /**
          Common code for _many/1 and _many1/1.
         */
-        to _many(func, initial) {
+        to _many(func, initial, initialErr) {
             var lastInput := current
             def ans := initial.diverge()
+            var lastErr := initialErr
             while (true) {
                 escape e {
                     lastInput := current
-                    ans.push(func(e))
+                    def [v, err] := func(e)
+                    ans.push(v)
+                    lastErr := err
                 } catch p {
                     current := lastInput
-                    return ans.snapshot()
+                    return [ans.snapshot(), lastErr]
                 }
             }
         }
@@ -192,7 +210,7 @@ def makeOMetaBase(input, self) {
          values into a list.
         */
         to _many(func) {
-            return ometaBase._many(func, [])
+            return ometaBase._many(func, [], null)
         }
 
         /**
@@ -200,7 +218,8 @@ def makeOMetaBase(input, self) {
          into a list. Eject if it matches zero times.
          */
         to _many1(func, ejector) {
-            return ometaBase._many(func, [func(ejector)])
+            def [v, e] := func(ejector)
+            return ometaBase._many(func, [v], e)
         }
 
         /**
@@ -210,7 +229,7 @@ def makeOMetaBase(input, self) {
         to _listpattern(subpattern, ejector) {
             def boringEjector := fn x { ejector(x)}
             # this is overly restrictive but I don't know a better spelling
-            def v :any[List, String] exit boringEjector := (
+            def [v :any[List, String], _] exit boringEjector := (
                 ometaBase.anything(ejector))
             def oldInput := current
             current := makeInputStream(v, 0)
@@ -234,7 +253,11 @@ def makeOMetaBase(input, self) {
          Match the end of the input stream.
         */
         to _end(ejector) {
-            return ometaBase._not(ometaBase.anything, ejector)
+            escape e {
+              return ometaBase._not(ometaBase.anything, e)
+            } catch p {
+              ejector(term`expected(endOfInput, null)`)
+            }
         }
 
         /**
@@ -242,12 +265,12 @@ def makeOMetaBase(input, self) {
         */
         to exactly(wanted, ejector) {
             def original := current
-            def val := ometaBase.anything(ejector)
+            def [val, err] := ometaBase.anything(ejector)
             if (wanted == val) {
-                return val
+                return [val, err]
             } else {
                 current := original
-                ejector(`$wanted does not match $val`)
+                ejector(term`expected(${wanted}, $err)`)
             }
         }
 
@@ -255,19 +278,22 @@ def makeOMetaBase(input, self) {
          Match a single character.
          */
         to char(ejector) {
-            # 'fn' hack here due to EoJ unfortunateness
-            def r :char exit fn x {ejector(x)} := ometaBase.anything(ejector)
-            return r
+            def [r, err] := ometaBase.anything(ejector)
+            if (r !~ _ :char) {
+                ejector(term`expected("a character", $err)`)
+            }
+            return [r, err]
         }
         /**
          Consume input until a non-whitespace character is reached.
          */
         to spaces(ejector) {
             def space(e) {
-                def r := ometaBase.char(e)
-                if (r > ' ') {
-                    e("not a space")
-                }
+              def [r, err] := ometaBase.char(e)
+              if (r > ' ') {
+                e(term`expected("whitespace", $err)`)
+              }
+	      return [r, err]
             }
             return ometaBase._many(space)
         }
@@ -276,32 +302,34 @@ def makeOMetaBase(input, self) {
          Consume a given string plus any leading whitespace.
         */
         to token(ejector) {
-            def tok := ometaBase.anything(ejector)
+          def [tok, _] := ometaBase.anything(ejector)
             def original := current
             ometaBase.spaces(ejector)
+            var lastErr := null
             escape e {
                 for ch in tok {
-                    ometaBase.exactly(ch, e)
+                  def [r, err] := ometaBase.exactly(ch, e)
+                  lastErr := err
                 }
             } catch err {
                 current := original
-                ejector(err)
+                ejector(term`expected($tok, $err)`)
             }
-            return tok
+            return [tok, lastErr]
         }
         /**
          Match a single letter.
         */
         to letter(ejector) {
             def original := current
-            def x := ometaBase.anything(ejector)
+            def [x, err] := ometaBase.anything(ejector)
             if ((x >= 'A' && x <= 'Z') ||
                 (x >= 'a' && x <= 'z') ||
                 x == '_') {
-                return x
+              return [x, err]
             } else {
                 current := original
-                ejector(`not a letter: ${x.quote()}`)
+                ejector(term`expected("letter", $err)`)
             }
         }
         /**
@@ -309,12 +337,12 @@ def makeOMetaBase(input, self) {
          */
         to digit(ejector) {
             def original := current
-            def x := ometaBase.anything(ejector)
+            def [x, e] := ometaBase.anything(ejector)
             if (x >= '0' && x <= '9') {
-                return x
+              return [x, e]
             } else {
                 current := original
-                ejector("not a digit")
+                ejector(term`expected("digit", $e)`)
             }
         }
         /**
@@ -322,15 +350,15 @@ def makeOMetaBase(input, self) {
         */
         to letterOrDigit(ejector) {
             def original := current
-            def x := ometaBase.anything(ejector)
+            def [x, e] := ometaBase.anything(ejector)
             if ((x >= 'A' && x <= 'Z') ||
                 (x >= 'a' && x <= 'z') ||
                 (x >= '0' && x <= '9') ||
                 (x == '_')) {
-                return x
+                return [x, e]
             } else {
                 current := original
-                ejector("not alphanumeric")
+                ejector(term`expected("letter or digit", $e)`)
             }
         }
 
@@ -340,13 +368,13 @@ def makeOMetaBase(input, self) {
             escape e {
                 ometaBase.spaces(e)
                 for ch in token {
-                    ometaBase.exactly(ch, e)
+                  def r := ometaBase.exactly(ch, e)
                 }
-                ometaBase._apply("br", [], e)
-                return token
+                def [v, brErr] := ometaBase._apply("br", [], e)
+                return [token, brErr]
             } catch p {
                 current := oldInput
-                ejector(p)
+                ejector(term`expected("token followed by line break or semicolon", $p)`)
             }
         }
 

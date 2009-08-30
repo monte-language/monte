@@ -1,4 +1,5 @@
 pragma.syntax("0.9")
+pragma.enable("accumulator")
 
 def makeTestCase := <import:com.twistedmatrix.eunit.makeTestCase>
 def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
@@ -12,7 +13,7 @@ def makeTestOMetaBase() {
         */
         to test_apply() {
             def g := makeOMetaBase("x", g)
-            self.assertEqual(g._apply("anything", [], throw), 'x')
+            self.assertEqual(g._apply("anything", [], throw)[0], 'x')
             escape e {
                 g._apply("anything", [], e)
                 throw("'_apply' did not eject on failure")
@@ -26,10 +27,10 @@ def makeTestOMetaBase() {
         to test_pred() {
             def g := makeOMetaBase("", g)
             escape e {
-                g._pred(fn { false }, e)
+ 	        g._pred(fn { false }, e)
                 throw("_pred' didn't eject")
             }
-            self.assertEqual(g._pred(fn { true }, throw), true)
+            self.assertEqual(g._pred(fn { true }, throw)[0], true)
         }
 
         /**
@@ -39,10 +40,10 @@ def makeTestOMetaBase() {
         to test_not() {
             def g := makeOMetaBase("", g)
             escape e {
-                g._not(fn x { true }, e)
+                g._not(fn x { [true, null] }, e)
                 throw("'_not' didn't eject")
             }
-            self.assertEqual(g._not(fn e { e("done") }, throw), true)
+            self.assertEqual(g._not(fn e { e("done") }, throw)[0], true)
         }
 
         /**
@@ -51,9 +52,9 @@ def makeTestOMetaBase() {
         */
         to test_lookahead() {
             def g := makeOMetaBase("x", g)
-            self.assertEqual(g._lookahead(fn e { g.anything(e) }, throw),
+            self.assertEqual(g._lookahead(fn e { g.anything(e) }, throw)[0],
                              'x')
-            self.assertEqual(g.anything(throw), 'x')
+            self.assertEqual(g.anything(throw)[0], 'x')
             escape e {
                 g._lookahead(fn e { g.anything(e) }, e)
                 throw("'_lookahead' did not eject")
@@ -75,9 +76,9 @@ def makeTestOMetaBase() {
                 }
                 return doMatch
             }
-            def result := g._or([makeMatcher('x'), makeMatcher('y'),
-                                makeMatcher('a'), makeMatcher('z')],
-                               throw)
+            def [result, err] := g._or([makeMatcher('x'), makeMatcher('y'),
+                                 makeMatcher('a'), makeMatcher('z')],
+                              	  throw)
             self.assertEqual(result, 'a')
             self.assertEqual(attemptedMatches.snapshot(),
                              ['x', 'y', 'a'])
@@ -85,7 +86,7 @@ def makeTestOMetaBase() {
                 g._or([makeMatcher('w')], e)
                 throw("'_or' refused to fail")
             } catch p {
-	        require(p == "No matches")
+	        self.assertEqual(p, term`oneOf([expected('w', input('b', 1))])`)
             }
         }
 
@@ -96,11 +97,11 @@ def makeTestOMetaBase() {
         to test_many() {
             def input := "xxxabc"
             def g := makeOMetaBase(input, g)
-            def res := g._many(fn e { g.exactly('x', e) })
+            def [res, err] := g._many(fn e { g.exactly('x', e) })
             self.assertEqual(res, ['x', 'x', 'x'])
-            self.assertEqual(g.exactly('a', throw), 'a')
+            self.assertEqual(g.exactly('a', throw)[0], 'a')
 
-            self.assertEquals(g._many(fn e { g.exactly('z', e) }), [])
+            self.assertEquals(g._many(fn e { g.exactly('z', e) })[0], [])
         }
 
         /**
@@ -112,9 +113,9 @@ def makeTestOMetaBase() {
         to test_many1() {
             def input := "xxxabc"
             def g := makeOMetaBase(input, g)
-            def res := g._many1(fn e { g.exactly('x', e) }, throw)
-            self.assertEqual(res, ['x', 'x', 'x'])
-            self.assertEqual(g.exactly('a', throw), 'a')
+            def [res, err] := g._many1(fn e { g.exactly('x', e) }, throw)
+            self.assertEqual(res , ['x', 'x', 'x'])
+            self.assertEqual(g.exactly('a', throw)[0], 'a')
 
             escape e {
                 g._many1(fn e { g.exactly('z', e) }, e)
@@ -129,8 +130,8 @@ def makeTestOMetaBase() {
 
         to test_anything() {
             def g := makeOMetaBase("xy", g)
-            self.assertEqual(g.anything(throw), 'x')
-            self.assertEqual(g.anything(throw), 'y')
+            self.assertEqual(g.anything(throw)[0], 'x')
+            self.assertEqual(g.anything(throw)[0], 'y')
             escape e {
                 g.anything(e)
                 throw("'anything' did not eject on failure")
@@ -147,7 +148,8 @@ def makeTestOMetaBase() {
                 throw("'end' matched before end of input")
             }
             g.anything(throw)
-            self.assertEqual(g._end(throw), true)
+	    def [val, err] := g._end(throw)
+            self.assertEqual(val, true)
         }
 
 
@@ -158,8 +160,8 @@ def makeTestOMetaBase() {
         to test_listpattern() {
             def input := ["fu", "fuzz"]
             def g := makeOMetaBase(input, g)
-            def submatcher(ej) { g.exactly('f', ej);g.exactly('u', ej) }
-            def result := g._listpattern(submatcher, throw)
+            def submatcher(ej) { g.exactly('f', ej); g.exactly('u', ej) }
+            def result := g._listpattern(submatcher, fn x { throw(`$x`) })
             self.assertEqual(result, "fu")
             escape e {
                 g._listpattern(submatcher, e)
@@ -176,13 +178,13 @@ def makeTestOMetaBase() {
         to test_exactly() {
             def input := "foo"
             def g := makeOMetaBase(input, g)
-            def result := g.exactly('f', throw)
+            def [result, err] := g.exactly('f', throw)
             self.assertEqual(result, 'f')
             escape e {
                 g.exactly('x', e)
                 throw("'exactly' did not eject on failure")
             }
-            self.assertEqual(g.exactly('o', throw), 'o')
+            self.assertEqual(g.exactly('o', throw)[0], 'o')
         }
 
         /**
@@ -192,8 +194,8 @@ def makeTestOMetaBase() {
         to test_spaces() {
             def input := " \n\t\r   x"
             def g := makeOMetaBase(input, g)
-            def result := g.spaces(throw)
-            self.assertEqual(g.exactly('x', throw), 'x')
+            def [result, err] := g.spaces(throw)
+            self.assertEqual(g.exactly('x', throw)[0], 'x')
         }
 
         /**
@@ -202,13 +204,13 @@ def makeTestOMetaBase() {
         to test_token() {
             def input := "  foo baz"
             def g := makeOMetaBase(input, g)
-            def result := g._apply("token", ["foo"], throw)
+            def [result, err] := g._apply("token", ["foo"], throw)
             self.assertEqual(result, "foo")
             escape e {
                 g._apply("token", ["foo"], e)
                 throw("'token' did not eject on failure")
             }
-            self.assertEqual(g._apply("token", ["baz"], throw), "baz")
+            self.assertEqual(g._apply("token", ["baz"], throw)[0], "baz")
         }
         /**
          'letter' matches letters.
@@ -216,13 +218,13 @@ def makeTestOMetaBase() {
         to test_letter() {
             def input := "x9"
             def g := makeOMetaBase(input, g)
-            def result := g.letter(throw)
+            def [result, err] := g.letter(throw)
             self.assertEqual(result, 'x')
             escape e {
                 g.letter(e)
                 throw("'letter' did not eject on failure")
             }
-            self.assertEqual(g.anything(throw), '9')
+            self.assertEqual(g.anything(throw)[0], '9')
         }
         /**
          'digit' matches digits.
@@ -230,13 +232,13 @@ def makeTestOMetaBase() {
         to test_digit() {
             def input := "9x"
             def g := makeOMetaBase(input, g)
-            def result := g.digit(throw)
+            def [result, err] := g.digit(throw)
             self.assertEqual(result, '9')
             escape e {
                 g.digit(e)
                 throw("'digit' did not eject on failure")
             }
-            self.assertEqual(g.anything(throw), 'x')
+            self.assertEqual(g.anything(throw)[0], 'x')
         }
         /**
          'letterOrDigit' matches letters, digits, and '_'.
@@ -244,14 +246,14 @@ def makeTestOMetaBase() {
         to test_letterOrDigit() {
             def input := "9_x@"
             def g := makeOMetaBase(input, g)
-            self.assertEqual(g.letterOrDigit(throw), '9')
-            self.assertEqual(g.letterOrDigit(throw), '_')
-            self.assertEqual(g.letterOrDigit(throw), 'x')
+            self.assertEqual(g.letterOrDigit(throw)[0], '9')
+            self.assertEqual(g.letterOrDigit(throw)[0], '_')
+            self.assertEqual(g.letterOrDigit(throw)[0], 'x')
             escape e {
                 g.letterOrDigit(e)
                 throw("'letterOrDigit' did not eject on failure")
             }
-            self.assertEqual(g.anything(throw), '@')
+            self.assertEqual(g.anything(throw)[0], '@')
         }
     }
     return self
