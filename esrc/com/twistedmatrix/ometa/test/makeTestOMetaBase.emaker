@@ -86,14 +86,14 @@ def makeTestOMetaBase() {
                 g._or([makeMatcher('w')], e)
                 throw("'_or' refused to fail")
             } catch p {
-	        self.assertEqual(p, term`expected('w', input('b', 1))`)
+	        self.assertEqual(p, term`error([expected('w')], input(1, 'b'))`)
             }
         }
 
 
 	to test_joinErrors() {
 	    def input := "xyz"
-            def g := makeOMetaBase(input, g)	
+            def g := makeOMetaBase(input, g)
 	    escape e {
     	        def [result, err] := g._or([fn e { g.exactly('x', e);
 	                                           g.exactly('a', e) },
@@ -103,7 +103,7 @@ def makeTestOMetaBase() {
 					    fn e { g.exactly('b', e) }], e)
                 throw(`failed to eject`)
 	    } catch p {
-                self.assertEqual(p, term`expected('a', input('z', 2))`)
+                self.assertEqual(p, term`error([expected('a')], input(2, 'z'))`)
             }
 	}
 

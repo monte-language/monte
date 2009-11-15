@@ -22,18 +22,15 @@ def makeMemo(var ans, var input) {
 
 def makeInputStream(input, position) {
     def memo := [].asMap().diverge()
+    def value := input.fetch(position, fn { null })
     var tail := null
     def inputStream {
         to head(ej) {
             if (input.size() == position) {
-              if ((def span := input.getOptSpan()) != null) {
-                ej(term`endOfInput(${span.getUrl()})`)
-              } else {
-                ej(term`endOfInput("*string*")`)
-              }
+                ej(term`error(endOfInput, input($position, null))`)
             }
             def value := input[position]
-            return [value, term`input($value, $position)`]
+            return [value, inputStream.error(null)]
         }
         to tail() {
             if (tail == null) {
@@ -47,6 +44,11 @@ def makeInputStream(input, position) {
         to setMemo(name, rec) {
             memo[name] := rec
             return rec
+        }
+
+        to error(var reason) {
+            if (reason != null) { reason := [reason] }
+            return term`error($reason, input($position, $value))`
         }
     }
     return inputStream
@@ -72,34 +74,39 @@ def makeArg(arg, current) {
     return argument
 }
 
-def joinErrors(errs) { 
+def joinErrors(errorTerms) {
     def bestErrs := [].asMap().diverge()
-    for err in errs {
-    	switch (err) {
-	    match term`expected(@_, input(@_, @where))` {
-	    	bestErrs.fetch(where, fn { bestErrs[where] := [].diverge() }).push(err)
-            }
-	    match term`oneOf(@suberrs)` {
-	        def where := suberrs[0].getArgs()[1]
-	    	bestErrs.fetch(where, fn { bestErrs[where] := [].diverge() }).append(suberrs)
-	    }
-	    match x {
-	        throw(`Unknown error structure: $x`)
-	    }
-	}
+    for err in errorTerms {
+        def term`error(@_, input(@where, @_))` := err
+        bestErrs.fetch(where, fn { bestErrs[where] := [].diverge() }).push(err)
     }
     def idx := bestErrs.getKeys().sort().last()
     traceln(`${bestErrs[idx].size()}`)
-    if (bestErrs[idx].size() == 1) {
-        return bestErrs[idx][0]
+    def bestList := bestErrs[idx]
+    if (bestList.size() == 1) {
+        return bestList[0]
     } else {
-        return term`oneOf(${bestErrs[idx]})`
+        def reasons := [].diverge()
+        def term`error(@_, @pos)` := bestList[0]
+        for err in bestList {
+            def term`error(@subReasons, @_)` := err
+            if (subReasons != null) {
+                reasons.append(subReasons)
+            }
+        }
+        return term`error($reasons, $pos)`
     }
-}   
+}
 
 def makeOMetaBase(input, self) {
     var current := makeInputStream(input, 0)
+    var currentError := current.error(null)
     def ometaBase {
+
+        to getCurrentError() {
+            return currentError
+        }
+
         /**
 	 Version of _apply that strips error info for successes.
 	*/
@@ -175,7 +182,7 @@ def makeOMetaBase(input, self) {
             } catch p {
                 return [true, null]
             }
-            ejector(term`unexpected($err)`)
+            ejector(current.error(null))
         }
 
         /**
@@ -276,11 +283,7 @@ def makeOMetaBase(input, self) {
          Match the end of the input stream.
         */
         to _end(ejector) {
-            escape e {
-              return ometaBase._not(ometaBase.anything, e)
-            } catch p {
-              ejector(term`expected(endOfInput, null)`)
-            }
+            return ometaBase._not(ometaBase.anything, ejector)
         }
 
         /**
@@ -293,7 +296,7 @@ def makeOMetaBase(input, self) {
                 return [val, err]
             } else {
                 current := original
-                ejector(term`expected(${wanted}, $err)`)
+                ejector(current.error(term`expected(${wanted})`))
             }
         }
 
@@ -303,7 +306,7 @@ def makeOMetaBase(input, self) {
         to char(ejector) {
             def [r, err] := ometaBase.anything(ejector)
             if (r !~ _ :char) {
-                ejector(term`expected("a character", $err)`)
+                ejector(current.error(term`expected("a character")`))
             }
             return [r, err]
         }
@@ -314,7 +317,7 @@ def makeOMetaBase(input, self) {
             def space(e) {
               def [r, err] := ometaBase.char(e)
               if (r > ' ') {
-                e(term`expected("whitespace", $err)`)
+                e(current.error(term`expected("whitespace")`))
               }
 	      return [r, err]
             }
@@ -336,7 +339,7 @@ def makeOMetaBase(input, self) {
                 }
             } catch err {
                 current := original
-                ejector(term`expected($tok, $err)`)
+                ejector(current.error(term`expected($tok)`))
             }
             return [tok, lastErr]
         }
@@ -352,7 +355,7 @@ def makeOMetaBase(input, self) {
               return [x, err]
             } else {
                 current := original
-                ejector(term`expected("letter", $err)`)
+                ejector(current.error(term`expected("letter")`))
             }
         }
         /**
@@ -365,7 +368,7 @@ def makeOMetaBase(input, self) {
               return [x, e]
             } else {
                 current := original
-                ejector(term`expected("digit", $e)`)
+                ejector(current.error(term`expected("digit")`))
             }
         }
         /**
@@ -381,7 +384,7 @@ def makeOMetaBase(input, self) {
                 return [x, e]
             } else {
                 current := original
-                ejector(term`expected("letter or digit", $e)`)
+                ejector(current.error(term`expected("letter or digit")`))
             }
         }
 
@@ -397,11 +400,17 @@ def makeOMetaBase(input, self) {
                 return [token, brErr]
             } catch p {
                 current := oldInput
-                ejector(term`expected("token followed by line break or semicolon", $p)`)
+                ejector(current.error(term`expected("token followed by line break or semicolon")`))
             }
         }
 
         to br(ejector) {}
+
+        to considerError(err) {
+            if (err != null) {
+                currentError := joinErrors([err, currentError])
+            }
+        }
 
         match [`rule_@name`, args] {
              E.call(ometaBase, name, args)
