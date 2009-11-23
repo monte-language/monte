@@ -81,7 +81,6 @@ def joinErrors(errorTerms) {
         bestErrs.fetch(where, fn { bestErrs[where] := [].diverge() }).push(err)
     }
     def idx := bestErrs.getKeys().sort().last()
-    traceln(`${bestErrs[idx].size()}`)
     def bestList := bestErrs[idx]
     if (bestList.size() == 1) {
         return bestList[0]
@@ -89,12 +88,11 @@ def joinErrors(errorTerms) {
         def reasons := [].diverge()
         def term`error(@_, @pos)` := bestList[0]
         for err in bestList {
-            def term`error(@subReasons, @_)` := err
-            if (subReasons != null) {
+            if (err =~ term`error([@subReasons*], @_)`) {
                 reasons.append(subReasons)
             }
         }
-        return term`error($reasons, $pos)`
+        return term`error(${reasons.snapshot()}, $pos)`
     }
 }
 
@@ -159,8 +157,8 @@ def makeOMetaBase(input, self) {
         /**
          Call the given nullary function. Eject if it returns false.
         */
-        to _pred(func, ejector) {
-            if (!func()) {
+        to pred(func, ejector) {
+            if (!func(ejector)[0]) {
                 ejector(term`predicateFailed`)
             } else {
               return [true, null]
@@ -170,7 +168,7 @@ def makeOMetaBase(input, self) {
         /**
          Call the given function. Eject if it does not.
         */
-        to _not(func, ejector) {
+        to not(func, ejector) {
             def lastInput := current
             def err
             escape e {
@@ -219,7 +217,7 @@ def makeOMetaBase(input, self) {
         /**
          Common code for _many/1 and _many1/1.
         */
-        to _many(func, initial, initialErr) {
+        to _many(func, [initial, initialErr]) {
             var lastInput := current
             def ans := initial.diverge()
             var lastErr := initialErr
@@ -240,7 +238,7 @@ def makeOMetaBase(input, self) {
          values into a list.
         */
         to _many(func) {
-            return ometaBase._many(func, [], null)
+            return ometaBase._many(func, [[], null])
         }
 
         /**
@@ -249,7 +247,7 @@ def makeOMetaBase(input, self) {
          */
         to _many1(func, ejector) {
             def [v, e] := func(ejector)
-            return ometaBase._many(func, [v], e)
+            return ometaBase._many(func, [[v], e])
         }
 
         /**
@@ -283,7 +281,7 @@ def makeOMetaBase(input, self) {
          Match the end of the input stream.
         */
         to _end(ejector) {
-            return ometaBase._not(ometaBase.anything, ejector)
+            return ometaBase.not(ometaBase.anything, ejector)
         }
 
         /**

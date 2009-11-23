@@ -27,10 +27,10 @@ def makeTestOMetaBase() {
         to test_pred() {
             def g := makeOMetaBase("", g)
             escape e {
- 	        g._pred(fn { false }, e)
-                throw("_pred' didn't eject")
+ 	        g.pred(fn e { [false, null] }, e)
+                throw("pred' didn't eject")
             }
-            self.assertEqual(g._pred(fn { true }, fail)[0], true)
+            self.assertEqual(g.pred(fn e { [true, null] }, fail)[0], true)
         }
 
         /**
@@ -40,10 +40,10 @@ def makeTestOMetaBase() {
         to test_not() {
             def g := makeOMetaBase("", g)
             escape e {
-                g._not(fn x { [true, null] }, e)
+                g.not(fn x { [true, null] }, e)
                 throw("'_not' didn't eject")
             }
-            self.assertEqual(g._not(fn e { e("done") }, fail)[0], true)
+            self.assertEqual(g.not(fn e { e("done") }, fail)[0], true)
         }
 
         /**

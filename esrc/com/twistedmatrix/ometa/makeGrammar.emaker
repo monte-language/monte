@@ -46,6 +46,9 @@ def makeOMetaE(input, builder) {
             return makeString(c)
         }
 
+        to makeString(c, cs) {
+            return makeString([c] + cs)
+        }
         to makeLiteral(s) {
             makeLiteralExpr(null, s, null)
         }
@@ -79,858 +82,880 @@ def makeOMetaE(input, builder) {
 
     def doAction(term, scope) {
         traceln(`doAction($term, $scope)`)
-        def term`@nameTerm(@argTerms*)` := term
         def `@name` := nameTerm
         if (argTerms.size() == 0) {
             if ((def lit := nameTerm.getOptData()) != null) {
-                traceln(`literal: $lit`)
                 return lit
             }
             escape e {
                 def val := scope.fetch(name, fn { e() })
-                traceln(`variable $name: $val`)
                 return val
             }
         }
         def args := accum [] for a in argTerms { _.with(doAction(a, scope)) }
-        traceln(`call $name($args)`)
         return E.callWithPair(bootGrammarActions, [name, args])
     }
 
 
     def self extends makeOMetaBase(input, self) {
-    to rule_number() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("spaces", )
-        self.considerError(lastError)
-        def _G_or_2() {
-            {def [_G_exactly_1, lastError] := self.exactly('-')
-             self.considerError(lastError)}
-            {def [_G_apply_2, lastError] := self.apply("barenumber", )
-             self.considerError(lastError)}
-            _localScope with= ("x", _G_apply_2)
-            {def [_G_e_3, lastError] := [doAction(term`negative(x)`, _localScope), null]
-             self.considerError(lastError)}
-            return [_G_e_3, self.getCurrentError()]
+    to rule_number(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("spaces", [], ej)
+        self.considerError(_G_apply_1[1])
+        def _G_or_2(ej) {
+            def _G_exactly_1 := self.exactly('-', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_apply_2 := self._apply("barenumber", [], ej)
+            self.considerError(_G_apply_2[1])
+            _localScope with= ("x", _G_apply_2[0])
+            def _G_e_3 := [doAction(term`negative(x)`, _localScope), null]
+            self.considerError(_G_e_3[1])
+            return [_G_e_3[0], self.getCurrentError()]
         }
-        def _G_or_3() {
-            {def [_G_apply_1, lastError] := self.apply("barenumber", )
-             self.considerError(lastError)
-             _localScope with= ("x", _G_apply_1)}
-            def [_G_e_2, lastError] := [doAction(term`x`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_2, self.getCurrentError()]
+        def _G_or_3(ej) {
+            def _G_apply_1 := self._apply("barenumber", [], ej)
+            self.considerError(_G_apply_1[1])
+            _localScope with= ("x", _G_apply_1[0])
+            def _G_e_2 := [doAction(term`x`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
         }
-        def [_G_or_4, lastError] := self._or([_G_or_2, _G_or_3])
-        self.considerError(lastError)
-        return [_G_or_4, self.getCurrentError()]
+        def _G_or_4 := self._or([_G_or_2, _G_or_3], ej)
+        self.considerError(_G_or_4[1])
+        return [_G_or_4[0], self.getCurrentError()]
     }
 
 
-    to rule_barenumber() {
-        def _localScope := safeScope.with("self", self)
-        def _G_or_1() {
-            def [_G_exactly_1, lastError] := self.exactly('0')
-            self.considerError(lastError)
-            def _G_or_2() {
-                def _G_or_1() {
-                    def [_G_exactly_1, lastError] := self.exactly('x')
-                    self.considerError(lastError)
-                    return [_G_exactly_1, self.getCurrentError()]
+    to rule_barenumber(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_or_1(ej) {
+            def _G_exactly_1 := self.exactly('0', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_or_2(ej) {
+                def _G_or_1(ej) {
+                    def _G_exactly_1 := self.exactly('x', ej)
+                    self.considerError(_G_exactly_1[1])
+                    return [_G_exactly_1[0], self.getCurrentError()]
                 }
-                def _G_or_2() {
-                    def [_G_exactly_1, lastError] := self.exactly('X')
-                    self.considerError(lastError)
-                    return [_G_exactly_1, self.getCurrentError()]
+                def _G_or_2(ej) {
+                    def _G_exactly_1 := self.exactly('X', ej)
+                    self.considerError(_G_exactly_1[1])
+                    return [_G_exactly_1[0], self.getCurrentError()]
                 }
-                def [_G_or_3, lastError] := self._or([_G_or_1, _G_or_2])
-                self.considerError(lastError)
-                def _G_many_4() {
-                    def [_G_apply_1, lastError] := self.apply("hexdigit", )
-                    self.considerError(lastError)
-                    return [_G_apply_1, self.getCurrentError()]
+                def _G_or_3 := self._or([_G_or_1, _G_or_2], ej)
+                self.considerError(_G_or_3[1])
+                def _G_many_4(ej) {
+                    def _G_apply_1 := self._apply("hexdigit", [], ej)
+                    self.considerError(_G_apply_1[1])
+                    return [_G_apply_1[0], self.getCurrentError()]
                 }
-                def [_G_many_5, lastError] := self.many(_G_many_4)
-                self.considerError(lastError)
-                _localScope with= ("hs", _G_many_5)
-                traceln(`woop`)
-                def [_G_e_6, lastError] := [doAction(term`makeHex(hs)`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_6, self.getCurrentError()]
+                def _G_many_5 := self._many(_G_many_4)
+                self.considerError(_G_many_5[1])
+                _localScope with= ("hs", _G_many_5[0])
+                def _G_e_6 := [doAction(term`makeHex(hs)`, _localScope), null]
+                self.considerError(_G_e_6[1])
+                return [_G_e_6[0], self.getCurrentError()]
             }
-            def _G_or_3() {
-                def _G_many1_1() {
-                    def [_G_apply_1, lastError] := self.apply("octaldigit", )
-                    self.considerError(lastError)
-                    return [_G_apply_1, self.getCurrentError()]
+            def _G_or_3(ej) {
+                def _G_many1_1(ej) {
+                    def _G_apply_1 := self._apply("octaldigit", [], ej)
+                    self.considerError(_G_apply_1[1])
+                    return [_G_apply_1[0], self.getCurrentError()]
                 }
-                def [_G_many1_2, lastError] := self.many(_G_many1_1, _G_many1_1())
-                self.considerError(lastError)
-                _localScope with= ("ds", _G_many1_2)
-                def [_G_e_3, lastError] := [doAction(term`makeOctal(ds)`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_3, self.getCurrentError()]
+                def _G_many1_2 := self._many(_G_many1_1, _G_many1_1())
+                self.considerError(_G_many1_2[1])
+                _localScope with= ("ds", _G_many1_2[0])
+                def _G_e_3 := [doAction(term`makeOctal(ds)`, _localScope), null]
+                self.considerError(_G_e_3[1])
+                return [_G_e_3[0], self.getCurrentError()]
             }
-            def [_G_or_4, lastError] := self._or([_G_or_2, _G_or_3])
-            self.considerError(lastError)
-            return [_G_or_4, self.getCurrentError()]
+            def _G_or_4 := self._or([_G_or_2, _G_or_3], ej)
+            self.considerError(_G_or_4[1])
+            return [_G_or_4[0], self.getCurrentError()]
         }
-        def _G_or_2() {
-            def _G_many1_1() {
-                def [_G_apply_1, lastError] := self.apply("digit", )
-                self.considerError(lastError)
-                return [_G_apply_1, self.getCurrentError()]
+        def _G_or_2(ej) {
+            def _G_many1_1(ej) {
+                def _G_apply_1 := self._apply("digit", [], ej)
+                self.considerError(_G_apply_1[1])
+                return [_G_apply_1[0], self.getCurrentError()]
             }
-            def [_G_many1_2, lastError] := self.many(_G_many1_1, _G_many1_1())
-            self.considerError(lastError)
-            _localScope with= ("ds", _G_many1_2)
-            def [_G_e_3, lastError] := [doAction(term`makeInt(ds)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_3, self.getCurrentError()]
+            def _G_many1_2 := self._many(_G_many1_1, _G_many1_1(ej))
+            self.considerError(_G_many1_2[1])
+            _localScope with= ("ds", _G_many1_2[0])
+            def _G_e_3 := [doAction(term`makeInt(ds)`, _localScope), null]
+            self.considerError(_G_e_3[1])
+            return [_G_e_3[0], self.getCurrentError()]
         }
-        def [_G_or_3, lastError] := self._or([_G_or_1, _G_or_2])
-        self.considerError(lastError)
-        return [_G_or_3, self.getCurrentError()]
+        def _G_or_3 := self._or([_G_or_1, _G_or_2], ej)
+        self.considerError(_G_or_3[1])
+        return [_G_or_3[0], self.getCurrentError()]
     }
 
 
-    to rule_octaldigit() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("anything", )
-        self.considerError(lastError)
-        _localScope with= ("x", _G_apply_1)
-        def _G_pred_2() {
-            def [_G_e_1, lastError] := [doAction(term`isOctDigit(x)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_1, self.getCurrentError()]
+    to rule_octaldigit(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("anything", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("x", _G_apply_1[0])
+        def _G_pred_2(ej) {
+            def _G_e_1 := [doAction(term`isOctDigit(x)`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            return [_G_e_1[0], self.getCurrentError()]
         }
-        def [_G_pred_3, lastError] := self.pred(_G_pred_2)
-        self.considerError(lastError)
-        def [_G_e_4, lastError] := [doAction(term`x`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_4, self.getCurrentError()]
+        def _G_pred_3 := self.pred(_G_pred_2, ej)
+        self.considerError(_G_pred_3[1])
+        def _G_e_4 := [doAction(term`x`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        return [_G_e_4[0], self.getCurrentError()]
     }
 
 
-    to rule_hexdigit() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("anything", )
-        self.considerError(lastError)
-        _localScope with= ("x", _G_apply_1)
-        def _G_pred_2() {
-            def [_G_e_1, lastError] := [doAction(term`isHexDigit(x)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_1, self.getCurrentError()]
+    to rule_hexdigit(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("anything", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("x", _G_apply_1[0])
+        def _G_pred_2(ej) {
+            def _G_e_1 := [doAction(term`isHexDigit(x)`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            return [_G_e_1[0], self.getCurrentError()]
         }
-        def [_G_pred_3, lastError] := self.pred(_G_pred_2)
-        self.considerError(lastError)
-        def [_G_e_4, lastError] := [doAction(term`x`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_4, self.getCurrentError()]
+        def _G_pred_3 := self.pred(_G_pred_2, ej)
+        self.considerError(_G_pred_3[1])
+        def _G_e_4 := [doAction(term`x`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        return [_G_e_4[0], self.getCurrentError()]
     }
 
 
-    to rule_escapedChar() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_exactly_1, lastError] := self.exactly('\\')
-        self.considerError(lastError)
-        def [_G_exactly_2, lastError] := self.exactly('"')#"
-        self.considerError(lastError)
-        def [_G_e_3, lastError] := [doAction(term`'"'`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_3, self.getCurrentError()]
+    to rule_escapedChar(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_exactly_1 := self.exactly('\\', ej)
+        self.considerError(_G_exactly_1[1])
+        def _G_or_2(ej) {
+            def _G_exactly_1 := self.exactly('n', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_e_2 := [doAction(term`newline()`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
+        }
+        def _G_or_3(ej) {
+            def _G_exactly_1 := self.exactly('r', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_e_2 := [doAction(term`'\r'`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
+        }
+        def _G_or_4(ej) {
+            def _G_exactly_1 := self.exactly('t', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_e_2 := [doAction(term`'\t'`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
+        }
+        def _G_or_5(ej) {
+            def _G_exactly_1 := self.exactly('b', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_e_2 := [doAction(term`'\b'`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
+        }
+        def _G_or_6(ej) {
+            def _G_exactly_1 := self.exactly('f', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_e_2 := [doAction(term`'\f'`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
+        }
+        def _G_or_7(ej) {
+            def _G_exactly_1 := self.exactly('"', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_e_2 := [doAction(term`'"'`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
+        }
+        def _G_or_8(ej) {
+            def _G_exactly_1 := self.exactly("'", ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_e_2 := [doAction(term`'\''`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
+        }
+        def _G_or_9(ej) {
+            def _G_exactly_1 := self.exactly('\\', ej)
+            self.considerError(_G_exactly_1[1])
+            def _G_e_2 := [doAction(term`'\\'`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
+        }
+        def _G_or_10 := self._or([_G_or_2, _G_or_3, _G_or_4, _G_or_5, _G_or_6, _G_or_7, _G_or_8, _G_or_9], ej)
+        self.considerError(_G_or_10[1])
+        return [_G_or_10[0], self.getCurrentError()]
     }
 
 
-    to rule_character() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_e_1, lastError] := [doAction(term`"'"`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-        self.considerError(lastError)
-        def _G_or_3() {
-            def [_G_apply_1, lastError] := self.apply("escapedChar", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+    to rule_character(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_e_1 := [doAction(term`"'"`, _localScope), null]
+        self.considerError(_G_e_1[1])
+        def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+        self.considerError(_G_apply_2[1])
+        def _G_or_3(ej) {
+            def _G_apply_1 := self._apply("escapedChar", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_4() {
-            def [_G_apply_1, lastError] := self.apply("anything", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_4(ej) {
+            def _G_apply_1 := self._apply("anything", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def [_G_or_5, lastError] := self._or([_G_or_3, _G_or_4])
-        self.considerError(lastError)
-        _localScope with= ("c", _G_or_5)
-        def [_G_e_6, lastError] := [doAction(term`"'"`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_7, lastError] := self.apply("token", _G_e_6)
-        self.considerError(lastError)
-        def [_G_e_8, lastError] := [doAction(term`c`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_8, self.getCurrentError()]
+        def _G_or_5 := self._or([_G_or_3, _G_or_4], ej)
+        self.considerError(_G_or_5[1])
+        _localScope with= ("c", _G_or_5[0])
+        def _G_e_6 := [doAction(term`"'"`, _localScope), null]
+        self.considerError(_G_e_6[1])
+        def _G_apply_7 := self._apply("token", [_G_e_6[0]], ej)
+        self.considerError(_G_apply_7[1])
+        def _G_e_8 := [doAction(term`c`, _localScope), null]
+        self.considerError(_G_e_8[1])
+        return [_G_e_8[0], self.getCurrentError()]
     }
 
 
-    to rule_bareString() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_e_1, lastError] := [doAction(term`"\""`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-        self.considerError(lastError)
-        def _G_many_3() {
-            def _G_or_1() {
-                def [_G_apply_1, lastError] := self.apply("escapedChar", )
-                self.considerError(lastError)
-                return [_G_apply_1, self.getCurrentError()]
+    to rule_bareString(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_e_1 := [doAction(term`"\""`, _localScope), null]
+        self.considerError(_G_e_1[1])
+        def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+        self.considerError(_G_apply_2[1])
+        def _G_many_3(ej) {
+            def _G_or_1(ej) {
+                def _G_apply_1 := self._apply("escapedChar", [], ej)
+                self.considerError(_G_apply_1[1])
+                return [_G_apply_1[0], self.getCurrentError()]
             }
-            def _G_or_2() {
-                def _G_not_1() {
-                    def [_G_exactly_1, lastError] := self.exactly('"')#"
-                    self.considerError(lastError)
-                    return [_G_exactly_1, self.getCurrentError()]
+            def _G_or_2(ej) {
+                def _G_not_1(ej) {
+                    def _G_exactly_1 := self.exactly('"', ej)
+                    self.considerError(_G_exactly_1[1])
+                    return [_G_exactly_1[0], self.getCurrentError()]
                 }
-                def [_G_not_2, lastError] := self._not(_G_not_1)
-                self.considerError(lastError)
-                def [_G_apply_3, lastError] := self.apply("anything", )
-                self.considerError(lastError)
-                return [_G_apply_3, self.getCurrentError()]
+                def _G_not_2 := self.not(_G_not_1, ej)
+                self.considerError(_G_not_2[1])
+                def _G_apply_3 := self._apply("anything", [], ej)
+                self.considerError(_G_apply_3[1])
+                return [_G_apply_3[0], self.getCurrentError()]
             }
-            def [_G_or_3, lastError] := self._or([_G_or_1, _G_or_2])
-            self.considerError(lastError)
-            return [_G_or_3, self.getCurrentError()]
+            def _G_or_3 := self._or([_G_or_1, _G_or_2], ej)
+            self.considerError(_G_or_3[1])
+            return [_G_or_3[0], self.getCurrentError()]
         }
-        def [_G_many_4, lastError] := self.many(_G_many_3)
-        self.considerError(lastError)
-        _localScope with= ("c", _G_many_4)
-        def [_G_e_5, lastError] := [doAction(term`"\""`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_6, lastError] := self.apply("token", _G_e_5)
-        self.considerError(lastError)
-        def [_G_e_7, lastError] := [doAction(term`makeString(c)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_7, self.getCurrentError()]
+        def _G_many_4 := self._many(_G_many_3)
+        self.considerError(_G_many_4[1])
+        _localScope with= ("c", _G_many_4[0])
+        def _G_e_5 := [doAction(term`"\""`, _localScope), null]
+        self.considerError(_G_e_5[1])
+        def _G_apply_6 := self._apply("token", [_G_e_5[0]], ej)
+        self.considerError(_G_apply_6[1])
+        def _G_e_7 := [doAction(term`makeString(c)`, _localScope), null]
+        self.considerError(_G_e_7[1])
+        return [_G_e_7[0], self.getCurrentError()]
     }
 
 
-    to rule_string() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("bareString", )
-        self.considerError(lastError)
-        _localScope with= ("s", _G_apply_1)
-        def [_G_e_2, lastError] := [doAction(term`apply("tokenBR", makeList(makeLiteral(s)))`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_2, self.getCurrentError()]
+    to rule_string(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("bareString", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("s", _G_apply_1[0])
+        def _G_e_2 := [doAction(term`apply("tokenBR", makeList(makeLiteral(s)))`, _localScope), null]
+        self.considerError(_G_e_2[1])
+        return [_G_e_2[0], self.getCurrentError()]
     }
 
 
-    to rule_name() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("letter", )
-        self.considerError(lastError)
-        _localScope with= ("x", _G_apply_1)
-        def _G_many_2() {
-            def [_G_apply_1, lastError] := self.apply("letterOrDigit", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+    to rule_name(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("letter", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("x", _G_apply_1[0])
+        def _G_many_2(ej) {
+            def _G_apply_1 := self._apply("letterOrDigit", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def [_G_many_3, lastError] := self.many(_G_many_2)
-        self.considerError(lastError)
-        _localScope with= ("xs", _G_many_3)
-        def [_G_e_4, lastError] := [doAction(term`makeString(x, xs)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_4, self.getCurrentError()]
+        def _G_many_3 := self._many(_G_many_2)
+        self.considerError(_G_many_3[1])
+        _localScope with= ("xs", _G_many_3[0])
+        def _G_e_4 := [doAction(term`makeString(x, xs)`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        return [_G_e_4[0], self.getCurrentError()]
     }
 
 
-    to rule_application() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_e_1, lastError] := [doAction(term`"<"`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-        self.considerError(lastError)
-        def [_G_apply_3, lastError] := self.apply("spaces", )
-        self.considerError(lastError)
-        def [_G_apply_4, lastError] := self.apply("name", )
-        self.considerError(lastError)
-        _localScope with= ("name", _G_apply_4)
-        def _G_or_5() {
-            def [_G_apply_1, lastError] := self.apply("applicationArgs", )
-            self.considerError(lastError)
-            _localScope with= ("args", _G_apply_1)
-            def [_G_e_2, lastError] := [doAction(term`apply(name, args)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_2, self.getCurrentError()]
+    to rule_application(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_e_1 := [doAction(term`"<"`, _localScope), null]
+        self.considerError(_G_e_1[1])
+        def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+        self.considerError(_G_apply_2[1])
+        def _G_apply_3 := self._apply("spaces", [], ej)
+        self.considerError(_G_apply_3[1])
+        def _G_apply_4 := self._apply("name", [], ej)
+        self.considerError(_G_apply_4[1])
+        _localScope with= ("name", _G_apply_4[0])
+        def _G_or_5(ej) {
+            def _G_apply_1 := self._apply("applicationArgs", [], ej)
+            self.considerError(_G_apply_1[1])
+            _localScope with= ("args", _G_apply_1[0])
+            def _G_e_2 := [doAction(term`apply(name, args)`, _localScope), null]
+            self.considerError(_G_e_2[1])
+            return [_G_e_2[0], self.getCurrentError()]
         }
-        def _G_or_6() {
-            def [_G_e_1, lastError] := [doAction(term`">"`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def [_G_e_3, lastError] := [doAction(term`apply(name, makeList())`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_3, self.getCurrentError()]
+        def _G_or_6(ej) {
+            def _G_e_1 := [doAction(term`">"`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+            self.considerError(_G_apply_2[1])
+            def _G_e_3 := [doAction(term`apply(name, makeList())`, _localScope), null]
+            self.considerError(_G_e_3[1])
+            return [_G_e_3[0], self.getCurrentError()]
         }
-        def [_G_or_7, lastError] := self._or([_G_or_5, _G_or_6])
-        self.considerError(lastError)
-        return [_G_or_7, self.getCurrentError()]
+        def _G_or_7 := self._or([_G_or_5, _G_or_6], ej)
+        self.considerError(_G_or_7[1])
+        return [_G_or_7[0], self.getCurrentError()]
     }
 
 
-    to rule_applicationArgs() {
-        def _localScope := safeScope.with("self", self)
-        def _G_many1_1() {
-            def [_G_apply_1, lastError] := self.apply("spaces", )
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("action", )
-            self.considerError(lastError)
-            return [_G_apply_2, self.getCurrentError()]
+    to rule_applicationArgs(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_many1_1(ej) {
+            def _G_apply_1 := self._apply("spaces", [], ej)
+            self.considerError(_G_apply_1[1])
+            def _G_apply_2 := self._apply("action", [], ej)
+            self.considerError(_G_apply_2[1])
+            return [_G_apply_2[0], self.getCurrentError()]
         }
-        def [_G_many1_2, lastError] := self.many(_G_many1_1, _G_many1_1())
-        self.considerError(lastError)
-        _localScope with= ("args", _G_many1_2)
-        def [_G_e_3, lastError] := [doAction(term`">"`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_4, lastError] := self.apply("token", _G_e_3)
-        self.considerError(lastError)
-        def [_G_e_5, lastError] := [doAction(term`applicationArgs(args)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_5, self.getCurrentError()]
+        def _G_many1_2 := self._many(_G_many1_1, _G_many1_1())
+        self.considerError(_G_many1_2[1])
+        _localScope with= ("args", _G_many1_2[0])
+        def _G_e_3 := [doAction(term`">"`, _localScope), null]
+        self.considerError(_G_e_3[1])
+        def _G_apply_4 := self._apply("token", [_G_e_3[0]], ej)
+        self.considerError(_G_apply_4[1])
+        def _G_e_5 := [doAction(term`applicationArgs(args)`, _localScope), null]
+        self.considerError(_G_e_5[1])
+        return [_G_e_5[0], self.getCurrentError()]
     }
 
 
-    to rule_expr1() {
-        def _localScope := safeScope.with("self", self)
-        def _G_or_1() {
-            def [_G_apply_1, lastError] := self.apply("application", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+    to rule_expr1(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_or_1(ej) {
+            def _G_apply_1 := self._apply("application", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_2() {
-            def [_G_apply_1, lastError] := self.apply("ruleValue", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_2(ej) {
+            def _G_apply_1 := self._apply("ruleValue", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_3() {
-            def [_G_apply_1, lastError] := self.apply("semanticPredicate", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_3(ej) {
+            def _G_apply_1 := self._apply("semanticPredicate", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_4() {
-            def [_G_apply_1, lastError] := self.apply("semanticAction", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_4(ej) {
+            def _G_apply_1 := self._apply("semanticAction", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_5() {
-            def [_G_apply_1, lastError] := self.apply("string", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_5(ej) {
+            def _G_apply_1 := self._apply("string", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_6() {
-            def _G_or_1() {
-                def [_G_apply_1, lastError] := self.apply("number", )
-                self.considerError(lastError)
-                return [_G_apply_1, self.getCurrentError()]
+        def _G_or_6(ej) {
+            def _G_or_1(ej) {
+                def _G_apply_1 := self._apply("number", [], ej)
+                self.considerError(_G_apply_1[1])
+                return [_G_apply_1[0], self.getCurrentError()]
             }
-            def _G_or_2() {
-                def [_G_apply_1, lastError] := self.apply("character", )
-                self.considerError(lastError)
-                return [_G_apply_1, self.getCurrentError()]
+            def _G_or_2(ej) {
+                def _G_apply_1 := self._apply("character", [], ej)
+                self.considerError(_G_apply_1[1])
+                return [_G_apply_1[0], self.getCurrentError()]
             }
-            def [_G_or_3, lastError] := self._or([_G_or_1, _G_or_2])
-            self.considerError(lastError)
-            _localScope with= ("lit", _G_or_3)
-            def [_G_e_4, lastError] := [doAction(term`exactly(lit)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_4, self.getCurrentError()]
+            def _G_or_3 := self._or([_G_or_1, _G_or_2], ej)
+            self.considerError(_G_or_3[1])
+            _localScope with= ("lit", _G_or_3[0])
+            def _G_e_4 := [doAction(term`exactly(lit)`, _localScope), null]
+            self.considerError(_G_e_4[1])
+            return [_G_e_4[0], self.getCurrentError()]
         }
-        def _G_or_7() {
-            def [_G_e_1, lastError] := [doAction(term`"("`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def [_G_apply_3, lastError] := self.apply("expr", )
-            self.considerError(lastError)
-            _localScope with= ("e", _G_apply_3)
-            def [_G_e_4, lastError] := [doAction(term`")"`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_5, lastError] := self.apply("token", _G_e_4)
-            self.considerError(lastError)
-            def [_G_e_6, lastError] := [doAction(term`e`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_6, self.getCurrentError()]
+        def _G_or_7(ej) {
+            def _G_e_1 := [doAction(term`"("`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+            self.considerError(_G_apply_2[1])
+            def _G_apply_3 := self._apply("expr", [], ej)
+            self.considerError(_G_apply_3[1])
+            _localScope with= ("e", _G_apply_3[0])
+            def _G_e_4 := [doAction(term`")"`, _localScope), null]
+            self.considerError(_G_e_4[1])
+            def _G_apply_5 := self._apply("token", [_G_e_4[0]], ej)
+            self.considerError(_G_apply_5[1])
+            def _G_e_6 := [doAction(term`e`, _localScope), null]
+            self.considerError(_G_e_6[1])
+            return [_G_e_6[0], self.getCurrentError()]
         }
-        def _G_or_8() {
-            def [_G_e_1, lastError] := [doAction(term`"["`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def [_G_apply_3, lastError] := self.apply("expr", )
-            self.considerError(lastError)
-            _localScope with= ("e", _G_apply_3)
-            def [_G_e_4, lastError] := [doAction(term`"]"`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_5, lastError] := self.apply("token", _G_e_4)
-            self.considerError(lastError)
-            def [_G_e_6, lastError] := [doAction(term`listpattern(e)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_6, self.getCurrentError()]
+        def _G_or_8(ej) {
+            def _G_e_1 := [doAction(term`"["`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+            self.considerError(_G_apply_2[1])
+            def _G_apply_3 := self._apply("expr", [], ej)
+            self.considerError(_G_apply_3[1])
+            _localScope with= ("e", _G_apply_3[0])
+            def _G_e_4 := [doAction(term`"]"`, _localScope), null]
+            self.considerError(_G_e_4[1])
+            def _G_apply_5 := self._apply("token", [_G_e_4[0]], ej)
+            self.considerError(_G_apply_5[1])
+            def _G_e_6 := [doAction(term`listpattern(e)`, _localScope), null]
+            self.considerError(_G_e_6[1])
+            return [_G_e_6[0], self.getCurrentError()]
         }
-        def [_G_or_9, lastError] := self._or([_G_or_1, _G_or_2, _G_or_3, _G_or_4, _G_or_5, _G_or_6, _G_or_7, _G_or_8])
-        self.considerError(lastError)
-        return [_G_or_9, self.getCurrentError()]
+        def _G_or_9 := self._or([_G_or_1, _G_or_2, _G_or_3, _G_or_4, _G_or_5, _G_or_6, _G_or_7, _G_or_8], ej)
+        self.considerError(_G_or_9[1])
+        return [_G_or_9[0], self.getCurrentError()]
     }
 
 
-    to rule_expr2() {
-        def _localScope := safeScope.with("self", self)
-        def _G_or_1() {
-            def [_G_e_1, lastError] := [doAction(term`"~"`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def _G_or_3() {
-                def [_G_e_1, lastError] := [doAction(term`"~"`, _localScope), null]
-                self.considerError(lastError)
-                def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-                self.considerError(lastError)
-                def [_G_apply_3, lastError] := self.apply("expr2", )
-                self.considerError(lastError)
-                _localScope with= ("e", _G_apply_3)
-                def [_G_e_4, lastError] := [doAction(term`lookahead(e)`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_4, self.getCurrentError()]
+    to rule_expr2(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_or_1(ej) {
+            def _G_e_1 := [doAction(term`"~"`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+            self.considerError(_G_apply_2[1])
+            def _G_or_3(ej) {
+                def _G_e_1 := [doAction(term`"~"`, _localScope), null]
+                self.considerError(_G_e_1[1])
+                def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+                self.considerError(_G_apply_2[1])
+                def _G_apply_3 := self._apply("expr2", [], ej)
+                self.considerError(_G_apply_3[1])
+                _localScope with= ("e", _G_apply_3[0])
+                def _G_e_4 := [doAction(term`lookahead(e)`, _localScope), null]
+                self.considerError(_G_e_4[1])
+                return [_G_e_4[0], self.getCurrentError()]
             }
-            def _G_or_4() {
-                def [_G_apply_1, lastError] := self.apply("expr2", )
-                self.considerError(lastError)
-                _localScope with= ("e", _G_apply_1)
-                def [_G_e_2, lastError] := [doAction(term`not(e)`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_2, self.getCurrentError()]
+            def _G_or_4(ej) {
+                def _G_apply_1 := self._apply("expr2", [], ej)
+                self.considerError(_G_apply_1[1])
+                _localScope with= ("e", _G_apply_1[0])
+                def _G_e_2 := [doAction(term`not(e)`, _localScope), null]
+                self.considerError(_G_e_2[1])
+                return [_G_e_2[0], self.getCurrentError()]
             }
-            def [_G_or_5, lastError] := self._or([_G_or_3, _G_or_4])
-            self.considerError(lastError)
-            return [_G_or_5, self.getCurrentError()]
+            def _G_or_5 := self._or([_G_or_3, _G_or_4], ej)
+            self.considerError(_G_or_5[1])
+            return [_G_or_5[0], self.getCurrentError()]
         }
-        def _G_or_2() {
-            def [_G_apply_1, lastError] := self.apply("expr1", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_2(ej) {
+            def _G_apply_1 := self._apply("expr1", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def [_G_or_3, lastError] := self._or([_G_or_1, _G_or_2])
-        self.considerError(lastError)
-        return [_G_or_3, self.getCurrentError()]
+        def _G_or_3 := self._or([_G_or_1, _G_or_2], ej)
+        self.considerError(_G_or_3[1])
+        return [_G_or_3[0], self.getCurrentError()]
     }
 
 
-    to rule_expr3() {
-        def _localScope := safeScope.with("self", self)
-        def _G_or_1() {
-            def [_G_apply_1, lastError] := self.apply("expr2", )
-            self.considerError(lastError)
-            _localScope with= ("e", _G_apply_1)
-            def _G_or_2() {
-                def [_G_exactly_1, lastError] := self.exactly('*')
-                self.considerError(lastError)
-                def [_G_e_2, lastError] := [doAction(term`many(e)`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_2, self.getCurrentError()]
+    to rule_expr3(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_or_1(ej) {
+            def _G_apply_1 := self._apply("expr2", [], ej)
+            self.considerError(_G_apply_1[1])
+            _localScope with= ("e", _G_apply_1[0])
+            def _G_or_2(ej) {
+                def _G_exactly_1 := self.exactly('*', ej)
+                self.considerError(_G_exactly_1[1])
+                def _G_e_2 := [doAction(term`many(e)`, _localScope), null]
+                self.considerError(_G_e_2[1])
+                return [_G_e_2[0], self.getCurrentError()]
             }
-            def _G_or_3() {
-                def [_G_exactly_1, lastError] := self.exactly('+')
-                self.considerError(lastError)
-                def [_G_e_2, lastError] := [doAction(term`many1(e)`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_2, self.getCurrentError()]
+            def _G_or_3(ej) {
+                def _G_exactly_1 := self.exactly('+', ej)
+                self.considerError(_G_exactly_1[1])
+                def _G_e_2 := [doAction(term`many1(e)`, _localScope), null]
+                self.considerError(_G_e_2[1])
+                return [_G_e_2[0], self.getCurrentError()]
             }
-            def _G_or_4() {
-                def [_G_exactly_1, lastError] := self.exactly('?')
-                self.considerError(lastError)
-                def [_G_e_2, lastError] := [doAction(term`optional(e)`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_2, self.getCurrentError()]
+            def _G_or_4(ej) {
+                def _G_exactly_1 := self.exactly('?', ej)
+                self.considerError(_G_exactly_1[1])
+                def _G_e_2 := [doAction(term`optional(e)`, _localScope), null]
+                self.considerError(_G_e_2[1])
+                return [_G_e_2[0], self.getCurrentError()]
             }
-            def _G_or_5() {
-                def [_G_e_1, lastError] := [doAction(term`e`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_1, self.getCurrentError()]
+            def _G_or_5(ej) {
+                def _G_e_1 := [doAction(term`e`, _localScope), null]
+                self.considerError(_G_e_1[1])
+                return [_G_e_1[0], self.getCurrentError()]
             }
-            def [_G_or_6, lastError] := self._or([_G_or_2, _G_or_3, _G_or_4, _G_or_5])
-            self.considerError(lastError)
-            _localScope with= ("r", _G_or_6)
-            def _G_or_7() {
-                def [_G_exactly_1, lastError] := self.exactly(':')
-                self.considerError(lastError)
-                def [_G_apply_2, lastError] := self.apply("name", )
-                self.considerError(lastError)
-                _localScope with= ("n", _G_apply_2)
-                def [_G_e_3, lastError] := [doAction(term`bindValue(r, n)`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_3, self.getCurrentError()]
+            def _G_or_6 := self._or([_G_or_2, _G_or_3, _G_or_4, _G_or_5], ej)
+            self.considerError(_G_or_6[1])
+            _localScope with= ("r", _G_or_6[0])
+            def _G_or_7(ej) {
+                def _G_exactly_1 := self.exactly(':', ej)
+                self.considerError(_G_exactly_1[1])
+                def _G_apply_2 := self._apply("name", [], ej)
+                self.considerError(_G_apply_2[1])
+                _localScope with= ("n", _G_apply_2[0])
+                def _G_e_3 := [doAction(term`bindValue(r, n)`, _localScope), null]
+                self.considerError(_G_e_3[1])
+                return [_G_e_3[0], self.getCurrentError()]
             }
-            def _G_or_8() {
-                def [_G_e_1, lastError] := [doAction(term`r`, _localScope), null]
-                self.considerError(lastError)
-                return [_G_e_1, self.getCurrentError()]
+            def _G_or_8(ej) {
+                def _G_e_1 := [doAction(term`r`, _localScope), null]
+                self.considerError(_G_e_1[1])
+                return [_G_e_1[0], self.getCurrentError()]
             }
-            def [_G_or_9, lastError] := self._or([_G_or_7, _G_or_8])
-            self.considerError(lastError)
-            return [_G_or_9, self.getCurrentError()]
+            def _G_or_9 := self._or([_G_or_7, _G_or_8], ej)
+            self.considerError(_G_or_9[1])
+            return [_G_or_9[0], self.getCurrentError()]
         }
-        def _G_or_2() {
-            def [_G_e_1, lastError] := [doAction(term`":"`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def [_G_apply_3, lastError] := self.apply("name", )
-            self.considerError(lastError)
-            _localScope with= ("n", _G_apply_3)
-            def [_G_e_4, lastError] := [doAction(term`bindValue(apply("anything", makeList()), n)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_4, self.getCurrentError()]
+        def _G_or_2(ej) {
+            def _G_e_1 := [doAction(term`":"`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+            self.considerError(_G_apply_2[1])
+            def _G_apply_3 := self._apply("name", [], ej)
+            self.considerError(_G_apply_3[1])
+            _localScope with= ("n", _G_apply_3[0])
+            def _G_e_4 := [doAction(term`bindValue(apply("anything", makeList()), n)`, _localScope), null]
+            self.considerError(_G_e_4[1])
+            return [_G_e_4[0], self.getCurrentError()]
         }
-        def [_G_or_3, lastError] := self._or([_G_or_1, _G_or_2])
-        self.considerError(lastError)
-        return [_G_or_3, self.getCurrentError()]
+        def _G_or_3 := self._or([_G_or_1, _G_or_2], ej)
+        self.considerError(_G_or_3[1])
+        return [_G_or_3[0], self.getCurrentError()]
     }
 
 
-    to rule_expr4() {
-        def _localScope := safeScope.with("self", self)
-        def _G_many_1() {
-            def [_G_apply_1, lastError] := self.apply("expr3", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+    to rule_expr4(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_many_1(ej) {
+            def _G_apply_1 := self._apply("expr3", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def [_G_many_2, lastError] := self.many(_G_many_1)
-        self.considerError(lastError)
-        _localScope with= ("es", _G_many_2)
-        def [_G_e_3, lastError] := [doAction(term`sequence(es)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_3, self.getCurrentError()]
+        def _G_many_2 := self._many(_G_many_1)
+        self.considerError(_G_many_2[1])
+        _localScope with= ("es", _G_many_2[0])
+        def _G_e_3 := [doAction(term`sequence(es)`, _localScope), null]
+        self.considerError(_G_e_3[1])
+        return [_G_e_3[0], self.getCurrentError()]
     }
 
 
-    to rule_expr5() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("expr4", )
-        self.considerError(lastError)
-        _localScope with= ("e", _G_apply_1)
-        def _G_many_2() {
-            def [_G_e_1, lastError] := [doAction(term`"|"`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def [_G_apply_3, lastError] := self.apply("expr4", )
-            self.considerError(lastError)
-            return [_G_apply_3, self.getCurrentError()]
+    to rule_expr(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("expr4", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("e", _G_apply_1[0])
+        def _G_many_2(ej) {
+            def _G_e_1 := [doAction(term`"|"`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+            self.considerError(_G_apply_2[1])
+            def _G_apply_3 := self._apply("expr4", [], ej)
+            self.considerError(_G_apply_3[1])
+            return [_G_apply_3[0], self.getCurrentError()]
         }
-        def [_G_many_3, lastError] := self.many(_G_many_2)
-        self.considerError(lastError)
-        _localScope with= ("es", _G_many_3)
-        def [_G_e_4, lastError] := [doAction(term`or(e, es)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_4, self.getCurrentError()]
+        def _G_many_3 := self._many(_G_many_2)
+        self.considerError(_G_many_3[1])
+        _localScope with= ("es", _G_many_3[0])
+        def _G_e_4 := [doAction(term`or(e, es)`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        return [_G_e_4[0], self.getCurrentError()]
     }
 
 
-    to rule_expr() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("expr5", )
-        self.considerError(lastError)
-        _localScope with= ("v", _G_apply_1)
-        def _G_or_2() {
-            def [_G_e_1, lastError] := [doAction(term`"<?>"`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def [_G_apply_3, lastError] := self.apply("bareString", )
-            self.considerError(lastError)
-            _localScope with= ("err", _G_apply_3)
-            def [_G_e_4, lastError] := [doAction(term`withError(v, err)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_4, self.getCurrentError()]
-        }
-        def _G_or_3() {
-            def [_G_e_1, lastError] := [doAction(term`withDefaultError(v)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_1, self.getCurrentError()]
-        }
-        def [_G_or_4, lastError] := self._or([_G_or_2, _G_or_3])
-        self.considerError(lastError)
-        return [_G_or_4, self.getCurrentError()]
+    to rule_ruleValue(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_e_1 := [doAction(term`"=>"`, _localScope), null]
+        self.considerError(_G_e_1[1])
+        def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+        self.considerError(_G_apply_2[1])
+        def _G_apply_3 := self._apply("action", [], ej)
+        self.considerError(_G_apply_3[1])
+        _localScope with= ("a", _G_apply_3[0])
+        def _G_e_4 := [doAction(term`compileAction(a)`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        return [_G_e_4[0], self.getCurrentError()]
     }
 
 
-    to rule_ruleValue() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_e_1, lastError] := [doAction(term`"=>"`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-        self.considerError(lastError)
-        def [_G_apply_3, lastError] := self.apply("action", )
-        self.considerError(lastError)
-        _localScope with= ("a", _G_apply_3)
-        def [_G_e_4, lastError] := [doAction(term`compileAction2(a)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_4, self.getCurrentError()]
+    to rule_semanticPredicate(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_e_1 := [doAction(term`"?("`, _localScope), null]
+        self.considerError(_G_e_1[1])
+        def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+        self.considerError(_G_apply_2[1])
+        def _G_apply_3 := self._apply("action", [], ej)
+        self.considerError(_G_apply_3[1])
+        _localScope with= ("a", _G_apply_3[0])
+        def _G_e_4 := [doAction(term`")"`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        def _G_apply_5 := self._apply("token", [_G_e_4[0]], ej)
+        self.considerError(_G_apply_5[1])
+        def _G_e_6 := [doAction(term`pred(a)`, _localScope), null]
+        self.considerError(_G_e_6[1])
+        return [_G_e_6[0], self.getCurrentError()]
     }
 
 
-    to rule_semanticPredicate() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_e_1, lastError] := [doAction(term`"?("`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-        self.considerError(lastError)
-        def [_G_apply_3, lastError] := self.apply("action", )
-        self.considerError(lastError)
-        _localScope with= ("a", _G_apply_3)
-        def [_G_e_4, lastError] := [doAction(term`")"`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_5, lastError] := self.apply("token", _G_e_4)
-        self.considerError(lastError)
-        def [_G_e_6, lastError] := [doAction(term`pred(a)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_6, self.getCurrentError()]
+    to rule_semanticAction(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_e_1 := [doAction(term`"!("`, _localScope), null]
+        self.considerError(_G_e_1[1])
+        def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+        self.considerError(_G_apply_2[1])
+        def _G_apply_3 := self._apply("action", [], ej)
+        self.considerError(_G_apply_3[1])
+        _localScope with= ("a", _G_apply_3[0])
+        def _G_e_4 := [doAction(term`")"`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        def _G_apply_5 := self._apply("token", [_G_e_4[0]], ej)
+        self.considerError(_G_apply_5[1])
+        def _G_e_6 := [doAction(term`a`, _localScope), null]
+        self.considerError(_G_e_6[1])
+        return [_G_e_6[0], self.getCurrentError()]
     }
 
 
-    to rule_semanticAction() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_e_1, lastError] := [doAction(term`"!("`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-        self.considerError(lastError)
-        def [_G_apply_3, lastError] := self.apply("action", )
-        self.considerError(lastError)
-        _localScope with= ("a", _G_apply_3)
-        def [_G_e_4, lastError] := [doAction(term`")"`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_5, lastError] := self.apply("token", _G_e_4)
-        self.considerError(lastError)
-        def [_G_e_6, lastError] := [doAction(term`a`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_6, self.getCurrentError()]
+    to rule_rulePart(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("anything", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("requiredName", _G_apply_1[0])
+        def _G_apply_2 := self._apply("spaces", [], ej)
+        self.considerError(_G_apply_2[1])
+        def _G_apply_3 := self._apply("name", [], ej)
+        self.considerError(_G_apply_3[1])
+        _localScope with= ("n", _G_apply_3[0])
+        def _G_pred_4(ej) {
+            def _G_e_1 := [doAction(term`eq(n, requiredName)`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            return [_G_e_1[0], self.getCurrentError()]
+        }
+        def _G_pred_5 := self.pred(_G_pred_4, ej)
+        self.considerError(_G_pred_5[1])
+        def _G_apply_6 := self._apply("expr4", [], ej)
+        self.considerError(_G_apply_6[1])
+        _localScope with= ("args", _G_apply_6[0])
+        def _G_or_7(ej) {
+            def _G_e_1 := [doAction(term`"::="`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+            self.considerError(_G_apply_2[1])
+            def _G_apply_3 := self._apply("expr", [], ej)
+            self.considerError(_G_apply_3[1])
+            _localScope with= ("e", _G_apply_3[0])
+            def _G_e_4 := [doAction(term`sequence(makeList(args, e))`, _localScope), null]
+            self.considerError(_G_e_4[1])
+            return [_G_e_4[0], self.getCurrentError()]
+        }
+        def _G_or_8(ej) {
+            def _G_e_1 := [doAction(term`args`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            return [_G_e_1[0], self.getCurrentError()]
+        }
+        def _G_or_9 := self._or([_G_or_7, _G_or_8], ej)
+        self.considerError(_G_or_9[1])
+        return [_G_or_9[0], self.getCurrentError()]
     }
 
 
-    to rule_rulePart() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("anything", )
-        self.considerError(lastError)
-        _localScope with= ("requiredName", _G_apply_1)
-        def [_G_apply_2, lastError] := self.apply("spaces", )
-        self.considerError(lastError)
-        def [_G_apply_3, lastError] := self.apply("name", )
-        self.considerError(lastError)
-        _localScope with= ("n", _G_apply_3)
-        def _G_pred_4() {
-            def [_G_e_1, lastError] := [doAction(term`eq(n, requiredName)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_1, self.getCurrentError()]
+    to rule_rule(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("spaces", [], ej)
+        self.considerError(_G_apply_1[1])
+        def _G_lookahead_2(ej) {
+            def _G_apply_1 := self._apply("name", [], ej)
+            self.considerError(_G_apply_1[1])
+            _localScope with= ("n", _G_apply_1[0])
+            return [_localScope with= ("n", _G_apply_1[0]), self.getCurrentError()]
         }
-        def [_G_pred_5, lastError] := self.pred(_G_pred_4)
-        self.considerError(lastError)
-        def [_G_apply_6, lastError] := self.apply("expr4", )
-        self.considerError(lastError)
-        _localScope with= ("args", _G_apply_6)
-        def _G_or_7() {
-            def [_G_e_1, lastError] := [doAction(term`"::="`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def [_G_apply_3, lastError] := self.apply("expr", )
-            self.considerError(lastError)
-            _localScope with= ("e", _G_apply_3)
-            def [_G_e_4, lastError] := [doAction(term`sequence(makeList(args, e))`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_4, self.getCurrentError()]
-        }
-        def _G_or_8() {
-            def [_G_e_1, lastError] := [doAction(term`args`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_1, self.getCurrentError()]
-        }
-        def [_G_or_9, lastError] := self._or([_G_or_7, _G_or_8])
-        self.considerError(lastError)
-        return [_G_or_9, self.getCurrentError()]
-    }
-
-
-    to rule_rule() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("spaces", )
-        self.considerError(lastError)
-        def _G_lookahead_2() {
-            def [_G_apply_1, lastError] := self.apply("name", )
-            self.considerError(lastError)
-            _localScope with= ("n", _G_apply_1)
-            return [_localScope with= ("n", _G_apply_1, self.getCurrentError())]
-        }
-        def [_G_lookahead_3, lastError] := self.lookahead(_G_lookahead_2)
-        self.considerError(lastError)
-        def [_G_e_4, lastError] := [doAction(term`n`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_5, lastError] := self.apply("rulePart", _G_e_4)
-        self.considerError(lastError)
-        _localScope with= ("r", _G_apply_5)
-        def _G_or_6() {
-            def _G_many1_1() {
-                def [_G_e_1, lastError] := [doAction(term`n`, _localScope), null]
-                self.considerError(lastError)
-                def [_G_apply_2, lastError] := self.apply("rulePart", _G_e_1)
-                self.considerError(lastError)
-                return [_G_apply_2, self.getCurrentError()]
+        def _G_lookahead_3 := self._lookahead(_G_lookahead_2, ej)
+        self.considerError(_G_lookahead_3[1])
+        def _G_e_4 := [doAction(term`n`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        def _G_apply_5 := self._apply("rulePart", [_G_e_4[0]], ej)
+        self.considerError(_G_apply_5[1])
+        _localScope with= ("r", _G_apply_5[0])
+        def _G_or_6(ej) {
+            def _G_many1_1(ej) {
+                def _G_e_1 := [doAction(term`n`, _localScope), null]
+                self.considerError(_G_e_1[1])
+                def _G_apply_2 := self._apply("rulePart", [_G_e_1[0]], ej)
+                self.considerError(_G_apply_2[1])
+                return [_G_apply_2[0], self.getCurrentError()]
             }
-            def [_G_many1_2, lastError] := self.many(_G_many1_1, _G_many1_1())
-            self.considerError(lastError)
-            _localScope with= ("rs", _G_many1_2)
-            def [_G_e_3, lastError] := [doAction(term`makeList(n, or(r, rs))`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_3, self.getCurrentError()]
+            def _G_many1_2 := self._many(_G_many1_1, _G_many1_1())
+            self.considerError(_G_many1_2[1])
+            _localScope with= ("rs", _G_many1_2[0])
+            def _G_e_3 := [doAction(term`makeList(n, or(r, rs))`, _localScope), null]
+            self.considerError(_G_e_3[1])
+            return [_G_e_3[0], self.getCurrentError()]
         }
-        def _G_or_7() {
-            def [_G_e_1, lastError] := [doAction(term`makeList(n, r)`, _localScope), null]
-            self.considerError(lastError)
-            return [_G_e_1, self.getCurrentError()]
+        def _G_or_7(ej) {
+            def _G_e_1 := [doAction(term`makeList(n, r)`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            return [_G_e_1[0], self.getCurrentError()]
         }
-        def [_G_or_8, lastError] := self._or([_G_or_6, _G_or_7])
-        self.considerError(lastError)
-        return [_G_or_8, self.getCurrentError()]
+        def _G_or_8 := self._or([_G_or_6, _G_or_7], ej)
+        self.considerError(_G_or_8[1])
+        return [_G_or_8[0], self.getCurrentError()]
     }
 
 
-    to rule_action() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("spaces", )
-        self.considerError(lastError)
-        def _G_or_2() {
-            def [_G_apply_1, lastError] := self.apply("actionCall", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+    to rule_action(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("spaces", [], ej)
+        self.considerError(_G_apply_1[1])
+        def _G_or_2(ej) {
+            def _G_apply_1 := self._apply("actionCall", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_3() {
-            def [_G_apply_1, lastError] := self.apply("actionNoun", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_3(ej) {
+            def _G_apply_1 := self._apply("actionNoun", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_4() {
-            def [_G_apply_1, lastError] := self.apply("actionLiteral", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_4(ej) {
+            def _G_apply_1 := self._apply("actionLiteral", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def [_G_or_5, lastError] := self._or([_G_or_2, _G_or_3, _G_or_4])
-        self.considerError(lastError)
-        return [_G_or_5, self.getCurrentError()]
+        def _G_or_5 := self._or([_G_or_2, _G_or_3, _G_or_4], ej)
+        self.considerError(_G_or_5[1])
+        return [_G_or_5[0], self.getCurrentError()]
     }
 
 
-    to rule_actionCall() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("name", )
-        self.considerError(lastError)
-        _localScope with= ("verb", _G_apply_1)
-        def [_G_e_2, lastError] := [doAction(term`"("`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_3, lastError] := self.apply("token", _G_e_2)
-        self.considerError(lastError)
-        def _G_optional_4() {
-            def [_G_apply_1, lastError] := self.apply("actionArgs", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+    to rule_actionCall(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("name", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("verb", _G_apply_1[0])
+        def _G_e_2 := [doAction(term`"("`, _localScope), null]
+        self.considerError(_G_e_2[1])
+        def _G_apply_3 := self._apply("token", [_G_e_2[0]], ej)
+        self.considerError(_G_apply_3[1])
+        def _G_optional_4(ej) {
+            def _G_apply_1 := self._apply("actionArgs", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
         def _G_optional_5() {
-            return [null, self.getInput().nullError()]
+            return [null, self.getInput().error(null)]
         }
-        def [_G_or_6, lastError] := self._or([_G_optional_4, _G_optional_5])
-        self.considerError(lastError)
-        _localScope with= ("args", _G_or_6)
-        def [_G_e_7, lastError] := [doAction(term`")"`, _localScope), null]
-        self.considerError(lastError)
-        def [_G_apply_8, lastError] := self.apply("token", _G_e_7)
-        self.considerError(lastError)
-        def [_G_e_9, lastError] := [doAction(term`doActionCall(verb, args)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_9, self.getCurrentError()]
+        def _G_or_6 := self._or([_G_optional_4, _G_optional_5], ej)
+        self.considerError(_G_or_6[1])
+        _localScope with= ("args", _G_or_6[0])
+        def _G_e_7 := [doAction(term`")"`, _localScope), null]
+        self.considerError(_G_e_7[1])
+        def _G_apply_8 := self._apply("token", [_G_e_7[0]], ej)
+        self.considerError(_G_apply_8[1])
+        def _G_e_9 := [doAction(term`makeActionCall(verb, args)`, _localScope), null]
+        self.considerError(_G_e_9[1])
+        return [_G_e_9[0], self.getCurrentError()]
     }
 
 
-    to rule_actionArgs() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("action", )
-        self.considerError(lastError)
-        _localScope with= ("a", _G_apply_1)
-        def _G_many_2() {
-            def [_G_e_1, lastError] := [doAction(term`","`, _localScope), null]
-            self.considerError(lastError)
-            def [_G_apply_2, lastError] := self.apply("token", _G_e_1)
-            self.considerError(lastError)
-            def [_G_apply_3, lastError] := self.apply("action", )
-            self.considerError(lastError)
-            return [_G_apply_3, self.getCurrentError()]
+    to rule_actionArgs(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("action", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("a", _G_apply_1[0])
+        def _G_many_2(ej) {
+            def _G_e_1 := [doAction(term`","`, _localScope), null]
+            self.considerError(_G_e_1[1])
+            def _G_apply_2 := self._apply("token", [_G_e_1[0]], ej)
+            self.considerError(_G_apply_2[1])
+            def _G_apply_3 := self._apply("action", [], ej)
+            self.considerError(_G_apply_3[1])
+            return [_G_apply_3[0], self.getCurrentError()]
         }
-        def [_G_many_3, lastError] := self.many(_G_many_2)
-        self.considerError(lastError)
-        _localScope with= ("b", _G_many_3)
-        def [_G_e_4, lastError] := [doAction(term`cons(a, b)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_4, self.getCurrentError()]
+        def _G_many_3 := self._many(_G_many_2)
+        self.considerError(_G_many_3[1])
+        _localScope with= ("b", _G_many_3[0])
+        def _G_e_4 := [doAction(term`cons(a, b)`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        return [_G_e_4[0], self.getCurrentError()]
     }
 
 
-    to rule_actionNoun() {
-        def _localScope := safeScope.with("self", self)
-        def [_G_apply_1, lastError] := self.apply("name", )
-        self.considerError(lastError)
-        _localScope with= ("n", _G_apply_1)
-        def [_G_e_2, lastError] := [doAction(term`doActionNoun(n)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_2, self.getCurrentError()]
+    to rule_actionNoun(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_apply_1 := self._apply("name", [], ej)
+        self.considerError(_G_apply_1[1])
+        _localScope with= ("n", _G_apply_1[0])
+        def _G_e_2 := [doAction(term`makeActionNoun(n)`, _localScope), null]
+        self.considerError(_G_e_2[1])
+        return [_G_e_2[0], self.getCurrentError()]
     }
 
 
-    to rule_actionLiteral() {
-        def _localScope := safeScope.with("self", self)
-        def _G_or_1() {
-            def [_G_apply_1, lastError] := self.apply("number", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+    to rule_actionLiteral(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_or_1(ej) {
+            def _G_apply_1 := self._apply("number", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_2() {
-            def [_G_apply_1, lastError] := self.apply("character", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_2(ej) {
+            def _G_apply_1 := self._apply("character", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_or_3() {
-            def [_G_apply_1, lastError] := self.apply("bareString", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+        def _G_or_3(ej) {
+            def _G_apply_1 := self._apply("bareString", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def [_G_or_4, lastError] := self._or([_G_or_1, _G_or_2, _G_or_3])
-        self.considerError(lastError)
-        _localScope with= ("lit", _G_or_4)
-        def [_G_e_5, lastError] := [doAction(term`doActionLiteral(lit)`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_5, self.getCurrentError()]
+        def _G_or_4 := self._or([_G_or_1, _G_or_2, _G_or_3], ej)
+        self.considerError(_G_or_4[1])
+        _localScope with= ("lit", _G_or_4[0])
+        def _G_e_5 := [doAction(term`makeActionLiteral(lit)`, _localScope), null]
+        self.considerError(_G_e_5[1])
+        return [_G_e_5[0], self.getCurrentError()]
     }
 
 
-    to rule_grammar() {
-        def _localScope := safeScope.with("self", self)
-        def _G_many_1() {
-            def [_G_apply_1, lastError] := self.apply("rule", )
-            self.considerError(lastError)
-            return [_G_apply_1, self.getCurrentError()]
+    to rule_grammar(ej) {
+        var _localScope := safeScope.with("self", self)
+        def _G_many_1(ej) {
+            def _G_apply_1 := self._apply("rule", [], ej)
+            self.considerError(_G_apply_1[1])
+            return [_G_apply_1[0], self.getCurrentError()]
         }
-        def [_G_many_2, lastError] := self.many(_G_many_1)
-        self.considerError(lastError)
-        _localScope with= ("rs", _G_many_2)
-        def [_G_apply_3, lastError] := self.apply("spaces", )
-        self.considerError(lastError)
-        def [_G_e_4, lastError] := [doAction(term`makeGrammar(makeMapFromPairs(rs))`, _localScope), null]
-        self.considerError(lastError)
-        return [_G_e_4, self.getCurrentError()]
+        def _G_many_2 := self._many(_G_many_1)
+        self.considerError(_G_many_2[1])
+        _localScope with= ("rs", _G_many_2[0])
+        def _G_apply_3 := self._apply("spaces", [], ej)
+        self.considerError(_G_apply_3[1])
+        def _G_e_4 := [doAction(term`makeGrammar(makeMapFromPairs(rs))`, _localScope), null]
+        self.considerError(_G_e_4[1])
+        return [_G_e_4[0], self.getCurrentError()]
     }
   }
+    return self
 }
