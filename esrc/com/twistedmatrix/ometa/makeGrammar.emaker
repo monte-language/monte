@@ -53,10 +53,6 @@ def makeOMetaE(input, builder) {
             makeLiteralExpr(null, s, null)
         }
 
-        to makeList(items) {
-            return items
-        }
-
         to applicationArgs(args) {
             return accum [] for a in args { _.with(bootGrammarActions.compileAction(a)) }
         }
@@ -77,11 +73,27 @@ def makeOMetaE(input, builder) {
             return [first] + rest
         }
 
+        to or(e, es) {
+            return bootGrammarActions.or([e] + es)
+        }
+
+        to makeMapFromPairs(pairs) {
+            return __makeMap.fromPairs(pairs)
+        }
+
+        to newline() {
+            return '\n'
+        }
+
+        match [=="makeList", args] {
+            args
+        }
+
     }
 
 
     def doAction(term, scope) {
-        traceln(`doAction($term, $scope)`)
+        def term`@nameTerm(@argTerms*)` := term
         def `@name` := nameTerm
         if (argTerms.size() == 0) {
             if ((def lit := nameTerm.getOptData()) != null) {
@@ -162,7 +174,7 @@ def makeOMetaE(input, builder) {
                     self.considerError(_G_apply_1[1])
                     return [_G_apply_1[0], self.getCurrentError()]
                 }
-                def _G_many1_2 := self._many(_G_many1_1, _G_many1_1())
+                def _G_many1_2 := self._many1(_G_many1_1, ej)
                 self.considerError(_G_many1_2[1])
                 _localScope with= ("ds", _G_many1_2[0])
                 def _G_e_3 := [doAction(term`makeOctal(ds)`, _localScope), null]
@@ -179,7 +191,7 @@ def makeOMetaE(input, builder) {
                 self.considerError(_G_apply_1[1])
                 return [_G_apply_1[0], self.getCurrentError()]
             }
-            def _G_many1_2 := self._many(_G_many1_1, _G_many1_1(ej))
+            def _G_many1_2 := self._many1(_G_many1_1, ej)
             self.considerError(_G_many1_2[1])
             _localScope with= ("ds", _G_many1_2[0])
             def _G_e_3 := [doAction(term`makeInt(ds)`, _localScope), null]
@@ -437,7 +449,7 @@ def makeOMetaE(input, builder) {
             self.considerError(_G_apply_2[1])
             return [_G_apply_2[0], self.getCurrentError()]
         }
-        def _G_many1_2 := self._many(_G_many1_1, _G_many1_1())
+        def _G_many1_2 := self._many1(_G_many1_1, ej)
         self.considerError(_G_many1_2[1])
         _localScope with= ("args", _G_many1_2[0])
         def _G_e_3 := [doAction(term`">"`, _localScope), null]
@@ -807,7 +819,7 @@ def makeOMetaE(input, builder) {
                 self.considerError(_G_apply_2[1])
                 return [_G_apply_2[0], self.getCurrentError()]
             }
-            def _G_many1_2 := self._many(_G_many1_1, _G_many1_1())
+            def _G_many1_2 := self._many1(_G_many1_1, ej)
             self.considerError(_G_many1_2[1])
             _localScope with= ("rs", _G_many1_2[0])
             def _G_e_3 := [doAction(term`makeList(n, or(r, rs))`, _localScope), null]
