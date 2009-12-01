@@ -27,7 +27,7 @@ def makeInputStream(input, position) {
     def inputStream {
         to head(ej) {
             if (input.size() == position) {
-                ej(term`error(endOfInput, input($position, null))`)
+                ej(term`error([endOfInput], input($position, null))`)
             }
             def value := input[position]
             return [value, inputStream.error(null)]
@@ -46,6 +46,10 @@ def makeInputStream(input, position) {
             return rec
         }
 
+	to getPosition() {
+	  return position
+	}
+
         to error(var reason) {
             if (reason != null) { reason := [reason] }
             return term`error($reason, input($position, $value))`
@@ -54,7 +58,7 @@ def makeInputStream(input, position) {
     return inputStream
 }
 
-def makeArg(arg, current) {
+def makeArg(arg, position, current) {
     def memo := [].asMap().diverge()
     def argument {
         to head(ej) {
@@ -69,6 +73,10 @@ def makeArg(arg, current) {
         to setMemo(name, rec) {
             memo[name] := rec
             return rec
+        }
+        to error(var reason) {
+            if (reason != null) { reason := [reason] }
+            return term`error($reason, input($position, $arg))`
         }
     }
     return argument
@@ -105,6 +113,10 @@ def makeOMetaBase(input, self) {
             return currentError
         }
 
+	to getInput() {
+	  return current
+	}
+
         /**
 	 Version of _apply that strips error info for successes.
 	*/
@@ -120,8 +132,8 @@ def makeOMetaBase(input, self) {
         to _apply(rule, args, ejector) {
             def name := "rule_" + rule
             if (args.size() > 0) {
-                for arg in args {
-                    current := makeArg(arg, current)
+	      for arg in args {
+		current := makeArg(arg, current.getPosition(), current)
                 }
                 return E.call(self, name, [ejector])
             }
@@ -147,7 +159,7 @@ def makeOMetaBase(input, self) {
                 }
             } else if (memoRec.isFailure()) {
                 memoRec.setUsed()
-                ejector(term`recursionErrorIGuess`)
+                ejector(current.error(null))
             }
             current := memoRec.input()
             return memoRec.ans()
@@ -159,7 +171,7 @@ def makeOMetaBase(input, self) {
         */
         to pred(func, ejector) {
             if (!func(ejector)[0]) {
-                ejector(term`predicateFailed`)
+	      ejector(current.error(term`predicateFailed`))
             } else {
               return [true, null]
             }
@@ -257,14 +269,14 @@ def makeOMetaBase(input, self) {
         to _listpattern(subpattern, ejector) {
             def boringEjector := fn x { ejector(x)}
             # this is overly restrictive but I don't know a better spelling
-            def [v :any[List, String], _] exit boringEjector := (
+            def [v :any[List, String], e] exit boringEjector := (
                 ometaBase.anything(ejector))
             def oldInput := current
             current := makeInputStream(v, 0)
             subpattern(ejector)
             ometaBase._end(ejector)
             current := oldInput
-            return v
+            return [v, e]
         }
 
         /**
@@ -387,23 +399,23 @@ def makeOMetaBase(input, self) {
         }
 
         to tokenBR(ejector) {
-            def token := ometaBase.anything(ejector)
-            def oldInput := current
-            escape e {
-                ometaBase.spaces(e)
-                for ch in token {
-                  def r := ometaBase.exactly(ch, e)
-                }
-                def [v, brErr] := ometaBase._apply("br", [], e)
-                return [token, brErr]
-            } catch p {
-                current := oldInput
-                ejector(current.error(term`expected("token followed by line break or semicolon")`))
-            }
+	  def [token, _] := ometaBase.anything(ejector)
+	  def oldInput := current
+	  escape e {
+	    ometaBase.spaces(e)
+	    for ch in token {
+	      def r := ometaBase.exactly(ch, e)
+	    }
+	    def [v, brErr] := ometaBase._apply("br", [], e)
+	    return [token, brErr]
+	  } catch p {
+	    current := oldInput
+	    ejector(current.error(term`expected("token followed by line break or semicolon")`))
+          }
         }
-
+	
         to br(ejector) {}
-
+	
         to considerError(err) {
             if (err != null) {
                 currentError := joinErrors([err, currentError])

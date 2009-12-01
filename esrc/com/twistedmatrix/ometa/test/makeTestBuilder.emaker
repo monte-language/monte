@@ -83,7 +83,7 @@ def makeTestBuilder() {
         to test_not() {
             def b := self.makeBuilder()
             def wanted := e`def _G_not_1(ej) { return x + y };
-                            foo._not(_G_not_1, ej)`
+                            foo.not(_G_not_1, ej)`
             self.assertEqual(b.not(e`x + y`), wanted)
         }
 
@@ -114,7 +114,7 @@ def makeTestBuilder() {
 
         to test_action() {
             def b := self.makeBuilder()
-            def wanted := e`17`
+            def wanted := e`[17, null]`
             self.assertEqual(b.compileAction(e`17`), wanted)
         }
 

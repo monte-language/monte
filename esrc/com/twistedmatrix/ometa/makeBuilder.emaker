@@ -119,7 +119,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             return makeSeqExpr(
                 null,
                 [newFunction(name, expr),
-                 e`$objname._not(${makeNounExpr(null, name, null)}, ej)`],
+                 e`$objname.not(${makeNounExpr(null, name, null)}, ej)`],
             null)
         }
 
@@ -144,13 +144,13 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
         to pred(expr) {
             def name := gensym("pred")
             def func := e__quasiParser.valueMaker(
-                `def $name() { return $${0} }`).substitute([expr])
+                `def $name(_) { return [$${0}, null] }`).substitute([expr])
             return e`$func;
-                     $objname._pred(${makeNounExpr(null, name, null)}, ej)`
+                     $objname.pred(${makeNounExpr(null, name, null)}, ej)`
         }
 
         to compileAction(expr) {
-            return expr
+	  return e`[$expr, null]`
         }
 
         to makeActionLiteral(a) {
@@ -167,7 +167,10 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             }
         }
 
-        to makeActionCall(verb, args) {
+        to makeActionCall(verb, var args) {
+	  if (args == null) {
+            args := []
+	  }
             return makeCallExpr(null, e`__actionObj`, verb, args, null)
         }
 

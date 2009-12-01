@@ -50,11 +50,11 @@ def makeOMetaE(input, builder) {
             return makeString([c] + cs)
         }
         to makeLiteral(s) {
-            makeLiteralExpr(null, s, null)
+            return makeLiteralExpr(null, s, null)
         }
 
         to applicationArgs(args) {
-            return accum [] for a in args { _.with(bootGrammarActions.compileAction(a)) }
+            return accum [] for a in args { _.with(e`$a`) }
         }
 
         to withError(val, err) {
@@ -876,7 +876,7 @@ def makeOMetaE(input, builder) {
             self.considerError(_G_apply_1[1])
             return [_G_apply_1[0], self.getCurrentError()]
         }
-        def _G_optional_5() {
+        def _G_optional_5(ej) {
             return [null, self.getInput().error(null)]
         }
         def _G_or_6 := self._or([_G_optional_4, _G_optional_5], ej)

@@ -13,366 +13,391 @@ def makeTestGrammarParser() {
     def self extends makeTestCase(self) {
 
         to compile(grammar, optActions, scope) {
-            def b := makeBuilder("TestGrammar", false, optActions, scope)
-            def g := makeGrammar(grammar, b)
-            def f := g._apply("grammar", [], fail)[0]
-            return fn x { f(x, "TestGrammar") }
+	  def b := makeBuilder("TestGrammar", false, optActions, scope)
+	  def g := makeGrammar(grammar, b)
+	  def f := g._apply("grammar", [], fail)[0]
+	  return fn x { f(x, "TestGrammar") }
         }
 
         to compile(grammar, optActions) {
-            return self.compile(grammar, optActions, safeScope)
+	  return self.compile(grammar, optActions, safeScope)
         }
         to compile(grammar) {
-            return self.compile(grammar, null, safeScope)
+	  return self.compile(grammar, null, safeScope)
         }
 
         /**
          Input matches can be made on literal characters.
         */
         to test_literal() {
-            def g := self.compile("digit ::= '1'")
-            self.assertEqual(g("1")._apply("digit", [], fail)[0], '1')
-            escape e {
-                g("4")._apply("digit", [], e)
-                fail("literal mismatch did not eject")
-            }
+	  def g := self.compile("digit ::= '1'")
+	  self.assertEqual(g("1")._apply("digit", [], fail)[0], '1')
+	  escape e {
+	    g("4")._apply("digit", [], e)
+	    fail("literal mismatch did not eject")
+	  } catch err {
+	    self.assertEqual(err, term`error([expected('1')], input(0, '4'))`)
+	  }
         }
 
         /**
          Input matches can be made on escaped literal characters.
         */
         to test_escapedLiterals() {
-            def g := self.compile("newline ::= '\\n'")
-            self.assertEqual(g("\n")._apply("newline", [], fail)[0], '\n')
+	  def g := self.compile("newline ::= '\\n'")
+	  self.assertEqual(g("\n")._apply("newline", [], fail)[0], '\n')
         }
 
         /**
         Input matches can be made on literal integers.
         */
         to test_integers() {
-            def g := self.compile("stuff ::= 17 0x1F -2")
-            self.assertEqual(g([17, 0x1f, -2 ])._apply("stuff", [], fail)[0], -2)
+	  def g := self.compile("stuff ::= 17 0x1F -2")
+	  self.assertEqual(g([17, 0x1f, -2 ])._apply("stuff", [], fail)[0], -2)
         }
 
-    #     /**
-    #      Input matches can be made on zero or more repetitions of a pattern.
-    #      */
-    #     to test_star() {
-    #         def g := self.compile("xs ::= 'x'*")
-    #         for input in ["", "x", "xxxxx"] {
-    #             self.assertEqual(g(input)._apply("xs", [], fail),
-    #                              input.getArray().snapshot())
-    #         }
-    #         self.assertEqual(g("yx")._apply("xs", [], fail), [])
-    #     }
+        /**
+         Input matches can be made on zero or more repetitions of a pattern.
+         */
+        to test_star() {
+	  def g := self.compile("xs ::= 'x'*")
+	  for input in ["", "x", "xxxxx"] {
+	    self.assertEqual(g(input)._apply("xs", [], fail)[0],
+			     input.getArray().snapshot())
+	  }
+	  self.assertEqual(g("yx")._apply("xs", [], fail)[0], [])
+        }
 
-    #     /**
-    #      Input matches can be made on one or more repetitions of a pattern.
-    #      */
-    #     to test_plus() {
-    #         def g := self.compile("xs ::= 'x'+")
-    #         self.assertEqual(g("x")._apply("xs", [], fail), ['x'])
-    #         self.assertEqual(g("xxx")._apply("xs", [], fail), ['x', 'x', 'x'])
+        /**
+         Input matches can be made on one or more repetitions of a pattern.
+         */
+        to test_plus() {
+	  def g := self.compile("xs ::= 'x'+")
+	  self.assertEqual(g("x")._apply("xs", [], fail)[0], ['x'])
+	  self.assertEqual(g("xxx")._apply("xs", [], fail)[0],
+			   ['x', 'x', 'x'])
+	  escape e {
+	    g("yx")._apply("xs", [], e)
+	    fail("plus mismatch did not eject")
+	  } catch err {
+	    self.assertEqual(err, term`error([expected('x')], input(0, 'y'))`)
+	  }
+	  escape e {
+	    g("")._apply("xs", [], e)
+	    fail("plus mismatch did not eject")
+          } catch err {
+	    self.assertEqual(err, term`error([endOfInput], input(0, null))`)
+	  }
+        }
+        /**
+         Input matches can be made on a sequence of patterns.
+        */
+        to test_sequencing() {
+	  def g := self.compile("twelve ::= '1' '2'")
+	  self.assertEqual(g("12")._apply("twelve", [], fail)[0], '2');
+	  escape e {
+	    g("1")._apply("twelve", [], e)
+	    fail("sequence mismatch did not eject")
+	  } catch err {
+	    self.assertEqual(err, term`error([endOfInput], input(1, null))`)
+	  }
+        }
 
-    #         escape e {
-    #             g("yx")._apply("xs", [], e)
-    #             fail("plus mismatch did not eject")
-    #             g("")._apply("xs", [], e)
-    #             fail("plus mismatch did not eject")
-    #         }
+        /**
+         Input matches can be made on one of a set of alternatives.
+        */
+        to test_alternatives() {
+	  def g := self.compile("digit ::= '0' | '1' | '2'")
+	  self.assertEqual(g("0")._apply("digit", [], fail)[0], '0')
+	  self.assertEqual(g("1")._apply("digit", [], fail)[0], '1')
+	  self.assertEqual(g("2")._apply("digit", [], fail)[0], '2')
+	  escape e {
+	    g("3")._apply("digit", [], e)
+	    fail("Alternative mismatch did not eject")
+	  } catch err {
+	    self.assertEqual(err, term`error([expected('0'), expected('1'), expected('2')], input(0, '3'))`)
+	  }
+        }
 
-    #     }
-    #     /**
-    #      Input matches can be made on a sequence of patterns.
-    #     */
-    #     to test_sequencing() {
-    #         def g := self.compile("twelve ::= '1' '2'")
-    #         self.assertEqual(g("12")._apply("twelve", [], fail), '2');
-    #         escape e {
-    #             g("1")._apply("twelve", [], e)
-    #             fail("sequence mismatch did not eject")
-    #         }
-    #     }
+        /**
+         Subpatterns can be made optional.
+        */
+        to test_optional() {
+	  def g := self.compile("foo ::= 'x' 'y'? 'z'")
+	  self.assertEqual(g("xyz")._apply("foo", [], fail)[0], 'z')
+	  self.assertEqual(g("xz")._apply("foo", [], fail)[0], 'z')
+	  
+	  # escape e {
+	  #   g("xa")._apply("foo", [], fail)
+	  #   fail("Optional mismatch did not eject")
+	  # } catch err {
+	  #   self.assertEqual(err, term`error([expected('y'), expected('z')], input(1, 'a'))`)
+	  # }
+        }
 
-    #     /**
-    #      Input matches can be made on one of a set of alternatives.
-    #     */
-    #     to test_alternatives() {
-    #         def g := self.compile("digit ::= '0' | '1' | '2'")
-    #         self.assertEqual(g("0")._apply("digit", [], fail), '0')
-    #         self.assertEqual(g("1")._apply("digit", [], fail), '1')
-    #         self.assertEqual(g("2")._apply("digit", [], fail), '2')
-    #         escape e {
-    #             g("3")._apply("digit", [], e)
-    #             fail("Alternative mismatch did not eject")
-    #         }
-    #     }
+        /**
+         Other productions can be invoked from within a production.
+        */
+        to test_apply() {
+	  def g := self.compile("digit ::= '0' | '1'
+                                   bits ::= <digit>+")
+	  def input := "0110110"
+	  self.assertEqual(g(input)._apply("bits", [], fail)[0],
+			   input.getArray().snapshot())
+        }
+	
+        /**
+         Input can be matched based on its failure to match a pattern.
+        */
+        to test_negate() {
+	  def g := self.compile("foo ::= ~'0' <anything>")
+	  self.assertEqual(g("1")._apply("foo", [], fail)[0], '1')
+	  escape e {
+	    g("01")._apply("foo", [], e)
+	    fail("Negation mismatch did not eject")
+	  } catch err {
+	    self.assertEqual(err, term`error(null, input(0, '0'))`)
+	  }
+        }
 
-    #     /**
-    #      Subpatterns can be made optional.
-    #     */
-    #     to test_optional() {
-    #         def g := self.compile("foo ::= 'x' 'y'? 'z'")
-    #         self.assertEqual(g("xyz")._apply("foo", [], fail), 'z')
-    #         self.assertEqual(g("xz")._apply("foo", [], fail), 'z')
-    #     }
+        /**
+         Productions can specify an expression that provides the result
+         of the parse.
+        */
+        to test_ruleValue() {
+            def g := self.compile("foo ::= '1' => 7")
+            self.assertEqual(g("1")._apply("foo", [], fail)[0], 7)
+        }
 
-    #     /**
-    #      Other productions can be invoked from within a production.
-    #     */
-    #     to test_apply() {
-    #         def g := self.compile("digit ::= '0' | '1'
-    #                                bits ::= <digit>+")
-    #         def input := "0110110"
-    #         self.assertEqual(g(input)._apply("bits", [], fail),
-    #                          input.getArray().snapshot())
-    #     }
+        /**
+         Actions can be specified when compiling the grammar, and invoked from
+         rules in it.
+        */
 
-    #     /**
-    #      Input can be matched based on its failure to match a pattern.
-    #     */
-    #     to test_negate() {
-    #         def g := self.compile("foo ::= ~'0' <anything>")
-    #         self.assertEqual(g("1")._apply("foo", [], fail), '1')
-    #         escape e {
-    #             g("01")._apply("foo", [], e)
-    #             fail("Negation mismatch did not eject")
-    #         }
-    #     }
+        to test_actionVerb() {
+	  def actions {
+	    to seven() {
+	      return 7
+	    }
+	  }
+	  def g := self.compile("foo ::= '1' => seven()", actions)
+	  self.assertEqual(g("1")._apply("foo", [], fail)[0], 7)
+        }
+	
+	
+        /**
+	   Nouns can be accessed from the scope specified at compile time.
+        */
+        to test_actionNoun() {
+	  def scope := safeScope.with("x", 7)
+	  def g := self.compile("foo ::= '1' => x", null, scope)
+	  self.assertEqual(g("1")._apply("foo", [], fail)[0], 7)
+        }
+	
+        /**
+	   If an action verb doesn't name a method on the actions object, it's
+	   looked up as a callable object in the scope.
+        */
+        to test_actionVerbFallthrough() {
+	  def scope := safeScope.with("seven", fn {7})
+	  def g := self.compile("foo ::= '1' => seven()", null, scope)
+	  self.assertEqual(g("1")._apply("foo", [], fail)[0], 7)
+        }
+	
+        /**
+	   Actions can be invoked with arguments.
+        */
+        to test_actionCallArgs() {
+	  def actions {
+	    to plusSeven(x) {
+	      return x + 7
+	    }
+	  }
+	  def g := self.compile("foo ::= '1' => plusSeven(1)", actions)
+	  self.assertEqual(g("1")._apply("foo", [], fail)[0], 8)
+        }
+	
+        /**
+	   The result of a parsing expression can be bound to a name.
+        */
+        to test_binding() {
+	  def scope := safeScope.with("intFromChar",
+				      fn x { x.asInteger() - 48})
+	  def g := self.compile("foo ::= '3':x => intFromChar(x)",
+				null, scope)
+	  self.assertEqual(g("3")._apply("foo", [], fail)[0], 3)
+        }
+	
+	
+        /**
+         Parens can be used to group subpatterns.
+	*/
+        to test_parens() {
+	  def g := self.compile("foo ::= 'a' ('b' | 'c')")
+	  self.assertEqual(g("ab")._apply("foo", [], fail)[0], 'b')
+	  self.assertEqual(g("ac")._apply("foo", [], fail)[0], 'c')
+        }
+	
+        /**
+	   A pattern consisting of only a bind name matches a single element and
+	   binds it to that name.
+        */
+        to test_bindNameOnly() {
+	  def g := self.compile("foo ::= '1' :x '2' => x")
+	  self.assertEqual(g("132")._apply("foo", [], fail)[0], '3')
+        }
+	
+        /**
+	   Expressions can be used to determine the success or failure of a
+	   parse.
+	*/
+        to test_predicate() {
+	  def g := self.compile(
+                "digit ::= '0' | '1'
+                 double_bits ::= <digit>:a <digit>:b ?(eq(a, b)) => int(b)",
+                def _ { to eq(a, b) { return a == b }
+                        to int(x) { return x.asInteger() - 48}})
+	  self.assertEqual(g("00")._apply("double_bits", [], fail)[0], 0)
+	  self.assertEqual(g("11")._apply("double_bits", [], fail)[0], 1)
+	  escape e {
+	    g("10")._apply("double_bits", [], e)
+	    fail("predicate mismatch failed to eject")
+	  } catch err {
+	    self.assertEqual(err, term`error([predicateFailed], input(2, null))`)
+	  }
 
-    #     /**
-    #      Productions can specify an expression that provides the result
-    #      of the parse.
-    #     */
-    #     to test_ruleValue() {
-    #         def g := self.compile("foo ::= '1' => 7")
-    #         self.assertEqual(g("1")._apply("foo", [], fail), 7)
-    #     }
+	  escape e {
+	    g("01")._apply("double_bits", [], e)
+	    fail("predicate mismatch failed to eject")
+	  } catch err {
+	    self.assertEqual(err, term`error([predicateFailed], input(2, null))`)
+	  }
+        }
 
-    #     /**
-    #      Actions can be specified when compiling the grammar, and invoked from
-    #      rules in it.
-    #     */
+        /**
+         Productions can take arguments.
+        */
+        to test_args() {
+	  def actions {
+	    to int(d) { return d.asInteger() - 48 }
+	    to gt(x, y) { return x > y }
+	    to lte(x, y) { return x <= y }
+	    to list(x, y) { return [x, y] }
+	  }
+	  def g := self.compile("
+              digit ::= ('0' | '1' | '2'):d => int(d)
+              baz ::= <digit>:a <foo a>:b => list(a, b)
+              foo :x ::= (?(gt(x, 1)) '9' | ?(lte(x, 1)) '8'):d => int(d)
+            ", actions)
+	  self.assertEqual(g("18")._apply("baz", [], fail)[0], [1, 8])
+	  self.assertEqual(g("08")._apply("baz", [], fail)[0], [0, 8])
+	  self.assertEqual(g("29")._apply("baz", [], fail)[0], [2, 9])
+        }
 
-    #     to test_actionVerb() {
-    #         def actions {
-    #             to seven() {
-    #                 return 7
-    #             }
-    #         }
-    #         def g := self.compile("foo ::= '1' => seven()", actions)
-    #         self.assertEqual(g("1")._apply("foo", [], fail), 7)
-    #     }
+         /**
+          Doubled negation does lookahead.
+         */
+        to test_lookahead() {
+	  def g := self.compile(
+                "foo ::= ~~(:x) <bar x>
+                 bar :x ::= :a :b ?(eq(x, a, b)) => x",
+                def _ { to eq(x, a, b) { return x == a && x == b} })
+	  self.assertEqual(g("11")._apply("foo", [], fail)[0], '1')
+	  self.assertEqual(g("22")._apply("foo", [], fail)[0], '2')
+        }
 
+        /**
+         Python expressions can be run as actions with no effect on the result
+         of the parse.
+        */
+        to test_action() {
+	  def g := self.compile("foo ::= ('1'*:ones !(false) '2' => 3)")
+	  self.assertEqual(g("1112")._apply("foo", [], fail)[0], 3)
+        }
 
-    #     /**
-    #      Nouns can be accessed from the scope specified at compile time.
-    #     */
-    #     to test_actionNoun() {
-    #         def scope := safeScope.with("x", 7)
-    #         def g := self.compile("foo ::= '1' => x", null, scope)
-    #         self.assertEqual(g("1")._apply("foo", [], fail), 7)
-    #     }
+        /**
+	   Productions can pattern-match on arguments.
+	   Also, multiple definitions of a rule can be done in sequence.
+        */
+        to test_patternMatch() {
+	  def g := self.compile(
+                "fact 0                        => 1
+                 fact :n ::= <fact decr(n)>:m => mult(n, m)",
+                def _ { to decr(n) { return n - 1}
+                        to mult(x, y) { return x * y }})
+	  self.assertEqual(g([3])._apply("fact", [], fail)[0], 6)
+	}
 
-    #     /**
-    #      If an action verb doesn't name a method on the actions object, it's
-    #      looked up as a callable object in the scope.
-    #     */
-    #     to test_actionVerbFallthrough() {
-    #         def scope := safeScope.with("seven", fn {7})
-    #         def g := self.compile("foo ::= '1' => seven()", null, scope)
-    #         self.assertEqual(g("1")._apply("foo", [], fail), 7)
-    #     }
+        /**
+         Brackets can be used to match contents of lists.
+        */
+        to test_listpattern() {
+            def g := self.compile(
+                "digit  ::= :x ?(isDigit(x))          => makeInt(x)
+                 interp ::= [<digit>:x '+' <digit>:y] => add(x, y)",
+                def _ { to isDigit(x) { return x >= '0' && x <= '9' }
+                        to makeInt(x) { return x.asInteger() - 48 }
+                        to add(x, y) { return x + y }})
+            self.assertEqual(g([['3', '+', '5']])._apply("interp", [], fail)[0],
+                             8)
+        }
 
-    #     /**
-    #      Actions can be invoked with arguments.
-    #     */
-    #     to test_actionCallArgs() {
-    #         def actions {
-    #             to plusSeven(x) {
-    #                 return x + 7
-    #             }
-    #         }
-    #         def g := self.compile("foo ::= '1' => plusSeven(1)", actions)
-    #         self.assertEqual(g("1")._apply("foo", [], fail), 8)
-    #     }
+        /**
+         The result of a list pattern is the entire list.
+        */
+        to test_listpatternresult() {
+            def g := self.compile(
+                "digit  ::= :x ?(isDigit(x))          => makeInt(x)
+                 interp ::= [<digit>:x '+' <digit>:y]:z => __makeList(z, add(x, y))",
+                def _ { to isDigit(x) { return x >= '0' && x <= '9' }
+                        to makeInt(x) { return x.asInteger() - 48 }
+                        to add(x, y) { return x + y }})
+            def e := ['3', '+', '5']
+            self.assertEqual(g([e])._apply("interp", [], fail)[0],
+                             [e, 8])
+        }
 
-    #     /**
-    #      The result of a parsing expression can be bound to a name.
-    #     */
-    #     to test_binding() {
-    #         def scope := safeScope.with("intFromChar",
-    #                                     fn x { x.asInteger() - 48})
-    #         def g := self.compile("foo ::= '3':x => intFromChar(x)",
-    #                               null, scope)
-    #         self.assertEqual(g("3")._apply("foo", [], fail), 3)
-    #     }
+        /**
+         Rules can call themselves.
+         */
+        to test_recursion() {
+            def g := self.compile("
+             interp ::= (['+' <interp>:x <interp>:y] => add(x, y)
+                       | ['*' <interp>:x <interp>:y] => mult(x, y)
+                       | :x ?(isDigit(x)) => makeInt(x))",
+                def _ { to isDigit(x) { char.coerce(x, fn _ { return false});
+                                        return x >= '0' && x <= '9' }
+                        to makeInt(x) { return x.asInteger() - 48 }
+                        to add(x, y) { return x + y }
+                        to mult(x, y) { return x * y}})
+            self.assertEqual(g([['+', '3', ['*', '5', '2']]])._apply("interp", [], fail)[0], 13)
+        }
 
+        /**
+         Left-recursion is detected and compiled appropriately.
+        */
+        to test_leftrecursion() {
+            def g := self.compile("
+               num ::= (<num>:n <digit>:d   => decimalize(n, d)
+                      | <digit>)
+               digit ::= :x ?(isDigit(x)) => makeInt(x)",
+               def _ {to isDigit(x) { char.coerce(x, fn _ { return false});
+                                      return x >= '0' && x <= '9' }
+                      to makeInt(x) { return x.asInteger() - 48 }
+                      to decimalize(n, d) { return n * 10 + d }})
+            self.assertEqual(g("3")._apply("num", [], fail)[0], 3)
+            self.assertEqual(g("32767")._apply("num", [], fail)[0], 32767)
 
-    #     /**
-    #      Parens can be used to group subpatterns.
-    #      */
-    #     to test_parens() {
-    #         def g := self.compile("foo ::= 'a' ('b' | 'c')")
-    #         self.assertEqual(g("ab")._apply("foo", [], fail), 'b')
-    #         self.assertEqual(g("ac")._apply("foo", [], fail), 'c')
-    #     }
+        }
 
-    #     /**
-    #      A pattern consisting of only a bind name matches a single element and
-    #      binds it to that name.
-    #     */
-    #     to test_bindNameOnly() {
-    #         def g := self.compile("foo ::= '1' :x '2' => x")
-    #         self.assertEqual(g("132")._apply("foo", [], fail), '3')
-    #     }
-
-    #     /**
-    #      Expressions can be used to determine the success or failure of a
-    #      parse.
-    #      */
-    #     to test_predicate() {
-    #         def g := self.compile(
-    #             "digit ::= '0' | '1'
-    #              double_bits ::= <digit>:a <digit>:b ?(eq(a, b)) => int(b)",
-    #             def _ { to eq(a, b) { return a == b }
-    #                     to int(x) { return x.asInteger() - 48}})
-    #         self.assertEqual(g("00")._apply("double_bits", [], fail), 0)
-    #         self.assertEqual(g("11")._apply("double_bits", [], fail), 1)
-    #         escape e {
-    #             g("10")._apply("double_bits", [], e)
-    #             g("01")._apply("double_bits", [], e)
-    #             fail("predicate mismatch failed to eject")
-    #         }
-    #     }
-
-    #     /**
-    #      Productions can take arguments.
-    #     */
-    #     to test_args() {
-    #         def actions {
-    #             to int(d) { return d.asInteger() - 48 }
-    #             to gt(x, y) { return x > y }
-    #             to lte(x, y) { return x <= y }
-    #             to list(x, y) { return [x, y] }
-    #         }
-    #         def g := self.compile("
-    #           digit ::= ('0' | '1' | '2'):d => int(d)
-    #           baz ::= <digit>:a <foo a>:b => list(a, b)
-    #           foo :x ::= (?(gt(x, 1)) '9' | ?(lte(x, 1)) '8'):d => int(d)
-    #         ", actions)
-    #         self.assertEqual(g("18")._apply("baz", [], fail), [1, 8])
-    #         self.assertEqual(g("08")._apply("baz", [], fail), [0, 8])
-    #         self.assertEqual(g("29")._apply("baz", [], fail), [2, 9])
-    #     }
-
-
-
-    #      /**
-    #       Doubled negation does lookahead.
-    #      */
-    #     to test_lookahead() {
-    #         def g := self.compile(
-    #             "foo ::= ~~(:x) <bar x>
-    #              bar :x ::= :a :b ?(eq(x, a, b)) => x",
-    #             def _ { to eq(x, a, b) { return x == a && x == b} })
-    #         self.assertEqual(g("11")._apply("foo", [], fail), '1')
-    #         self.assertEqual(g("22")._apply("foo", [], fail), '2')
-    #     }
-
-    #     /**
-    #      Python expressions can be run as actions with no effect on the result
-    #      of the parse.
-    #     */
-    #     to test_action() {
-
-    #         def g := self.compile("foo ::= ('1'*:ones !(false) '2' => 3)")
-    #         self.assertEqual(g("1112")._apply("foo", [], fail), 3)
-    #     }
-
-    #     /**
-    #      Productions can pattern-match on arguments.
-    #      Also, multiple definitions of a rule can be done in sequence.
-    #     */
-    #     to test_patternMatch() {
-    #         def g := self.compile(
-    #             "fact 0                        => 1
-    #              fact :n ::= <fact decr(n)>:m => mult(n, m)",
-    #             def _ { to decr(n) { return n - 1}
-    #                     to mult(x, y) { return x * y }})
-    #         self.assertEqual(g([3])._apply("fact", [], fail), 6)
-    # }
-
-    #     /**
-    #      Brackets can be used to match contents of lists.
-    #     */
-    #     to test_listpattern() {
-    #         def g := self.compile(
-    #             "digit  ::= :x ?(isDigit(x))          => makeInt(x)
-    #              interp ::= [<digit>:x '+' <digit>:y] => add(x, y)",
-    #             def _ { to isDigit(x) { return x >= '0' && x <= '9' }
-    #                     to makeInt(x) { return x.asInteger() - 48 }
-    #                     to add(x, y) { return x + y }})
-    #         self.assertEqual(g([['3', '+', '5']])._apply("interp", [], fail),
-    #                          8)
-    #     }
-
-    #     /**
-    #      The result of a list pattern is the entire list.
-    #     */
-    #     to test_listpatternresult() {
-    #         def g := self.compile(
-    #             "digit  ::= :x ?(isDigit(x))          => makeInt(x)
-    #              interp ::= [<digit>:x '+' <digit>:y]:z => __makeList(z, add(x, y))",
-    #             def _ { to isDigit(x) { return x >= '0' && x <= '9' }
-    #                     to makeInt(x) { return x.asInteger() - 48 }
-    #                     to add(x, y) { return x + y }})
-    #         def e := ['3', '+', '5']
-    #         self.assertEqual(g([e])._apply("interp", [], fail),
-    #                          [e, 8])
-    #     }
-
-    #     /**
-    #      Rules can call themselves.
-    #      */
-    #     to test_recursion() {
-    #         def g := self.compile("
-    #          interp ::= (['+' <interp>:x <interp>:y] => add(x, y)
-    #                    | ['*' <interp>:x <interp>:y] => mult(x, y)
-    #                    | :x ?(isDigit(x)) => makeInt(x))",
-    #             def _ { to isDigit(x) { char.coerce(x, fn _ { return false});
-    #                                     return x >= '0' && x <= '9' }
-    #                     to makeInt(x) { return x.asInteger() - 48 }
-    #                     to add(x, y) { return x + y }
-    #                     to mult(x, y) { return x * y}})
-    #         self.assertEqual(g([['+', '3', ['*', '5', '2']]])._apply("interp", [], fail), 13)
-    #     }
-
-    #     /**
-    #      Left-recursion is detected and compiled appropriately.
-    #     */
-    #     to test_leftrecursion() {
-    #         def g := self.compile("
-    #            num ::= (<num>:n <digit>:d   => decimalize(n, d)
-    #                   | <digit>)
-    #            digit ::= :x ?(isDigit(x)) => makeInt(x)",
-    #            def _ {to isDigit(x) { char.coerce(x, fn _ { return false});
-    #                                   return x >= '0' && x <= '9' }
-    #                   to makeInt(x) { return x.asInteger() - 48 }
-    #                   to decimalize(n, d) { return n * 10 + d }})
-    #         self.assertEqual(g("3")._apply("num", [], fail), 3)
-    #         self.assertEqual(g("32767")._apply("num", [], fail), 32767)
-
-    #     }
-
-    #     /**
-    #      Strings in double quotes match tokens with breaks afterwards.
-    #     */
-    #     to test_string() {
-    #     def g := self.compile(`interp ::= "Foo" "baz" "boz" => 3
-    #                            br ::= '-'`)
-    #     self.assertEqual(g("Foo-baz-boz-")._apply("interp", [], fail), 3)
-    #     }
+        /**
+         Strings in double quotes match tokens with breaks afterwards.
+        */
+        to test_string() {
+        def g := self.compile(`interp ::= "Foo" "baz" "boz" => 3
+                               br ::= '-'`)
+        self.assertEqual(g("Foo-baz-boz-")._apply("interp", [], fail)[0], 3)
+        }
 
     }
     return self
