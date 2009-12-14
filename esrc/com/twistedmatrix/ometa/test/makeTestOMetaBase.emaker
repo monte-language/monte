@@ -52,12 +52,12 @@ def makeTestOMetaBase() {
         */
         to test_lookahead() {
             def g := makeOMetaBase("x", g)
-            self.assertEqual(g._lookahead(fn e { g.anything(e) }, fail)[0],
+            self.assertEqual(g.lookahead(fn e { g.anything(e) }, fail)[0],
                              'x')
             self.assertEqual(g.anything(fail)[0], 'x')
             escape e {
-                g._lookahead(fn e { g.anything(e) }, e)
-                throw("'_lookahead' did not eject")
+                g.lookahead(fn e { g.anything(e) }, e)
+                throw("'lookahead' did not eject")
             }
         }
 
@@ -179,7 +179,7 @@ def makeTestOMetaBase() {
             def g := makeOMetaBase(input, g)
             def submatcher(ej) { g.exactly('f', ej); g.exactly('u', ej) }
             def result := g._listpattern(submatcher, fail)
-            self.assertEqual(result, "fu")
+            self.assertEqual(result, ["fu", term`error(null, input(0, "fu",))`])
             escape e {
                 g._listpattern(submatcher, e)
                 throw("'listpattern' did not eject on failure")

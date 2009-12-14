@@ -292,11 +292,13 @@ class EWriter(object):
         self.tree = tree
         self.lines = []
         self.gensymCounter = 0
+        self.indent = 0
 
     def _generate(self, retrn=False):
+
         result = self._generateNode(self.tree)
         if retrn:
-            self.lines.append("return [%s, self.getCurrentError()]" % (result,))
+            self.lines.append("return %s" % (result,))
         elif result:
             self.lines.append(result)
         return self.lines
@@ -309,9 +311,10 @@ class EWriter(object):
     def _generateNode(self, node):
         name = node[0]
         args =  node[1:]
-        return getattr(self, "generate_"+name)(*args)
-
-
+        self.indent += 1
+        x = getattr(self, "generate_"+name)(*args)
+        self.indent -= 1
+        return x
     def _gensym(self, name):
         """
         Produce a unique name for a variable in generated code.
@@ -339,11 +342,7 @@ class EWriter(object):
         Generate the code needed to execute the expression, and return the
         variable name bound to its value.
         """
-        name = self._gensym(typ)
-        self.lines.append("def %s := %s" % (name, e))
-        self.lines.append("self.considerError(%s[1])" % (name,))
-        return name+"[0]"
-
+        return e
 
     def _writeFunction(self, fname, arglist, flines):
         """
@@ -376,7 +375,6 @@ class EWriter(object):
         """
         Generate code for running embedded Python expressions.
         """
- 
         return self._expr('e', '[doAction(term`%s`, _localScope), null]' %(expr,))
 
 
@@ -456,10 +454,19 @@ class EWriter(object):
         """
         Generate code for each statement in order.
         """
-        v = None
-        for ex in exprs:
+        #flatten any nested sequences
+        for i in range(len(exprs)-1, -1, -1):
+            if exprs[i][0] == "And":
+                seqs = exprs[i][1]
+                exprs[i:i+1] = seqs
+        fex = None
+        for ex in exprs[:-1]:
             v = self._generateNode(ex)
-        return v
+            fex = "self.considerError(%s)" % (v,)
+            self.lines.append(fex)
+        v = self._generateNode(exprs[-1])
+        fex = "self.considerError(%s)" % (v,)
+        return fex
 
 
     def generate_Bind(self, name, expr):
@@ -469,7 +476,7 @@ class EWriter(object):
         v = self._generateNode(expr)
         ref = '_localScope with= ("%s", %s)' % (name, v)
         self.lines.append(ref)
-        return ref
+        return '_localScope["%s"]' % (name,)
 
 
     def generate_Predicate(self, expr):
@@ -508,7 +515,7 @@ class EWriter(object):
         subwriter = EWriter(expr)
         flines  = subwriter._generate(retrn=True)
         rulelines.extend(flines)
-        self._writeMethod("rule_" + name, ("ej",), rulelines)
+        return self._writeMethod("rule_" + name, ("ej",), rulelines)
 
 
     def generate_Grammar(self, name, rules):
@@ -522,7 +529,7 @@ class EWriter(object):
         del self.lines[-2:]
         self.lines.append("  }")
         self.lines.append("}")
-
+        
 
 def writePython(tree):
     pw = PythonWriter(tree)

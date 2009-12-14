@@ -7,7 +7,7 @@ def realMakeSeqExpr := <elang:evm.makeSeqExpr>
 #XXX EoJ accepts empty SeqExprs, EoCL does not
 def makeSeqExpr(x, seqs, y) {
     if (seqs.size() == 0) {
-       return e`null`
+       return e``
     } else {
       return realMakeSeqExpr(x, seqs, y)
     }
@@ -29,6 +29,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
         gensymCounter += 1
         return `_G_${name}_$gensymCounter`
     }
+
     def newFunction(name, expr) {
         return e__quasiParser.valueMaker(
             `def $name(ej) { return $${0} }`).substitute([expr])
@@ -67,7 +68,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             }
             return e__quasiParser.valueMaker(
                    `def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
-                    def $makerName(input, _grammarName) {
+                    def $makerName(input, __actionObj) {
                         def $name extends makeOMetaBase(input, $name) {$\n` +
 
                         "\n".rjoin(methodTexts.snapshot()) +
@@ -75,13 +76,12 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
         }
 
         to apply(ruleName, args) {
-            return e__quasiParser.valueMaker(
-                `$name._apply("$ruleName", $${0}, ej)`
-            ).substitute([buildList(args)])
+	  return e__quasiParser.valueMaker(`$name._apply("$ruleName", $${0}, ej)`
+						     ).substitute([buildList(args)])
         }
         to exactly(value) {
             def expr := makeLiteralExpr(null, value, null)
-            return e`$objname.exactly($expr, ej)`
+            return  e`$objname.exactly($expr, ej)`
         }
         to many(expr) {
             def funcname := gensym("many")
@@ -99,7 +99,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
         }
 
         to optional(expr) {
-            return builder.or([expr, e`null`])
+            return builder.or([expr, e`[null, null]`])
         }
 
         to or(exprs) {
@@ -120,7 +120,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
                 null,
                 [newFunction(name, expr),
                  e`$objname.not(${makeNounExpr(null, name, null)}, ej)`],
-            null)
+		null)
         }
 
         to lookahead(expr) {
@@ -129,24 +129,28 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
                 null,
                 [newFunction(name, expr),
                  e`$objname._lookahead(${makeNounExpr(null, name, null)}, ej)`],
-            null)
+		null)
         }
 
         to sequence(exprs) {
-            return makeSeqExpr(null, exprs, null)
+            def fullExprs := [].diverge()
+            for ex ? (ex != e`null`) in exprs {
+                fullExprs.push(e`${objname}.considerError(${ex})`)
+            }
+	  return makeSeqExpr(null, fullExprs.snapshot(), null)
         }
 
         to bindValue(expr, name) {
             def nameString := makeLiteralExpr(null, name, null)
-            return e`ruleLocals.put($nameString, $expr[0])`
+            def temp := makeNounExpr(null, gensym("bind"), null)
+            return e`def $temp := $expr; [ruleLocals.put($nameString, $temp[0]), $temp[1]]`
         }
 
         to pred(expr) {
             def name := gensym("pred")
             def func := e__quasiParser.valueMaker(
                 `def $name(_) { return [$${0}, null] }`).substitute([expr])
-            return e`$func;
-                     $objname.pred(${makeNounExpr(null, name, null)}, ej)`
+            return  e`$func; $objname.pred(${makeNounExpr(null, name, null)}, ej)`
         }
 
         to compileAction(expr) {
@@ -176,9 +180,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
 
         to listpattern(expr) {
             def name := gensym("listpattern")
-            return e`${newFunction(name, expr)};
-                     $objname._listpattern(${makeNounExpr(null, name, null)},
-                     ej)`
+            return e`${newFunction(name, expr)}; $objname._listpattern(${makeNounExpr(null, name, null)}, ej)`
         }
     }
     return builder

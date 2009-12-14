@@ -16,7 +16,7 @@ def makeTestGrammarParser() {
 	  def b := makeBuilder("TestGrammar", false, optActions, scope)
 	  def g := makeGrammar(grammar, b)
 	  def f := g._apply("grammar", [], fail)[0]
-	  return fn x { f(x, "TestGrammar") }
+	  return fn x { f(x, optActions) }
         }
 
         to compile(grammar, optActions) {
@@ -194,15 +194,15 @@ def makeTestGrammarParser() {
 	  self.assertEqual(g("1")._apply("foo", [], fail)[0], 7)
         }
 	
-        /**
-	   If an action verb doesn't name a method on the actions object, it's
-	   looked up as a callable object in the scope.
-        */
-        to test_actionVerbFallthrough() {
-	  def scope := safeScope.with("seven", fn {7})
-	  def g := self.compile("foo ::= '1' => seven()", null, scope)
-	  self.assertEqual(g("1")._apply("foo", [], fail)[0], 7)
-        }
+        # /**
+	#    If an action verb doesn't name a method on the actions object, it's
+	#    looked up as a callable object in the scope.
+        # */
+        # to test_actionVerbFallthrough() {
+	#   def scope := safeScope.with("seven", fn {7})
+	#   def g := self.compile("foo ::= '1' => seven()", null, scope)
+	#   self.assertEqual(g("1")._apply("foo", [], fail)[0], 7)
+        # }
 	
         /**
 	   Actions can be invoked with arguments.
@@ -221,10 +221,13 @@ def makeTestGrammarParser() {
 	   The result of a parsing expression can be bound to a name.
         */
         to test_binding() {
-	  def scope := safeScope.with("intFromChar",
-				      fn x { x.asInteger() - 48})
+	  def actions {
+	    to intFromChar(x) {
+	      return x.asInteger() - 48
+	    }
+	  }
 	  def g := self.compile("foo ::= '3':x => intFromChar(x)",
-				null, scope)
+				actions, safeScope)
 	  self.assertEqual(g("3")._apply("foo", [], fail)[0], 3)
         }
 	

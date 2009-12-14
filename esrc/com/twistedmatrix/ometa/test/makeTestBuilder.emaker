@@ -13,7 +13,7 @@ def makeTestBuilder() {
         to test_makeGrammar() {
             def b := self.makeBuilder()
             def wanted := e`def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
-                            def makeFoo(input, _grammarName) {
+                            def makeFoo(input, __actionObj) {
                               def foo extends makeOMetaBase(input, foo) {
                               }
                               return foo
@@ -24,7 +24,7 @@ def makeTestBuilder() {
         to test_buildMethod() {
            def b := self.makeBuilder()
            def wanted := e`def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
-                           def makeFoo(input, _grammarName) {
+                           def makeFoo(input, __actionObj) {
                               def foo extends makeOMetaBase(input, foo) {
                                   method rule_baz(ej) {
                                       def ruleLocals := [].asMap().diverge()
@@ -67,7 +67,7 @@ def makeTestBuilder() {
         to test_optional() {
             def b := self.makeBuilder()
             def wanted := e`def _G_or_1(ej) { return 17 };
-                            def _G_or_2(ej) { return null };
+                            def _G_or_2(ej) { return [null, null] };
                             foo._or([_G_or_1, _G_or_2], ej)`
             self.assertEqual(b.optional(e`17`), wanted)
         }
@@ -96,19 +96,19 @@ def makeTestBuilder() {
 
         to test_sequence() {
             def b := self.makeBuilder()
-            def wanted := e`x; y`
+            def wanted := e`foo.considerError(x); foo.considerError(y)`
             self.assertEqual(b.sequence([e`x`, e`y`]), wanted)
         }
 
         to test_bindValue() {
             def b := self.makeBuilder()
-            def wanted := e`ruleLocals.put("baz", (12; 17)[0])`
+            def wanted := e`def _G_bind_1 := (12; 17); [ruleLocals.put("baz", _G_bind_1[0]), _G_bind_1[1]]`
             self.assertEqual(b.bindValue(e`12; 17`, "baz"), wanted)
         }
 
         to test_pred() {
             def b := self.makeBuilder()
-            def wanted := e`def _G_pred_1() { return true }; foo._pred(_G_pred_1, ej)`;
+            def wanted := e`def _G_pred_1(_) { return [true, null] }; foo.pred(_G_pred_1, ej)`;
             self.assertEqual(b.pred(e`true`), wanted)
         }
 

@@ -78,29 +78,35 @@ def makeArg(arg, position, current) {
             if (reason != null) { reason := [reason] }
             return term`error($reason, input($position, $arg))`
         }
+        to getPosition() {
+            return position
+        }
     }
     return argument
 }
 
 def joinErrors(errorTerms) {
     def bestErrs := [].asMap().diverge()
-    for err in errorTerms {
+    for err ? (err != null) in errorTerms {
         def term`error(@_, input(@where, @_))` := err
         bestErrs.fetch(where, fn { bestErrs[where] := [].diverge() }).push(err)
+    }
+    if (bestErrs.size() == 0) {
+      return null
     }
     def idx := bestErrs.getKeys().sort().last()
     def bestList := bestErrs[idx]
     if (bestList.size() == 1) {
         return bestList[0]
     } else {
-        def reasons := [].diverge()
+      var reasons := [].asSet()
         def term`error(@_, @pos)` := bestList[0]
         for err in bestList {
             if (err =~ term`error([@subReasons*], @_)`) {
-                reasons.append(subReasons)
+	      reasons |= subReasons.asSet()
             }
         }
-        return term`error(${reasons.snapshot()}, $pos)`
+        return term`error(${reasons.getElements().sort()}, $pos)`
     }
 }
 
@@ -198,7 +204,7 @@ def makeOMetaBase(input, self) {
         /**
          Call the given function, resetting the input position afterwards.
          */
-        to _lookahead(func, ejector) {
+        to lookahead(func, ejector) {
             def m := current
             try {
                 return func(ejector)
@@ -217,7 +223,9 @@ def makeOMetaBase(input, self) {
             for f in fns {
                 escape e {
                     lastInput := current
-                    return f(e)
+                    def [v, err] := f(e)
+		    errs.push(err)
+		    return [v, joinErrors(errs)]
                 } catch p {
                     current := lastInput
                     errs.push(p)
@@ -413,13 +421,14 @@ def makeOMetaBase(input, self) {
 	    ejector(current.error(term`expected("token followed by line break or semicolon")`))
           }
         }
-	
+
         to br(ejector) {}
-	
-        to considerError(err) {
+
+        to considerError([expr, err]) {
             if (err != null) {
                 currentError := joinErrors([err, currentError])
             }
+            return [expr, currentError]
         }
 
         match [`rule_@name`, args] {
