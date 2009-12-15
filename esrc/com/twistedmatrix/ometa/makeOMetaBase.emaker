@@ -275,7 +275,7 @@ def makeOMetaBase(input, self) {
          stream.
         */
         to _listpattern(subpattern, ejector) {
-            def boringEjector := fn x { ejector(x)}
+            def boringEjector := fn x { ejector(current.error(term`listPatternMismatch`)) }
             # this is overly restrictive but I don't know a better spelling
             def [v :any[List, String], e] exit boringEjector := (
                 ometaBase.anything(ejector))

@@ -128,7 +128,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             return makeSeqExpr(
                 null,
                 [newFunction(name, expr),
-                 e`$objname._lookahead(${makeNounExpr(null, name, null)}, ej)`],
+                 e`$objname.lookahead(${makeNounExpr(null, name, null)}, ej)`],
 		null)
         }
 

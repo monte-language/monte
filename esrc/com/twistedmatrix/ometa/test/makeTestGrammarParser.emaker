@@ -351,10 +351,11 @@ def makeTestGrammarParser() {
         to test_listpatternresult() {
             def g := self.compile(
                 "digit  ::= :x ?(isDigit(x))          => makeInt(x)
-                 interp ::= [<digit>:x '+' <digit>:y]:z => __makeList(z, add(x, y))",
+                 interp ::= [<digit>:x '+' <digit>:y]:z => makeList(z, add(x, y))",
                 def _ { to isDigit(x) { return x >= '0' && x <= '9' }
                         to makeInt(x) { return x.asInteger() - 48 }
-                        to add(x, y) { return x + y }})
+                        to add(x, y) { return x + y }
+		        to makeList(x, y) { return [x, y] }})
             def e := ['3', '+', '5']
             self.assertEqual(g([e])._apply("interp", [], fail)[0],
                              [e, 8])
