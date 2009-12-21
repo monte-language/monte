@@ -61,7 +61,7 @@ expr ::= <expr4>:e (<token "|"> <expr4>)*:es => or(e, es)
 ruleValue ::= <token "=>"> <action>:a => compileAction(a)
 
 semanticPredicate ::= <token "?("> <action>:a <token ")"> => pred(a)
-semanticAction ::= <token "!("> <action>:a <token ")"> => a
+semanticAction ::= <token "!("> <action>:a <token ")"> => compileAction(a)
 
 rulePart :requiredName ::= (<spaces> <name>:n ?(eq(n, requiredName))
                             <expr4>:args
