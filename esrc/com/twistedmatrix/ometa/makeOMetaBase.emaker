@@ -282,7 +282,7 @@ def makeOMetaBase(input, self) {
             def oldInput := current
             current := makeInputStream(v, 0)
             subpattern(ejector)
-            ometaBase._end(ejector)
+            ometaBase.rule_end(ejector)
             current := oldInput
             return [v, e]
         }
@@ -300,7 +300,7 @@ def makeOMetaBase(input, self) {
         /**
          Match the end of the input stream.
         */
-        to _end(ejector) {
+        to rule_end(ejector) {
             return ometaBase.not(ometaBase.anything, ejector)
         }
 

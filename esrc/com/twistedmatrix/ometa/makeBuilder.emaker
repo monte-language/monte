@@ -175,7 +175,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
 	  if (args == null) {
             args := []
 	  }
-            return makeCallExpr(null, e`__actionObj`, verb, args, null)
+            return makeCallExpr(null, e`__actionObj`, verb, args + [e`ej`], null)
         }
 
         to listpattern(expr) {

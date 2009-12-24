@@ -214,6 +214,7 @@ def makeEParser(source, valueHoles, patternHoles) {
         }
 
         to SeqExpr(xs) {
+	  return term`SeqExpr($xs*)`
         }
 
         to Script(e, oi, s) {

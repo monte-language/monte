@@ -90,7 +90,7 @@ def makeTestBuilder() {
         to test_lookahead() {
             def b := self.makeBuilder()
             def wanted := e`def _G_lookahead_1(ej) { return x + y };
-                            foo._lookahead(_G_lookahead_1, ej)`
+                            foo.lookahead(_G_lookahead_1, ej)`
             self.assertEqual(b.lookahead(e`x + y`), wanted)
         }
 
