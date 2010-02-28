@@ -2,46 +2,17 @@ from pymeta.grammar import OMetaGrammar, PortableOMeta, OMeta, ActionNoun, Actio
 from pymeta.runtime import ParseError
 
 from ecru import nodes
+from ecru.baseparser import CommonParser
 import string
 
 
 egrammar = r"""
-spaces ::= (' '|'\t'|'\f'|('#' (~<eol> <anything>)*))*
-
-number ::= <spaces> <barenumber>
-barenumber ::= ('0' (('x'|'X') <hexdigit>*:hs => makeHex(hs)
-                    |<floatPart '0'>
-                    |<octaldigit>*:ds => makeOctal(ds))
-               |<decdigits>:ds <floatPart ds>
-               |<decdigits>:ds => int(join(ds)))
-
-
-exponent ::= ('e' | 'E'):e ('+' | '-' | => ""):s <decdigits>:ds => concat(e, s, join(ds))
-
-
-floatPart :ds ::= ('.' <decdigits>:fs <exponent>?:e => makeFloat(ds, fs, e)
-                               | <exponent>:e => float(concat(ds, e)))
-
-decdigits ::= <digit>:d ((:x ?(isDigit(x)) => x) | '_' => "")*:ds => concat(d, join(ds))
-octaldigit ::= :x ?(isOctDigit(x)) => x
-hexdigit ::= :x ?(isHexDigit(x)) => x
-
-string ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c '"' => join(c)
-character ::= <token "'"> (<escapedChar> | ~('\''|'\n'|'\r'|'\\') <anything>):c '\'' => Character(c)
-escapedUnicode ::= ('u' <hexdigit>:a <hexdigit>:b <hexdigit>:c <hexdigit>:d => unichr(int(concat(a, b, c, d), 16))
-                   |'U' (<hexdigit>:a <hexdigit>:b <hexdigit>:c <hexdigit>:d
-                         <hexdigit>:e <hexdigit>:f <hexdigit>:g <hexdigit>:h => unichr(int(concat(a, b, c, d, e, f, g, h), 16))))
-
-escapedOctal ::= ((:a ?(contains("0123", a))) (<octdigit>:b  (<octdigit>:c (=> int(concat(a, b, c), 8)) | (=> int(concat(a, b), 8))| => int(a, 8)))
-                 | :a ?(contains("4567", a)) (<octdigit>:b (=> int(concat(a, b), 8)) | => int(a, 8)))
-
 updocLine ::= ('?'|'#'|'>'):y (~('\n' | '\r') <anything>)*:ys <eol> => cons(y, ys)
 updoc ::= ('?' (~('\n' | '\r') <anything>)*:xs
               ((<eol> (<eol>
                       |<updocLine>)*)
               (<spaces> | <updocLine>))?)
 
-eol ::= <spaces> ('\r' '\n'|'\r' | '\n')
 eolplus ::= <eol> <updoc>?
 linesep ::= <eolplus>+:xs => xs
 
@@ -53,19 +24,7 @@ identifier ::= <spaces> (<letter> | '_'):x (<letterOrDigit> | '_')*:xs => concat
 uri ::= "<" <uriScheme>:s ':' <uriBody>:b '>' => URIExpr(s, b)
 uriGetter ::= "<" <uriScheme>:s '>' => URIGetter(s)
 uriScheme ::= <letter>:x (<letterOrDigit> | '_' | '+' | '-' | '.')*:xs => concat(x, join(xs))
-escapedChar ::= '\\' ('n' => '\n'
-                     |'r' => '\r'
-                     |'t' => '\t'
-                     |'b' => '\b'
-                     |'f' => '\f'
-                     |'"' => '"'
-                     |'\'' => '\''
-                     |'?' => '?'
-                     |'\\' => '\\'
-                     | <escapedUnicode>
-                     | <escapedOctal>
-                     | <spaces> <eol> => "")
-uriBody ::= (<letterOrDigit> |';'|'/'|'?'|':'|'@'|'&'|'='|'+'|'$'|','|'-'|'.'|'!'|'~'|'*'|'\''|'('|')'|'%'|'\\'|'|'|'#')+:x => join(x)
+
 noun ::= <sourceHole> | <justNoun>
 justNoun ::= ((<identifier>:id => keywordCheck(id)
               | ("::" (<string> | <identifier>):x => x)):n  => nounExprFromSource(n)
@@ -323,10 +282,10 @@ start ::= <updoc>? <br> <topSeq>?
 try:
     from eparser_generated import BaseEParser
 except ImportError:
-    BaseEParser= PortableOMeta.makeGrammar(egrammar,  {}, "BaseEParser")
+    BaseEParser = PortableOMeta.makeGrammar(egrammar,  {}, "BaseEParser")
 
 
-class EParser(BaseEParser):
+class EParser(CommonParser, BaseEParser):
     """
     A parser for E.
     """
@@ -418,28 +377,7 @@ class EParser(BaseEParser):
             else:
                 return n
         return m
-
-    def action_cons(self, first, rest):
-        return [first] + rest
-
-    def action_concat(self, *bits):
-        return ''.join(map(str, bits))
-
-    def action_float(self, x):
-        return float(x)
-
-    def action_makeFloat(self, ds, fs, e):
-        if e:
-            return float(ds+"."+fs+e)
-        else:
-            return float(ds+"."+fs
-)
-    def action_int(self, x, base=10):
-        return int(x, base)
-
-    def action_join(self, x):
-        return ''.join(x)
-
+    
     def action_makeList(self, *bits):
         return list(bits)
 
@@ -454,27 +392,6 @@ class EParser(BaseEParser):
 
     def action_strip(self, x):
         return x.strip()
-
-    def action_unichr(self, x):
-        return unichr(x)
-
-    def action_makeHex(self, hs):
-        return int(''.join(hs), 16)
-
-    def action_makeOctal(self, ds):
-        return int('0'+''.join(ds), 8)
-
-    def action_isDigit(self, x):
-        return x in string.digits
-
-    def action_isOctDigit(self, x):
-        return x in string.octdigits
-
-    def action_isHexDigit(self, x):
-        return x in string.hexdigits
-
-    def action_contains(self, container, value):
-        return value in container
 
     def action_Object(self, doc, o):
         return nodes.Object(doc, *o)
