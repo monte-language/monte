@@ -8,16 +8,16 @@ def makeGrammar := <ometa:makeGrammar>
 def makeBuilder := <ometa:makeBuilder>
 
 def fail(e) { throw(`$e`) }
-
+traceln(`rock it on`)
 def makeTestGrammarParser() {
     def self extends makeTestCase(self) {
 
         to compile(grammar, optActions, scope) {
-          def b := makeBuilder("TestGrammar", false, optActions, scope)
-          def g := makeGrammar(grammar, b)
-          def f := g._apply("grammar", [], fail)[0]
-          return fn x { f(x, optActions) }
-        }
+          def b := makeBuilder("TestGrammar", false, optActions, scope);
+          def g := makeGrammar(grammar, b);
+          def f := g._apply("grammar", [], fail)[0];
+          return fn x { f(x, optActions) }        
+	}
 
         to compile(grammar, optActions) {
           return self.compile(grammar, optActions, safeScope)
@@ -30,6 +30,7 @@ def makeTestGrammarParser() {
          Input matches can be made on literal characters.
         */
         to test_literal() {
+	  traceln(`test_literal`)
           def g := self.compile("digit ::= '1'")
           self.assertEqual(g("1")._apply("digit", [], fail)[0], '1')
           escape e {
@@ -38,6 +39,7 @@ def makeTestGrammarParser() {
           } catch err {
             self.assertEqual(err, term`error([expected('1')], input(0, '4'))`)
           }
+	  traceln(`test_literal done`)
         }
 
         /**

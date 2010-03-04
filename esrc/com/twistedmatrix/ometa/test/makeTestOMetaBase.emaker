@@ -161,11 +161,11 @@ def makeTestOMetaBase() {
         to test_end() {
             def g := makeOMetaBase("x", g)
             escape e {
-                g._end(e)
+                g.rule_end(e)
                 throw("'end' matched before end of input")
             }
             g.anything(fail)
-	    def [val, err] := g._end(fail)
+	    def [val, err] := g.rule_end(fail)
             self.assertEqual(val, true)
         }
 
@@ -179,7 +179,7 @@ def makeTestOMetaBase() {
             def g := makeOMetaBase(input, g)
             def submatcher(ej) { g.exactly('f', ej); g.exactly('u', ej) }
             def result := g._listpattern(submatcher, fail)
-            self.assertEqual(result, ["fu", term`error(null, input(0, "fu",))`])
+            self.assertEqual(result, ["fu", term`error(null, input(0, "fu"))`])
             escape e {
                 g._listpattern(submatcher, e)
                 throw("'listpattern' did not eject on failure")
@@ -213,7 +213,7 @@ def makeTestOMetaBase() {
             def g := makeOMetaBase(input, g)
             def [result, err] := g.spaces(fail)
             self.assertEqual(g.exactly('x', fail)[0], 'x')
-        }
+        } 
 
         /**
          'token' matches the given string plus any preceding whitespace.

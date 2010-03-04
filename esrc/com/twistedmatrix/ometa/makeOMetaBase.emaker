@@ -23,11 +23,13 @@ def makeMemo(var ans, var input) {
 def makeInputStream(input, position) {
     def memo := [].asMap().diverge()
     def value := input.fetch(position, fn { null })
+    #def value := if (position >= input.size()) {
+    #  null } else { input[position] }
     var tail := null
     def inputStream {
         to head(ej) {
             if (input.size() == position) {
-                ej(term`error([endOfInput], input($position, null))`)
+                ej(term`error([endOfInput], input(${position}, null))`)
             }
             def value := input[position]
             return [value, inputStream.error(null)]
@@ -89,6 +91,9 @@ def joinErrors(errorTerms) {
     def bestErrs := [].asMap().diverge()
     for err ? (err != null) in errorTerms {
         def term`error(@_, input(@where, @_))` := err
+	if (where !~ _ :int) {
+	  traceln(`wtf $where`)
+	}
         bestErrs.fetch(where, fn { bestErrs[where] := [].diverge() }).push(err)
     }
     if (bestErrs.size() == 0) {
@@ -106,7 +111,8 @@ def joinErrors(errorTerms) {
 	      reasons |= subReasons.asSet()
             }
         }
-        return term`error(${reasons.getElements().sort()}, $pos)`
+        def r := term`error(${reasons.getElements().sort()}, $pos)`
+	return r
     }
 }
 
@@ -118,6 +124,10 @@ def makeOMetaBase(input, self) {
         to getCurrentError() {
             return currentError
         }
+
+	to wrapErrorTerm(errorTerm) {
+	  return current.error(errorTerm)
+	}
 
 	to getInput() {
 	  return current
@@ -176,7 +186,8 @@ def makeOMetaBase(input, self) {
          Call the given nullary function. Eject if it returns false.
         */
         to pred(func, ejector) {
-            if (!func(ejector)[0]) {
+	  def x := func(ejector)
+	  if (!(x[0])) {
 	      ejector(current.error(term`predicateFailed`))
             } else {
               return [true, null]
@@ -237,17 +248,15 @@ def makeOMetaBase(input, self) {
         /**
          Common code for _many/1 and _many1/1.
         */
-        to _many(func, [initial, initialErr]) {
+        to _many(func, initial) {
             var lastInput := current
             def ans := initial.diverge()
-            var lastErr := initialErr
             while (true) {
                 escape e {
                     lastInput := current
-                    def [v, err] := func(e)
+                    def [v, _] := func(e)
                     ans.push(v)
-                    lastErr := err
-                } catch p {
+                } catch lastErr {
                     current := lastInput
                     return [ans.snapshot(), lastErr]
                 }
@@ -258,7 +267,7 @@ def makeOMetaBase(input, self) {
          values into a list.
         */
         to _many(func) {
-            return ometaBase._many(func, [[], null])
+            return ometaBase._many(func, [])
         }
 
         /**
@@ -266,8 +275,8 @@ def makeOMetaBase(input, self) {
          into a list. Eject if it matches zero times.
          */
         to _many1(func, ejector) {
-            def [v, e] := func(ejector)
-            return ometaBase._many(func, [[v], e])
+            def [v, _] := func(ejector)
+            return ometaBase._many(func, [v])
         }
 
         /**

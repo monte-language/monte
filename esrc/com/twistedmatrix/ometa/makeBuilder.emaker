@@ -143,7 +143,8 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
         to bindValue(expr, name) {
             def nameString := makeLiteralExpr(null, name, null)
             def temp := makeNounExpr(null, gensym("bind"), null)
-            return e`def $temp := $expr; [ruleLocals.put($nameString, $temp[0]), $temp[1]]`
+	    def tempPattern := makeFinalPattern(null, temp, null, null)
+            return e`def $tempPattern := $expr; [ruleLocals.put($nameString, $temp[0]), $temp[1]]`
         }
 
         to pred(expr) {

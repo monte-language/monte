@@ -7,6 +7,14 @@ def makeBuilder := <import:com.twistedmatrix.ometa.makeBuilder>
 def makeTestBuilder() {
     def self extends makeTestCase(self) {
 
+        to assertEqualKernelE(left, right) {
+	    if (left.__respondsTo("asKernelE", 0)) {
+		self.assertEqual(left.asKernelE(), right.asKernelE())
+	    } else {
+		self.assertEqual(left, right)
+	    }
+        }
+
         to makeBuilder() {
             return makeBuilder("foo", false, null, safeScope)
         }
@@ -18,7 +26,7 @@ def makeTestBuilder() {
                               }
                               return foo
                             }`
-            self.assertEqual(b.makeGrammarSource([].asMap()), wanted)
+            self.assertEqualKernelE(b.makeGrammarSource([].asMap()), wanted)
         }
 
         to test_buildMethod() {
@@ -33,20 +41,20 @@ def makeTestBuilder() {
                               }
                               return foo
                             }`
-            self.assertEqual(b.makeGrammarSource(["baz" => e`1 + 1`]), wanted)
+            self.assertEqualKernelE(b.makeGrammarSource(["baz" => e`1 + 1`]), wanted)
         }
 
         to test_apply() {
             def b := self.makeBuilder()
             def wanted := e`foo._apply("baz", [one, two], ej)`
-            self.assertEqual(b.apply("baz", [e`one`, e`two`]),
+            self.assertEqualKernelE(b.apply("baz", [e`one`, e`two`]),
                              wanted)
         }
 
         to test_exactly() {
             def b := self.makeBuilder()
             def wanted := e`foo.exactly("x", ej)`
-            self.assertEqual(b.exactly("x"),
+            self.assertEqualKernelE(b.exactly("x"),
                              wanted)
         }
 
@@ -54,14 +62,14 @@ def makeTestBuilder() {
             def b := self.makeBuilder()
             def wanted := e`def _G_many_1(ej) { return x + y };
                             foo._many(_G_many_1)`
-            self.assertEqual(b.many(e`x + y`), wanted)
+            self.assertEqualKernelE(b.many(e`x + y`), wanted)
         }
 
         to test_many1() {
             def b := self.makeBuilder()
             def wanted := e`def _G_many1_1(ej) { return x + y };
                             foo._many1(_G_many1_1, ej)`
-            self.assertEqual(b.many1(e`x + y`), wanted)
+            self.assertEqualKernelE(b.many1(e`x + y`), wanted)
         }
 
         to test_optional() {
@@ -69,7 +77,7 @@ def makeTestBuilder() {
             def wanted := e`def _G_or_1(ej) { return 17 };
                             def _G_or_2(ej) { return [null, null] };
                             foo._or([_G_or_1, _G_or_2], ej)`
-            self.assertEqual(b.optional(e`17`), wanted)
+            self.assertEqualKernelE(b.optional(e`17`), wanted)
         }
 
         to test_or() {
@@ -77,52 +85,52 @@ def makeTestBuilder() {
             def wanted := e`def _G_or_1(ej) { return x + y };
                             def _G_or_2(ej) { return a + b };
                             foo._or([_G_or_1, _G_or_2], ej)`
-            self.assertEqual(b.or([e`x + y`, e`a + b`]), wanted)
+            self.assertEqualKernelE(b.or([e`x + y`, e`a + b`]), wanted)
         }
 
         to test_not() {
             def b := self.makeBuilder()
             def wanted := e`def _G_not_1(ej) { return x + y };
                             foo.not(_G_not_1, ej)`
-            self.assertEqual(b.not(e`x + y`), wanted)
+            self.assertEqualKernelE(b.not(e`x + y`), wanted)
         }
 
         to test_lookahead() {
             def b := self.makeBuilder()
             def wanted := e`def _G_lookahead_1(ej) { return x + y };
                             foo.lookahead(_G_lookahead_1, ej)`
-            self.assertEqual(b.lookahead(e`x + y`), wanted)
+            self.assertEqualKernelE(b.lookahead(e`x + y`), wanted)
         }
 
         to test_sequence() {
             def b := self.makeBuilder()
             def wanted := e`foo.considerError(x); foo.considerError(y)`
-            self.assertEqual(b.sequence([e`x`, e`y`]), wanted)
+            self.assertEqualKernelE(b.sequence([e`x`, e`y`]), wanted)
         }
 
         to test_bindValue() {
             def b := self.makeBuilder()
             def wanted := e`def _G_bind_1 := (12; 17); [ruleLocals.put("baz", _G_bind_1[0]), _G_bind_1[1]]`
-            self.assertEqual(b.bindValue(e`12; 17`, "baz"), wanted)
+            self.assertEqualKernelE(b.bindValue(e`12; 17`, "baz"), wanted)
         }
 
         to test_pred() {
             def b := self.makeBuilder()
             def wanted := e`def _G_pred_1(_) { return [true, null] }; foo.pred(_G_pred_1, ej)`;
-            self.assertEqual(b.pred(e`true`), wanted)
+            self.assertEqualKernelE(b.pred(e`true`), wanted)
         }
 
         to test_action() {
             def b := self.makeBuilder()
             def wanted := e`[17, null]`
-            self.assertEqual(b.compileAction(e`17`), wanted)
+            self.assertEqualKernelE(b.compileAction(e`17`), wanted)
         }
 
         to test_listpattern() {
             def b := self.makeBuilder()
             def wanted := e`def _G_listpattern_1(ej) { return x + y };
                             foo._listpattern(_G_listpattern_1, ej)`
-            self.assertEqual(b.listpattern(e`x + y`), wanted)
+            self.assertEqualKernelE(b.listpattern(e`x + y`), wanted)
         }
     }
     return self
