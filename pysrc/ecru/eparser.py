@@ -6,35 +6,6 @@ import string
 
 
 egrammar = r"""
-spaces ::= (' '|'\t'|'\f'|('#' (~<eol> <anything>)*))*
-
-number ::= <spaces> <barenumber>
-barenumber ::= ('0' (('x'|'X') <hexdigit>*:hs => makeHex(hs)
-                    |<floatPart '0'>
-                    |<octaldigit>*:ds => makeOctal(ds))
-               |<decdigits>:ds <floatPart ds>
-               |<decdigits>:ds => int(join(ds)))
-
-
-exponent ::= ('e' | 'E'):e ('+' | '-' | => ""):s <decdigits>:ds => concat(e, s, join(ds))
-
-
-floatPart :ds ::= ('.' <decdigits>:fs <exponent>?:e => makeFloat(ds, fs, e)
-                               | <exponent>:e => float(concat(ds, e)))
-
-decdigits ::= <digit>:d ((:x ?(isDigit(x)) => x) | '_' => "")*:ds => concat(d, join(ds))
-octaldigit ::= :x ?(isOctDigit(x)) => x
-hexdigit ::= :x ?(isHexDigit(x)) => x
-
-string ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c '"' => join(c)
-character ::= <token "'"> (<escapedChar> | ~('\''|'\n'|'\r'|'\\') <anything>):c '\'' => Character(c)
-escapedUnicode ::= ('u' <hexdigit>:a <hexdigit>:b <hexdigit>:c <hexdigit>:d => unichr(int(concat(a, b, c, d), 16))
-                   |'U' (<hexdigit>:a <hexdigit>:b <hexdigit>:c <hexdigit>:d
-                         <hexdigit>:e <hexdigit>:f <hexdigit>:g <hexdigit>:h => unichr(int(concat(a, b, c, d, e, f, g, h), 16))))
-
-escapedOctal ::= ((:a ?(contains("0123", a))) (<octdigit>:b  (<octdigit>:c (=> int(concat(a, b, c), 8)) | (=> int(concat(a, b), 8))| => int(a, 8)))
-                 | :a ?(contains("4567", a)) (<octdigit>:b (=> int(concat(a, b), 8)) | => int(a, 8)))
-
 updocLine ::= ('?'|'#'|'>'):y (~('\n' | '\r') <anything>)*:ys <eol> => cons(y, ys)
 updoc ::= ('?' (~('\n' | '\r') <anything>)*:xs
               ((<eol> (<eol>
