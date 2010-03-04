@@ -1,0 +1,288 @@
+pragma.syntax("0.9")
+pragma.enable("accumulator")
+
+def makeFloat64 := <elib:atom.makeFloat64>
+def makeTextWriter := <elib:oldeio.makeTextWriter>
+
+def makeString(bits) {
+  def [tw, sb] := makeTextWriter.makeBufferingPair()
+  for c :char in bits {
+    tw.print(c)
+  }
+  return sb.snapshot()
+}
+
+
+def makeBase := <import:com.twistedmatrix.ecru.makeEBaseParser>
+
+
+def makeAstroTag := <import:org.quasiliteral.astro.makeAstroTag>
+def makeTerm := <import:org.quasiliteral.term.makeTerm>
+def Term := makeTerm.asType()
+def makeTermBuilder := <import:org.quasiliteral.term.makeTermBuilder>
+#XXX fix this EoCL/EoJ discrepancy
+def termBuilder := try { makeTermBuilder() } catch p { makeTermBuilder(null) }
+
+
+def reserved := ["delegate", "module", "abstract", "an", "as", "assert", "attribute",
+               "be", "begin", "behalf", "belief", "believe", "believes", "case",
+               "class", "const", "constructor", "declare", "default", "define",
+               "defmacro", "delicate", "deprecated", "dispatch", "do", "encapsulate",
+               "encapsulated", "encapsulates", "end", "ensure", "enum", "eventual",
+               "eventually", "export", "facet", "forall", "function", "given",
+               "hidden", "hides", "inline", "is", "know", "knows", "lambda", "let",
+               "methods", "namespace", "native", "obeys", "octet", "oneway",
+               "operator", "package", "private", "protected", "public",
+               "raises", "reliance", "reliant", "relies", "rely", "reveal", "sake",
+               "signed", "static", "struct", "suchthat", "supports", "suspect",
+               "suspects", "synchronized", "this", "transient", "truncatable",
+               "typedef", "unsigned", "unum", "uses", "using", "utf8", "utf16",
+               "virtual", "volatile", "wstring"].asSet()
+ def basicKeywords := ["bind", "break", "catch", "continue", "def", "else", "escape", "exit",
+               "extends", "finally", "fn", "for", "guards", "if", "implements", "in",
+               "interface", "match", "meta", "method", "pragma", "return", "switch",
+               "to", "try", "var", "via", "when", "while", "accum", "module", "on",
+               "select", "throws", "thunk"].asSet()
+def keywords := reserved | basicKeywords
+
+
+def tempSep(name) {
+    def lastSEP := name.lastIndexOf1("__")
+    if (-1 == lastSEP) {
+        return -1
+    }
+    def len := name.size()
+    if (lastSEP == len - 2) {
+        # ends with "__"
+        return -1
+    }
+    for i in (lastSEP + 2)..len {
+        if (name[i] < '0' || name[i] > '9') {
+            return -1
+        }
+    }
+    return lastSEP
+}
+
+def hilbertHotelRename(name) {
+    def i := tempSep(name)
+    if (-1 == i) {
+        return name
+    }
+    def base := name.run(0, i)
+    def suffix := __makeInt(name.run(i + 2))
+    return `${base}__${suffix * 2}`
+}
+def makeEParser(source, valueHoles, patternHoles) {
+    def parser
+    def actions {
+      /**
+         Ensure an identifier isn't a keyword or reserved word.
+      */
+      to keywordCheck(ident, ej) {
+	if (reserved.contains(ident)) {
+	  ej(`"$ident is a reserved word"`)
+	} else if (basicKeywords.contains(ident)) {
+	    ej(term`${ident + "is a keyword"}`)
+	  } else {
+	  return ident
+	}
+      }
+      
+      /**
+         Look up a value hole in the table and return its position.
+      */
+      to valueHole(ej) {
+	def pos := parser.getCurrent().getPosition()
+	if (pos != null) {
+	  def hole := valueHoles.lastIndexOf1(pos - 1)
+	  if (hole == -1) {
+	    ej(term`"A literal $$ is not meaningful in E source."`)
+	  }
+	}
+      }
+      
+      /**
+         Look up a pattern hole in the table and return its position.
+      */
+      to patternHole(ej) {
+	def pos := parser.getCurrent().getPosition()
+	if (pos != null) {
+	  def hole := patternHoles.lastIndexOf1(pos - 1)
+	  if (hole == -1) {
+	    ej(term`"A literal @@ is not meaningful in E source."`)
+	  }
+	}
+      }
+      
+      to quasiHoleKeywordCheck(n, ej) {
+            if (keywords.contains(n)) {
+                ej(`"Unexpected keyword $n in quasi hole"`)
+            }
+        }
+
+      to exprHoleKeywordCheck(n, ej) {
+            if (keywords.contains(n)) {
+                throw(term`"Unexpected keyword $n in quasi hole"`)
+            }
+        }
+
+        to throwSemanticHere(arg, ej) {
+            ej(arg)
+        }
+
+        to cons(first, rest, ej) {
+            return [first] + rest
+        }
+
+        to float(x, ej) {
+            return makeFloat64(x)
+        }
+
+        to makeFloat(ds, fs, e, ej) {
+            if (e != null) {
+                return makeFloat64(ds+"."+fs+e)
+            } else {
+                return makeFloat64(ds+"."+fs)
+            }
+        }
+
+	to isDigit(x, ej) {
+            return (x >= '0' && x <= '9')
+	}
+
+	to isHexDigit(x, ej) {
+	  return (x >= '0' && x <= '9') || (x >= 'A' && x <= 'F') || (x >= 'a' && x <= 'f')
+	}
+        to int(x, base, ej) {
+            return __makeInt(x, base)
+        }
+
+        to int(x, ej) {
+            return __makeInt(x)
+        }
+
+        to join(x, ej) {
+	  if (x =~ _ :List[any[char, void]]) {
+	        return makeString(x)
+            } else {
+                return "".rjoin(x)
+            }
+        }
+
+        to noIgnorePatternHole(ej) {
+            ej(term`"An ignore pattern is not allowed as a pattern hole"`)
+        }
+        to noIgnoreExpressionHole(ej) {
+            ej(term`"An ignore pattern is not allowed as a expression hole"`)
+        }
+        to nounExprFromSource(n, ej) {
+            return term`NounExpr(${hilbertHotelRename(n)})`
+        }
+
+        to strip(x, ej) {
+            var limit := 0
+            for i in (0..!x.size()).descending() {
+                if (x[i] > ' ') {
+                    limit := i+1
+                    break
+                }
+            }
+            def rstripped := x(0, limit)
+            for i in (0..x.size()) {
+                if (x[i] > ' ') {
+                    limit := i
+                    break
+                }
+            }
+            return rstripped(limit)
+        }
+
+        to unichr(x, ej) {
+            return '\u0000' + x
+        }
+
+        to makeHex(hs, ej) {
+            return __makeInt(makeString(hs), 16)
+        }
+
+        to contains(container, value, ej) {
+            return container.contains(value)
+        }
+
+	to MethodOrMatcher(t, doc, v, ps, g, b) {
+	  
+	}
+
+        to Object(doc, o, ej) {
+	  return term`ObjectHeadExpr($doc, $o*)`
+        }
+
+        to "Interface"(doc, i, ej) {
+	  def [n, g, es, oi, s] := i
+	  return term`InterfaceExpr($doc, $i*)`
+        }
+
+        to SeqExpr(xs, ej) {
+	  return term`SeqExpr($xs*)`
+        }
+
+        to Script(e, oi, s, ej) {
+	  return term`MethodObject($e, Auditors(null, $oi), $s)`
+        }
+
+	to _Return(ej) {
+	    return term`Return`
+        }
+
+        match [=="AccumFor", [p] + args] {
+            term`AccumFor($p, ${args(0, args.size()-1)})`
+        }
+
+        match [=="For", [p] + args] {
+            term`For($p, ${args(0, args.size()-1)})`
+        }
+
+        match [=="makeList", bits] {
+            __makeList(bits(0, bits.size()-1))
+        }
+        match [=="concat", args] {
+	  "".rjoin(accum [] for x in args(0, args.size()-1) { if (x != null) { _.with(`$x`) }})
+        }
+	match [verb, args] {
+	  require(verb[0] >= 'A' && verb[0] <= 'Z',
+	  `"$verb" is not a valid parser action.`)
+	  def argTerms := [].diverge()
+	  for arg in args(0, args.size()-1) {
+	    switch (arg) {
+	      match ==null {
+		argTerms.push(term`null`)
+	      }
+	      match _ :Term {
+		argTerms.push(arg)
+	      }
+	      match _ :any[int, float64, String] {
+		argTerms.push(termBuilder.leafData(arg, null))
+	      }
+	      match _ {	
+                throw(`$arg is not a valid AST value.`)
+	      }
+	    }
+	  }
+	  makeTerm(makeAstroTag(-1, verb, String), null, null, argTerms.snapshot())
+	}
+    }
+    def actionWrapper {
+      match [verb, args] {
+	def ej := args.last()
+	escape newEj {
+	  def newArgs := args(0, args.size()-1) + [newEj]
+	  E.call(actions, verb, newArgs)
+	} catch val {
+	  ej(parser.wrapErrorTerm(val))
+	}
+      }
+    }
+    bind parser := makeBase(source, actionWrapper)
+    return parser
+}

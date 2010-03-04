@@ -4,16 +4,21 @@ def makeTestResults := <import:com.twistedmatrix.eunit.makeTestResults>;
 def makeTestLoader := <import:com.twistedmatrix.eunit.makeTestLoader>;
 def makeTestSuite := <import:com.twistedmatrix.eunit.makeTestSuite>;
 
+
+
 def getProblemStackAndMessage :=
     if (privilegedScope.maps("lisp")) {
+       def Throwable := <import:org.cubik.cle.prim.Throwable>
+      def formatCLBacktrace(p :Throwable) {
+       def stack := privilegedScope["lisp"]["E.ELIB", "LOCAL-THROW-SEALED-BOX-BACKTRACE"].getFunction()(p)
+       return privilegedScope["lisp"]["CL-USER", "FORMAT"].getFunction()(null, "~A", stack)
+       }
         def getProblemStackAndMessage(p) {
             #can't say 'lisp' because then this code wouldn't parse under EoJ
-            return [privilegedScope["lisp"]["E.ELIB",
-                         "FORMAT-BACKTRACE"].getFunction()(
-                             p:(<import:org.cubik.cle.prim.Throwable>)),
-                    privilegedScope["lisp"]["E.ELIB",
+            return [formatCLBacktrace(p),
+                   privilegedScope["lisp"]["E.ELIB",
                          "LOCAL-THROW-SEALED-BOX-VALUE"].getFunction()(
-                             p:(<import:org.cubik.cle.prim.Throwable>))]
+                             p:Throwable)]
         }
     } else {
         def getProblemStackAndMessage(p) {
@@ -46,8 +51,8 @@ def <test> {
   }
 }
 
-
-runTest(<test>[interp.getArgs()[0]])
+def x := <test>[interp.getArgs()[0]]
+runTest(x)
 
 
 

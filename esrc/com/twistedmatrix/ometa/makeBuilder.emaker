@@ -3,7 +3,15 @@ def makeNoun := <elang:evm.makeSimpleNounExpr>
 def makeFinalPattern := <elang:evm.makeFinalPattern>
 def makeCallExpr := <elang:evm.makeCallExpr>
 def makeNounExpr := <elang:evm.makeNounExpr>
-def makeSeqExpr := <elang:evm.makeSeqExpr>
+def realMakeSeqExpr := <elang:evm.makeSeqExpr>
+#XXX EoJ accepts empty SeqExprs, EoCL does not
+def makeSeqExpr(x, seqs, y) {
+    if (seqs.size() == 0) {
+       return e``
+    } else {
+      return realMakeSeqExpr(x, seqs, y)
+    }
+}
 def makeLiteralExpr := <elang:evm.makeLiteralExpr>
 def ENode := <type:org.erights.e.elang.evm.ENode>
 def EExpr := <type:org.erights.e.elang.evm.EExpr>
@@ -21,6 +29,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
         gensymCounter += 1
         return `_G_${name}_$gensymCounter`
     }
+
     def newFunction(name, expr) {
         return e__quasiParser.valueMaker(
             `def $name(ej) { return $${0} }`).substitute([expr])
@@ -54,12 +63,12 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             for name => code in rules {
                 methodTexts.push(`method rule_$name(ej) {
                     def ruleLocals := [].asMap().diverge()
-                    $$$i$\n}$\n`)
+                    $${$i}$\n}$\n`)
                 i += 1
             }
             return e__quasiParser.valueMaker(
                    `def makeOMetaBase := <import:com.twistedmatrix.ometa.makeOMetaBase>
-                    def $makerName(input) {
+                    def $makerName(input, __actionObj) {
                         def $name extends makeOMetaBase(input, $name) {$\n` +
 
                         "\n".rjoin(methodTexts.snapshot()) +
@@ -67,13 +76,12 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
         }
 
         to apply(ruleName, args) {
-            return e__quasiParser.valueMaker(
-                `$name._apply("$ruleName", $${0}, ej)`
-            ).substitute([buildList(args)])
+	  return e__quasiParser.valueMaker(`$name._apply("$ruleName", $${0}, ej)`
+						     ).substitute([buildList(args)])
         }
         to exactly(value) {
             def expr := makeLiteralExpr(null, value, null)
-            return e`$objname.exactly($expr, ej)`
+            return  e`$objname.exactly($expr, ej)`
         }
         to many(expr) {
             def funcname := gensym("many")
@@ -91,7 +99,7 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
         }
 
         to optional(expr) {
-            return builder.or([expr, e`null`])
+            return builder.or([expr, e`[null, null]`])
         }
 
         to or(exprs) {
@@ -111,8 +119,8 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             return makeSeqExpr(
                 null,
                 [newFunction(name, expr),
-                 e`$objname._not(${makeNounExpr(null, name, null)}, ej)`],
-            null)
+                 e`$objname.not(${makeNounExpr(null, name, null)}, ej)`],
+		null)
         }
 
         to lookahead(expr) {
@@ -120,29 +128,34 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             return makeSeqExpr(
                 null,
                 [newFunction(name, expr),
-                 e`$objname._lookahead(${makeNounExpr(null, name, null)}, ej)`],
-            null)
+                 e`$objname.lookahead(${makeNounExpr(null, name, null)}, ej)`],
+		null)
         }
 
         to sequence(exprs) {
-            return makeSeqExpr(null, exprs, null)
+            def fullExprs := [].diverge()
+            for ex ? (ex != e`null`) in exprs {
+                fullExprs.push(e`${objname}.considerError(${ex})`)
+            }
+	  return makeSeqExpr(null, fullExprs.snapshot(), null)
         }
 
         to bindValue(expr, name) {
             def nameString := makeLiteralExpr(null, name, null)
-            return e`ruleLocals.put($nameString, $expr)`
+            def temp := makeNounExpr(null, gensym("bind"), null)
+	    def tempPattern := makeFinalPattern(null, temp, null, null)
+            return e`def $tempPattern := $expr; [ruleLocals.put($nameString, $temp[0]), $temp[1]]`
         }
 
         to pred(expr) {
             def name := gensym("pred")
             def func := e__quasiParser.valueMaker(
-                `def $name() { return $${0} }`).substitute([expr])
-            return e`$func;
-                     $objname._pred(${makeNounExpr(null, name, null)}, ej)`
+                `def $name(_) { return [$${0}, null] }`).substitute([expr])
+            return  e`$func; $objname.pred(${makeNounExpr(null, name, null)}, ej)`
         }
 
         to compileAction(expr) {
-            return expr
+	  return e`[$expr, null]`
         }
 
         to makeActionLiteral(a) {
@@ -159,15 +172,16 @@ def makeBuilder(name, sourceForm, optActions, grammarScope) {
             }
         }
 
-        to makeActionCall(verb, args) {
-            return makeCallExpr(null, e`__actionObj`, verb, args, null)
+        to makeActionCall(verb, var args) {
+	  if (args == null) {
+            args := []
+	  }
+            return makeCallExpr(null, e`__actionObj`, verb, args + [e`ej`], null)
         }
 
         to listpattern(expr) {
             def name := gensym("listpattern")
-            return e`${newFunction(name, expr)};
-                     $objname._listpattern(${makeNounExpr(null, name, null)},
-                     ej)`
+            return e`${newFunction(name, expr)}; $objname._listpattern(${makeNounExpr(null, name, null)}, ej)`
         }
     }
     return builder
