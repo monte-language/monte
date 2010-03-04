@@ -14,7 +14,7 @@ exponent ::= ('e' | 'E'):e ('+' | '-' | => ""):s <decdigits>:ds => concat(e, s, 
 floatPart :ds ::= ('.' <decdigits>:fs <exponent>?:e => makeFloat(ds, fs, e)
                                | <exponent>:e => float(concat(ds, e)))
 
-decdigits ::= <digit>:d ((:x ?(isDigit(x)) => x) | '_' => "")*:ds => concat(d, join(ds))
+decdigits ::= <digit>:d ((:x ?(isDigit(x)) => x) | '_' <digit>)*:ds => concat(d, join(ds))
 octaldigit ::= :x ?(isOctDigit(x)) => x
 hexdigit ::= :x ?(isHexDigit(x)) => x
 
@@ -67,7 +67,7 @@ sourceHole ::= ("$" (=> valueHole()):v '{' <digit>+:ds '}' => QuasiLiteralExpr(v
 
 quasiString ::= "`" (<exprHole> | <pattHole> | <quasiText>)*:qs '`' => qs
 
-quasiText ::= (~('`'|'$'|'@') <anything> | '`' '`' | '$' '$' | ('$' | '@') '\\' <escapedChar> | '@' '@')+:qs => QuasiText(join(qs))
+quasiText ::= (~('`'|'$'|'@') <anything> | '`' '`' | ('$' '$') => '$'  | ('$' | '@')  <escapedChar> | ('@' '@') => '@' )+:qs => QuasiText(join(qs))
 
 exprHole ::= '$' ('{' <br> <seq>:s '}' => QuasiExprHole(s)
                  |'_' !(noIgnoreExpressionHole())
@@ -211,7 +211,7 @@ eqPattern ::= (<token "_"> <optGuard>:e => IgnorePattern(e)
               |"!=" <prim>:p => throwSemanticHere("reserved: not-same pattern")
               )
 
-patterns ::= (<pattern>:p ("," <pattern>)*:ps => cons(p, ps)
+patterns ::= (<pattern>:p ("," <pattern>)*:ps ","?  => cons(p, ps)
              | => makeList())
 key ::= (<parenExpr> | <literal>):x <br> => x
 
@@ -250,12 +250,12 @@ objectTail ::= (<functionTail>
                   => Script(e, oi, s)))
 oImplements ::= (<token "implements"> <br> <order>:x ("," <order>)*:xs => cons(x, xs)
                 | => makeList())
-functionTail ::= <parenParamList>:ps <optResultGuard>:g <oImplements>:fi <block>:b => Function(ps, g, fi, b)
+functionTail ::= <parenParamList>:ps <optResultGuard>:g <oImplements>:fi <block>:b => FunctionExpr(ps, g, fi, b)
 parenParamList ::= "(" (<pattern>:p ("," <pattern>)*:ps <token ")"> => cons(p,  ps)
                        | <token ")"> => makeList())
 optResultGuard ::= (":" <guard>)?
 scriptPair ::= "{" <method>*:methods <matcher>*:matchers <token "}"> => makeList(methods, matchers)
-method ::= (<doco>?:doc ((<token "to"> => To) | <token "method"> => Method):t <verb>?:v <parenParamList>:ps <optResultGuard>:g <block>:b => t(doc, v, ps, g, b))
+method ::= (<doco>?:doc ((<token "to"> => "To") | <token "method"> => "Method"):t <verb>?:v <parenParamList>:ps <optResultGuard>:g <block>:b => MethodOrMatcher(t, doc, v, ps, g, b))
 matcher ::= <token "match"> <pattern>:p <block>:b => Matcher(p, b)
 
 interfaceExpr ::= (<token "interface"> <objectName>:n <iguards>?:g ((<multiExtends>:es <oImplements>:oi <iscript>:s => makeList(n, g, es, oi, s))
@@ -291,7 +291,7 @@ forPattern ::= <pattern>:p (<br> "=>" <pattern>:px => makeList(p, px)
 
 ifExpr ::= <token "if"> <parenExpr>:p <br> <block>:b (<token "else"> (<ifExpr> | <block>) | => null):e => If(p, b, e)
 
-lambdaExpr ::= <doco>?:doc <token "fn"> <patterns>:ps <block>:b => Lambda(doc, ps, b)
+lambdaExpr ::= <doco>?:doc <token "fn"> <patterns>:ps <block>:b => FunctionExpr(doc, ps, b)
 
 metaExpr ::= <token "meta"> "." (<token "getState"> => "State"
                                 |<token "scope"> => "Scope"

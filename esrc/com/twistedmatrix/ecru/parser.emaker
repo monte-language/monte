@@ -6,7 +6,7 @@ def makeTextWriter := <elib:oldeio.makeTextWriter>
 
 def makeString(bits) {
   def [tw, sb] := makeTextWriter.makeBufferingPair()
-  for c in bits {
+  for c :char in bits {
     tw.print(c)
   }
   return sb.snapshot()
@@ -79,11 +79,11 @@ def makeEParser(source, valueHoles, patternHoles) {
       /**
          Ensure an identifier isn't a keyword or reserved word.
       */
-      to keywordCheck(ident) {
+      to keywordCheck(ident, ej) {
 	if (reserved.contains(ident)) {
-	  throw(`$ident is a reserved word`)
+	  ej(`"$ident is a reserved word"`)
 	} else if (basicKeywords.contains(ident)) {
-	    throw(`$ident is a keyword`)
+	    ej(term`${ident + "is a keyword"}`)
 	  } else {
 	  return ident
 	}
@@ -92,12 +92,12 @@ def makeEParser(source, valueHoles, patternHoles) {
       /**
          Look up a value hole in the table and return its position.
       */
-      to valueHole() {
+      to valueHole(ej) {
 	def pos := parser.getCurrent().getPosition()
 	if (pos != null) {
 	  def hole := valueHoles.lastIndexOf1(pos - 1)
 	  if (hole == -1) {
-	    throw("A literal $ is not meaningful in E source.")
+	    ej(term`"A literal $$ is not meaningful in E source."`)
 	  }
 	}
       }
@@ -105,41 +105,41 @@ def makeEParser(source, valueHoles, patternHoles) {
       /**
          Look up a pattern hole in the table and return its position.
       */
-      to patternHole() {
+      to patternHole(ej) {
 	def pos := parser.getCurrent().getPosition()
 	if (pos != null) {
 	  def hole := patternHoles.lastIndexOf1(pos - 1)
 	  if (hole == -1) {
-	    throw("A literal @ is not meaningful in E source.")
+	    ej(term`"A literal @@ is not meaningful in E source."`)
 	  }
 	}
       }
       
-        to quasiHoleKeywordCheck(n) {
+      to quasiHoleKeywordCheck(n, ej) {
             if (keywords.contains(n)) {
-                throw(`Unexpected keyword $n in quasi hole`)
+                ej(`"Unexpected keyword $n in quasi hole"`)
             }
         }
 
-        to exprHoleKeywordCheck(n) {
+      to exprHoleKeywordCheck(n, ej) {
             if (keywords.contains(n)) {
-                throw(`Unexpected keyword $n in quasi hole`)
+                throw(term`"Unexpected keyword $n in quasi hole"`)
             }
         }
 
-        to throwSemanticHere(arg) {
-            throw(arg)
+        to throwSemanticHere(arg, ej) {
+            ej(arg)
         }
 
-        to cons(first, rest) {
+        to cons(first, rest, ej) {
             return [first] + rest
         }
 
-        to float(x) {
+        to float(x, ej) {
             return makeFloat64(x)
         }
 
-        to makeFloat(ds, fs, e) {
+        to makeFloat(ds, fs, e, ej) {
             if (e != null) {
                 return makeFloat64(ds+"."+fs+e)
             } else {
@@ -147,37 +147,40 @@ def makeEParser(source, valueHoles, patternHoles) {
             }
         }
 
-	to isDigit(x) {
+	to isDigit(x, ej) {
             return (x >= '0' && x <= '9')
 	}
 
-        to int(x, base) {
+	to isHexDigit(x, ej) {
+	  return (x >= '0' && x <= '9') || (x >= 'A' && x <= 'F') || (x >= 'a' && x <= 'f')
+	}
+        to int(x, base, ej) {
             return __makeInt(x, base)
         }
 
-        to int(x) {
+        to int(x, ej) {
             return __makeInt(x)
         }
 
-        to join(x) {
-            if (x =~ _ :List[char]) {
+        to join(x, ej) {
+	  if (x =~ _ :List[any[char, void]]) {
 	        return makeString(x)
             } else {
                 return "".rjoin(x)
             }
         }
 
-        to noIgnorePatternHole() {
-            throw("An ignore pattern is not allowed as a pattern hole")
+        to noIgnorePatternHole(ej) {
+            ej(term`"An ignore pattern is not allowed as a pattern hole"`)
         }
-        to noIgnoreExpressionHole() {
-            throw("An ignore pattern is not allowed as a expression hole")
+        to noIgnoreExpressionHole(ej) {
+            ej(term`"An ignore pattern is not allowed as a expression hole"`)
         }
-        to nounExprFromSource(n) {
+        to nounExprFromSource(n, ej) {
             return term`NounExpr(${hilbertHotelRename(n)})`
         }
 
-        to strip(x) {
+        to strip(x, ej) {
             var limit := 0
             for i in (0..!x.size()).descending() {
                 if (x[i] > ' ') {
@@ -195,52 +198,62 @@ def makeEParser(source, valueHoles, patternHoles) {
             return rstripped(limit)
         }
 
-        to unichr(x) {
+        to unichr(x, ej) {
             return '\u0000' + x
         }
 
-        to makeHex(hs) {
+        to makeHex(hs, ej) {
             return __makeInt(makeString(hs), 16)
         }
 
-        to contains(container, value) {
+        to contains(container, value, ej) {
             return container.contains(value)
         }
 
-        to Object(doc, o) {
+	to MethodOrMatcher(t, doc, v, ps, g, b) {
+	  
+	}
+
+        to Object(doc, o, ej) {
+	  return term`ObjectHeadExpr($doc, $o*)`
         }
 
-        to "Interface"(doc, i) {
+        to "Interface"(doc, i, ej) {
+	  def [n, g, es, oi, s] := i
+	  return term`InterfaceExpr($doc, $i*)`
         }
 
-        to SeqExpr(xs) {
+        to SeqExpr(xs, ej) {
 	  return term`SeqExpr($xs*)`
         }
 
-        to Script(e, oi, s) {
+        to Script(e, oi, s, ej) {
+	  return term`MethodObject($e, Auditors(null, $oi), $s)`
         }
 
-	to _Return() {
+	to _Return(ej) {
 	    return term`Return`
         }
 
         match [=="AccumFor", [p] + args] {
-            term`AccumFor($p, $args)`
+            term`AccumFor($p, ${args(0, args.size()-1)})`
         }
 
         match [=="For", [p] + args] {
-            term`For($p, $args)`
+            term`For($p, ${args(0, args.size()-1)})`
         }
 
         match [=="makeList", bits] {
-            __makeList(bits)
+            __makeList(bits(0, bits.size()-1))
         }
         match [=="concat", args] {
-            "".rjoin(accum [] for x in args { _.with(`$x`) })
+	  "".rjoin(accum [] for x in args(0, args.size()-1) { if (x != null) { _.with(`$x`) }})
         }
 	match [verb, args] {
+	  require(verb[0] >= 'A' && verb[0] <= 'Z',
+	  `"$verb" is not a valid parser action.`)
 	  def argTerms := [].diverge()
-	  for arg in args {
+	  for arg in args(0, args.size()-1) {
 	    switch (arg) {
 	      match ==null {
 		argTerms.push(term`null`)
@@ -259,5 +272,17 @@ def makeEParser(source, valueHoles, patternHoles) {
 	  makeTerm(makeAstroTag(-1, verb, String), null, null, argTerms.snapshot())
 	}
     }
-    return makeBase(source, actions)
+    def actionWrapper {
+      match [verb, args] {
+	def ej := args.last()
+	escape newEj {
+	  def newArgs := args(0, args.size()-1) + [newEj]
+	  E.call(actions, verb, newArgs)
+	} catch val {
+	  ej(parser.wrapErrorTerm(val))
+	}
+      }
+    }
+    bind parser := makeBase(source, actionWrapper)
+    return parser
 }
