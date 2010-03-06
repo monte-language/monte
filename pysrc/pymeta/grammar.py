@@ -1,3 +1,4 @@
+# -*- test-case-name: pymeta.test.test_pymeta -*-
 """
 Public interface to OMeta, as well as the grammars used to compile grammar
 definitions.
@@ -5,7 +6,7 @@ definitions.
 import string
 from builder import TreeBuilder, moduleFromGrammar
 from boot import BootOMetaGrammar
-from runtime import OMetaBase, ParseError, EOFError
+from runtime import OMetaBase, ParseError, EOFError, expected
 
 class OMeta(OMetaBase):
     """
@@ -24,12 +25,12 @@ class OMeta(OMetaBase):
         g = cls.metagrammarClass(grammar)
         tree = g.parseGrammar(name, TreeBuilder)
         return moduleFromGrammar(tree, name, cls, globals)
-    
+
     makeGrammar = classmethod(makeGrammar)
 
 ometaGrammar = r"""
-number ::= <spaces> ('-' <barenumber>:x => self.builder.exactly(-x)
-                    |<barenumber>:x => self.builder.exactly(x))
+number ::= <spaces> ('-' <barenumber>:x => -x
+                    |<barenumber>:x => x)
 barenumber ::= ('0' (('x'|'X') <hexdigit>*:hs => int(''.join(hs), 16)
                     |<octaldigit>*:ds => int('0'+''.join(ds), 8))
                |<digit>+:ds => int(''.join(ds)))
@@ -45,24 +46,25 @@ escapedChar ::= '\\' ('n' => "\n"
                      |'\'' => "'"
                      |'\\' => "\\")
 
-character ::= <token "'"> (<escapedChar> | <anything>):c <token "'"> => self.builder.exactly(c)
+character ::= <token "'"> (<escapedChar> | <anything>):c <token "'"> => c
 
-string ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c <token '"'> => self.builder.exactly(''.join(c))
+bareString ::= <token '"'> (<escapedChar> | ~('"') <anything>)*:c <token '"'> => ''.join(c)
+string ::= <bareString>:s => self.builder.exactly(s)
 
 name ::= <letter>:x <letterOrDigit>*:xs !(xs.insert(0, x)) => ''.join(xs)
 
 application ::= (<token '<'> <spaces> <name>:name
-                  (' ' !(self.applicationArgs()):args
+                  (<applicationArgs>:args
                      => self.builder.apply(name, self.name, *args)
                   |<token '>'>
                      => self.builder.apply(name, self.name)))
+applicationArgs ::= <spaces> => self.applicationArgs()
 
 expr1 ::= (<application>
           |<ruleValue>
           |<semanticPredicate>
           |<semanticAction>
-          |<number>
-          |<character>
+          |(<number> | <character>):lit => self.builder.exactly(lit)
           |<string>
           |<token '('> <expr>:e <token ')'> => e
           |<token '['> <expr>:e <token ']'> => self.builder.listpattern(e))
@@ -105,9 +107,9 @@ grammar ::= <rule>*:rs <spaces> => self.builder.makeGrammar(rs)
 """
 #don't be confused, emacs
 
-class OMetaGrammar(OMeta.makeGrammar(ometaGrammar, globals())):
+class GrammarInterfaceMixin(object):
     """
-    The base grammar for parsing grammar definitions.
+    Interface bits common to various OMeta permutations.
     """
     def parseGrammar(self, name, builder, *args):
         """
@@ -130,6 +132,13 @@ class OMetaGrammar(OMeta.makeGrammar(ometaGrammar, globals())):
         return res
 
 
+_PythonActionGrammar = OMeta.makeGrammar(ometaGrammar, globals())
+
+class OMetaGrammar(GrammarInterfaceMixin,
+                   _PythonActionGrammar):
+    """
+    The base grammar for parsing grammar definitions.
+    """
     def applicationArgs(self):
         """
         Collect rule arguments, a list of Python expressions separated by
@@ -149,7 +158,7 @@ class OMetaGrammar(OMeta.makeGrammar(ometaGrammar, globals())):
         if args:
             return args
         else:
-            raise ParseError()
+            raise ParseError(self.input.position, expected("Application args"))
 
     def ruleValueExpr(self):
         """
@@ -202,3 +211,100 @@ rulePair ::= ["Rule" :name <opt>:rule] => self.builder.rule(name, rule)
 """
 
 NullOptimizer = OMeta.makeGrammar(nullOptimizationGrammar, {}, name="NullOptimizer")
+
+class ActionNoun(object):
+    """
+    A noun in a portable OMeta grammar action.
+    """
+    def __init__(self, name):
+        self.name = name
+
+
+    def visit(self, visitor):
+        return visitor.name(self.name)
+
+class ActionCall(object):
+    """
+    A call action in a portable OMeta grammar.
+    """
+    def __init__(self, verb, args):
+        self.verb = verb
+        self.args = args or []
+
+
+    def visit(self, visitor):
+        return visitor.call(self.verb.visit(visitor),
+                            [arg.visit(visitor) for arg in self.args])
+
+
+class ActionLiteral(object):
+    """
+    A literal value in a portable OMeta action.
+    """
+    def __init__(self, value):
+        self.value = value
+
+    def visit(self, visitor):
+        return visitor.literal(self.value)
+
+
+
+portableOMetaGrammar = """
+action ::= <spaces> (<actionCall> | <actionNoun> | <actionLiteral>)
+actionCall ::= <actionNoun>:verb <token "("> <actionArgs>?:args <token ")"> => ActionCall(verb, args)
+actionArgs ::= <action>:a (<token ','> <action>)*:b => [a] + b
+actionNoun ::= <name>:n => ActionNoun(n)
+actionLiteral ::=  (<number> | <character> | <bareString>):lit => ActionLiteral(lit)
+
+ruleValue ::= <token "=>"> <action>:a => self.result(a)
+semanticPredicate ::= <token "?("> <action>:a <token ")"> => self.predicate(a)
+semanticAction ::= <token "!("> <action>:a <token ")"> => self.action(a)
+applicationArgs ::= (<spaces> <action>)+:args <token ">"> => [self.result(a) for a in args]
+string ::= <bareString>:s => self.builder.apply("tokenBR", self.name, [[repr(s)]])
+"""
+
+
+_PortableActionGrammar = _PythonActionGrammar.makeGrammar(portableOMetaGrammar,
+                                                          globals(), "PortableOMeta")
+
+class PortableOMetaGrammar(GrammarInterfaceMixin, _PortableActionGrammar):
+    """
+    An OMeta variant with portable syntax for actions.
+    """
+
+    def result(self, action):
+        return self.builder.compilePortableAction(action)
+
+
+    def predicate(self, action):
+        return self.builder.pred(self.builder.compilePortableAction(action))
+
+
+    def action(self, action):
+        return self.builder.compilePortableAction(action)
+
+
+
+
+OMeta.metagrammarClass = OMetaGrammar
+
+class PortableOMeta(OMeta):
+    metagrammarClass = PortableOMetaGrammar
+
+    def rule_tokenBR(self):
+        """
+        Match and return the given string, consuming any preceding or trailing
+        whitespace.
+        """
+        tok = self.input.head()
+
+        m = self.input = self.input.tail()
+        try:
+            self.eatWhitespace()
+            for c in tok:
+                self.exactly(c)
+            self.apply("br")
+            return tok
+        except ParseError:
+            self.input = m
+            raise

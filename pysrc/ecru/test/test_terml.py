@@ -1,5 +1,5 @@
 from twisted.trial import unittest
-from ecru.terml import TermLParser, TermLiteral, character, Tag, _Term
+from ecru.terml import TermLParser, TermLiteral, character, Tag, _Term, Term
 
 class ParserTest(unittest.TestCase):
     """
@@ -41,7 +41,6 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse('"foo\\\nbar"'), TermLiteral('.String.', "foobar"))
 
 
-        
     def test_simpleTag(self):
         """
         Tags are parsed properly.
@@ -49,7 +48,6 @@ class ParserTest(unittest.TestCase):
 
         parse = self.getParser("tag")
         self.assertEqual(parse("foo"), Tag("foo"))
-        self.assertEqual(parse(" foo  "), Tag("foo"))
         self.assertEqual(parse('::"foo"'), Tag('::"foo"'))
         self.assertEqual(parse("::foo"), Tag('::foo'))
         self.assertEqual(parse("foo::baz"), Tag('foo::baz'))
@@ -58,6 +56,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("foo_yay"), Tag('foo_yay'))
         self.assertEqual(parse("foo$baz32"), Tag('foo$baz32'))
         self.assertEqual(parse("foo-baz.19"), Tag('foo-baz.19'))
+
 
     def test_simpleTerm(self):
         """
@@ -90,3 +89,20 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("a: b"), parse(".attr.(a, b)"))
         self.assertEqual(parse('"a": b'), parse('.attr.("a", b)'))
         self.assertEqual(parse('a: [b]'), parse('.attr.(a, .tuple.(b))'))
+
+
+    def test_unparse(self):
+
+        def assertRoundtrip(txt):
+            self.assertEqual("Term(%r)" % (txt,), repr(Term(txt)))
+        cases = ["1", "3.25", "f", "f(1)", "f(1, 2)", "f(a, b)",
+                  "{a, b}", "[a, b]", "f{1, 2}",  '''{"name": "Robert", attrs: {'c': 3}}''']
+        for case in cases:
+            assertRoundtrip(case)
+
+
+    def test_valueHole(self):
+        parse = self.getParser("term")
+
+        qt = Term("foo($x, 2)")
+        qt.substitute({"x": 1})

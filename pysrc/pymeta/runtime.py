@@ -548,3 +548,12 @@ class OMetaBase(object):
         if len(stack) > 0:
             raise ParseError(self.input.position, expected("Python expression"))
         return (''.join(expr).strip(), endchar), e
+
+
+    def lookupActionName(self, name, _locals):
+        _absent = object()
+        x = self.globals.get(name, _absent)
+        if x is _absent:
+            return _locals[name]
+        else:
+            return x

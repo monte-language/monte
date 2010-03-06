@@ -61,6 +61,8 @@ class TreeBuilder(object):
     def listpattern(self, exprs):
         return ["List", exprs]
 
+    def compilePortableAction(self, action):
+        return ["PortableAction", action]
 
 
 class PythonWriter(object):
@@ -253,6 +255,13 @@ class PythonWriter(object):
         """
         return self.compilePythonExpr(expr)
 
+
+    def generate_PortableAction(self, action):
+        """
+        Generate Python code for an action expression.
+        """
+        av = ActionVisitor(self.lines)
+        return action.visit(av)
 
     def generate_Python(self, expr):
         """
@@ -566,4 +575,31 @@ def moduleFromGrammar(tree, className, superclass, globalsDict):
     return mod.__dict__[className]
 
 
-    
+
+class ActionVisitor:
+    gensymCounter = 0
+
+    def __init__(self, output):
+        self.output = output
+
+    def _gensym(self):
+        """
+        Produce a unique name for a variable in generated code.
+        """
+        ActionVisitor.gensymCounter += 1
+        return "_A_%s" % (self.gensymCounter)
+
+    def name(self, name):
+        result = self._gensym()
+        self.output.append('%s = self.lookupActionName(%r, _locals)' % (result, name))
+        return result
+
+    def call(self, verb, args):
+        result = self._gensym()
+        self.output.append('%s = %s(%s)' % (result, verb, ', '.join(args)))
+        return result
+
+    def literal(self, value):
+        return repr(value)
+
+
