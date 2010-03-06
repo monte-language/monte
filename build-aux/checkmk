@@ -1,4 +1,4 @@
-#!/usr/bin/env gawk -f
+#!/usr/bin/awk -f
 # checkmk.  Generated from checkmk.in by configure.
 
 # checkmk - translate more concise versions of test suite specifications

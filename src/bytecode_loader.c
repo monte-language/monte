@@ -282,7 +282,7 @@ e_Ref ecru_readMethod(GString *str) {
   }
   method->verb = e_intern(verb->str);
   method->length = code->len;
-  method->code = code->str;
+  method->code = (unsigned char *)(code->str);
   result.data.other = method;
   return result;
 }
@@ -363,9 +363,9 @@ e_Ref ecru_readMatcher(GString *str) {
   }
 
   matcher->bodyLength = body->len;
-  matcher->body = body->str;
+  matcher->body = (unsigned char *)(body->str);
   matcher->patternLength = pattern->len;
-  matcher->pattern = pattern->str;
+  matcher->pattern = (unsigned char *)(pattern->str);
   result.data.other = matcher;
   return result;
 }

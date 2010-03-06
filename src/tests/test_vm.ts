@@ -82,7 +82,7 @@ e_Ref vm_exec_constants_sels(unsigned char *code, int codelen,
                                        selectorslen, NULL, 0);
 }
 
-e_Ref vm_exec_scope(char *code, int codelen,
+e_Ref vm_exec_scope(unsigned char *code, int codelen,
                     e_Ref *constants, int constantslen,
                     e_Ref *globals, int globalslen) {
   ecru_module module = {NULL, 0, NULL, 0, empty_scope, NULL, 0, 0};
@@ -102,7 +102,7 @@ e_Ref vm_exec_scope(char *code, int codelen,
   return res;
 }
 
-e_Ref vm_exec_frame(char *code, int codelen,
+e_Ref vm_exec_frame(unsigned char *code, int codelen,
                     e_Ref *constants, int constantslen,
                     e_Ref *globals, int globalslen,
                     ecru_script **scripts, int scriptslen,
@@ -127,7 +127,7 @@ e_Ref vm_exec_frame(char *code, int codelen,
   return res;
 }
 
-e_Ref vm_exec_frame_sels_htable(char *code, int codelen,
+e_Ref vm_exec_frame_sels_htable(unsigned char *code, int codelen,
                                 e_Ref *constants, int constantslen,
                                 e_Ref *globals, int globalslen,
                                 ecru_script **scripts, int scriptslen,
@@ -156,7 +156,7 @@ e_Ref vm_exec_frame_sels_htable(char *code, int codelen,
   return res;
 }
 
-e_Ref vm_exec_frame_sels(char *code, int codelen,
+e_Ref vm_exec_frame_sels(unsigned char *code, int codelen,
                          e_Ref *constants, int constantslen,
                          e_Ref *globals, int globalslen,
                          ecru_script **scripts, int scriptslen,
@@ -171,7 +171,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_dup
 {
   // Test that OP_DUP duplicates the top item on the stack.
-  char code[3] = {OP_LITERAL, 0, OP_DUP};
+  unsigned char code[3] = {OP_LITERAL, 0, OP_DUP};
   e_Ref fixnum = e_make_fixnum(42);
   e_Ref constants[1] = { fixnum };
   e_Ref stackTop = vm_exec_constants(code, 3, constants, 1, 0);
@@ -184,7 +184,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_pop
 {
   // Test that OP_POP removes the top item from the stack.
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 0, OP_POP};
+  unsigned char code[] = {OP_LITERAL, 0, OP_LITERAL, 0, OP_POP};
   e_Ref fixnum = e_make_fixnum(42);
   e_Ref constants[1] = { fixnum };
   vm_fail_unless(vm_exec_constants(code, 5, constants, 1, 0));
@@ -194,7 +194,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_swap
 {
   // test that OP_SWAP swaps the top two items on the stack.
-  char code[5] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_SWAP};
+  unsigned char code[5] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_SWAP};
   e_Ref constants[2] = { e_make_fixnum(42), e_make_fixnum(19) };
   e_Ref stackTop = vm_exec_constants(code, 5, constants, 2, 0);
   e_Ref stack2nd = FIRST();
@@ -206,7 +206,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_rot
 {
   // test that OP_ROT moves the top item on the stack to the third item.
-  char code[] = {OP_LITERAL, 2, OP_LITERAL, 1, OP_LITERAL, 0, OP_ROT};
+  unsigned char code[] = {OP_LITERAL, 2, OP_LITERAL, 1, OP_LITERAL, 0, OP_ROT};
   e_Ref constants[3] = { e_make_fixnum(42), e_make_fixnum(19), e_make_fixnum(3) };
   e_Ref stackTop = vm_exec_constants(code, 7, constants, 3, 0);
   e_Ref stack2nd = FIRST();
@@ -220,7 +220,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_literal1
 {
   // Test that OP_LITERAL pushes a value from the constant pool onto the stack.
-  char code[2] = {OP_LITERAL, 0};
+  unsigned char code[2] = {OP_LITERAL, 0};
   e_Ref c = e_make_fixnum(17);
   e_Ref constants[1] = {c};
   fail_unless(e_same(vm_exec_constants(code, 2, constants, 1, 0), c));
@@ -230,7 +230,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_literal2
 {
   // Test that more than one value can be loaded from the constant pool.
-  char code[4] = {OP_LITERAL, 3, OP_LITERAL, 0};
+  unsigned char code[4] = {OP_LITERAL, 3, OP_LITERAL, 0};
   char values[5] = {17, 24, 19, 47, 99};
   e_Ref *constants = e_malloc(5 * sizeof(e_Ref));
   for (int i = 0; i < 5; i++) {
@@ -248,7 +248,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // test that OP_NOUN_OUTER loads the indexed item from the outer scope and
   // places it on the stack.
-  char code[] = {OP_NOUN_OUTER, 0};
+  unsigned char code[] = {OP_NOUN_OUTER, 0};
   e_Ref scope[] = { e_make_finalslot(e_make_fixnum(42)) };
   fail_unless((vm_exec_scope(code, 2, NULL, 0, scope, 1)).data.fixnum == 42);
 }
@@ -259,7 +259,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   /// in the outer scope.
   e_Ref scope[] = { e_make_varslot(e_make_fixnum(42)) };
   e_Ref constants[] = {e_make_fixnum(99), e_null};
-  char code[] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_ASSIGN_OUTER, 0};
+  unsigned char code[] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_ASSIGN_OUTER, 0};
   fail_unless(e_same(vm_exec_scope(code, 6, constants, 2, scope, 1), e_null));
   fail_unless(e_same(scope[0].data.refs[0], constants[0]));
 }
@@ -268,7 +268,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // Test that OP_SLOT_OUTER retrieves the indexed slot from the outer scope
   // and places it on the stack.
-  char code[] = {OP_SLOT_OUTER, 0};
+  unsigned char code[] = {OP_SLOT_OUTER, 0};
   e_Ref scope[] = { e_make_finalslot(e_make_fixnum(42)) };
   fail_unless(e_same(vm_exec_scope(code, 2, NULL, 0, scope, 1), scope[0]));
 }
@@ -277,7 +277,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // Test that OP_NOUN_LOCAL retrieves the indexed slot from the local scope
   // and places it on the stack.
-  char code[] = {OP_LITERAL, 0, OP_BINDSLOT, 0, OP_NOUN_LOCAL, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_BINDSLOT, 0, OP_NOUN_LOCAL, 0};
   e_Ref constants[] = {e_make_finalslot(e_make_fixnum(99))};
   fail_unless(e_same(vm_exec_constants(code, 6, constants, 1, 1),
                      e_call_0(constants[0], &do_get)));
@@ -287,7 +287,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // Test that OP_SLOT_LOCAL retrieves the indexed slot from the local scope
   // and places it on the stack.
-  char code[] = {OP_LITERAL, 0, OP_BINDSLOT, 0, OP_SLOT_LOCAL, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_BINDSLOT, 0, OP_SLOT_LOCAL, 0};
   e_Ref constants[] = {e_make_finalslot(e_make_fixnum(99))};
   fail_unless(e_same(constants[0],
                      vm_exec_constants(code, 6, constants, 1, 1)));
@@ -297,7 +297,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // Test that OP_BIND makes the slot for the specified local refer to the object on
   // the top of the stack.
-  char code[] = {OP_LITERAL, 0, OP_BIND, 0, OP_NOUN_LOCAL, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_BIND, 0, OP_NOUN_LOCAL, 0};
   e_Ref constants[] = {e_make_fixnum(99)};
   fail_unless(e_same(vm_exec_constants(code, 6, constants, 1, 1),
                      constants[0]));
@@ -307,7 +307,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // Test that OP_BINDSLOT associates the specified local with the slot on the top
   // of the stack.
-  char code[] = {OP_LITERAL, 0, OP_BINDSLOT, 0, OP_SLOT_LOCAL, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_BINDSLOT, 0, OP_SLOT_LOCAL, 0};
   e_Ref constants[] = {e_make_finalslot(e_make_fixnum(99))};
   fail_unless(e_same(constants[0],
                      vm_exec_constants(code, 6, constants, 1, 1)));
@@ -318,7 +318,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   // Test that OP_CALL uses the specified object in the constant pool as a verb
   // in a message to the object on top of the stack, along with the specified number
   // of args on the stack.
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_CALL, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_CALL, 0};
   e_Ref constants[] = {e_make_fixnum(10), e_make_fixnum(1)};
   e_Selector sels[1];
   e_make_selector(sels, "add", 1);
@@ -332,7 +332,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   // Test that 'OP_LIST_PATT x' produces x instances of the optEjector on the
   // top of stack interleaved with all x items of the 2nd item on the stack.
 
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_LIST_PATT, 3};
+  unsigned char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_LIST_PATT, 3};
   e_Ref test_array[3] = {e_make_fixnum(2), e_make_fixnum(4), e_make_fixnum(7)};
   e_Ref constants[] = {e_constlist_from_array(3, test_array),
                     e_null};
@@ -356,7 +356,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // Test that OP_SIMPLEVARSLOT takes the top item on the stack and replaces it
   // with a varslot containing it.
-  char code[] = {OP_LITERAL, 0, OP_SIMPLEVARSLOT};
+  unsigned char code[] = {OP_LITERAL, 0, OP_SIMPLEVARSLOT};
   e_Ref constants[] = {e_make_fixnum(1)};
   e_Ref res = vm_exec_constants(code, 3, constants, 1, 0);
   fail_unless(e_is_varslot(res));
@@ -368,7 +368,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   // OP_GUARDEDVARSLOT should take the top three items on the stack: specimen,
   // optional ejector, and guard. It should then coerce the specimen with the
   // guard, ejecting on failure. On success, a guarded slot goes on the stack.
-  char code[] = {OP_LITERAL, 2, OP_LITERAL, 1, OP_LITERAL, 0, OP_GUARDEDVARSLOT};
+  unsigned char code[] = {OP_LITERAL, 2, OP_LITERAL, 1, OP_LITERAL, 0, OP_GUARDEDVARSLOT};
   e_Ref constants[] = {e_IntGuard, e_null, e_make_fixnum(7)};
   e_Ref ej = e_make_ejector();
   e_Ref constants2[] = {e_IntGuard, e_null, e_make_string("seven")};
@@ -396,7 +396,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   // a slot. On success, a slot is pushed to the stack. On failure,
   // the ejector is invoked.
 
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_COERCETOSLOT};
+  unsigned char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_COERCETOSLOT};
   e_Ref constants[] = {e_make_varslot(e_make_fixnum(42)), e_null};
   e_Ref ej = e_make_ejector();
   e_Ref constants2[] = {e_make_fixnum(42), ej};
@@ -417,7 +417,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// OP_ASSIGN_LOCAL should effectively call put() on the indexed slot
   /// in the locals array.
-  char code[] = {OP_LITERAL, 0, OP_BINDSLOT, 0, OP_LITERAL, 1,
+  unsigned char code[] = {OP_LITERAL, 0, OP_BINDSLOT, 0, OP_LITERAL, 1,
                  OP_ASSIGN_LOCAL, 0, OP_NOUN_LOCAL, 0};
   e_Ref constants[] = {e_make_varslot(e_make_fixnum(17)), e_make_fixnum(42)};
   fail_unless(e_same(constants[1], vm_exec_constants(code, 10, constants, 2, 1)));
@@ -427,7 +427,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// OP_EJECTOR pushes an ejector to the stack. Invoking it
   /// activates its handler table entry.
-  char code[] = {OP_EJECTOR, 9, 0, OP_LITERAL, 0, OP_SWAP, OP_CALL, 0,
+  unsigned char code[] = {OP_EJECTOR, 9, 0, OP_LITERAL, 0, OP_SWAP, OP_CALL, 0,
                  OP_JUMP, 4, 0, OP_END_HANDLER, OP_LITERAL, 1, OP_SWAP};
   e_Ref constants[] = {e_make_fixnum(17), e_make_fixnum(99)};
   e_Selector sels[] = {do_run1};
@@ -445,7 +445,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   /// Ejectors are disabled when their corresponding OP_END_HANDLER is
   /// executed.
   e_Selector isEnabled;
-  char code[] = {OP_EJECTOR, 4, 0, OP_LITERAL, 0, OP_POP, OP_END_HANDLER};
+  unsigned char code[] = {OP_EJECTOR, 4, 0, OP_LITERAL, 0, OP_POP, OP_END_HANDLER};
   e_Ref constants[] = {e_make_fixnum(17)};
   ecru_handler_table_entry ht[] = {{OP_EJECTOR, 0, 7, 3, 6}};
   e_Ref res = vm_exec_constants_sels_htable(code, 7, constants, 1, 0,
@@ -463,7 +463,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   /// Invoking the handler created by OP_UNWIND should branch to the
   /// label and push a rethrower.
 
-  char code[] = {OP_EJECTOR, 9, 0, OP_UNWIND, 6, 0, OP_LITERAL, 0, OP_SWAP, OP_CALL, 0, OP_END_HANDLER};
+  unsigned char code[] = {OP_EJECTOR, 9, 0, OP_UNWIND, 6, 0, OP_LITERAL, 0, OP_SWAP, OP_CALL, 0, OP_END_HANDLER};
   e_Ref constants[] = {e_make_fixnum(17)};
   e_Selector sels[] = {do_run1};
   ecru_handler_table_entry ht[] = {{OP_UNWIND, 1, 12, 6, 10}, {OP_EJECTOR, 0, 12, 3, 10}};
@@ -478,7 +478,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// Invoking the re-ejector pushed by an invoked unwinder should
   /// invoke the next ejection handler.
-  char code[] = { OP_EJECTOR, 17, 0, OP_UNWIND, 8, 0, OP_LITERAL, 2, OP_SWAP,
+  unsigned char code[] = { OP_EJECTOR, 17, 0, OP_UNWIND, 8, 0, OP_LITERAL, 2, OP_SWAP,
                   OP_CALL, 0, OP_LITERAL, 2, OP_END_HANDLER,
                   OP_CALL, 0, OP_LITERAL, 0, OP_LITERAL, 3, OP_END_HANDLER};
 
@@ -496,7 +496,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   /// Invoking an ejector should trigger unwinders above it in the
   /// handler table.
 
-  char code[] = { OP_EJECTOR, 18, 0, OP_UNWIND, 13, 0, OP_EJECTOR, 7, 0,
+  unsigned char code[] = { OP_EJECTOR, 18, 0, OP_UNWIND, 13, 0, OP_EJECTOR, 7, 0,
                   OP_SWAP, OP_LITERAL, 2, OP_SWAP, OP_CALL, 0,
                   OP_END_HANDLER, OP_LITERAL, 2, OP_END_HANDLER, OP_LITERAL, 0,
                   OP_LITERAL, 3};
@@ -514,7 +514,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test buried_unwinder2
 {
   /// Dropping an unwinder should push a returner and not break outer handlers.
-  char code[] = {OP_EJECTOR, 13, 0, OP_POP, OP_UNWIND, 3, 0, OP_LITERAL, 0,
+  unsigned char code[] = {OP_EJECTOR, 13, 0, OP_POP, OP_UNWIND, 3, 0, OP_LITERAL, 0,
                  OP_END_HANDLER, OP_LITERAL, 1, OP_POP,
                  OP_CALL, 0, OP_END_HANDLER};
   e_Ref constants[] = {e_make_fixnum(17), e_null, e_make_fixnum(21)};
@@ -530,7 +530,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_unwinder_end
 {
   /// Dropping the handler created by OP_UNWIND should push a returner.
-  char code[] = {OP_UNWIND, 5, 0, OP_LITERAL, 0, OP_END_HANDLER, OP_LITERAL, 1};
+  unsigned char code[] = {OP_UNWIND, 5, 0, OP_LITERAL, 0, OP_END_HANDLER, OP_LITERAL, 1};
   e_Ref constants[] = {e_make_fixnum(17), e_make_fixnum(99)};
   ecru_handler_table_entry ht[] = {{OP_UNWIND, 0, 8, 3, 5}};
   e_thrown_problem_set(e_empty_ref);
@@ -547,7 +547,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   /// Invoking the handler associated with an OP_TRY should truncate
   /// the value stack and branch to its label.
 
-  char code[] = { OP_LITERAL, 0, OP_TRY, 10, 0, OP_LITERAL, 2, OP_LITERAL, 3,
+  unsigned char code[] = { OP_LITERAL, 0, OP_TRY, 10, 0, OP_LITERAL, 2, OP_LITERAL, 3,
                   OP_CALL, 0, OP_JUMP, 3, 0, OP_END_HANDLER, OP_SWAP, OP_POP};
    e_Ref constants[] = {e_make_fixnum(17), e_null, e_make_fixnum(21), e_thrower};
   e_Selector sels[] = {do_run1};
@@ -562,7 +562,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// Invoking a problem handler should walk the handler stack and
   /// execute the unwinders above it in order.
-  char code[] = { OP_TRY, 12, 0, OP_UNWIND, 10, 0, OP_LITERAL, 2,  OP_LITERAL, 2, OP_LITERAL, 0,
+  unsigned char code[] = { OP_TRY, 12, 0, OP_UNWIND, 10, 0, OP_LITERAL, 2,  OP_LITERAL, 2, OP_LITERAL, 0,
                   OP_CALL, 0, OP_END_HANDLER, OP_END_HANDLER};
   e_Ref constants[] = {e_thrower, e_null,  e_make_fixnum(21)};
   e_Selector sels[] = {do_run1};
@@ -577,7 +577,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// Throwing a problem when no problem handlers exist should cause
   /// the execution to fail by returning 0.
-  char code[] = {OP_LITERAL, 0, OP_CALL, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_CALL, 0};
   e_Ref constants[] = {e_thrower, e_make_string("run")};
   e_Selector sels[1];
   e_make_selector(sels, "run", 0);
@@ -589,7 +589,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_jump
 {
   /// Test that OP_JUMP jumps to the right place.
-  char code[] = {OP_JUMP, 2, 0, OP_LITERAL, 0, OP_LITERAL, 0};
+  unsigned char code[] = {OP_JUMP, 2, 0, OP_LITERAL, 0, OP_LITERAL, 0};
   e_Ref constants[] = {e_make_fixnum(17)};
   e_Ref res = vm_exec_constants(code, 7, constants, 1, 0);
   fail_unless(e_same(res, constants[0]));
@@ -600,7 +600,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// Test that OP_EJECTOR_ONLY behaves like OP_EJECTOR, except
   /// without pushing its argument after invocation.
-  char code[] = {OP_LITERAL, 0, OP_EJECTOR_ONLY, 10, 0, OP_LITERAL, 2, OP_SWAP,
+  unsigned char code[] = {OP_LITERAL, 0, OP_EJECTOR_ONLY, 10, 0, OP_LITERAL, 2, OP_SWAP,
                  OP_CALL, 0, OP_END_HANDLER};
   e_Ref constants[] = {e_make_fixnum(17), e_null, e_make_fixnum(21)};
   e_Selector sels[] = {do_run1};
@@ -615,7 +615,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   /// Test that OP_BRANCH ejects if its argument is false and an ejector is
   /// provided.
 
-  char code[] = {OP_EJECTOR, 6, 0, OP_LITERAL, 0, OP_BRANCH, OP_LITERAL, 1, OP_END_HANDLER};
+  unsigned char code[] = {OP_EJECTOR, 6, 0, OP_LITERAL, 0, OP_BRANCH, OP_LITERAL, 1, OP_END_HANDLER};
   e_Ref constants[] = {e_false, e_make_fixnum(37)};
   ecru_handler_table_entry ht[] = {{OP_EJECTOR, 0, 9, 5, 8}};
   e_Ref res = vm_exec_constants_sels_htable(code, 9, constants, 1, 0, NULL, 0, ht, 1);
@@ -628,7 +628,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   /// Test that OP_BRANCH throws a problem if its argument is false and an ejector is
   /// provided.
 
-  char code[] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_BRANCH, OP_LITERAL, 0};
+  unsigned char code[] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_BRANCH, OP_LITERAL, 0};
   e_Ref constants[] = {e_false, e_null};
   e_Ref res = vm_exec_constants(code, 9, constants, 2, 0);
   fail_unless(res.script == NULL);
@@ -639,7 +639,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// Test that OP_BRANCH continues execution as normal if its arg is true.
 
-  char code[] = {OP_EJECTOR, 5, 0, OP_LITERAL, 0, OP_BRANCH, OP_LITERAL, 1, OP_END_HANDLER};
+  unsigned char code[] = {OP_EJECTOR, 5, 0, OP_LITERAL, 0, OP_BRANCH, OP_LITERAL, 1, OP_END_HANDLER};
   e_Ref constants[] = {e_true, e_null};
   ecru_handler_table_entry ht[] = {{OP_EJECTOR, 0, 9, 3, 8}};
   e_Ref res = vm_exec_constants_sels_htable(code, 9, constants, 2, 0, NULL, 0, ht, 1);
@@ -649,7 +649,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_branch3
 {
   /// Test that OP_BRANCH raises an error if its argument is not a boolean.
-  char code[] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_BRANCH, OP_LITERAL, 0};
+  unsigned char code[] = {OP_LITERAL, 1, OP_LITERAL, 0, OP_BRANCH, OP_LITERAL, 0};
   e_Ref constants[] = {e_make_fixnum(17), e_null};
   e_Ref res = vm_exec_constants(code, 7, constants, 2, 0);
   fail_unless(res.script == NULL);
@@ -661,8 +661,8 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
   /// Test that ecru_make_script sets the proper fields in the
   /// script and that method structs are set up right.
   ecru_script script;
-  char runcode[] = {OP_LITERAL, 0};
-  char getcode[] = {OP_POP, OP_CALL, 1};
+  unsigned char runcode[] = {OP_LITERAL, 0};
+  unsigned char getcode[] = {OP_POP, OP_CALL, 1};
   ecru_method methods[] = {{e_intern("run/1"), runcode, 2, 1,  NULL, 0},
                             {e_intern("get/2"), getcode, 3, 2, NULL, 0}};
   ecru_make_script(&script, methods, 2, NULL, 0, 4);
@@ -682,11 +682,11 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// Test that OP_OBJECT creates an object with the specified script
   /// and slots.
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_OBJECT, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_OBJECT, 0};
   e_Ref constants[] = {e_make_finalslot(e_make_fixnum(99)),
                        e_make_varslot(e_make_fixnum(21))};
-  char runcode[] = {OP_LITERAL, 0};
-  char getcode[] = {OP_POP, OP_CALL, 1};
+  unsigned char runcode[] = {OP_LITERAL, 0};
+  unsigned char getcode[] = {OP_POP, OP_CALL, 1};
   ecru_method methods[] = {{e_intern("run/1"), runcode, 2, 0, NULL, 0},
                             {e_intern("get/2"), getcode, 3, 0, NULL, 0}};
   ecru_script script;
@@ -706,12 +706,12 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_bindobject
 {
   // OP_BINDOBJECT should create an object and bind it to a final slot.
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_BINDOBJECT, 0, 0,
+  unsigned char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_BINDOBJECT, 0, 0,
                  OP_SLOT_LOCAL, 0};
   e_Ref constants[] = {e_make_finalslot(e_make_fixnum(99)),
                        e_make_varslot(e_make_fixnum(21))};
-  char runcode[] = {OP_LITERAL, 0};
-  char getcode[] = {OP_POP, OP_CALL, 1};
+  unsigned char runcode[] = {OP_LITERAL, 0};
+  unsigned char getcode[] = {OP_POP, OP_CALL, 1};
   ecru_method methods[] = {{e_intern("run/1"), runcode, 2, 0, NULL, 0},
                             {e_intern("get/2"), getcode, 3, 0, NULL, 0}};
   ecru_script script;
@@ -736,12 +736,12 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test op_varobject
 {
   // OP_VAROBJECT should create an object and bind it to a variable slot.
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_VAROBJECT, 0, 0,
+  unsigned char code[] = {OP_LITERAL, 0, OP_LITERAL, 1, OP_VAROBJECT, 0, 0,
                  OP_SLOT_LOCAL, 0};
   e_Ref constants[] = {e_make_finalslot(e_make_fixnum(99)),
                        e_make_varslot(e_make_fixnum(21))};
-  char runcode[] = {OP_LITERAL, 0};
-  char getcode[] = {OP_POP, OP_CALL, 1};
+  unsigned char runcode[] = {OP_LITERAL, 0};
+  unsigned char getcode[] = {OP_POP, OP_CALL, 1};
   ecru_method methods[] = {{e_intern("run/1"), runcode, 2, 0, NULL, 0},
                             {e_intern("get/2"), getcode, 3, 0, NULL, 0}};
   ecru_script script;
@@ -767,13 +767,13 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 
   // It is OK for OP_BINDOBJECT to be given a slot that isn't bound yet
   // as an instance var, and fix it up in the frame once it's bound it.
-  char code[] = {OP_LITERAL, 0, OP_SLOT_LOCAL, 0, OP_BINDOBJECT, 0, 0,
+  unsigned char code[] = {OP_LITERAL, 0, OP_SLOT_LOCAL, 0, OP_BINDOBJECT, 0, 0,
                  OP_SLOT_LOCAL, 0};
   ecru_method mainMethod = {e_intern("run/0"), code, 9, 1, NULL, 0};
   ecru_script mainScript = {1, &mainMethod, 0, NULL, 0};
   e_Ref constants[] = {e_make_finalslot(e_make_fixnum(99)),
                        e_make_varslot(e_make_fixnum(21))};
-  char runcode[] = {OP_SLOT_FRAME, 0};
+  unsigned char runcode[] = {OP_SLOT_FRAME, 0};
   ecru_method methods[] = {{e_intern("run/0"), runcode, 2, 0, NULL, 0}};
   ecru_script script;
   ecru_script *scripts[] = {&mainScript, &script};
@@ -794,9 +794,9 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test vmobject_call
 {
   // Calling objects created from bytecode should work.
-  char code[] = {OP_OBJECT, 0, OP_CALL, 0};
+  unsigned char code[] = {OP_OBJECT, 0, OP_CALL, 0};
   e_Ref constants[] = {e_make_string("foo")};
-  char runcode[] = {OP_LITERAL, 0};
+  unsigned char runcode[] = {OP_LITERAL, 0};
   ecru_method methods[] = {{e_intern("run/0"), runcode, 2, 0, NULL, 0}};
   ecru_script script;
   ecru_script *scripts[] = {NULL, &script};
@@ -814,9 +814,9 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test vmobject_callArgs
 {
   // Passing args to objects created from bytecode should work.
-  char code[] = {OP_LITERAL, 1, OP_OBJECT, 0, OP_CALL, 0};
+  unsigned char code[] = {OP_LITERAL, 1, OP_OBJECT, 0, OP_CALL, 0};
   e_Ref constants[] = {e_null, e_make_fixnum(97)};
-  char runcode[] = {OP_LITERAL, 0};
+  unsigned char runcode[] = {OP_LITERAL, 0};
   ecru_method methods[] = {{e_intern("run/1"), runcode, 2, 0, NULL, 0}};
   ecru_script script;
   ecru_script *scripts[] = {NULL, &script};
@@ -832,10 +832,10 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test crossframe_ejection
 {
   // Ejectors can be invoked in frames below the one they were created in.
-  char code[] = {OP_BINDOBJECT, 0, 0, OP_POP, OP_EJECTOR, 15, 0, OP_BIND, 1,
+  unsigned char code[] = {OP_BINDOBJECT, 0, 0, OP_POP, OP_EJECTOR, 15, 0, OP_BIND, 1,
                  OP_NOUN_LOCAL, 1, OP_LITERAL, 0, OP_NOUN_LOCAL, 0,
                  OP_CALL, 1, OP_POP, OP_LITERAL, 1, OP_END_HANDLER};
-  char runcode[] = {OP_SWAP, OP_CALL, 0, OP_LITERAL, 2};
+  unsigned char runcode[] = {OP_SWAP, OP_CALL, 0, OP_LITERAL, 2};
   e_Ref constants[] = {e_make_fixnum(2), e_make_fixnum(3), e_null};
   ecru_method methods[] = {{e_intern("run/2"), runcode, 5, 0, NULL, 0}};
   ecru_script script;
@@ -855,9 +855,9 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // Test that OP_NOUN_FRAME retrieves the indexed slot from the
   // object's instance variables and places it on the stack.
-  char code[] = {OP_LITERAL, 0, OP_OBJECT, 0, OP_CALL, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_OBJECT, 0, OP_CALL, 0};
   e_Ref constants[] = {e_make_varslot(e_make_fixnum(99))};
-  char runcode[] = {OP_NOUN_FRAME, 0};
+  unsigned char runcode[] = {OP_NOUN_FRAME, 0};
   ecru_method methods[] = {{e_intern("run/0"), runcode, 2, 0, NULL, 0}};
   ecru_script script;
   ecru_script *scripts[] = {NULL, &script};
@@ -874,9 +874,9 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   /// OP_ASSIGN_FRAME should effectively call put() on the indexed slot
   /// in the frame array.
-  char code[] = {OP_LITERAL, 1, OP_OBJECT, 0, OP_CALL, 0};
+  unsigned char code[] = {OP_LITERAL, 1, OP_OBJECT, 0, OP_CALL, 0};
   e_Ref constants[] = {e_make_string("foo"), e_make_varslot(e_null)};
-  char runcode[] = {OP_LITERAL, 0, OP_DUP, OP_ASSIGN_FRAME, 0};
+  unsigned char runcode[] = {OP_LITERAL, 0, OP_DUP, OP_ASSIGN_FRAME, 0};
   ecru_method methods[] = {{e_intern("run/0"), runcode, 5, 0, NULL, 0}};
   ecru_script script;
   ecru_script *scripts[] = {NULL, &script};
@@ -893,9 +893,9 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 {
   // Test that OP_SLOT_FRAME retrieves the indexed slot from the
   // object's instance variables and places it on the stack.
-  char code[] = {OP_LITERAL, 0, OP_OBJECT, 0, OP_CALL, 0};
+  unsigned char code[] = {OP_LITERAL, 0, OP_OBJECT, 0, OP_CALL, 0};
   e_Ref constants[] = {e_make_varslot(e_make_fixnum(99))};
-  char runcode[] = {OP_SLOT_FRAME, 0};
+  unsigned char runcode[] = {OP_SLOT_FRAME, 0};
   ecru_method methods[] = {{e_intern("run/0"), runcode, 2, 0, NULL, 0}};
   ecru_script script;
   ecru_script *scripts[] = {NULL, &script};
@@ -911,7 +911,7 @@ e_Ref vm_exec_frame_sels(char *code, int codelen,
 #test stack_depth
 {
   /// Stack management is consistent across calls.
-  char code[] = {OP_LITERAL, 0, OP_LITERAL, 0, OP_LITERAL, 0,
+  unsigned char code [] = {OP_LITERAL, 0, OP_LITERAL, 0, OP_LITERAL, 0,
                  OP_CALL, 0, OP_CALL, 0};
   e_Ref constants[] = {e_make_fixnum(1)};
   e_Selector sels[1];
