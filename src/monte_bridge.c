@@ -1,12 +1,12 @@
+#include <Python.h>
+#include <string.h>
+#include <gc/gc.h>
 
 #include "elib.h"
 #include "ecru.h"
 #include "vm.h"
 #include "ref.h"
 #include "scope.h"
-#include <Python.h>
-#include <string.h>
-#include <gc/gc.h>
 
 
 typedef struct monte_handle {

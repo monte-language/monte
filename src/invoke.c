@@ -378,7 +378,7 @@ void e__exit_set_up() {
   g_static_private_set(&e_thrown_problem_key, problem, NULL);
   g_static_private_set(&e_ejected_value_key, value, NULL);
   g_static_private_set(&e_ejector_counter_key, counter, NULL);
-  e_thrown_problem(e_empty_ref);
+  e_thrown_problem_set(e_empty_ref);
   e_ejected_value_set(e_empty_ref);
   *counter = 1;
 }

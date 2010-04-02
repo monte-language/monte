@@ -1,12 +1,14 @@
-AC_INIT([Ecru], [0.2.0], [washort@divmod.com])
+AC_PREREQ(2.64)
+LT_PREREQ([2.2.6])
+AC_INIT([Ecru], [0.3.0], [washort42@gmail.com], [ecru], [http://launchpad.net/ecru])
 AC_CONFIG_AUX_DIR(build-aux)
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([1.11.1 foreign -Wall -Werror])
+AM_SILENT_RULES([yes])
+LT_INIT([dlopen])
 AC_CONFIG_MACRO_DIR([build-aux/m4])
-AC_PREREQ(2.60)
 AC_DEFINE([OLD_GIO], [], ["Whether to use the old GIO API or not"])
 AC_CONFIG_HEADERS([config.h])
-AC_LIBTOOL_DLOPEN
-AC_PROG_LIBTOOL
+
 AC_PROG_CC
 AC_PROG_CC_C99
 AM_PROG_CC_C_O
@@ -38,6 +40,5 @@ AC_SUBST([PYTHON_CFLAGS])
 
 AM_PATH_PYTHON([2.5])
 
-SHAVE_INIT([build-aux])
-AC_CONFIG_FILES([Makefile build-aux/shave build-aux/shave-libtool])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
