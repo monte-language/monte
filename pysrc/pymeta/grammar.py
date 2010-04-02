@@ -260,7 +260,7 @@ ruleValue ::= <token "=>"> <action>:a => self.result(a)
 semanticPredicate ::= <token "?("> <action>:a <token ")"> => self.predicate(a)
 semanticAction ::= <token "!("> <action>:a <token ")"> => self.action(a)
 applicationArgs ::= (<spaces> <action>)+:args <token ">"> => [self.result(a) for a in args]
-string ::= <bareString>:s => self.builder.apply("tokenBR", self.name, [[repr(s)]])
+string ::= <bareString>:s => self.builder.apply("tokenBR", self.name, self.action(ActionLiteral(s)))
 """
 
 

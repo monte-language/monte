@@ -93,6 +93,7 @@ pymeta_PYTHON = pysrc/pymeta/__init__.py pysrc/pymeta/boot.py	\
                 pysrc/pymeta/runtime.py
 pyecru_PYTHON = pysrc/ecru/__init__.py pysrc/ecru/api.py	\
                pysrc/ecru/eparser.py pysrc/ecru/nodes.py	\
+               pysrc/ecru/baseparser.py                      \
                pysrc/ecru/structlike.py
 pyecru_test_PYTHON = pysrc/ecru/test/__init__.py	\
                pysrc/ecru/test/test_api.py		\

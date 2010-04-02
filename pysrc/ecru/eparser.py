@@ -280,7 +280,7 @@ start ::= <updoc>? <br> <topSeq>?
 """
 
 try:
-    from eparser_generated import BaseEParser
+    from eparser_generated import BaseEParsxxer
 except ImportError:
     BaseEParser = PortableOMeta.makeGrammar(egrammar,  {}, "BaseEParser")
 
@@ -316,9 +316,9 @@ class EParser(CommonParser, BaseEParser):
         Ensure an identifier isn't a keyword or reserved word.
         """
         if ident in self.reserved:
-            raise ParseError(ident + " is a reserved word")
+            raise ParseError(self.input.position, ident + " is a reserved word")
         elif ident in self.basicKeywords:
-            raise ParseError(ident + " is a keyword")
+            raise ParseError(self.input.position, ident + " is a keyword")
         else:
             return ident
 

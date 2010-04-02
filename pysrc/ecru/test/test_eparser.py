@@ -10,7 +10,8 @@ class ParserTest(unittest.TestCase):
     def getParser(self, rule):
         def parse(src):
             p = EParser(src)
-            return p.apply(rule).serialize()
+            r, e = p.apply(rule)
+            return r.serialize()
         return parse
 
 
