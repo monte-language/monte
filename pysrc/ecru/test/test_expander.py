@@ -7,7 +7,7 @@ class ExpanderTest(unittest.TestCase):
     def parse(self, txt):
         SubNode.tempCounter = 1 #XXX hack
 
-        ast = EParser(txt).apply("expr")
+        ast, e = EParser(txt).apply("expr")
         return ast.expand().serialize()
 
 

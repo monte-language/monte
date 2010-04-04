@@ -66,19 +66,19 @@ class ParserTest(unittest.TestCase):
         """
         p = EParser(" ${0}")
         p.valueHoles = [1]
-        self.assertEqual(p.apply("noun").serialize(), ["QuasiLiteralExpr", 0])
+        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiLiteralExpr", 0])
         p = EParser("   ${0}")
         p.valueHoles = [3]
-        self.assertEqual(p.apply("noun").serialize(), ["QuasiLiteralExpr", 0])
+        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiLiteralExpr", 0])
         p = EParser("@{0}")
         p.patternHoles = [0]
-        self.assertEqual(p.apply("noun").serialize(), ["QuasiPatternExpr", 0])
+        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiPatternExpr", 0])
         p = EParser("  @{7}")
         p.patternHoles = [2]
-        self.assertEqual(p.apply("noun").serialize(), ["QuasiPatternExpr", 0])
+        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiPatternExpr", 0])
         p = EParser(" ${0}")
         p.valueHoles = [0, 1, 13]
-        self.assertEqual(p.apply("noun").serialize(), ["QuasiLiteralExpr", 1])
+        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiLiteralExpr", 1])
 
 
     def test_quasiliterals(self):

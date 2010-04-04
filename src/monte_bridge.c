@@ -265,6 +265,7 @@ PyObject *bridge_set_up(PyObject *self, PyObject *args) {
                                ).data.gstring;
   GString *ddName = e_make_string("com.twistedmatrix.ecru.debugDump"
                                ).data.gstring;
+  // XXX check errors here
   compiler = e_module_import(cName);
   bytecodeDumper = e_module_import(bdName);
   debugDumper = e_module_import(ddName);

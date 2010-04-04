@@ -23,7 +23,7 @@ e_privilegedScope = bridge.getPrivilegedScope()
 def parse(source):
     from eparser import EParser
     p = EParser(source.strip())
-    tree = p.apply("start")
+    tree, e = p.apply("start")
     x = p.input.data[p.input.position:]
     if len(x) != 0:
         raise ValueError("Syntax error", ''.join(x))

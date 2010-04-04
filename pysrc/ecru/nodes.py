@@ -428,7 +428,7 @@ class QuasiExpr(record("name quasis"), Node):
                 bits.append("${%s}" % len(exprs))
                 exprs.append(q.expr.forValue(None))
             else:
-                raise ParseError()
+                raise ParseError(None, None)
         if self.name is None:
             name = NounExpr("simple__quasiParser")
         else:
@@ -884,9 +884,9 @@ class Def(record("pattern exit expr"), Node):
             optEj = None
         rvalUsed = rvalScope.namesUsed()
         if len(varPatts & rvalUsed) != 0:
-            raise ParseError("Circular 'var' definition not allowed")
+            raise ParseError("Circular 'var' definition not allowed", None)
         if len(pattScope.namesUsed() & rvalScope.outNames()) != 0:
-            raise ParseError("Pattern may not use var defined on the right")
+            raise ParseError("Pattern may not use var defined on the right", None)
         conflicts = defPatts & rvalUsed
         if (0 >= len(conflicts)):
             return Def(patt, optEj, rval)
@@ -910,7 +910,7 @@ class Def(record("pattern exit expr"), Node):
             resolves.append(resName)
             if optEj is not None:
                 optEj = Renamer.rename(optEj, renamings)
-            rval = Renamer.rename(rval, renamings)
+            rval, e = Renamer.rename(rval, renamings)
             resPatt = FinalPattern(resName, None)
             resDef = Def(resPatt, None, Def(patt, optEj, rval))
             return SeqExpr(promises + [resDef] + resolves)
@@ -950,11 +950,11 @@ class Assign(record("left right"), Node):
             setVerb = putVerb(left.verb)
             if setVerb is None:
                 raise ParseError("Assignment can only be done"
-                                 " to nouns and collection elements")
+                                 " to nouns and collection elements", None)
             args = left.args
         else:
             raise ParseError("Assignment can only be done"
-                             " to nouns and collection elements")
+                             " to nouns and collection elements", None)
         ares = self.newTemp("ares")
         args.append(Def(FinalPattern(ares, None),
                         None,
@@ -999,12 +999,12 @@ class VerbAssign(record("verb left args"), Node):
             return SeqExpr(seq)
         elif isinstance(left, QuasiLiteralExpr):
             raise ParseError("Can't use update-assign syntax on a \"$\"-hole. "
-                             "Use explicit \":=\" syntax instead");
+                             "Use explicit \":=\" syntax instead", None);
         elif isinstance(left, QuasiPatternExpr):
             raise ParseError("Can't use update-assign syntax on a \"@\"-hole. "
-                             "Use explicit \":=\" syntax instead")
+                             "Use explicit \":=\" syntax instead", None)
         else:
-            raise ParseError("Can only update-assign nouns and calls")
+            raise ParseError("Can only update-assign nouns and calls", None)
 
 
 class AugAssign(record("op left right"), VerbAssign):
@@ -1572,9 +1572,9 @@ class For(record("key value expr block catcher"), Node):
         value = self.value.expand()
         coll = self.expr.forValue(block.staticScope())
         if key.staticScope().add(value.staticScope()).outNames() & coll.staticScope().namesUsed():
-            raise ParseError("Use on right isn't really in scope of definition")
+            raise ParseError("Use on right isn't really in scope of definition", None)
         if coll.staticScope().outNames() & key.staticScope().add(value.staticScope()).namesUsed():
-            raise ParseError("Use on left would get captured by definition on right")
+            raise ParseError("Use on left would get captured by definition on right", None)
         if self.catcher is not None:
             catcher = Catch(self.catcher.pattern.expand(),
                             self.catcher.block.forValue(None))

@@ -296,15 +296,15 @@ class PortableOMeta(OMeta):
         Match and return the given string, consuming any preceding or trailing
         whitespace.
         """
-        tok = self.input.head()
+        tok, _ = self.input.head()
 
         m = self.input = self.input.tail()
         try:
             self.eatWhitespace()
-            for c in tok:
+            for c  in tok:
                 self.exactly(c)
-            self.apply("br")
-            return tok
+            _, e = self.apply("br")
+            return tok, e
         except ParseError:
             self.input = m
             raise

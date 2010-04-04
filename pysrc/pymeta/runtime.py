@@ -182,6 +182,9 @@ class ArgInput(object):
         self.memo[name] = rec
         return rec
 
+    def nullError(self):
+        return ParseError(-1, None)
+
 
 class LeftRecursion(object):
     """

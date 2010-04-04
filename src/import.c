@@ -15,7 +15,7 @@ static e_Ref e_module_fileopen(GString *modName) {
   GFile *modFile = g_file_get_child(parent, fullModName->str);
   GFileInputStream *stream = g_file_read(modFile, NULL, &err);
   if (stream == NULL || err != NULL) {
-    return e_throw_pair("Not found", e_make_gstring(modName));
+    return e_throw_pair(err->message, e_make_gstring(modName));
   }
   return e_make_reader((GInputStream *)stream);
 }
