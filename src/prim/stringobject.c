@@ -43,10 +43,13 @@ static e_Ref string_multiply(e_Ref self, e_Ref *args) {
   e_Ref arg = e_coerce(e_IntGuard, args[0], args[1]);
   E_ERROR_CHECK(arg);
   int times = arg.data.fixnum;
+  if (times <= 0) {
+    return e_make_string("");
+  }
   GString *result = g_string_new_len(self.data.gstring->str,
                                      self.data.gstring->len);
 
-  for (int i = 0; i < times; i++) {
+  for (int i = 1; i < times; i++) {
   g_string_append_len(result,
                       self.data.gstring->str,
                       self.data.gstring->len);

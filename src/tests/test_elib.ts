@@ -141,6 +141,17 @@ static void cleanup_exits() {
   cleanup_exits();
 }
 
+#test string_multiply
+{
+  // 'string * n' duplicates the original string n times.
+  e_Selector multiply;
+  e_make_selector(&multiply, "multiply", 1);
+  e_Ref str = e_make_string("foo");
+  e_Ref n = e_make_fixnum(4);
+  e_Ref newstr = e_call_1(str, &multiply, n);
+  fail_unless(strcmp(newstr.data.gstring->str, "foofoofoofoo") == 0);
+}
+
 #test flexmap_size
 {
   e_Selector size, put;
