@@ -1,8 +1,8 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
-from pymeta.grammar import PortableOMeta
 from pymeta.runtime import character
+from monte.grammar import PortableOMeta
 from monte.baseparser import CommonParser
 termLGrammar = r"""
 literal ::= (<string>:x => TermLiteral(".String.", x)

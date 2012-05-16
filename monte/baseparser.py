@@ -2,7 +2,7 @@
 # See LICENSE for details.
 
 import string
-from pymeta.grammar import OMetaGrammar, PortableOMeta, OMeta, ActionNoun, ActionCall, ActionLiteral
+from monte.grammar import PortableOMeta, ActionNoun, ActionCall, ActionLiteral
 
 baseGrammar = r"""
 spaces ::= (' '|'\t'|'\f'|('#' (~<eol> <anything>)*))*

@@ -1,11 +1,10 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
-from pymeta.grammar import (OMetaGrammar, PortableOMeta, OMeta,
-                            ActionNoun, ActionCall, ActionLiteral)
 from pymeta.runtime import ParseError
 
 from monte import nodes
+from monte.grammar import PortableOMeta,  ActionNoun, ActionCall, ActionLiteral
 from monte.baseparser import CommonParser
 import string
 
