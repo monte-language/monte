@@ -1,70 +1,8 @@
-Ecru 0.2.0
-
-What is this?
+Mont-E Python
 =============
 
-  Ecru is a C runtime for the E language (http://erights.org/).
-
-  Ecru is at a very early stage of development, so only implements a small
-  portion of the features found in E-on-Java. However, it supports enough of
-  the language to run the bytecode compiler. So far, Ecru supports:
-
-  - All of Kernel-E's semantics (except for meta.getScope(), meta.syntax(), and
-    auditors).
-
-  - All of the objects for which there are special syntax (strings,
-    quasiliterals, integers, float64s, booleans, characters, ConstLists,
-    ConstMaps, OrderedRegions, Promises/Resolvers, Slots, VarSlots), though
-    many methods are currently unimplemented.
-
-  - Guards for these types.
-
-  - Simple emaker import, loading bytecode files with fully-qualified names
-    from a directory defined at compile time.
-
-  - ConstSets, FlexSets, FlexMaps, and FlexLists.
-
-  - All the objects required by 0.9 syntax expansion (except TypeDesc and
-    MessageDesc).
-
-  - Vats support message queuing and turn execution.
-
-  - Message buffering on Promises.
-
-  Notable unimplemented features at this point include:
-
-  - Most of the methods on 'E' or 'Ref'.
-
-  - Any quasiparser other than simple__quasiParser.
+A parser for E and TermL, with expansions from E to Kernel-E.
 
 
-How do I install it?
-====================
-  First, install the packages named in DEPENDENCIES.  Ecru uses Autotools, so
-  the standard './configure', 'make', 'make install' procedure should be all
-  you need. 'make check' will run the C unit tests.  'trial monte.test' (if you
-  have Twisted's "trial" unit test tool installed) will run the Python unit
-  tests. See the included standard Autotools INSTALL document for further
-  installation details.
 
 
-How can I try it out?
-=====================
-
-  Ecru currently includes a frontend written in Python that provides a simple
-  REPL, located in scripts/ecru.
-
-  The E script in scripts/compile.e accepts E source on stdin and outputs
-  bytecode on stdout. The 'ecru_driver' executable compiled by the default make
-  rule accepts bytecode on stdin and runs it.
-
-
-Where can I find more information?
-==================================
-
-Ecru's project page is http://launchpad.net/ecru - bug and patches can be filed
-there, as well as questions submitted. Ecru developers can be found on IRC at
-#erights on irc.freenode.net.
-
-Allen Short
-washort@divmod.com

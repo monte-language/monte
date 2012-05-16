@@ -1,8 +1,0 @@
-#!/usr/bin/python
-
-import sys, ecru.api
-
-if len(sys.argv) == 1:
-  ecru.api.repl()
-else:
-  ecru.api.eval(open(sys.argv[1]).read(), ecru.api.e_privilegedScope)
