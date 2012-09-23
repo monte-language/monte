@@ -43,14 +43,16 @@ pattHole = '@' ('{' br pattern:s '}' -> QuasiPatternHole(s)
                  |'_' !(noIgnorePatternHole())
                  |identifier:n !(quasiHoleKeywordCheck(n)) -> QuasiPatternHole(FinalPattern(NounExpr(n), null)))
 
-slotExpr = "&" verb:v -> Slot(v)
+reifyExpr = ("&&" verb:v -> BindingExpr(v)
+            |"&" verb:v -> SlotExpr(v))
+
 verb = identifier | string
 
 listAndMap = "[" (assoc:x ("," assoc)*:xs ","? ']' -> MapExpr(cons(x, xs))
                    |(seq:s ("," seq)*:ss ","? ']')-> ListExpr(cons(s, ss))
                    | ']' -> ListExpr([]))
 assoc = (seq:k "=>" seq:v -> MapExprAssoc(k, v)
-          |"=>" (noun | slotExpr):n -> MapExprExport(n)
+          |"=>" (noun | reifyExpr):n -> MapExprExport(n)
                 | "def" noun:n ~":=" !(throwSemanticHere("Reserved syntax: forward export")))
 
 
@@ -90,7 +92,7 @@ prefix = (call
            | "-" call:c -> Minus(c)
            | "!" call:c -> LogicalNot(c)
            | "~" call:c -> BinaryNot(c)
-           | slotExpr
+           | reifyExpr
            | "&" call !(throwSemanticHere("reserved: unary prefix '&' applied to non-noun lValue")))
 
 pow = prefix:x ("**" prefix:y -> Pow(x, y)
@@ -185,8 +187,11 @@ key = (parenExpr | literal):x br -> x
 keywordPattern = (token("var") noun:n optGuard:g -> VarPattern(n, g)
                    |token("bind") noun:n optGuard:g -> BindPattern(n, g))
 namePattern = (keywordPattern
-                |noun:n optGuard:g -> FinalPattern(n, g)
-                |"&" noun:n optGuard:g -> SlotPattern(n, g))
+              |noun:n optGuard:g -> FinalPattern(n, g)
+              |reifyPattern)
+
+reifyPattern = ("&&" noun:n optGuard:g -> BindingPattern(n, g)
+               |"&" noun:n optGuard:g -> SlotPattern(n, g))
 
 mapPatternAddressing = (key:k "=>" pattern:v -> MapPatternAssoc(k, v)
                          |"=>" namePattern:p -> MapPatternImport(p))
@@ -213,8 +218,9 @@ objectExpr = ((token("def") objectName:n) | keywordPattern:n) objectTail:t -> [n
 objectName = (token('_') optGuard:e -> IgnorePattern(e)
                |namePattern)
 objectTail = (functionTail
-               |((token("extends") br order)?:e oImplements:oi scriptPair:s
-                  -> makeScript(e, oi, s)))
+               |((token("extends") br order)?:e oAs?:g oImplements:oi scriptPair:s
+                  -> makeScript(e, g, oi, s)))
+oAs = token("as") br order
 oImplements = ((token("implements") br order:x ("," order)*:xs -> cons(x, xs))
                 | -> [])
 functionTail = parenParamList:ps optResultGuard:g oImplements:fi block:b -> Function(ps, g, fi, b)
@@ -429,7 +435,7 @@ class EParser(CommonParser, BaseEParser):
     def action_makeSeqExpr(self, xs):
         return termMaker.SeqExpr(filter(None, xs))
 
-    def action_makeScript(self, e, oi, s):
-        return termMaker.Script(e, oi, *s)
+    def action_makeScript(self, e, g, oi, s):
+        return termMaker.Script(e, g, oi, *s)
 
     #noIgnoreExpressionHole nounExprFromSource valueHole

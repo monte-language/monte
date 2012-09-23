@@ -1,7 +1,8 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
-from pymeta.grammar import ParseError
+from monte.grammar import ParseError
+from monte.expander import StaticScope
 from structlike import StructBehavior, record #from epsilon
 
 # XXX should kernel nodes be separate from the non-kernel nodes of the same name?
@@ -70,115 +71,6 @@ class Renamer(BaseRenamer):
     def rename(cls, ast, renamings):
         return cls([ast], renamings).apply("trans")
     rename = classmethod(rename)
-
-class ScopeSet(object):
-    def __init__(self, bits=()):
-        self.contents = list(bits)[:]
-
-    def __sub__(self, other):
-        bits = self.contents[:]
-        for bit in other:
-            if bit in bits:
-                bits[bits.index(bit)] = bits[-1]
-                del bits[-1]
-        return ScopeSet(bits)
-
-    def __and__(self, other):
-        if len(self) > len(other):
-            big = self.contents
-            small = list(other)
-        else:
-            small = self.contents
-            big = list(other)
-        bits = []
-        for bit in small:
-            if bit in big:
-                bits.append(bit)
-        return ScopeSet(bits)
-
-    def __or__(self, other):
-        bits = list(other)
-        for bit in self.contents:
-            if bit not in bits:
-                bits.append(bit)
-        return ScopeSet(bits)
-
-    def getKeys(self):
-        return self.contents[:]
-
-    def __iter__(self):
-        return iter(self.contents)
-
-    def __len__(self):
-        return len(self.contents)
-
-class StaticScope(object):
-    def __init__(self, namesRead=None, namesSet=None, metaStateExprFlag=False,
-                 defNames=None, varNames=None):
-        if namesRead is None:
-            namesRead = ScopeSet()
-        if namesSet is None:
-            namesSet = ScopeSet()
-        if defNames is None:
-            defNames = ScopeSet()
-        if varNames is None:
-            varNames = ScopeSet()
-        self.namesRead = ScopeSet(namesRead)
-        self.namesSet = ScopeSet(namesSet)
-        self.defNames = ScopeSet(defNames)
-        self.varNames = ScopeSet(varNames)
-        self.metaStateExprFlag = metaStateExprFlag
-
-    def hide(self):
-        return StaticScope(self.namesRead, self.namesSet,
-                           self.metaStateExprFlag,
-                           None, None)
-    def add(self, right):
-        """
-        For processing normal expressions left to right, where all definitions
-        are exported, but uses are hidden by definitions to their left.
-        """
-        rightNamesRead = (right.namesRead - self.defNames) - self.varNames
-        rightNamesSet = (right.namesSet - self.varNames)
-        badAssigns = rightNamesSet & self.defNames
-        #XXX slavishly porting Java code etc
-        if (1 <= len(badAssigns)):
-            rightNamesSet = rightNamesSet - badAssigns
-
-        return StaticScope(self.namesRead | rightNamesRead,
-                           self.namesSet | rightNamesSet,
-                           self.metaStateExprFlag or right.metaStateExprFlag,
-                           self.defNames | right.defNames,
-                           self.varNames | right.varNames)
-
-
-    def namesUsed(self):
-        """
-        What are the names of variables used by this expression that refer to
-        variables defined outside this expression?
-
-        Union of namesRead and namesSet.
-        """
-        return self.namesRead | self.namesSet
-
-    def outNames(self):
-        """
-        What variables are defined in this expression that are visible after
-        this expression (i.e., to its right)?
-
-        Union of defNames and varNames.
-        """
-
-        return self.defNames | self.varNames
-
-    def __repr__(self):
-        return "<%r := %r =~ %r + var %r %s>" % (list(self.namesSet),
-                                                 list(self.namesRead),
-                                                 list(self.defNames),
-                                                 list(self.varNames),
-                                                 ("meta.getState()"
-                                                  if self.metaStateExprFlag
-                                                  else ""))
 
 class SubNode(object):
     tempCounter = 1
