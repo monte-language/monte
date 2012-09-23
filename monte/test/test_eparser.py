@@ -3,6 +3,25 @@
 
 from twisted.trial import unittest
 from monte.eparser import EParser
+from terml.nodes import Tag
+
+class Listifier(object):
+    def leafData(self, data, span):
+        return data
+    def leafTag(self, tag, span):
+        return tag
+    def term(self, tag, args):
+        if isinstance(tag, Tag): #argh
+            if tag.name == 'null':
+                return None
+            if tag.name == '.tuple.':
+                return args
+            return [tag.name] + args
+        else:
+            return tag
+
+def serialize(term):
+    return term.build(Listifier())
 
 class ParserTest(unittest.TestCase):
     """
@@ -14,7 +33,7 @@ class ParserTest(unittest.TestCase):
         def parse(src):
             p = EParser(src)
             r, e = p.apply(rule)
-            return r.serialize()
+            return serialize(r)
         return parse
 
 
@@ -69,19 +88,19 @@ class ParserTest(unittest.TestCase):
         """
         p = EParser(" ${0}")
         p.valueHoles = [1]
-        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiLiteralExpr", 0])
+        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiLiteralExpr", 0])
         p = EParser("   ${0}")
         p.valueHoles = [3]
-        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiLiteralExpr", 0])
+        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiLiteralExpr", 0])
         p = EParser("@{0}")
         p.patternHoles = [0]
-        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiPatternExpr", 0])
+        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiPatternExpr", 0])
         p = EParser("  @{7}")
         p.patternHoles = [2]
-        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiPatternExpr", 0])
+        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiPatternExpr", 0])
         p = EParser(" ${0}")
         p.valueHoles = [0, 1, 13]
-        self.assertEqual(p.apply("noun")[0].serialize(), ["QuasiLiteralExpr", 1])
+        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiLiteralExpr", 1])
 
 
     def test_quasiliterals(self):
