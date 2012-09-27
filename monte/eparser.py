@@ -1,7 +1,7 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
-from pymeta.runtime import ParseError
+from parsley import ParseError
 
 from monte import nodes
 from monte.grammar import PortableOMeta
@@ -167,7 +167,7 @@ assignOp = ("+=" -> "Add"
              |"|=" -> "BinaryOr"
              |"^=" -> "BinaryXor")
 
-expr =  ejector | assign
+expr =  assign | ejector
 ejector = ((token("break") (-> Break) | token("continue") (-> Continue) | token("return") (-> Return)):ej
              (("(" token(")") -> null) | assign)?:val -> ej(val))
 
@@ -339,9 +339,9 @@ class EParser(CommonParser, BaseEParser):
         Ensure an identifier isn't a keyword or reserved word.
         """
         if ident in self.reserved:
-            raise ParseError(self.input.position, ident + " is a reserved word")
+            raise ParseError(self.input, self.input.position, ident + " is a reserved word")
         elif ident in self.basicKeywords:
-            raise ParseError(self.input.position, ident + " is a keyword")
+            raise ParseError(self.input, self.input.position, ident + " is a keyword")
         else:
             return ident
 

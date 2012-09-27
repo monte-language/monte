@@ -67,11 +67,12 @@ class ParserTest(unittest.TestCase):
         """
         Nouns and URL expressions can be parsed.
         """
-        parse = self.getParser("noun")
+        parse = self.getParser("expr")
         self.assertEqual(parse("foo"), ["NounExpr", "foo"])
         self.assertEqual(parse("<unsafe>"), ["URIGetter", "unsafe"])
         self.assertEqual(parse("::length"), ["NounExpr", "length"])
         self.assertEqual(parse('::"if"'), ["NounExpr", "if"])
+        self.assertEqual(parse("iffy"), ["NounExpr", "iffy"])
 
 
     def test_uri(self):
@@ -357,6 +358,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("break(x + y)"), ["Break", ["Add", ["NounExpr", "x"], ["NounExpr", "y"]]])
         self.assertEqual(parse("break()"), ["Break", None])
         self.assertEqual(parse("break"), ["Break", None])
+        self.assertEqual(parse("breaks"), ["NounExpr", "breaks"])
 
 
     def test_try(self):
