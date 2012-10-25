@@ -233,6 +233,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("x % y"), ["Remainder", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x %% y"), ["Mod", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x + y"), ["Add", ["NounExpr", "x"], ["NounExpr", "y"]])
+        self.assertEqual(parse("(x + y) + z"), ["Add", ["Add", ["NounExpr", "x"], ["NounExpr", "y"]], ["NounExpr", "z"]])
         self.assertEqual(parse("1 + 1"), ["Add", ["LiteralExpr", 1], ["LiteralExpr", 1]])
         self.assertEqual(parse("x - y"), ["Subtract", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x - y + z"), ["Add", ["Subtract", ["NounExpr", "x"], ["NounExpr", "y"]], ["NounExpr", "z"]])

@@ -48,6 +48,10 @@ except ImportError:
     KernelENodeCopier = OMeta.makeGrammar(kernelENodeCopyGrammar, globals(), name="KernelENodeCopier")
 KernelENodeCopier.rule_apply = KernelENodeCopier.apply
 renameGrammar = """
+@NounExpr(:name) -> $NounExpr(self.renamings.get(name, name))
+@FinalPattern(@NounExpr(:name), :guard) !(self.renamings.pop(noun.name)
+"""
+renameGrammar = """
 NounExpr :name => NounExpr(self.renamings.get(name, name))
 FinalPattern <trans>:noun <trans>:guard => (self.renamings.pop(noun.name, None),
                                             FinalPattern(noun, guard))[1]
