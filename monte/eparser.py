@@ -3,11 +3,9 @@
 
 from parsley import ParseError
 
-from monte import nodes
 from monte.grammar import MonteOMeta
 from terml. common import CommonParser
 from terml.nodes import termMaker as t
-from terml.twine import TwineBytes
 
 egrammar = r"""
 updocLine = <('?'|'#'|'>') (~('\n' | '\r') anything)*>:txt eol -> txt
@@ -174,7 +172,7 @@ ejector = ((token("break") (-> t.Break) | token("continue") (-> t.Continue) | to
 
 guard = (noun | parenExpr):e ("[" args:x token(']') -> x)*:xs -> t.Guard(e, xs)
 optGuard = (":" guard)?
-eqPattern = (token('_') optGuard:e -> t.IgnorePattern(e)
+eqPattern = (token('_') ~letterOrDigit optGuard:e -> t.IgnorePattern(e)
               |identifier?:n quasiString:q -> t.QuasiPattern(n, q)
               |namePattern
               |"==" prim:p -> t.SamePattern(p)

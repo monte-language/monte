@@ -198,6 +198,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("[=> a]"), ["MapPattern", [["MapPatternRequired", ["MapPatternImport", ["FinalPattern", ["NounExpr", "a"], None]]]], None])
         self.assertEqual(parse('["a" => b] | c'), ["MapPattern", [["MapPatternRequired", ["MapPatternAssoc", ["LiteralExpr", "a"], ["FinalPattern", ["NounExpr", "b"], None]]]], ["FinalPattern", ["NounExpr", "c"], None]])
         self.assertEqual(parse("_"), ["IgnorePattern", None])
+        self.assertEqual(parse("__foo"), ["FinalPattern", ["NounExpr", "__foo"], None])
         self.assertEqual(parse("a :int"), ["FinalPattern", ["NounExpr", "a"], ["Guard", ["NounExpr", "int"], []]])
         self.assertEqual(parse("a :List[int]"), ["FinalPattern", ["NounExpr", "a"], ["Guard", ["NounExpr", "List"], [[["NounExpr", "int"]]]]])
         self.assertEqual(parse("x :(str; int)"), ["FinalPattern", ["NounExpr", "x"], ["Guard", ["SeqExpr", [["NounExpr", "str"], ["NounExpr", "int"]]], []]])
