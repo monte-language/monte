@@ -343,6 +343,8 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("interface foo {to run(a :int, b :float64) :any}"), ["Interface", None, ["FinalPattern", ["NounExpr", "foo"], None], None, [], [], [["MessageDesc", None, "to", "run", [["ParamDesc", ["NounExpr", "a"], ["Guard", ["NounExpr", "int"], []]], ["ParamDesc", ["NounExpr", "b"], ["Guard", ["NounExpr", "float64"], []]]], ["Guard", ["NounExpr", "any"], []]]]])
         self.assertEqual(parse("interface foo(a :int, b :float64) :any"), ["Interface", None, ["FinalPattern", ["NounExpr", "foo"], None], None, [], [], ["InterfaceFunction", [["ParamDesc", ["NounExpr", "a"], ["Guard", ["NounExpr", "int"], []]], ["ParamDesc", ["NounExpr", "b"], ["Guard", ["NounExpr", "float64"], []]]], ["Guard", ["NounExpr", "any"], []]]])
 
+        self.assertEqual(parse("interface a guards b ? c () {}"), ["Interface", None, ["FinalPattern", ["NounExpr", "a"], None], ["SuchThatPattern", ["FinalPattern", ["NounExpr", "b"], None], ["FunctionCallExpr", ["NounExpr", "c"], []]], [], [], []])
+
     def test_ejector(self):
         """
         Special ejector-invoking expressions.

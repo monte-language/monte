@@ -2,16 +2,16 @@
 # See LICENSE for details.
 
 from twisted.trial import unittest
+from ometa.runtime import ParseError
 from monte.eparser import EParser
-from monte.nodes import ParseError, SubNode
+from monte.expander import expand
+from monte.test.test_eparser import serialize
 
 class ExpanderTest(unittest.TestCase):
 
     def parse(self, txt):
-        SubNode.tempCounter = 1 #XXX hack
-
         ast, e = EParser(txt).apply("expr")
-        return ast.expand().serialize()
+        return serialize(expand(ast))
 
 
     def test_anoun(self):
@@ -191,7 +191,7 @@ class ExpanderTest(unittest.TestCase):
                                 ["NounExpr", "x"]],
                                ["MethodCallExpr", ["NounExpr", "__makeList"],
                                 "run",
-                                [["NounExpr", "true"], ["Slot", "y"]]]]],
+                                [["NounExpr", "true"], ["SlotExpr", "y"]]]]],
                              ["Catch", ["FinalPattern", ["NounExpr", "ex__3"],
                                         None],
                               ["SeqExpr",
@@ -222,7 +222,7 @@ class ExpanderTest(unittest.TestCase):
                                 ["NounExpr", "x"]],
                                ["MethodCallExpr", ["NounExpr", "__makeList"],
                                 "run",
-                                [["Slot", "y"]]]]],
+                                [["SlotExpr", "y"]]]]],
                              ["Catch", ["FinalPattern", ["NounExpr", "ex__3"],
                                         None],
                               ["SeqExpr",
@@ -501,7 +501,6 @@ class ExpanderTest(unittest.TestCase):
              [["NounExpr", "x"], ["NounExpr", "y"]]])
 
     def test_mapPattern(self):
-
         self.assertEqual(
             self.parse('def ["a" => b, "c" => d] := x'),
             ["Def", ["ViaPattern",
@@ -590,14 +589,14 @@ class ExpanderTest(unittest.TestCase):
                  [["LiteralExpr", "a"], ["NounExpr", "a"]]],
                 ["MethodCallExpr", ["NounExpr", "__makeList"],
                  "run",
-                 [["LiteralExpr", "&b"], ["Slot", "b"]]]]]]])
+                 [["LiteralExpr", "&b"], ["SlotExpr", "b"]]]]]]])
 
 
     def test_object(self):
         self.assertEqual(self.parse("def foo {}"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
-                          ["Script", None, [],
+                          ["Script", None, None, [],
                            [], []]])
         self.assertEqual(self.parse("def foo extends baz {}"),
                          ["Def", ["FinalPattern", ["NounExpr", "foo"], None],
@@ -610,7 +609,7 @@ class ExpanderTest(unittest.TestCase):
                               ["NounExpr", "baz"]],
                              ["Object", None,
                               ["FinalPattern", ["NounExpr", "foo"], None],
-                              ["Script", None, [],
+                              ["Script", None, None, [],
                                [],
                                [["Matcher",
                                  ["FinalPattern", ["NounExpr", "pair__1"], None],
@@ -631,7 +630,7 @@ class ExpanderTest(unittest.TestCase):
                                 ["NounExpr", "baz"]],
                                ["Object", None,
                                 ["VarPattern", ["NounExpr", "foo"], None],
-                                ["Script", None, [],
+                                ["Script", None, None, [],
                                  [],
                                  [["Matcher",
                                    ["FinalPattern", ["NounExpr", "pair__1"],
@@ -640,7 +639,7 @@ class ExpanderTest(unittest.TestCase):
                                     "callWithPair",
                                     [["NounExpr", "super"],
                                      ["NounExpr", "pair__1"]]]]]]],
-                               ["Slot", "foo"]]]]],
+                               ["SlotExpr", "foo"]]]]],
                             ["NounExpr", "foo"]]])
 
         self.assertEqual(self.parse("bind foo extends baz {}"),
@@ -663,7 +662,7 @@ class ExpanderTest(unittest.TestCase):
                                 ["NounExpr", "baz"]],
                                ["Object", None,
                                 ["FinalPattern", ["NounExpr", "foo"], None],
-                                ["Script", None, [],
+                                ["Script", None, None, [],
                                  [],
                                  [["Matcher",
                                    ["FinalPattern", ["NounExpr", "pair__1"],
@@ -677,7 +676,7 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("def foo { to baz() { x } }"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
-                          ["Script", None, [],
+                          ["Script", None, None, [],
                            [["Method", None, "baz", [], None,
                              ["Escape",
                               ["FinalPattern",
@@ -693,7 +692,7 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("def foo { method baz(x) { y } }"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
-                          ["Script", None, [],
+                          ["Script", None, None, [],
                            [["Method", None, "baz",
                              [["FinalPattern", ["NounExpr", "x"], None]], None,
                              ["NounExpr", "y"]]],
@@ -703,7 +702,7 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("def foo { match x { y } }"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
-                          ["Script", None, [], [],
+                          ["Script", None, None, [], [],
                            [["Matcher", ["FinalPattern",
                                          ["NounExpr", "x"], None],
                              ["NounExpr", "y"]]]]])
@@ -712,7 +711,7 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("def foo() { y }"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
-                          ["Script", None, [],
+                          ["Script", None, None, [],
                            [["Method", None, "run", [], None,
                              ["Escape", ["FinalPattern",
                                            ["NounExpr", "__return"],
@@ -728,7 +727,7 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("fn x { y }"),
                          ["Object", None,
                           ["IgnorePattern", None],
-                          ["Script", None, [],
+                          ["Script", None, None, [],
                            [["Method", None, "run",
                              [["FinalPattern", ["NounExpr", "x"], None]], None,
                              ["NounExpr", "y"]]],
@@ -817,7 +816,7 @@ class ExpanderTest(unittest.TestCase):
                            ["MethodCallExpr",
                             ["NounExpr", "__makeProtocolDesc"],
                             "run",
-                            [["LiteralExpr", ""],
+                            [None,
                               ["MethodCallExpr",
                                ["MethodCallExpr", ["Meta", "context"],
                                 "getFQNPrefix", []],
@@ -871,7 +870,7 @@ class ExpanderTest(unittest.TestCase):
                                 ["MethodCallExpr",
                                  ["NounExpr", "__makeMessageDesc"],
                                  "run",
-                                 [["LiteralExpr", ""],
+                                 [None,
                                   ["LiteralExpr", "boz"],
                                   ["MethodCallExpr", ["NounExpr", "__makeList"],
                                    "run",
@@ -947,7 +946,7 @@ class ExpanderTest(unittest.TestCase):
                              [["NounExpr", "x"],
                              ["Object", "when-catch 'done' function",
                               ["IgnorePattern", None],
-                              ["Script", None, [],
+                              ["Script", None, None, [],
                                [["Method", None, "run",
                                  [["FinalPattern",
                                    ["NounExpr", "resolution__3"], None]],
@@ -975,7 +974,7 @@ class ExpanderTest(unittest.TestCase):
                              [["NounExpr", "x"],
                              ["Object", "when-catch 'done' function",
                               ["IgnorePattern", None],
-                              ["Script", None, [],
+                              ["Script", None, None, [],
                                [["Method", None, "run",
                                  [["FinalPattern",
                                    ["NounExpr", "resolution__1"], None]],
