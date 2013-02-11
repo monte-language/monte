@@ -28,11 +28,11 @@ class ExpanderTest(unittest.TestCase):
     def test_update(self):
         self.assertEqual(self.parse("x foo= y"), ["Assign", ["NounExpr", "x"], ["MethodCallExpr", ["NounExpr", "x"], "foo", [["NounExpr", "y"]]]])
         self.assertEqual(self.parse("x foo= (y, z)"), ["Assign", ["NounExpr", "x"], ["MethodCallExpr", ["NounExpr", "x"], "foo", [["NounExpr", "y"], ["NounExpr", "z"]]]])
-        self.assertEqual(self.parse("x[i] foo= y"), ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "recip__1"], None], None, ["NounExpr", "x"]], ["Def", ["FinalPattern", ["NounExpr", "arg__3"], None], None, ["NounExpr", "i"]], ["MethodCallExpr", ["NounExpr", "recip__1"], "put", [["NounExpr", "arg__3"], ["Def", ["FinalPattern", ["NounExpr", "ares__5"], None], None, ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "recip__1"], "get", [["NounExpr", "arg__3"]]], "foo", [["NounExpr", "y"]]]]]], ["NounExpr", "ares__5"]]])
-        self.assertEqual(self.parse("x(a) foo= y"), ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "recip__1"], None], None, ["NounExpr", "x"]], ["Def", ["FinalPattern", ["NounExpr", "arg__3"], None], None, ["NounExpr", "a"]], ["MethodCallExpr", ["NounExpr", "recip__1"], "setRun", [["NounExpr", "arg__3"], ["Def", ["FinalPattern", ["NounExpr", "ares__5"], None], None, ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "recip__1"], "run", [["NounExpr", "arg__3"]]], "foo", [["NounExpr", "y"]]]]]], ["NounExpr", "ares__5"]]])
+        self.assertEqual(self.parse("x[i] foo= y"), ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "recip__1"], None], None, ["NounExpr", "x"]], ["Def", ["FinalPattern", ["NounExpr", "arg__1"], None], None, ["NounExpr", "i"]], ["MethodCallExpr", ["NounExpr", "recip__1"], "put", [["NounExpr", "arg__1"], ["Def", ["FinalPattern", ["NounExpr", "ares__1"], None], None, ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "recip__1"], "get", [["NounExpr", "arg__1"]]], "foo", [["NounExpr", "y"]]]]]], ["NounExpr", "ares__1"]]])
+        self.assertEqual(self.parse("x(a) foo= y"), ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "recip__1"], None], None, ["NounExpr", "x"]], ["Def", ["FinalPattern", ["NounExpr", "arg__1"], None], None, ["NounExpr", "a"]], ["MethodCallExpr", ["NounExpr", "recip__1"], "setRun", [["NounExpr", "arg__1"], ["Def", ["FinalPattern", ["NounExpr", "ares__1"], None], None, ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "recip__1"], "run", [["NounExpr", "arg__1"]]], "foo", [["NounExpr", "y"]]]]]], ["NounExpr", "ares__1"]]])
 
-        self.assertEqual(self.parse("x[i] += y"), ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "recip__1"], None], None, ["NounExpr", "x"]], ["Def", ["FinalPattern", ["NounExpr", "arg__3"], None], None, ["NounExpr", "i"]], ["MethodCallExpr", ["NounExpr", "recip__1"], "put", [["NounExpr", "arg__3"], ["Def", ["FinalPattern", ["NounExpr", "ares__5"], None], None, ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "recip__1"], "get", [["NounExpr", "arg__3"]]], "add", [["NounExpr", "y"]]]]]], ["NounExpr", "ares__5"]]])
-        self.assertEqual(self.parse("x(a) += y"), ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "recip__1"], None], None, ["NounExpr", "x"]], ["Def", ["FinalPattern", ["NounExpr", "arg__3"], None], None, ["NounExpr", "a"]], ["MethodCallExpr", ["NounExpr", "recip__1"], "setRun", [["NounExpr", "arg__3"], ["Def", ["FinalPattern", ["NounExpr", "ares__5"], None], None, ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "recip__1"], "run", [["NounExpr", "arg__3"]]], "add", [["NounExpr", "y"]]]]]], ["NounExpr", "ares__5"]]])
+        self.assertEqual(self.parse("x[i] += y"), ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "recip__1"], None], None, ["NounExpr", "x"]], ["Def", ["FinalPattern", ["NounExpr", "arg__1"], None], None, ["NounExpr", "i"]], ["MethodCallExpr", ["NounExpr", "recip__1"], "put", [["NounExpr", "arg__1"], ["Def", ["FinalPattern", ["NounExpr", "ares__1"], None], None, ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "recip__1"], "get", [["NounExpr", "arg__1"]]], "add", [["NounExpr", "y"]]]]]], ["NounExpr", "ares__1"]]])
+        self.assertEqual(self.parse("x(a) += y"), ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "recip__1"], None], None, ["NounExpr", "x"]], ["Def", ["FinalPattern", ["NounExpr", "arg__1"], None], None, ["NounExpr", "a"]], ["MethodCallExpr", ["NounExpr", "recip__1"], "setRun", [["NounExpr", "arg__1"], ["Def", ["FinalPattern", ["NounExpr", "ares__1"], None], None, ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "recip__1"], "run", [["NounExpr", "arg__1"]]], "add", [["NounExpr", "y"]]]]]], ["NounExpr", "ares__1"]]])
 
 
         self.assertEqual(self.parse("x += y"), ["Assign", ["NounExpr", "x"], ["MethodCallExpr", ["NounExpr", "x"], "add", [["NounExpr", "y"]]]])
@@ -75,7 +75,7 @@ class ExpanderTest(unittest.TestCase):
     def test_def(self):
         self.assertEqual(self.parse("def x := 1"), ["Def", ["FinalPattern", ["NounExpr", "x"], None], None, ["LiteralExpr", 1]])
         self.assertEqual(self.parse("def [x, y] := 1"), ["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "x"], None], ["FinalPattern", ["NounExpr", "y"], None]], None], None, ["LiteralExpr", 1]])
-        self.assertEqual(self.parse("def [x, y] := [1, x]"), ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "x__1"], None], ["FinalPattern", ["NounExpr", "xR__3"], None]], None], None, ["MethodCallExpr", ["NounExpr", "Ref"], "promise", []]], ["Def", ["FinalPattern", ["NounExpr", "res__5"], None], None, ["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "x"], None], ["FinalPattern", ["NounExpr", "y"], None]], None], None, ["MethodCallExpr", ["NounExpr", "__makeList"], "run", [["LiteralExpr", 1], ["NounExpr", "x__1"]]]]], ["MethodCallExpr", ["NounExpr", "xR__3"], "resolve", [["NounExpr", "x"]]], ["NounExpr", "res__5"]]])
+        self.assertEqual(self.parse("def [x, y] := [1, x]"), ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "x__1"], None], ["FinalPattern", ["NounExpr", "xR__1"], None]], None], None, ["MethodCallExpr", ["NounExpr", "Ref"], "promise", []]], ["Def", ["FinalPattern", ["NounExpr", "res__1"], None], None, ["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "x"], None], ["FinalPattern", ["NounExpr", "y"], None]], None], None, ["MethodCallExpr", ["NounExpr", "__makeList"], "run", [["LiteralExpr", 1], ["NounExpr", "x__1"]]]]], ["MethodCallExpr", ["NounExpr", "xR__1"], "resolve", [["NounExpr", "x"]]], ["NounExpr", "res__1"]]])
 
 
     def test_forward(self):
@@ -610,67 +610,13 @@ class ExpanderTest(unittest.TestCase):
                              ["Object", None,
                               ["FinalPattern", ["NounExpr", "foo"], None],
                               ["Script", None, None, [],
-                               [],
+                               [], 
                                [["Matcher",
                                  ["FinalPattern", ["NounExpr", "pair__1"], None],
                                  ["MethodCallExpr", ["NounExpr", "E"],
                                   "callWithPair",
                                   [["NounExpr", "super"],
                                    ["NounExpr", "pair__1"]]]]]]]]]]])
-
-        self.assertEqual(self.parse("var foo extends baz {}"),
-                         ["SeqExpr",
-                          [["Def", ["SlotPattern", ["NounExpr", "foo"], None],
-                            None,
-                            ["HideExpr",
-                             ["SeqExpr",
-                              [["Def", ["FinalPattern", ["NounExpr", "super"],
-                                        None],
-                                None,
-                                ["NounExpr", "baz"]],
-                               ["Object", None,
-                                ["VarPattern", ["NounExpr", "foo"], None],
-                                ["Script", None, None, [],
-                                 [],
-                                 [["Matcher",
-                                   ["FinalPattern", ["NounExpr", "pair__1"],
-                                    None],
-                                   ["MethodCallExpr", ["NounExpr", "E"],
-                                    "callWithPair",
-                                    [["NounExpr", "super"],
-                                     ["NounExpr", "pair__1"]]]]]]],
-                               ["SlotExpr", "foo"]]]]],
-                            ["NounExpr", "foo"]]])
-
-        self.assertEqual(self.parse("bind foo extends baz {}"),
-                         ["Def", ["ViaPattern",
-                                    ["MethodCallExpr",
-                                     ["NounExpr", "__bind"],
-                                     "run",
-                                      [["NounExpr", "foo__Resolver"]]],
-                                    ["IgnorePattern", None]],
-                            None,
-                          ["HideExpr",
-                           ["Def",
-                            ["FinalPattern", ["NounExpr", "foo"], None],
-                            None,
-                            ["HideExpr",
-                             ["SeqExpr",
-                              [["Def", ["FinalPattern", ["NounExpr", "super"],
-                                        None],
-                                None,
-                                ["NounExpr", "baz"]],
-                               ["Object", None,
-                                ["FinalPattern", ["NounExpr", "foo"], None],
-                                ["Script", None, None, [],
-                                 [],
-                                 [["Matcher",
-                                   ["FinalPattern", ["NounExpr", "pair__1"],
-                                    None],
-                                   ["MethodCallExpr", ["NounExpr", "E"],
-                                    "callWithPair",
-                                    [["NounExpr", "super"],
-                                     ["NounExpr", "pair__1"]]]]]]]]]]]]])
 
     def test_to(self):
         self.assertEqual(self.parse("def foo { to baz() { x } }"),

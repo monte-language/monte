@@ -146,41 +146,42 @@ def err(msg, parser):
 
 def expandCallVerbAssign(verb, args, receiver, methVerb, methArgs):
     r = mktemp("recip")
-    prelude = t.Def(t.FinalPattern(r, None, None), None, receiver)
+    prelude = t.Def(t.FinalPattern(r, None), None, receiver)
     seq = [prelude]
     setArgs = []
-    for arg in args:
+    for arg in methArgs.args:
         a = mktemp("arg")
-        seq.append(t.Def(t.FinalPattern(a, None), arg))
+        seq.append(t.Def(t.FinalPattern(a, None), None, arg))
         setArgs.append(a)
-    seq.extend(expand(t.Assign(t.MethodCallExpr(r, verb, setArgs), t.MethodCallExpr(t.MethodCallExpr(r, verb, setArgs),
-                               methVerb, methArgs))).args[0].args)
+    seq.extend(expand(t.Assign(t.MethodCallExpr(r, methVerb, setArgs), t.MethodCallExpr(t.MethodCallExpr(r, methVerb, setArgs),
+                               verb, args))).args[0].args)
     return t.SeqExpr(seq)
 
 
-def expandDef(patt, optEj, rval):
+def expandDef(patt, optEj, rval, nouns):
     pattScope = scope(patt)
     defPatts = pattScope.defNames
     varPatts = pattScope.varNames
     rvalScope = scope(rval)
     if optEj:
         rvalScope = scope(optEj).add(rvalScope)
-    else:
-        optEj = None
     rvalUsed = rvalScope.namesUsed()
+    commonNames = pattScope.outNames() & rvalScope.namesUsed().getKeys()
     if len(varPatts & rvalUsed) != 0:
         raise ParseError("Circular 'var' definition not allowed", None)
     if len(pattScope.namesUsed() & rvalScope.outNames()) != 0:
         raise ParseError("Pattern may not use var defined on the right", None)
     conflicts = defPatts & rvalUsed
-    if (0 >= len(conflicts)):
+    if len(conflicts) == 0:
         return t.Def(patt, optEj, rval)
     else:
         promises = []
         resolves = []
-        for oldNameStr in conflicts:
+        renamings = {}
+        for oldNameStr in conflicts.getKeys():
             newName = mktemp(oldNameStr)
             newNameR = mktemp(oldNameStr + "R")
+            renamings[oldNameStr] = newName
              # def [newName, newNameR] := Ref.promise()
             pair = [t.FinalPattern(newName, None),
                     t.FinalPattern(newNameR, None)]
@@ -190,6 +191,9 @@ def expandDef(patt, optEj, rval):
                                             [t.NounExpr(oldNameStr)]))
         resName = mktemp("res")
         resolves.append(resName)
+        cr = CycleRenamer([rval])
+        cr.renamings = renamings
+        rval =  cr.apply("transform")[0]
         resPatt = t.FinalPattern(resName, None)
         resDef = t.Def(resPatt, None, t.Def(patt, optEj, rval))
         return t.SeqExpr(promises + [resDef] + resolves)
@@ -198,6 +202,7 @@ computeStaticScopeRules = """
 null = anything:t ?(t.tag.name == 'null')
 LiteralExpr(:val) -> StaticScope()
 NounExpr(@name) -> StaticScope(namesRead=[name])
+TempNounExpr(@name @idx) -> StaticScope(namesRead=[name + str(idx)])
 SlotExpr(@name) -> StaticScope(namesRead=[name])
 BindingExpr(NounExpr(@name)) -> StaticScope(namesRead=[name])
 HideExpr(@blockScope) -> blockScope.hide()
@@ -206,6 +211,7 @@ MethodCallExpr(@receiverScope :verb @argScopes) -> union(receiverScope, argScope
 
 Def(@patternScope @exitScope @exprScope) -> patternScope.add(exitScope).add(exprScope)
 Assign(NounExpr(@name) @rightScope) -> StaticScope(namesSet=[name]).add(rightScope)
+Assign(TempNounExpr(@name @idx) @rightScope) -> StaticScope(namesSet=[name + str(idx)]).add(rightScope)
 
 IgnorePattern(@guardScope) -> guardScope
 VarPattern(NounExpr(@name) @guardScope) -> StaticScope(varNames=[name]).add(guardScope)
@@ -287,7 +293,7 @@ expander = """
 #term, so we explicitly deal with it here
 null = anything:t ?(t.tag.name == 'null')
 
-nameAndString = NounExpr(:name):e -> e, name.data
+nameAndString = NounExpr(:name):e !(self.nouns.add(name)) -> e, name.data
      | SlotExpr(:name):e -> e, '&' + name.data
      | BindingExpr(:name):e -> e, '&&' + name.data
 
@@ -297,10 +303,12 @@ nameAndString = NounExpr(:name):e -> e, name.data
      | SlotPattern(name:name :guard):p transform(p):e -> e, '&' + name
      | BindingPattern(name:name :guard):p transform(p):e -> e, '&&' + name
 
-name = NounExpr(:name) -> name.data
+name = NounExpr(:name) !(self.nouns.add(name)) -> name.data
      | SlotExpr(:name) -> '&' + name.data
      | BindingExpr(:name) -> '&&' + name.data
 
+
+NounExpr(:name) !(self.nouns.add(name)) -> t.NounExpr(name)
 URIExpr(@scheme @body) -> mcall(scheme + "__uriGetter", "get", t.LiteralExpr(body))
 URIGetter(@scheme) -> t.NounExpr(scheme + "__uriGetter")
 MapExpr(@assocs) -> mcall("__makeMap", "fromPairs", mcall("__makeList", "run", *[mcall("__makeList", "run", *a) for a in assocs]))
@@ -365,9 +373,9 @@ BinaryXor(@left @right) -> binop("xor", left, right)
 LogicalAnd(:left :right) -> expandLogicalAnd_forValue(left, right, self.scope)
 LogicalOr(:left :right) -> expandLogicalOr_forValue(left, right, self.scope)
 
-Def(@pattern @exit @expr) -> expandDef(pattern, exit, expr)
+Def(@pattern @exit @expr) -> expandDef(pattern, exit, expr, self.nouns)
 
-Forward(@name) !(mktemp(name.data + "__Resolver")):rname -> t.SeqExpr([
+Forward(@name) !(t.NounExpr(name.args[0].data + "__Resolver")):rname -> t.SeqExpr([
                                             t.Def(t.ListPattern([
                                                       t.FinalPattern(name, None),
                                                       t.FinalPattern(rname, None)],
@@ -377,7 +385,7 @@ Forward(@name) !(mktemp(name.data + "__Resolver")):rname -> t.SeqExpr([
                                         rname])
 
 Assign(@left @right) = ass(left right)
-ass NounExpr(@name) :right -> t.Assign(t.NounExpr(name), right)
+ass NounExpr(:name) :right -> t.Assign(t.NounExpr(name), right)
 ass MethodCallExpr(@receiver @verb @args):left :right !(mktemp("ares")):ares -> t.SeqExpr([t.MethodCallExpr(receiver, putVerb(verb), args + [t.Def(t.FinalPattern(ares, None), None, right)]), ares])
 ass :left :right -> err("Assignment can only be done to nouns and collection elements", self)
 
@@ -388,7 +396,7 @@ vass :verb NounExpr(@name) :args -> t.Assign(t.NounExpr(name), mcall(name, verb,
 vass :verb MethodCallExpr(@receiver :methVerb :methArgs) :args -> expandCallVerbAssign(verb, args, receiver, methVerb, methArgs)
 vass :verb :badTarget :args -> verbAssignError(badTarget, self)
 
-AugAssign(:op :left :right) -> self.apply("transform", t.VerbAssign(binops[op], left, right))
+AugAssign(@op :left :right) -> expand(t.VerbAssign(binops[op], left, [right]))
 
 Break(null) -> mcall("__break", "run")
 Break(@expr) -> mcall("__break", "run", expr)
@@ -405,7 +413,7 @@ Guard(:expr :subscripts) -> expand(reduce(lambda e, s: t.GetExpr(e, s), subscrip
 
 SamePattern(@value) -> t.ViaPattern(mcall("__is", "run", value), t.IgnorePattern(None))
 
-#VarPattern(@name @guard) -> t.VarPattern(name, guard)
+VarPattern(@name @guard) = -> t.VarPattern(name, guard)
 
 BindPattern(@name @guard) -> t.ViaPattern(mcall("__bind", "run", [name.args[0].data + "__Resolver", guard]), t.IgnorePattern(None))
 
@@ -436,16 +444,23 @@ MessageDesc(@doco @type @verb @paramDescs @guard) -> t.HideExpr(mcall("__makeMes
 
 ParamDesc(name:name @guard) -> mcall("__makeParamDesc", "run", t.LiteralExpr(name), guard or t.NounExpr("any"))
 
+
+Lambda(@doco @patterns @block) -> t.Object(doco, t.IgnorePattern(None),
+                                      t.Script(None, None, [],
+                                               [t.Method(None, "run", patterns,
+                                                         None, block)],
+                                               []))
+
 Object(:doco BindPattern(:name :guard):bp :script):o transform(bp):exName
-    transform(t.Object(doco, t.FinalPattern(t.NounExpr(name), None), script)):exObj
+     transform(t.Object(doco, t.FinalPattern(t.NounExpr(name), None), script)):exObj
  -> t.Def(exName, None, t.HideExpr(exObj))
 
 Object(@doco @name Function(@params @guard @implements @block))
-    -> t.Object(doco, name, None, t.Script(None, implements,
-                                      [t.Method(doco, "run", params, guard,
-                                           t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
-                                               t.SeqExpr([block, t.NounExpr("null")]), None))],
-                                      []))
+    -> t.Object(doco, name, t.Script(None, None, implements,
+                                  [t.Method(doco, "run", params, guard,
+                                       t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
+                                           t.SeqExpr([block, t.NounExpr("null")]), None))],
+                                  []))
 
 Object(@doco @name Script(null @guard @implements @methods @matchers)) -> t.Object(doco, name, t.Script(None, guard, implements, methods, matchers))
 
@@ -460,15 +475,95 @@ objectSuper :doco :name :extends :guard :implements :methods :matchers :maybeSlo
        t.Def(t.FinalPattern(t.NounExpr("super"), None),
            None, extends),
        t.Object(doco, name,
-           t.Script(None, guard, methods, implements, methods,
+           t.Script(None, guard, implements, methods,
                matchers + [t.Matcher(t.FinalPattern(p, None),
                            mcall("E", "callWithPair", t.NounExpr("super"), p))]))
        ] + maybeSlot))
+To(:doco @verb @params @guard @block) -> t.Method(doco, verb, params, guard, t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
+                                                  t.SeqExpr([block, t.NounExpr("null")]), None))
 
-matchBind_forValue :spec :patt = !(getExports(scope(spec), self.scope)):exports (
+Accum(@base !(mktemp("accum")):tmp accum(tmp):accumulator) -> t.SeqExpr(
+    [t.Def(t.VarPattern(tmp, None), None, base), accumulator, tmp])
+
+accum :tmp = (AccumFor(:left :right :expr accum(tmp):body @catcher) forValue(expr scope(body)):coll expandFor(left right coll body catcher)
+             |AccumIf(@expr accum(tmp):body) expandIf(expr body)
+             |AccumWhile(@test accum(tmp):body @catcher) expandWhile(test body catcher)
+             |AccumOp(@op @expr) -> t.Assign(tmp, binop(binops[op], tmp, expr))
+             |AccumCall(:verb @args) -> t.Assign(tmp, t.MethodCallExpr(tmp, verb, args)))
+
+For(:key :value :expr @block @catcher) forValue(expr scope(block)):coll expandFor(key value coll block catcher)
+
+expandFor :key :value :coll :block :catcher =
+    !(validateFor(self, key, value, coll))
+    !(mktemp("validFlag")):fTemp
+    !(mktemp("key")):kTemp
+    !(mktemp("value")):vTemp
+    transform(t.If(t.LogicalAnd(t.MatchBind(kTemp, key)),
+                                t.MatchBind(vTemp, value),
+                   t.Escape(t.FinalPattern(t.NounExpr("__continue"), None),
+                            t.SeqExpr([block, t.NounExpr("null")]),
+                   None),
+              None)):body
+    -> (t.Escape(t.FinalPattern(t.NounExpr("__break"), None),
+                 t.SeqExpr([t.Def(t.VarPattern(fTemp, None), None,
+                                  t.NounExpr("true")),
+                            t.Finally(t.MethodCallExpr(coll, "iterate",
+                                [t.Object("For-loop body", t.IgnorePattern(None),
+                                     t.Script(None, None, [],
+                                         [t.Method(None, "run",
+                                             [t.FinalPattern(kTemp, None),
+                                              t.FinalPattern(vTemp, None)],
+                                             None,
+                                             t.SeqExpr([
+                                                 mcall("require", "run", fTemp,
+                                                     t.LiteralExpr("For-loop body isn't valid"
+                                                                   " after for-loop exits.")),
+                                                 body])
+                                             )],
+                                         []))]),
+                                t.Assign(fTemp, NounExpr("false"))),
+                            t.NounExpr("null")]),
+                 catcher))
+
+If(delayed_forControl:testAndEj @consq @alt) -> t.Escape(t.FinalPattern(testAndEj[1], None),
+                                                         t.SeqExpr([testAndEj[0], consq]),
+                                                       t.Catch(t.IgnorePattern(None), alt))
+
+If(@test @consq @alt) -> t.If(test, consq, alt)
+
+Switch(@expr :matchers) !(mktemp("specimen")):sp -> expand(t.HideExpr(t.SeqExpr([
+                                                        t.Def(t.FinalPattern(sp, None),
+                                                            None, expr),
+                                                        matchExpr(matchers, sp)])))
+
+Try(@tryblock null null) -> t.HideExpr(tryblock)
+Try(@tryblock null @finallyblock) -> t.Finally(tryblock, finallyblock)
+Try(@tryblock [Catcher(@pattern @block)] @finallyblock) kerneltry(t.KernelTry(tryblock, pattern, block) finallyblock)
+Try(@tryblock :catchers @finallyblock) !(mktemp("sp")):sp kerneltry(t.KernelTry(tryblock, t.FinalPattern(sp, None), expand(matchExpr(catchers, sp))) finallyblock)
+
+kerneltry :tryexpr null -> tryexpr
+kerneltry :tryexpr :finallyexpr -> t.Finally(tryexpr, finallyexpr)
+
+While(:test :block @catcher) -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", t.Object("While loop body", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [], t.NounExpr("boolean"), expand(t.If(test, t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None), t.NounExpr("true")]), t.NounExpr("false"))))], []))), catcher)
+
+When([@arg] @block :catchers @finallyblock) expandWhen(arg block catchers finallyblock)
+When(:args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", expand(t.ListExpr(args))) block catchers finallyblock)
+
+expandWhen :arg :block :catchers :finallyblock = expandWhenCatchers(catchers):cs !(mktemp("resolution")):resolution -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, expand(t.Try(t.SeqExpr([t.Def(t.IgnorePattern(None), None, mcall("Ref", "fulfillment", resolution)), block]), [cs], finallyBlock)))]))))
+
+expandWhenCatchers null !(mktemp("ex")):ex -> t.Catch(t.FinalPattern(ex, None), mcall("throw", "run", ex))
+expandWhenCatchers [catcher] -> catcher
+expandWhenCatchers :catchers !(mktemp("specimen")):sp -> t.Catch(t.FinalPattern("specimen", None), matchExpr(catchers, sp))
+
+
+
+forValue MatchBind(@spec @patt) :scope = matchBind_forValue(spec patt scope)
+forValue @expr :scope -> expr
+
+matchBind_forValue :spec :patt :currentScope = !(getExports(scope(spec), currentScope)):exports (
     ?(1 <= len(exports)) !(mktemp("sp")):sp -> t.SeqExpr([t.Def(t.FinalPattern(sp, None), None, spec),
-                                                          expand(t.MatchBind(sp, patt), self.scope)])
-    | -> delayed_forValue(t.MatchBind(spec, patt), self.scope))
+                                                          expand(t.MatchBind(sp, patt), currentScope)])
+    | -> delayed_forValue(t.MatchBind(spec, patt), currentScope))
 matchBind_forFxOnly :spec :patt :exports !(getExports(scope(spec))):exports (
     ?(exports) !(mktemp("sp")):sp -> t.SeqExpr([t.Def(t.FinalPattern(sp, None),
                                                       None, spec),
@@ -482,8 +577,20 @@ matchBind_forControl :spec :patt :ej -> t.Def(patt, ej, spec)
 
 """
 
+def matchExpr(matchers, var):
+    result = t.MethodCallExpr(t.NounExpr("throw"), "run",
+                            [t.MethodCallExpr(t.LiteralExpr("no match: "),
+                                            "add", [var])])
+    for m in reversed(matchers.args):
+        result = t.If(t.MatchBind(var, m.args[0]), m.args[1], result)
+    return result
+
 def binop(name, left, right):
     return t.MethodCallExpr(left, name, [right])
+
+
+def validateFor(self, key, value, coll):
+    raise NotImplementedError()
 
 
 binops =  {"Add": "add",
@@ -502,10 +609,36 @@ binops =  {"Add": "add",
            "ButNot": "butNot",
            }
 
+reifier = r"""
+TempNounExpr(:basename :id) -> reifyNoun(self.nouns, basename.data, id)
+"""
+def reifyNoun(nouns, base, id):
+    count = 1
+    cached = nouns.get((base, id))
+    if cached:
+        return cached
+    noun = "%s__%s" % (base, count)
+    while noun in nouns:
+        count += 1
+        noun = "%s__%s" % (base, count)
+    nouns[base, id] = n = t.NounExpr(noun)
+    return n
+
+cycleRenamer = r"""
+NounExpr(@name) (?(name in self.renamings) -> self.renamings[name]
+                |                          -> t.NounExpr(name))
+"""
+
 def expand(term, scope=None):
-    g = Expander([term])
-    g.scope = scope
-    return g.apply("transform")[0]
+    e = Expander([term])
+    e.scope = scope
+    e.nouns = set()
+    expanded = e.apply("transform")[0]
+    r = Reifier([expanded])
+    r.nouns = dict.fromkeys(e.nouns)
+    reified = r.apply("transform")[0]
+    return reified
+
 
 def expandForFxOnly(term, scope=None):
     g = FxOnlyExpander([term])
@@ -530,3 +663,9 @@ StaticScopeTransformer = TreeTransformerGrammar.makeGrammar(
 
 Expander = TreeTransformerGrammar.makeGrammar(
     expander, globals(), name="EExpander", superclass=TreeTransformerBase)
+
+Reifier = TreeTransformerGrammar.makeGrammar(
+    reifier, globals(), name="Reifier", superclass=TreeTransformerBase)
+
+CycleRenamer = TreeTransformerGrammar.makeGrammar(
+    cycleRenamer, globals(), name="CycleRenamer", superclass=TreeTransformerBase)
