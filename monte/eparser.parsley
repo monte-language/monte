@@ -1,92 +1,32 @@
-hspace = (' '|'\t'|'\f'|('#' (~eol anything)*))
-ws = ('\r' '\n'|'\r' | '\n' | hspace)*
+EOL = tok('EOL')
+EOLs = EOL+
+br = EOL*
 
-number = ws barenumber
-barenumber = '-'?:sign ('0' (('x'|'X') <hexdigit*>:hs
-                                        -> int((sign or '') + hs, 16)
-                        |floatPart(sign '0')
-                        |<octaldigit*>:ds -> int((sign or '') + '0' + ds, 8))
-               |decdigits:ds floatPart(sign ds)
-               |decdigits:ds -> int((sign or '') + ds))
+string = tok('.String.')
+character = tok('.char.'):c -> t.Character(c)
+float = tok('.float64.')
+integer = tok('.int.')
 
-exponent = <('e' | 'E') ('+' | '-')? decdigits>
-floatPart :sign :ds = <('.' decdigits exponent?) | exponent>:tail
-                    -> float((sign or '') + ds + tail)
-decdigits = digit:d ((:x ?(x.isdigit()) -> x) | '_' -> "")*:ds
-          -> d + ''.join(ds)
-octaldigit = :x ?(x in string.octdigits) -> x
-hexdigit = :x ?(x in string.hexdigits) -> x
+identifier = tok('IDENTIFIER')
+uriGetter = tok('URI_GETTER'):s -> t.URIGetter(s)
+uri = tok('URI'):u -> t.URIExpr(*u.split(':', 1))
 
-string = ws '"' (escapedChar | ~('"') anything)*:c '"' -> ''.join(c)
-character = ws '\'' (escapedChar | ~('\''|'\n'|'\r'|'\\') anything):c '\''
-          -> t.Character(c)
-escapedUnicode = ('u' <hexdigit hexdigit hexdigit hexdigit>:hs
-                -> unichr(int(hs, 16))
-               |'U' <hexdigit hexdigit hexdigit hexdigit
-                     hexdigit hexdigit hexdigit hexdigit>:hs
-                -> unichr(int(hs, 16)))
-
-escapedOctal = ( <:a ?(a in "0123") octdigit? octdigit?>
-                 | <:a ?(a in "4567") octdigit?>):os -> int(os, 8)
-
-escapedChar = '\\' ('n' -> '\n'
-                     |'r' -> '\r'
-                     |'t' -> '\t'
-                     |'b' -> '\b'
-                     |'f' -> '\f'
-                     |'"' -> '"'
-                     |'\'' -> '\''
-                     |'?' -> '?'
-                     |'\\' -> '\\'
-                     | escapedUnicode
-                     | escapedOctal
-                     | eol -> "")
-
-eol = hspace* ('\r' '\n'|'\r' | '\n')
-
-uriBody = <(letterOrDigit|'_'|';'|'/'|'?'|':'|'@'|'&'|'='|'+'|'$'|','|'-'|'.'
-            |'!'|'~'|'*'|'\''|'('|')'|'%'|'\\'|'|'|'#')+>
-
-
-updocLine = <('?'|'#'|'>') (~('\n' | '\r') anything)*>:txt eol -> txt
-updoc = ('?' (~('\n' | '\r') anything)*
-             ((eol (eol | updocLine)*) (spaces | updocLine))?
-        )
-
-eolplus = eol updoc?
-linesep = eolplus+
-
-br = (spaces eolplus | eolplus)*
-
-literal = (string | character | number):x -> t.LiteralExpr(x)
-identifier = spaces <(letter | '_') (letterOrDigit | '_')*>
-uri = "<" uriScheme:s ':' uriBody:b '>' -> t.URIExpr(s, b)
-uriGetter = "<" uriScheme:s '>' -> t.URIGetter(s)
-uriScheme = <letter (letterOrDigit | '_' | '+' | '-' | '.')*>
+literal = (string | character | float | integer):x -> t.LiteralExpr(x)
 
 noun = sourceHole | justNoun
 justNoun = ((identifier:id -> self.keywordCheck(id)
               | ("::" (string | identifier):x -> x)):n  -> t.NounExpr(n)
               | uriGetter)
-sourceHole = ("$" (-> self.valueHole()):v '{' digit+:ds '}'
-              -> t.QuasiLiteralExpr(v)
-               |"@" (-> self.patternHole()):v '{' digit+:ds '}'
-              -> t.QuasiPatternExpr(v))
+sourceHole = ('${' integer:i '}' -> t.QuasiLiteralExpr(i)
+             |'@{' integer:i '}' -> t.QuasiPatternExpr(i))
 
-quasiString = "`" (exprHole | pattHole | quasiText)*:qs '`' -> qs
-
-quasiText = <(~('`'|'$'|'@') anything | '`' '`' | '$' '$'
-            | ('$' | '@') '\\' escapedChar | '@' '@')+>:qs
-          -> t.QuasiText(qs.replace("``", "`"))
-
-exprHole = '$' ('{' br seq:s '}' -> t.QuasiExprHole(s)
-                 |'_' !(noIgnoreExpressionHole())
-                 |identifier:n !(exprHoleKeywordCheck(n))
-         -> t.QuasiExprHole(t.NounExpr(n)))
-pattHole = '@' ('{' br pattern:s '}' -> t.QuasiPatternHole(s)
-                 |'_' !(noIgnorePatternHole())
-                 |identifier:n !(quasiHoleKeywordCheck(n))
-                  -> t.QuasiPatternHole(t.FinalPattern(t.NounExpr(n), None)))
+quasiString = subquasi*:qs 'QUASI_CLOSE':qc -> qs + [t.QuasiText(qc)]
+subquasi = ('QUASI_OPEN':q -> t.QuasiText(q)
+           |'${' seq:e '}' -> t.QuasiExprHole(e)
+           |'_' !(noIgnoreExpressionHole())
+           |'DOLLAR_IDENT':id -> t.QuasiExprHole(t.NounExpr(id))
+           |'@{' br pattern:s '}' -> t.QuasiPatternHole(s)
+           |"AT_IDENT":id -> t.QuasiPatternHole(t.FinalPattern(t.NounExpr(id), None)))
 
 reifyExpr = ("&&" verb:v -> t.BindingExpr(v)
             |"&" verb:v -> t.SlotExpr(v))
@@ -113,19 +53,19 @@ prim = ( literal
          | listAndMap
          )
 
-parenExpr = "(" seq:s ws ')' -> s
-block = "{" (seq |-> t.SeqExpr([])):s ws '}' -> s
+parenExpr = "(" seq:s ')' -> s
+block = "{" (seq |-> t.SeqExpr([])):s '}' -> s
 
-seqSep = (";"| linesep)+
+seqSep = (";"| tok('EOL'))+
 seq = expr:e ((seqSep expr)+:es seqSep? -> t.SeqExpr(filter(None, [e] + es))
                  |seqSep? -> e)
-parenArgs = "(" args:a ws ')' -> a
+parenArgs = "(" args:a ')' -> a
 args = (seq:s ("," seq)*:ss -> [s] + ss
          |-> [])
 
 call = (call:c ("." verb:v (parenArgs:x -> t.MethodCallExpr(c, v, x)
                                   | -> t.VerbCurryExpr(c, v))
-                    |"[" args:a ws ']' -> t.GetExpr(c, a)
+                    |"[" args:a ']' -> t.GetExpr(c, a)
                     |parenArgs:x -> t.FunctionCallExpr(c, x)
                     | "<-" (parenArgs:x -> t.FunctionSendExpr(c, x)
                            |verb:v (parenArgs:x -> t.MethodSendExpr(c, v, x)
@@ -195,8 +135,8 @@ assign = (~objectExpr "def" (pattern:p ("exit" order)?:e ":=" assign:a -> t.Def(
            |keywordPattern:p ":=" assign:a -> t.Def(p, None, a)
            |cond:x (":=" assign:y -> t.Assign(x, y)
                     |assignOp:o assign:y -> t.AugAssign(o, x, y)
-                    |identifier:v '=' (parenArgs:y -> t.VerbAssign(v, x, y)
-                                        |assign:y -> t.VerbAssign(v, x, [y]))
+                    |tok('VERB_ASSIGN'):v (parenArgs:y -> t.VerbAssign(v, x, y)
+                                          |assign:y -> t.VerbAssign(v, x, [y]))
                     | -> x))
 
 assignOp = ("+=" -> "Add"
@@ -214,14 +154,14 @@ assignOp = ("+=" -> "Add"
              |"^=" -> "BinaryXor")
 
 expr =  assign | ejector
-ejector = ws ('break' -> t.Break
+ejector = ('break' -> t.Break
              | 'continue' -> t.Continue
              | 'return' -> t.Return):ej
-             (("(" ws ')' -> None) | assign)?:val -> ej(val)
+             (("(" ')' -> None) | assign)?:val -> ej(val)
 
-guard = (noun | parenExpr):e ("[" args:x ws ']' -> x)*:xs -> t.Guard(e, xs)
+guard = (noun | parenExpr):e ("[" args:x ']' -> x)*:xs -> t.Guard(e, xs)
 optGuard = (":" guard)?
-eqPattern = (ws '_' ~(letterOrDigit | '_') optGuard:e -> t.IgnorePattern(e)
+eqPattern = ('_' optGuard:e -> t.IgnorePattern(e)
               |identifier?:n quasiString:q -> t.QuasiPattern(n, q)
               |namePattern
               |"==" prim:p -> t.SamePattern(p)
@@ -232,8 +172,8 @@ patterns = (pattern:p ("," pattern)*:ps -> [p] + ps
              | -> [])
 key = (parenExpr | literal):x br -> x
 
-keywordPattern = (ws 'var' noun:n optGuard:g -> t.VarPattern(n, g)
-                   |ws 'bind' noun:n optGuard:g -> t.BindPattern(n, g))
+keywordPattern = ('var' noun:n optGuard:g -> t.VarPattern(n, g)
+                   |'bind' noun:n optGuard:g -> t.BindPattern(n, g))
 namePattern = (keywordPattern
               |noun:n optGuard:g -> t.FinalPattern(n, g)
               |reifyPattern)
@@ -248,8 +188,8 @@ mapPattern = mapPatternAddressing:a (":=" order:d -> t.MapPatternOptional(a, d)
                                         | -> t.MapPatternRequired(a))
 mapPatts = mapPattern:m ("," mapPattern)*:ms -> [m] + ms
 
-listPatternInner = (mapPatts:ms br ws ']' ("|" listPattern)?:tail -> t.MapPattern(ms, tail)
-                     |patterns:ps br ws ']' ("+" listPattern)?:tail -> t.ListPattern(ps, tail))
+listPatternInner = (mapPatts:ms br ']' ("|" listPattern)?:tail -> t.MapPattern(ms, tail)
+                     |patterns:ps br ']' ("+" listPattern)?:tail -> t.ListPattern(ps, tail))
 listPattern = (
                 "via" parenExpr:e listPattern:p -> t.ViaPattern(e, p)
                 | eqPattern
@@ -259,74 +199,74 @@ pattern = listPattern:p ("?" order:e -> t.SuchThatPattern(p, e)
 
 basic = docoDef | accumExpr | escapeExpr | forExpr | ifExpr | lambdaExpr | metaExpr | switchExpr | tryExpr | whileExpr | whenExpr
 
-docoDef = doco?:doc (objectExpr:o -> t.Object(doc, *o)
+docoDef = br doco?:doc (objectExpr:o -> t.Object(doc, *o)
                        |interfaceExpr:i -> t.Interface(doc, *i))
-doco = ws '/**' <(~('*' '/') anything)*>:doc '*' '/' -> doc.strip()
-objectExpr = ((ws 'def' objectName:n) | keywordPattern:n) objectTail:tail -> [n, tail]
-objectName = (ws '_' optGuard:e -> t.IgnorePattern(e)
+doco = tok('DOC_COMMENT'):doc br -> doc.strip()
+objectExpr = (('def' objectName:n) | keywordPattern:n) objectTail:tail -> [n, tail]
+objectName = ('_' optGuard:e -> t.IgnorePattern(e)
                |namePattern)
 objectTail = (functionTail
-               |((ws 'extends' br order)?:e oAs?:g oImplements:oi scriptPair:s
+               |(('extends' br order)?:e oAs?:g oImplements:oi scriptPair:s
                   -> t.Script(e, g, oi, *s)))
-oAs = ws 'as' br order
-oImplements = (ws 'implements' br order:x ("," order)*:xs -> [x] + xs
+oAs = 'as' br order
+oImplements = ('implements' br order:x ("," order)*:xs -> [x] + xs
                | -> [])
 functionTail = parenParamList:ps optResultGuard:g oImplements:fi block:b -> t.Function(ps, g, fi, b)
-parenParamList = "(" (pattern:p ("," pattern)*:ps ws ')' -> [p] +  ps
-                       | ws ')' -> [])
+parenParamList = "(" (pattern:p ("," pattern)*:ps ')' -> [p] +  ps
+                       | ')' -> [])
 optResultGuard = (":" guard)?
-scriptPair = "{" method*:methods matcher*:matchers ws '}' -> [methods, matchers]
-method = (doco?:doc ((ws 'to' -> t.To) | ws 'method' -> t.Method):to verb?:v parenParamList:ps optResultGuard:g block:b -> to(doc, v, ps, g, b))
-matcher = ws 'match' pattern:p block:b -> t.Matcher(p, b)
+scriptPair = "{" method*:methods matcher*:matchers br '}' -> [methods, matchers]
+method = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g block:b  -> to(doc, v, ps, g, b))
+matcher = 'match' pattern:p block:b -> t.Matcher(p, b)
 
-interfaceExpr = (ws 'interface' objectName:n iguards?:g ((multiExtends:es oImplements:oi iscript:s -> [n, g, es, oi, s])
+interfaceExpr = ('interface' objectName:n iguards?:g ((multiExtends:es oImplements:oi iscript:s -> [n, g, es, oi, s])
                        |parenParamDescList:ps optGuard:rg -> [n, g, [], [], t.InterfaceFunction(ps, rg)]))
-iguards = ws 'guards' pattern
-multiExtends = ((ws 'extends' br order:x ("," order)*:xs -> [x] + xs)
+iguards = 'guards' pattern
+multiExtends = (('extends' br order:x ("," order)*:xs -> [x] + xs)
                  | -> [])
-iscript = "{" (messageDesc:m br -> m)*:ms ws '}' -> ms
-messageDesc = (doco?:doc (ws 'to' | ws 'method'):to verb?:v parenParamDescList:ps optGuard:g
+iscript = "{" (messageDesc:m br -> m)*:ms '}' -> ms
+messageDesc = br (doco?:doc ("to" | "method"):to verb?:v parenParamDescList:ps optGuard:g
                 -> t.MessageDesc(doc, to, v, ps, g))
-paramDesc = (justNoun | (ws '_') -> None):n optGuard:g -> t.ParamDesc(n, g)
-parenParamDescList = "(" paramDesc:p ("," paramDesc)*:ps ws ')' -> [p] +  ps
+paramDesc = (justNoun | ('_') -> None):n optGuard:g -> t.ParamDesc(n, g)
+parenParamDescList = "(" paramDesc:p ("," paramDesc)*:ps ')' -> [p] +  ps
 
-accumExpr = ws 'accum' call:c accumulator:a -> t.Accum(c, a)
-accumulator = (((ws 'for' forPattern:p ws 'in' logical:a accumBody:b catcher?:c -> t.AccumFor(*(p + [a, b, c]))))
-                |(ws 'if' parenExpr:e accumBody:a -> t.AccumIf(e, a))
-                |(ws 'while' parenExpr:e accumBody:a catcher?:c -> t.AccumWhile(e, a, c)))
+accumExpr = 'accum' call:c accumulator:a -> t.Accum(c, a)
+accumulator = ((('for' forPattern:p 'in' logical:a accumBody:b catcher?:c -> t.AccumFor(*(p + [a, b, c]))))
+                |('if' parenExpr:e accumBody:a -> t.AccumIf(e, a))
+                |('while' parenExpr:e accumBody:a catcher?:c -> t.AccumWhile(e, a, c)))
 
-accumBody = "{" (ws '_' (accumOp:op assign:a -> t.AccumOp(op, a)
+accumBody = "{" ('_' (accumOp:op assign:a -> t.AccumOp(op, a)
                                |"." verb:v parenArgs:ps -> t.AccumCall(v, ps))
-                  | accumulator):ab br ws '}' -> ab
+                  | accumulator):ab br '}' -> ab
 accumOp = ("+" -> "Add"
             |"*" -> "Multiply"
             |"&" -> "BinaryAnd"
             |"|" -> "BinaryOr")
 
-escapeExpr = ws 'escape' pattern:p block:b catcher?:c -> t.Escape(p, b, c)
+escapeExpr = 'escape' pattern:p block:b catcher?:c -> t.Escape(p, b, c)
 
-forExpr = ws 'for' forPattern:p ws 'in' br assign:a block:b catcher?:c -> t.For(*(p + [a, b, c]))
+forExpr = 'for' forPattern:p 'in' br assign:a block:b catcher?:c -> t.For(*(p + [a, b, c]))
 
 forPattern = pattern:p (br "=>" pattern:px -> [p, px]
                            | -> [None, p])
 
-ifExpr = ws 'if' parenExpr:p br block:b (ws 'else' (ifExpr | block) | -> None):e -> t.If(p, b, e)
+ifExpr = 'if' parenExpr:p br block:b ('else' (ifExpr | block) | -> None):e -> t.If(p, b, e)
 
-lambdaExpr = doco?:doc ws 'fn' patterns:ps block:b -> t.Lambda(doc, ps, b)
+lambdaExpr = br doco?:doc 'fn' patterns:ps block:b -> t.Lambda(doc, ps, b)
 
-metaExpr = ws 'meta' "." (ws 'getState' -> "State"
-                                |ws 'scope' -> "Scope"
-                                |ws 'context' -> "Context"):s "(" ws ')' -> t.Meta(s)
-switchExpr = ws 'switch' parenExpr:e "{" (matcher:m br -> m)*:ms ws '}' -> t.Switch(e, ms)
+metaExpr = 'meta' "." identifier:i (?(i == 'getState') -> "State"
+                                   |?(i == 'scope') -> "Scope"
+                                   |?(i == 'context') -> "Context"):s "(" ')' -> t.Meta(s)
+switchExpr = 'switch' parenExpr:e "{" (matcher:m br -> m)*:ms '}' -> t.Switch(e, ms)
 
-tryExpr = ws 'try' block:tb catcher*:cs (ws 'finally' block)?:fb -> t.Try(tb, cs, fb)
-catcher = ws 'catch' pattern:p block:b -> t.Catch(p, b)
+tryExpr = 'try' block:tb catcher*:cs ('finally' block)?:fb -> t.Try(tb, cs, fb)
+catcher = 'catch' pattern:p block:b -> t.Catch(p, b)
 
-whileExpr = ws 'while' parenExpr:e block:b catcher?:c -> t.While(e, b, c)
+whileExpr = 'while' parenExpr:e block:b catcher?:c -> t.While(e, b, c)
 
-whenExpr = ws 'when' parenArgs:a br "->" block:b catcher*:cs (ws 'finally' block)?:fb -> t.When(a, b, cs, fb)
+whenExpr = 'when' parenArgs:a br "->" block:b catcher*:cs ('finally' block)?:fb -> t.When(a, b, cs, fb)
 
 topSeq = topExpr:x (seqSep topExpr)*:xs seqSep? -> t.SeqExpr([x] + xs)
-pragma = ws 'pragma' "." verb:v "(" string:s ws ')' -> t.Pragma(v, s)
+pragma = 'pragma' "." verb:v "(" string:s ')' -> t.Pragma(v, s)
 topExpr = (pragma -> t.NounExpr("null")) | expr
-start = updoc? br topSeq?
+start = br topSeq?

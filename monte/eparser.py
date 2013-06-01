@@ -4,33 +4,13 @@ import string
 
 from parsley import ParseError
 from ometa.grammar import loadGrammar
+from ometa.runtime import expected
 from terml.nodes import termMaker as t
 
 import monte
+from monte.lexer import reserved, basicKeywords, keywords, makeTokenStream
 
 
-
-reserved = set(["delegate", "module", "abstract", "an", "as", "assert", "attribute",
-           "be", "begin", "behalf", "belief", "believe", "believes", "case",
-           "class", "const", "constructor", "declare", "default", "define",
-           "defmacro", "delicate", "deprecated", "dispatch", "do", "encapsulate",
-           "encapsulated", "encapsulates", "end", "ensure", "enum", "eventual",
-           "eventually", "export", "facet", "forall", "function", "given",
-           "hidden", "hides", "inline", "is", "know", "knows", "lambda", "let",
-           "methods", "namespace", "native", "obeys", "octet", "oneway",
-           "operator", "package", "private", "protected", "public",
-           "raises", "reliance", "reliant", "relies", "rely", "reveal", "sake",
-           "signed", "static", "struct", "suchthat", "supports", "suspect",
-           "suspects", "synchronized", "this", "transient", "truncatable",
-           "typedef", "unsigned", "unum", "uses", "using", "utf8", "utf16",
-           "virtual", "volatile", "wstring"])
-basicKeywords = set(["bind", "break", "catch", "continue", "def", "else", "escape", "exit",
-           "extends", "finally", "fn", "for", "guards", "if", "implements", "in",
-           "interface", "match", "meta", "method", "pragma", "return", "switch",
-           "to", "try", "var", "via", "when", "while", "accum", "module", "on",
-           "select", "throws", "thunk"])
-
-keywords = reserved | basicKeywords
 def quasiHoleKeywordCheck(n):
     if n in keywords:
         raise ValueError("Unexpected keyword %r in quasi hole" % (n,))
@@ -62,25 +42,33 @@ class EParser(BaseEParser):
     """
     A parser for E.
     """
-    
-    def rule_tokenBR(self):
-        """
-        Match and return the given string, consuming any preceding or trailing
-        whitespace.
-        """
-        tok, _ = self.input.head()
 
-        m = self.input = self.input.tail()
-        try:
-            self.eatWhitespace()
-            for c  in tok:
-                self.exactly(c)
-            _, e = self.apply("br")
-            return tok, e
-        except ParseError:
-            self.input = m
-            raise
+    def rule_tok(self, tok):
+        """
+        Match a single token from the token stream.
+        """
+        candidate, e = self.input.head()
+        if candidate.tag.name != tok:
+            raise self.input.nullError(expected("token", tok))
+        self.input = self.input.tail()
+        return candidate.data, e
 
+    def rule_ws(self):
+        #lexer already did it
+        return None, None
+
+    def rule_token(self):
+        """
+        Handle double-quoted tokens, matching 'br' after then the token.
+        """
+        token, _ = self.input.head()
+        self.input = self.input.tail()
+        x = self.rule_tok(token)
+        self.apply('br')
+        return x
+
+    rule_exactly = rule_tok
+    exactly = rule_tok
 
     def keywordCheck(self, ident):
         """
@@ -93,24 +81,31 @@ class EParser(BaseEParser):
         else:
             return ident
 
-    def valueHole(self):
+    def valueHole(self, d):
         """
         Look up a value hole in the table and return its position.
         """
         try:
-            return self.valueHoles.index(self.input.position - 1)
+            return self.valueHoles[d]
         except ValueError:
             raise ValueError("A literal $ is not meaningful in E source.")
 
-    def patternHole(self):
+    def patternHole(self, a):
         """
         Look up a pattern hole in the table and return its position.
         """
         try:
-            return self.patternHoles.index(self.input.position - 1)
+            return self.patternHoles[a]
         except ValueError:
             raise ValueError("A literal @ is not meaningful in E source.")
 
 EParser.globals = {}
 EParser.globals.update(globals())
 
+def makeParser(source, origin="<string>"):
+    stream = makeTokenStream(source, origin)
+    return EParser(stream, stream=True)
+
+def parse(source, origin="<string>"):
+    from parsley import _GrammarWrapper
+    return _GrammarWrapper(makeParser(source, origin), source).start()

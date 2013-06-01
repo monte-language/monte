@@ -2,7 +2,7 @@
 # See LICENSE for details.
 
 from twisted.trial import unittest
-from monte.eparser import EParser
+from monte.eparser import makeParser
 from terml.nodes import Tag
 
 class Listifier(object):
@@ -31,7 +31,7 @@ class ParserTest(unittest.TestCase):
 
     def getParser(self, rule):
         def parse(src):
-            p = EParser(src)
+            p = makeParser(src)
             r, e = p.apply(rule)
             return serialize(r)
         return parse
@@ -46,7 +46,6 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse('"foo bar"'), ["LiteralExpr", "foo bar"])
         self.assertEqual(parse("'z'"), ["LiteralExpr", ["Character", "z"]])
         self.assertEqual(parse("0xDECAFC0FFEEBAD"), ["LiteralExpr", 0xDECAFC0FFEEBAD])
-        self.assertEqual(parse("0755"), ["LiteralExpr", 0755])
         self.assertEqual(parse("3.14159E17"), ["LiteralExpr", 3.14159E17])
         self.assertEqual(parse("1e9"), ["LiteralExpr", 1e9])
         self.assertEqual(parse("0"), ["LiteralExpr", 0])
@@ -54,12 +53,9 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("3_000"), ["LiteralExpr", 3000])
         self.assertEqual(parse("0.91"), ["LiteralExpr", 0.91])
         self.assertEqual(parse("3e-2"), ["LiteralExpr", 3e-2])
-
         self.assertEqual(parse("'\\n'"), ["LiteralExpr", ["Character", "\n"]])
         self.assertEqual(parse('"foo\\nbar"'), ["LiteralExpr", "foo\nbar"])
         self.assertEqual(parse("'\\u0061'"), ["LiteralExpr", ["Character", u"a"]])
-        self.assertEqual(parse('"z\141p"'), ["LiteralExpr", "zap"])
-        self.assertEqual(parse('"x\41"'), ["LiteralExpr", "x!"])
         self.assertEqual(parse('"foo\\\nbar"'), ["LiteralExpr", "foobar"])
 
 
@@ -87,22 +83,14 @@ class ParserTest(unittest.TestCase):
         """
         Value and pattern holes are recognized and checked.
         """
-        p = EParser(" ${0}")
-        p.valueHoles = [1]
+        p = makeParser(" ${0}")
         self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiLiteralExpr", 0])
-        p = EParser("   ${0}")
-        p.valueHoles = [3]
-        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiLiteralExpr", 0])
-        p = EParser("@{0}")
-        p.patternHoles = [0]
+        p = makeParser("   ${3}")
+        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiLiteralExpr", 3])
+        p = makeParser("@{0}")
         self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiPatternExpr", 0])
-        p = EParser("  @{7}")
-        p.patternHoles = [2]
-        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiPatternExpr", 0])
-        p = EParser(" ${0}")
-        p.valueHoles = [0, 1, 13]
-        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiLiteralExpr", 1])
-
+        p = makeParser("  @{7}")
+        self.assertEqual(serialize(p.apply("noun")[0]), ["QuasiPatternExpr", 7])
 
     def test_quasiliterals(self):
         """
@@ -120,7 +108,7 @@ class ParserTest(unittest.TestCase):
         Test that quasiliterals and braces don't smash each other up.
         """
         parse = self.getParser("seq")
-        self.assertEqual(parse("{`${x}`}; 1"), ["SeqExpr", [["HideExpr", ["QuasiExpr", None, [["QuasiExprHole", ["NounExpr", "x"]]]]], ["LiteralExpr", 1]]])
+        self.assertEqual(parse("{`${x}`}; 1"), ["SeqExpr", [["HideExpr", ["QuasiExpr", None, [["QuasiExprHole", ["NounExpr", "x"]], ["QuasiText", '']]]], ["LiteralExpr", 1]]])
 
     def test_parenExpr(self):
         """
@@ -238,7 +226,6 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("1 + 1"), ["Add", ["LiteralExpr", 1], ["LiteralExpr", 1]])
         self.assertEqual(parse("x - y"), ["Subtract", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x - y + z"), ["Add", ["Subtract", ["NounExpr", "x"], ["NounExpr", "y"]], ["NounExpr", "z"]])
-        self.assertEqual(parse("x -- y"), ["Subtract", ["NounExpr", "x"], ["Minus", ["NounExpr", "y"]]])
         self.assertEqual(parse("x..y"), ["Thru", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x..!y"), ["Till", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x < y"), ["LessThan", ["NounExpr", "x"], ["NounExpr", "y"]])

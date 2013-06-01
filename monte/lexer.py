@@ -1,6 +1,6 @@
 from collections import namedtuple
 import string
-from parsley import ParseError as ParsleyParseError
+from ometa.runtime import InputStream, ParseError as ParsleyParseError
 from terml.nodes import Term, Tag
 
 class ParseError(ParsleyParseError):
@@ -23,20 +23,20 @@ _SourceSpan = namedtuple("SourceSpan",
                          "uri isOneToOne startLine startCol endLine endCol")
 class SourceSpan(_SourceSpan):
     """
-Information about the original location of a span of text.
-Twines use this to remember where they came from.
+    Information about the original location of a span of text.
+    Twines use this to remember where they came from.
 
-uri: Name of document this text came from.
+    uri: Name of document this text came from.
 
-isOneToOne: Whether each character in that Twine maps to the
-corresponding source character position.
+    isOneToOne: Whether each character in that Twine maps to the
+    corresponding source character position.
 
-startLine, endLine: Line numbers for the beginning and end of the
-span. Line numbers start at 1.
+    startLine, endLine: Line numbers for the beginning and end of the
+    span. Line numbers start at 1.
 
-startCol, endCol: Column numbers for the beginning and end of the
-span. Column numbers start at 0.
-"""
+    startCol, endCol: Column numbers for the beginning and end of the
+    span. Column numbers start at 0.
+    """
     def __new__(*args, **kwargs):
         ss = _SourceSpan.__new__(*args, **kwargs)
         if (ss.startLine != ss.endLine and ss.isOneToOne):
@@ -55,7 +55,6 @@ span. Column numbers start at 0.
         return "<%s#:%s::%s>" % (self.uri,
                                  "span" if self.isOneToOne else "blob",
                                  ':'.join(str(x) for x in self[2:]))
-
 
 
 def spanCover(a, b):
@@ -96,6 +95,7 @@ def spanCover(a, b):
 
     return SourceSpan(a.uri, False, startLine, startCol, endLine, endCol)
 
+
 def twineAdd(left, right):
     # Poor approximation of the real thing since it doesn't accomodate
     # later slicing.
@@ -103,6 +103,7 @@ def twineAdd(left, right):
     rightText, rightSpan = right
 
     return leftText + rightText, spanCover(leftSpan, rightSpan)
+
 
 def twineSlice(twine, start, stop):
     text, span = twine
@@ -121,6 +122,7 @@ def twineSlice(twine, start, stop):
                          span.endLine,
                          endCol)
     return text[start:stop], newspan
+
 
 uriChars = string.letters + string.digits + '_;/?:@&=+$,-.!~*\()%\\#\'|'
 EOF = object()
@@ -144,10 +146,12 @@ basicKeywords = set(["bind", "break", "catch", "continue", "def", "else", "escap
            "to", "try", "var", "via", "when", "while", "accum", "module", "on",
            "select", "throws", "thunk"])
 
+
 keywords = reserved | basicKeywords
 
 def isKeyword(key):
     return key.lower() in keywords
+
 
 idStart = string.letters + '_'
 idPart = string.letters + string.digits + '_'
@@ -155,14 +159,18 @@ idPart = string.letters + string.digits + '_'
 def isIdentifierPart(c):
     return c in idPart
 
+
 def isIdentifierStart(c):
     return c in idStart
+
 
 def leafTag(tagName, span):
     return Term(Tag(tagName), None, None, span)
 
+
 def composite(tagName, data, span):
     return Term(Tag(tagName), data, None, span)
+
 
 class StringFeeder(object):
     def __init__(self, data, url):
@@ -197,6 +205,7 @@ class Indenter(object):
 
     def push(self, opener, closerChar, indent, isNest=False):
         self.stack.append((opener, closerChar, indent, isNest))
+
 
     def pop(self, lexer, closerChar, closer):
         if len(self.stack) <= 1:
@@ -252,7 +261,7 @@ class ELexer(object):
         if self._startPos == -1:
             if self._startText is not None:
                 # current token already started
-                self._startText = twineAdd(self._startText, self._currentLine)
+                self._startText = twineAdd(self._startText, (self._currentLine, self._currentSpan))
             # else no current token, do nothing
         else:
             # current token started on this line
@@ -313,6 +322,25 @@ class ELexer(object):
     def endSpan(self):
         return self.endToken()[1]
 
+    def openBracket(self, closer, opener=None):
+        c = opener or self.currentChar
+        if not opener:
+            self.nextChar()
+            opener = self.endToken()
+        if self._currentLine and self._currentLine[self.position:].isspace():
+            self.indenter.nestLevel += 1
+            self.indenter.push(opener, closer, self.indenter.nestLevel * 4, True)
+        else:
+            self.indenter.push(opener, closer, self.position, True)
+        return leafTag(c, opener[1])
+
+    def closeBracket(self):
+        closerChar = self.currentChar
+        self.nextChar()
+        closer, span = self.endToken()
+        self.indenter.pop(self, closerChar, closer)
+        return leafTag(closerChar, span)
+
     def skipWhiteSpace(self):
         """
         Skip horizontal whitespace.
@@ -321,6 +349,13 @@ class ELexer(object):
             return
         while self.currentChar == ' ':
             self.nextChar()
+
+    def skipLine(self):
+        if not self.isEndOfFile():
+            self.position = len(self._currentLine) - 1
+            self.currentChar = self._currentLine[self.position]
+            assert self.currentChar == '\n'
+        self._delayedNextChar = True
 
     def leafEOL(self):
         if self.indenter.indent() == 0 and self.continueCount == 0:
@@ -362,6 +397,13 @@ class ELexer(object):
         if cur is EOF:
             raise StopIteration()
 
+        # Updoc.
+        if cur in '?>' and (self.position == 0 or self._currentLine[:self.position].isspace()):
+            self.skipLine()
+            updoc, span = self.endToken()
+            return composite('UPDOC', self._currentLine[self.position:], span)
+
+
         if cur in ';,~?':
             self.nextChar()
             return leafTag(cur, self.endSpan())
@@ -384,44 +426,279 @@ class ELexer(object):
             self.indenter.popIf('$')
             return result
 
-        if cur in ')]':
-            self.closeBracket()
+        if cur == ')':
+            return self.closeBracket()
+
+        if cur == ']':
+            return self.closeBracket()
 
         if cur == '$':
             nex = self.nextChar()
             if nex == '{':
                 # quasi hole of form ${blah}
                 self.nextChar()
-                return self.openBracket('${', self.endToken(), '}')
+                return self.openBracket('}', '${')
             elif isIdentifierStart(nex):
                 # quasi hole of form $blee
                 nex = self.nextChar()
                 while isIdentifierPart(nex):
                     nex = self.nextChar()
-                name = self.endToken()
-                key = name[0][1:]
+                name, span = self.endToken()
+                key = name[1:]
                 if isKeyword(key):
-                    raise self.syntaxError(key + "is a keyword")
+                    self.nextChar()
+                    self.syntaxError(key + "is a keyword")
                 self.indenter.popIf('$')
-                return composite('${', key, name[1])
+                return composite('DOLLAR_IDENT', key, span)
             else:
                 # for $$ or $0
                 return leafTag('$', self.endSpan())
 
         if cur == '@':
-            raise RuntimeError('todo')
+            nex = self.nextChar()
+            if nex == '{':
+                # quasi hole of form @{blah}
+                self.nextChar()
+                return self.openBracket('}', '@{')
+            elif nex == '_' and not isIdentifierPart(self.peekChar()):
+                self.nextChar()
+                name, span = self.endToken()
+                self.indenter.popIf('$')
+                return composite('AT_IDENT', '_', span)
+            elif isIdentifierStart(nex):
+                # quasi hole of form @blee
+                nex = self.nextChar()
+                while isIdentifierPart(nex):
+                    nex = self.nextChar()
+                name, span = self.endToken()
+                key = name[1:]
+                if isKeyword(key):
+                    self.nextChar()
+                    self.syntaxError(key + "is a keyword")
+                self.indenter.popIf('$')
+                return composite('AT_IDENT', key, span)
+            else:
+                # for @@ or @0
+                return leafTag('@', self.endSpan())
+
+        if cur == '.':
+            nex = self.nextChar()
+            if nex == '.':
+                nex2 = self.nextChar()
+                if nex2 == '!':
+                    self.nextChar()
+                    return leafTag('..!', self.endSpan())
+                return leafTag('..', self.endSpan())
+            return leafTag('.', self.endSpan())
+
+        if cur == '^':
+            nex = self.nextChar()
+            if nex == '=':
+                self.nextChar()
+                return leafTag('^=', self.endSpan())
+            return leafTag('^', self.endSpan())
+
+        if cur == '+':
+            nex = self.nextChar()
+            if nex == '+':
+                self.nextChar()
+                self.syntaxError('++? lol no')
+            if nex == '=':
+                self.nextChar()
+                return leafTag('+=', self.endSpan())
+            return leafTag('+', self.endSpan())
+
+        if cur == '-':
+            nex = self.nextChar()
+            if nex == '-':
+                self.nextChar()
+                self.syntaxError('--? lol no')
+            if nex == '=':
+                self.nextChar()
+                return leafTag('-=', self.endSpan())
+            if nex == '>':
+                self.nextChar()
+                return leafTag('->', self.endSpan())
+            return leafTag('-', self.endSpan())
+
+        if cur == ':':
+            nex = self.nextChar()
+            if nex == ':':
+                self.nextChar()
+                return leafTag('::', self.endSpan())
+            if nex == '=':
+                self.nextChar()
+                return leafTag(':=', self.endSpan())
+            return leafTag(':', self.endSpan())
 
         if cur == '<':
             nex = self.nextChar()
-            if nex == '=':
-                raise RuntimeError('todo')
+            if nex == '-':
+                nex2 = self.nextChar()
+                if nex2 == '*':
+                    self.nextChar()
+                    self.syntaxError('<-* is reserved')
+                return leafTag('<-', self.endSpan())
+
+            elif nex == '=':
+                nex2 = self.nextChar()
+                if nex2 == '>':
+                    self.nextChar()
+                    return leafTag('<=>', self.endSpan())
+                return leafTag('<=', self.endSpan())
             elif nex == '<':
-                raise RuntimeError('todo')
+                nex2 = self.nextChar()
+                if nex2 == '=':
+                    self.nextChar()
+                    return leafTag('<<=', self.endSpan())
+                return leafTag('<<', self.endSpan())
             elif isIdentifierStart(nex):
                 res = self.uri()
                 if res is not None:
                     return res
             return leafTag(cur, self.endSpan())
+
+        if cur == '>':
+            nex = self.nextChar()
+            if nex == '=':
+                self.nextChar()
+                return leafTag('>=', self.endSpan())
+            if nex == '>':
+                nex2 = self.nextChar()
+                if nex2 == '=':
+                    self.nextChar()
+                    return leafTag('>>=', self.endSpan())
+                return leafTag('>>', self.endSpan())
+            return leafTag('>', self.endSpan())
+
+        if cur == '*':
+            nex = self.nextChar()
+            if nex == '*':
+                nex2 = self.nextChar()
+                if nex2 == '=':
+                    self.nextChar()
+                    return leafTag('**=', self.endSpan())
+                return leafTag('**', self.endSpan())
+            elif nex == '=':
+                self.nextChar()
+                return leafTag('*=', self.endSpan())
+            elif nex == '-' and self.peekChar() == '>':
+                self.nextChar()
+                self.nextChar()
+                self.syntaxError("*-> is reserved")
+
+            elif nex == '/':
+                self.nextChar()
+                self.syntaxError("/*..*/ comments are reserved. Use '#' on each line instead")
+            return leafTag('*', self.endSpan())
+
+        if cur == '/':
+            nex = self.nextChar()
+            if nex == '/':
+                nex2 = self.nextChar()
+                if nex2 == '=':
+                    self.nextChar()
+                    return leafTag('//=', self.endSpan())
+                return leafTag('//', self.endSpan())
+            elif nex == '=':
+                self.nextChar()
+                return leafTag('/=', self.endSpan())
+            elif nex == '*':
+                nex2 = self.nextChar
+                if nex == '*':
+                    self.nextChar()
+                    self.nextChar()
+                    return self.docComment()
+                self.syntaxError("/*..*/ comments are reserved. Use '#' on each line instead")
+            return leafTag('/', self.endSpan())
+
+        if cur == '#':
+            self.skipLine()
+            self._delayedNextChar = False
+            comment, span = self.endToken()
+            return composite('#', comment[1:], span)
+
+        if cur == '\\':
+            self.nextChar()
+            self.skipWhiteSpace()
+            if self.currentChar == '\n':
+                self.skipLine()
+                self.stopToken()
+                result = self.getNextToken()
+                if result is EOF:
+                    self.syntaxError("file ends in continued line")
+                else:
+                    return result
+            self.syntaxError("unexpected character %r after line continuation character" % self.currentChar)
+
+        if cur == '%':
+            nex = self.nextChar()
+            if nex == '%':
+                nex2 = self.nextChar()
+                if nex2 == '=':
+                    self.nextChar()
+                    return leafTag('%%=', self.endSpan())
+                return leafTag('%%', self.endSpan())
+            elif nex == '=':
+                self.nextChar()
+                return leafTag('%=', self.endSpan())
+            return leafTag('%', self.endSpan())
+
+        if cur == '!':
+            nex = self.nextChar()
+            if nex == '=':
+                self.nextChar()
+                return leafTag('!=', self.endSpan())
+            elif nex == '~':
+                self.nextChar()
+                return leafTag('!~', self.endSpan())
+            return leafTag('!', self.endSpan())
+
+        if cur == '=':
+            nex = self.nextChar()
+            if nex == '=':
+                self.nextChar()
+                return leafTag('==', self.endSpan())
+            if nex == '>':
+                self.nextChar()
+                return leafTag('=>', self.endSpan())
+            elif nex == '~':
+                self.nextChar()
+                return leafTag('=~', self.endSpan())
+            self.syntaxError("use := for assignment or == for equality")
+
+        if cur == '!':
+            nex = self.nextChar()
+            if nex == '=':
+                self.nextChar()
+                return leafTag('!=', self.endSpan())
+            elif nex == '~':
+                self.nextChar()
+                return leafTag('!~', self.endSpan())
+            return leafTag('!', self.endSpan())
+
+        if cur == '&':
+            nex = self.nextChar()
+            if nex == '&':
+                self.nextChar()
+                return leafTag('&&', self.endSpan())
+            elif nex == '=':
+                self.nextChar()
+                return leafTag('&=', self.endSpan())
+            elif nex == '!':
+                self.nextChar()
+                return leafTag('&!', self.endSpan())
+            return leafTag('&', self.endSpan())
+
+        if cur == '|':
+            nex = self.nextChar()
+            if nex == '|':
+                self.nextChar()
+                return leafTag('||', self.endSpan())
+            elif nex == '=':
+                self.nextChar()
+                return leafTag('|=', self.endSpan())
+            return leafTag('|', self.endSpan())
 
         if cur == '\'':
             return self.charLiteral()
@@ -429,13 +706,21 @@ class ELexer(object):
         if cur == '"':
             return self.stringLiteral()
 
+        if cur == '`':
+            self.nextChar()
+            opener = self.getSpan(self._startPos, self.position,
+                                  "File ends inside quasiliteral")
+            self.indenter.push(opener, '`', 0)
+            return self.quasiPart()
+
         if cur in string.digits:
             return self.numberLiteral()
 
         if cur == '_':
             if isIdentifierPart(self.peekChar()):
                 return self.identifier()
-            return self.leafTag(cur, self.endSpan())
+            self.nextChar()
+            return leafTag(cur, self.endSpan())
 
         if isIdentifierStart(cur):
             return self.identifier()
@@ -457,7 +742,7 @@ class ELexer(object):
                 return composite("VERB_ASSIGN", token, span)
         token, span = self.endToken()
         if isKeyword(token):
-            return leafTag(token.lower(), span)
+            return composite(token.lower(), token.lower(), span)
         else:
             return composite('IDENTIFIER', token, span)
 
@@ -567,6 +852,46 @@ class ELexer(object):
             else:
                 return composite('.int.', int(s), span)
 
+    def quasiPart(self):
+        buf = []
+        while True:
+            while self.currentChar not in '`@$':
+                if self.isEndOfFile():
+                    self.syntaxError("File ends inside quasiliteral")
+                buf.append(self.currentChar)
+                self.nextChar()
+            if self.peekChar() == self.currentChar:
+                buf.append(self.currentChar)
+                if self.currentChar == '$@':
+                    buf.append(self.currentChar)
+                self.nextChar()
+                self.nextChar()
+            elif self.currentChar == '`':
+                self.nextChar()
+                closer = self.endToken()
+                self.indenter.pop(self, '`', closer)
+                return composite('QUASI_CLOSE', ''.join(buf), closer[1])
+            elif self.peekChar() == '`':
+                buf.append(self.currentChar())
+                self.nextChar()
+            elif self.currentChar == '$' and self.peekChar() == '\\':
+                self.nextChar()
+                cc = self.charConstant()
+                if cc is not None:
+                    buf.append(cc)
+            else:
+                opener = self.endToken()
+                self.indenter.nestLevel += 1
+                self.indenter.push(opener, '$', self.indenter.nestLevel * 4, True)
+                if not buf:
+                    result = self.getNextToken()
+                    if result is EOF:
+                        self.syntaxError("file ends in quasiliteral")
+                    else:
+                        return result
+                else:
+                    return composite('QUASI_OPEN', ''.join(buf), opener[1])
+
     def digits(self, radix):
         if radix == 10:
             digs = string.digits
@@ -606,73 +931,31 @@ class ELexer(object):
         source, span = self.endToken()
         return composite('URI', source[1:-1], span)
 
-
-# ['!', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~', '!=', '!~', '%%', '%=', '&!', '&&', '&=', '**', '*=', '+=', '-=', '->', '..', '//', '/=', '::', ':=', '<-', '<<', '<=', '==', '=>', '=~', '>=', '>>', '^=', 'as', 'fn', 'if', 'in', 'to', '|=', '||', '%%=', '**=', '..!', '/**', '//=', '<<=', '<=>', '>>=', 'def', 'for', 'try', 'var', 'via', 'bind', 'else', 'exit', 'meta', 'when', 'accum', 'break', 'catch', 'match', 'scope', 'while', 'escape', 'guards', 'method', 'pragma', 'return', 'switch', 'context', 'extends', 'finally', 'continue', 'getState', 'interface', 'implements']
-
-"""
-hspace = (' '|'\t'|'\f'|('#' (~eol anything)*))
-ws = ('\r' '\n'|'\r' | '\n' | hspace)*
-
-number = ws barenumber
-barenumber = '-'?:sign ('0' (('x'|'X') <hexdigit*>:hs
-                                        -> int((sign or '') + hs, 16)
-                        |floatPart(sign '0')
-                        |<octaldigit*>:ds -> int((sign or '') + '0' + ds, 8))
-               |decdigits:ds floatPart(sign ds)
-               |decdigits:ds -> int((sign or '') + ds))
-
-exponent = <('e' | 'E') ('+' | '-')? decdigits>
-floatPart :sign :ds = <('.' decdigits exponent?) | exponent>:tail
-                    -> float((sign or '') + ds + tail)
-decdigits = digit:d ((:x ?(x.isdigit()) -> x) | '_' -> "")*:ds
-          -> d + ''.join(ds)
-octaldigit = :x ?(x in string.octdigits) -> x
-hexdigit = :x ?(x in string.hexdigits) -> x
-
-string = ws '"' (escapedChar | ~('"') anything)*:c '"' -> ''.join(c)
-character = ws '\'' (escapedChar | ~('\''|'\n'|'\r'|'\\') anything):c '\''
-          -> t.Character(c)
-escapedUnicode = ('u' <hexdigit hexdigit hexdigit hexdigit>:hs
-                -> unichr(int(hs, 16))
-               |'U' <hexdigit hexdigit hexdigit hexdigit
-                     hexdigit hexdigit hexdigit hexdigit>:hs
-                -> unichr(int(hs, 16)))
-
-escapedOctal = ( <:a ?(a in "0123") octdigit? octdigit?>
-                 | <:a ?(a in "4567") octdigit?>):os -> int(os, 8)
-
-escapedChar = '\\' ('n' -> '\n'
-                     |'r' -> '\r'
-                     |'t' -> '\t'
-                     |'b' -> '\b'
-                     |'f' -> '\f'
-                     |'"' -> '"'
-                     |'\'' -> '\''
-                     |'?' -> '?'
-                     |'\\' -> '\\'
-                     | escapedUnicode
-                     | escapedOctal
-                     | eol -> "")
-
-eol = hspace* ('\r' '\n'|'\r' | '\n')
-
-uriBody = <(letterOrDigit|'_'|';'|'/'|'?'|':'|'@'|'&'|'='|'+'|'$'|','|'-'|'.'
-            |'!'|'~'|'*'|'\''|'('|')'|'%'|'\\'|'|'|'#')+>
+    def docComment(self):
+        opener = self.getSpan(self._startPos, self.position,
+                              "File ends inside doc-comment")
+        self.indenter.push(opener, '*', self.position - 2)
+        buf = []
+        while '*/' not in self._currentLine:
+            buf.append(self._currentLine[self.position:])
+            self.skipLine()
+            self.nextChar()
+            if self.isEndOfFile():
+                self.syntaxError("File ends inside doc-comment")
+            self.skipWhiteSpace()
+            if self.currentChar == '*' and self.peekChar() != '/':
+                self.nextChar()
+        bound = self._currentLine.find('*/')
+        buf.append(self._currentLine[self.position:bound])
+        self.position = bound
+        self.nextChar()
+        self.nextChar()
+        closer = self.endToken()
+        self.indenter.pop(self, '*', closer)
+        return composite('DOC_COMMENT', ''.join(buf), closer[1])
 
 
-updocLine = <('?'|'#'|'>') (~('\n' | '\r') anything)*>:txt eol -> txt
-updoc = ('?' (~('\n' | '\r') anything)*
-             ((eol (eol | updocLine)*) (spaces | updocLine))?
-        )
-
-eolplus = eol updoc?
-linesep = eolplus+
-
-br = (spaces eolplus | eolplus)*
-
-
-uriScheme = <letter (letterOrDigit | '_' | '+' | '-' | '.')*>
-uriGetter = "<" uriScheme:s '>'
-identifier = spaces <(letter | '_') (letterOrDigit | '_')*>
-
-"""
+def makeTokenStream(text, origin="<string>"):
+    lexer = ELexer(StringFeeder(text, origin))
+    toks = [tok for tok in lexer if tok.tag.name != '#' and tok.tag.name != 'UPDOC']
+    return InputStream.fromIterable(toks)
