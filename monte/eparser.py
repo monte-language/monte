@@ -35,6 +35,35 @@ def noIgnorePatternHole():
 def noIgnoreExpressionHole():
     raise RuntimeError()
 
+OPERATORS = {
+    '**': (1, t.Pow),
+    '*': (2, t.Multiply),
+    '/': (2, t.Divide),
+    '//': (2, t.FloorDivide),
+    '%': (2, t.Remainder),
+    '%%': (2, t.Mod),
+    '+': (3, t.Add),
+    '-': (3, t.Subtract),
+    '<<': (4, t.ShiftLeft),
+    '>>': (4, t.ShiftRight),
+    '..': (5, t.Thru),
+    '..!': (5, t.Till),
+    '>': (6, t.GreaterThan),
+    '<': (6, t.LessThan),
+    '>=': (6, t.GreaterThanEqual),
+    '<=': (6, t.LessThanEqual),
+    '<=>': (6, t.AsBigAs),
+    '=~': (7, t.MatchBind),
+    '!~': (7, t.Mismatch),
+    '==': (7, t.Same),
+    '!=': (7, t.NotSame),
+    '&!': (7, t.ButNot),
+    '^': (7, t.BinaryXor),
+    '&': (8, t.BinaryAnd),
+    '|': (8, t.BinaryOr),
+    '&&': (9, t.LogicalAnd),
+    '||': (10, t.LogicalOr)
+}
 
 BaseEParser = loadGrammar(monte, "eparser", globals())
 
@@ -98,6 +127,53 @@ class EParser(BaseEParser):
             return self.patternHoles[a]
         except ValueError:
             raise ValueError("A literal @ is not meaningful in E source.")
+
+    def rule_infix(self):
+        return self.convertInfix(10)
+
+    def rule_logical(self):
+        return self.convertInfix(8)
+
+    def rule_order(self):
+        return self.convertInfix(6)
+
+    def convertInfix(self, maxPrec):
+        leftAssociative = set(['+', '-', '>>', '<<', '/', '*', '//', '%', '%%'])
+        selfAssociative = set(['|', '&'])
+        lhs, err = self.rule_prefix()
+        output = [lhs]
+        opstack = []
+        while True:
+            opTok, _ = self.input.head()
+            op = opTok.tag.name
+            if op not in OPERATORS:
+                break
+            nextPrec = OPERATORS[op][0]
+            if nextPrec > maxPrec:
+                break
+            self.input = self.input.tail()
+            self.rule_br()
+            if opstack and (opstack[-1][0] < nextPrec
+                         or op in leftAssociative and
+                            opstack[-1][0] <= nextPrec
+                         or op in selfAssociative and opstack[-1][2] == op):
+                prec, node, opname = opstack.pop()
+                rhs = output.pop()
+                lhs = output.pop()
+                output.append(node(lhs, rhs))
+            opstack.append(OPERATORS[op] + (op,))
+            if op in ['=~', '!~']:
+                nextTok, err = self.rule_pattern()
+            else:
+                nextTok, err = self.rule_prefix()
+            output.append(nextTok)
+        while opstack:
+            prec, node, opname = opstack.pop()
+            rhs = output.pop()
+            lhs = output.pop()
+            output.append(node(lhs, rhs))
+        assert len(output) == 1
+        return output[0], err
 
 EParser.globals = {}
 EParser.globals.update(globals())

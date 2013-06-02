@@ -43,15 +43,15 @@ assoc = (seq:k "=>" seq:v -> t.MapExprAssoc(k, v)
 
 
 prim = ( literal
-         | basic
-         | identifier?:n quasiString:qs -> t.QuasiExpr(n, qs)
-         | noun
-         | uri
-         | parenExpr:p (quasiString:qs -> t.QuasiExpr(p, qs)
-                         | -> p)
-         | block:b -> t.HideExpr(b)
-         | listAndMap
-         )
+       | basic
+       | identifier?:n quasiString:qs -> t.QuasiExpr(n, qs)
+       | noun
+       | uri
+       | parenExpr:p (quasiString:qs -> t.QuasiExpr(p, qs)
+                       | -> p)
+       | block:b -> t.HideExpr(b)
+       | listAndMap
+       )
 
 parenExpr = "(" seq:s ')' -> s
 block = "{" (seq |-> t.SeqExpr([])):s '}' -> s
@@ -65,75 +65,28 @@ args = (seq:s ("," seq)*:ss -> [s] + ss
 
 call = (call:c ("." verb:v (parenArgs:x -> t.MethodCallExpr(c, v, x)
                                   | -> t.VerbCurryExpr(c, v))
-                    |"[" args:a ']' -> t.GetExpr(c, a)
-                    |parenArgs:x -> t.FunctionCallExpr(c, x)
-                    | "<-" (parenArgs:x -> t.FunctionSendExpr(c, x)
-                           |verb:v (parenArgs:x -> t.MethodSendExpr(c, v, x)
-                                     | -> t.SendCurryExpr(c, v)))
+               |"[" args:a ']' -> t.GetExpr(c, a)
+               |parenArgs:x -> t.FunctionCallExpr(c, x)
+               | "<-" (parenArgs:x -> t.FunctionSendExpr(c, x)
+               |verb:v (parenArgs:x -> t.MethodSendExpr(c, v, x)
+               | -> t.SendCurryExpr(c, v)))
                     )
          |prim
          )
-
-prefix = (call
-           | "-" call:c -> t.Minus(c)
+guarded = call:c (":" guard:g -> t.Coerce(c, g)
+                 | -> c)
+prefix = (guarded
+           | "-" prim:c -> t.Minus(c)
            | "!" call:c -> t.LogicalNot(c)
            | "~" call:c -> t.BinaryNot(c)
            | reifyExpr
            | "&" call !(throwSemanticHere("reserved: unary prefix '&' applied to non-noun lValue")))
 
-pow = prefix:x ("**" prefix:y -> t.Pow(x, y)
-                   | -> x)
-mult = (mult:x ("*" pow:y -> t.Multiply(x, y)
-                 |"/" pow:y -> t.Divide(x, y)
-                 |"//" pow:y -> t.FloorDivide(x, y)
-                 |"%" pow:y -> t.Remainder(x, y)
-                 |"%%" pow:y -> t.Mod(x, y))
-         |pow)
 
-add = (add:x ("+" mult:y -> t.Add(x, y)
-                 |"-" mult:y -> t.Subtract(x, y))
-        | mult)
-
-shift = (shift:x ("<<" add:y -> t.ShiftLeft(x, y)
-                     |">>" add:y -> t.ShiftRight(x, y))
-          |add)
-
-interval = shift:x ("..!" shift:y -> t.Till(x, y)
-                       |".." shift:y -> t.Thru(x, y)
-                       | -> x)
-
-order = interval:x (">" interval:y -> t.GreaterThan(x, y)
-                       | ">=" interval:y -> t.GreaterThanEqual(x, y)
-                       | "<=>" interval:y -> t.AsBigAs(x, y)
-                       | "<=" interval:y -> t.LessThanEqual(x, y)
-                       | "<" interval:y -> t.LessThan(x, y)
-                       | ":" guard:g -> t.Coerce(x, g)
-                       | -> x)
-
-logical = (band
-            |bor
-            |(order:x ("=~" pattern:p -> t.MatchBind(x, p)
-                        |"!~" pattern:p -> t.Mismatch(x, p)
-                        |"==" order:y -> t.Same(x, y)
-                        |"!=" order:y -> t.NotSame(x, y)
-                        |"&!" order:y -> t.ButNot(x, y)
-                        |"^" order:y -> t.BinaryXor(x, y)
-                        | -> x)))
-
-band = (band:x ~("&&" | "&!") "&" order:y -> t.BinaryAnd(x, y)
-         |order:x ~("&&" | "&!") "&" order:y -> t.BinaryAnd(x, y))
-
-bor = (bor:x "|" order:y -> t.BinaryOr(x, y)
-        |order:x "|" order:y -> t.BinaryOr(x, y))
-
-condAnd = logical:x (("&&" condAnd):y -> t.LogicalAnd(x, y)
-                        | -> x)
-cond = condAnd:x (("||" cond):y -> t.LogicalOr(x, y)
-                     | -> x)
 assign = (~objectExpr "def" (pattern:p ("exit" order)?:e ":=" assign:a -> t.Def(p, e, a)
                   |noun:n (~~seqSep | end)-> t.Forward(n))
            |keywordPattern:p ":=" assign:a -> t.Def(p, None, a)
-           |cond:x (":=" assign:y -> t.Assign(x, y)
+           |infix:x (":=" assign:y -> t.Assign(x, y)
                     |assignOp:o assign:y -> t.AugAssign(o, x, y)
                     |tok('VERB_ASSIGN'):v (parenArgs:y -> t.VerbAssign(v, x, y)
                                           |assign:y -> t.VerbAssign(v, x, [y]))

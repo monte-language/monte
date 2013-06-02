@@ -251,6 +251,27 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("x || y"), ["LogicalOr", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x || y || z"), ["LogicalOr", ["NounExpr", "x"], ["LogicalOr", ["NounExpr", "y"], ["NounExpr", "z"]]])
 
+    def test_precedence(self):
+        parse = self.getParser("expr")
+        self.assertEqual(parse("x && y || z"),  parse("(x && y) || z"))
+        self.assertEqual(parse("x || y && z"),  parse("x || (y && z)"))
+        self.assertEqual(parse("x =~ a || y == b && z != c"),
+                         parse("(x =~ a) || ((y == b) && (z != c))"))
+        self.assertEqual(parse("x | y > z"),  parse("x | (y > z)"))
+        self.assertEqual(parse("x < y | y > z"),  parse("(x < y) | (y > z)"))
+        self.assertEqual(parse("x & y > z"),  parse("x & (y > z)"))
+        self.assertEqual(parse("x < y & y > z"),  parse("(x < y) & (y > z)"))
+        self.assertEqual(parse("x..y <=> a..!b"),  parse("(x..y) <=> (a..!b)"))
+        self.assertEqual(parse("a << b..y >> z"),  parse("(a << b) .. (y >> z)"))
+        self.assertEqual(parse("x.y() :List[int] > a..!b"),
+                         parse("(x.y() :List[int]) > a..!b"))
+        self.assertEqual(parse("a + b >> z"),  parse("(a + b) >> z"))
+        self.assertEqual(parse("a >> b + z"),  parse("a >> (b + z)"))
+        self.assertEqual(parse("a + b * c"), parse("a + (b * c)"))
+        self.assertEqual(parse("a - b + c * d"), parse("(a - b) + (c * d)"))
+        self.assertEqual(parse("a / b + c - d"), parse("((a / b) + c) - d"))
+        self.assertEqual(parse("a / b * !c ** ~d"), parse("(a / b) * ((!c) ** (~d))"))
+        
     def test_assign(self):
         """
         Assignment expressions.
