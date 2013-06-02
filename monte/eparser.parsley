@@ -63,15 +63,14 @@ parenArgs = "(" args:a ')' -> a
 args = (seq:s ("," seq)*:ss -> [s] + ss
          |-> [])
 
-call = (call:c ("." verb:v (parenArgs:x -> t.MethodCallExpr(c, v, x)
-                                  | -> t.VerbCurryExpr(c, v))
-               |"[" args:a ']' -> t.GetExpr(c, a)
-               |parenArgs:x -> t.FunctionCallExpr(c, x)
-               | "<-" (parenArgs:x -> t.FunctionSendExpr(c, x)
-               |verb:v (parenArgs:x -> t.MethodSendExpr(c, v, x)
-               | -> t.SendCurryExpr(c, v)))
-                    )
-         |prim
+call = (prim:p ("." verb:v (parenArgs:x -> (t.MethodCallExpr, v, x)
+                                  | -> (t.VerbCurryExpr, v))
+               |"[" args:a ']' -> (t.GetExpr, a)
+               |parenArgs:x -> (t.FunctionCallExpr, x)
+               | "<-" (parenArgs:x -> (t.FunctionSendExpr, x)
+               |verb:v (parenArgs:x -> (t.MethodSendExpr, v, x)
+               | -> (t.SendCurryExpr, v)))
+               )*:ts -> self.collapseTrailers(p, ts)
          )
 guarded = call:c (":" guard:g -> t.Coerce(c, g)
                  | -> c)
@@ -83,7 +82,7 @@ prefix = (guarded
            | "&" call !(throwSemanticHere("reserved: unary prefix '&' applied to non-noun lValue")))
 
 
-assign = (~objectExpr "def" (pattern:p ("exit" order)?:e ":=" assign:a -> t.Def(p, e, a)
+assign = ("def" (pattern:p ("exit" order)?:e ":=" assign:a -> t.Def(p, e, a)
                   |noun:n (~~seqSep | end)-> t.Forward(n))
            |keywordPattern:p ":=" assign:a -> t.Def(p, None, a)
            |infix:x (":=" assign:y -> t.Assign(x, y)

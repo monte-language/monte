@@ -175,6 +175,12 @@ class EParser(BaseEParser):
         assert len(output) == 1
         return output[0], err
 
+    def collapseTrailers(self, base, trailers):
+        node = base
+        for tr in trailers:
+            node = tr[0](node, *tr[1:])
+        return node
+
 EParser.globals = {}
 EParser.globals.update(globals())
 
@@ -182,6 +188,9 @@ def makeParser(source, origin="<string>"):
     stream = makeTokenStream(source, origin)
     return EParser(stream, stream=True)
 
-def parse(source, origin="<string>"):
+def parse(source, origin="<string>", tracefunc=None):
     from parsley import _GrammarWrapper
-    return _GrammarWrapper(makeParser(source, origin), source).start()
+    p = makeParser(source, origin)
+    if tracefunc:
+        p._trace = tracefunc
+    return _GrammarWrapper(p, source).start()
