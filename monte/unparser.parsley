@@ -1,0 +1,235 @@
+null :x ?(x.tag.name == "null") -> None
+
+LogicalOr(@left @right) = prec(12) --> $left || $right
+LogicalAnd(@left @right) = prec(11) --> $left && $right
+
+BinaryAnd(@left @right) = prec(10) --> $left & $right
+BinaryOr(@left @right) = prec(10) --> $left | $right
+
+MatchBind(@left @right) = prec(9) --> $left =~ $right
+Mismatch(@left @right)  = prec(9) --> $left !~ $right
+Same(@left @right)      = prec(9) --> $left == $right
+NotSame(@left @right)   = prec(9) --> $left != $right
+ButNot(@left @right)    = prec(9) --> $left &! $right
+BinaryXor(@left @right) = prec(9) --> $left ^ $right
+
+GreaterThan(@left @right)      = prec(8) --> $left > $right
+GreaterThanEqual(@left @right) = prec(8) --> $left >= $right
+LessThan(@left @right)         = prec(8) --> $left < $right
+LessThanEqual(@left @right)    = prec(8) --> $left <= $right
+AsBigAs(@left @right)          = prec(8) --> $left <=> $right
+
+Thru(@left @right) = prec(7) --> $left..$right
+Till(@left @right) = prec(7) --> $left..!$right
+
+ShiftLeft(@left @right)  = prec(6) --> $left << $right
+ShiftRight(@left @right) = prec(6) --> $left >> $right
+
+Add(@left @right)      = prec(5) --> $left + $right
+Subtract(@left @right) = prec(5) --> $left - $right
+
+Multiply(@left @right)    = prec(4) --> $left * $right
+FloorDivide(@left @right) = prec(4) --> $left // $right
+Divide(@left @right)      = prec(4) --> $left / $right
+Mod(@left @right)         = prec(4) --> $left % $right
+Remainder(@left @right)   = prec(4) --> $left %% $right
+
+Pow(@left @right) = prec(3) --> $left ** $right
+
+SlotExpr(verb:v)     = prec(2) --> &$v
+BindingExpr(verb:v)  = prec(2) --> &&$v
+BinaryNot(@e)        = prec(2) --> ~$e
+LogicalNot(@call)    = prec(2) --> !$call
+Coerce(@call @g) = prec(2) --> $call :$g
+
+#TODO folding
+arglist @args -> ', '.join(str(a) for a in args)
+MethodCallExpr(@base verb:v arglist:args) = prec(1) --> $base.$v($args)
+VerbCurryExpr(@base verb:v)               = prec(1) --> $base.$v
+GetExpr(@base arglist:val)                = prec(1) --> $base[$val]
+FunctionCallExpr(@base arglist:args)      = prec(1) --> $base($args)
+FunctionSendExpr(@base arglist:args)      = prec(1) --> $base <- ($args)
+MethodSendExpr(@base verb:v arglist:args)  = prec(1) --> $base <- $v($args)
+SendCurryExpr(@base verb:v)                = prec(1) --> $base <- $v
+
+Minus(@val) = prec(0) --> -$val
+
+exit null -> ''
+exit @e --> exit $e
+Def(VarPattern(@n guard:g) exit:e @a) --> var $n $g $e := $a
+Def(BindPattern(@n) exit:e @a) --> bind $p $e := $a
+Def(@p exit:e @a) --> def $p $e := $a
+
+Forward(@n) --> def $n
+Assign(@x @y) --> $x := $y
+AugAssign(assignOp:o @x @y) --> $x $o= $y
+verbAssign(@v @x @y) --> $x $v= $y
+
+assignOp @n -> ({"Add": "+=",
+             "Subtract": "-=",
+             "Multiply": "*=",
+             "Divide": "/=",
+             "Remainder": "%=",
+             "Mod": "%%=",
+             "Pow": "**=",
+             "FloorDivide": "//=",
+             "ShiftRight": ">>=",
+             "ShiftLeft": "<<=",
+             "BinaryAnd": "&=",
+             "BinaryOr": "|=",
+             "BinaryXor": "^="}[n])
+
+Break(null) --> break
+Break(@v) --> break($v)
+Continue(null) --> continue
+Continue(@v) --> continue($v)
+Return(null) --> return
+Return(@v) --> return($v)
+#TODO string escaping
+LiteralExpr(@x) -> repr(x)
+NounExpr(@n) ?(isKeyword(n) or not isIdentifier(n)) --> ::"$n"
+NounExpr(@n) --> $n
+
+verb :v = (?(isKeyword(v.data) or not isIdentifier(v.data)) --> "$v"
+          | -> v.data)
+
+opt null -> ""
+opt @n -> n
+
+QuasiExpr(opt:n quasiParts:qs) --> $n`$qs`
+QuasiPattern(opt:n quasiParts:qs) --> $n`$qs`
+
+quasiParts [transform*:qs] -> ''.join(str(q) for q in qs)
+#TODO string escaping
+QuasiText(@q) --> $q
+QuasiExprHole(NounExpr(@n)) ?(not isKeyword(n) and isIdentifier(n)) --> $$$n
+QuasiExprHole(@e) --> $${$e}
+QuasiPatternHole(FinalPattern(NounExpr(@n) null)) ?(not isKeyword(n) and isIdentifier(n)) --> @$n
+QuasiPatternHole(@e) --> @{$e}
+
+URIExpr(@scheme @content) --> <$scheme:$content>
+URIGetter(@scheme) --> <$scheme>
+
+ListExpr(items:xs) --> [$xs]
+MapExpr(items:xs) --> [$xs]
+
+items [transform*:xs] -> ', '.join(str(x) for x in xs)
+MapExprAssoc(@k @v) --> $k => $v
+MapExprExport(@n) --> => $n
+
+HideExpr(block:b) -> b
+
+docstring null -> ""
+docstring @d {{{
+/**
+$d
+*/}}}
+extends null -> ""
+extends @e --> extends $e
+guards null -> ""
+guards @g --> as $g
+implements [] -> ""
+implements items:i --> implements $i
+
+guard null -> ""
+guard @g --> :$g
+Guard(@e []) -> e
+Guard(@e items:xs) --> $e[$xs]
+
+arglist @args -> ', '.join(str(a) for a in args)
+Object(docstring:doc @name Script(extends:e guards:g implements:i
+       :methods :matchers)) block(concat(methods, matchers)):b
+    --> $doc def $name $e $g $i $b
+
+Object(docstring:doc @name Function(arglist:ps guard:g implements:fi block:b))
+    --> $doc def $name($ps) $g $fi $b
+
+To(docstring:doc verb:v arglist:ps guard:g block:b) --> $doc to $v($ps) $g $b
+
+Method(docstring:doc verb:v arglist:ps guard:g block:b)
+    --> $doc method $v($ps) $g $block
+Matcher(@p block:b) --> match $p $b
+Interface(@name null :ign :ign InterfaceFunction(arglist:ps guard:rg))
+    --> interface $name($ps) $rg
+
+
+iguards null -> ""
+iguards @g --> guards $g
+multiExtends [] -> ""
+multiExtends items:es --> extends $es
+
+Interface(@name iguards:g multiExtends:es implements:i block:msgs)
+    --> interface $name $g $es $i $msgs
+
+MessageDesc(docstring:doc :keyword verb:v arglist:ps guard:g)
+    --> $doc $keyword $v($ps) $g
+
+ParamDesc(null guard:g) --> _ $g
+ParamDesc(@n guard:g) --> $n $g
+
+catcher null -> ""
+catcher Catch(@p block:b) --> catch $p $b
+
+catchers [catcher*:cs] -> ' '.join(str(c) for c in cs)
+
+block @content {{{
+{
+    $content
+}
+}}}
+
+Accum(@c @ac) --> accum $c $ac
+AccumFor(forPatt:patt @val @body catcher:c) --> for $patt in $val $body $c
+AccumIf(@e @a) --> if ($e) $a
+AccumWhile(@e @a catcher:c) --> while ($e) $a $c
+AccumCall(verb:v arglist:ps) --> { _.$v($ps) }
+AccumOp(accOp:op @a) --> { _ $op $a }
+accOp :opName -> {'Add': '+', 'Multiply': '*', 'BinaryAnd': '&', 'BinaryOr': '|'}[opName]
+
+Escape(@p block:b catcher:c) --> escape $p $b $c
+forPatt null @p --> $p
+forPatt @p @px --> $p => $px
+For(forPatt:p @a block:b catcher:c) --> for $p in $a $b $c
+
+els null -> ""
+els If(@p block:b els:e) --> else if ($p) $b $e
+els block:x --> else $x
+If(@p block:b els:e) --> if ($p) $b $e
+
+Lambda(docstring:doc @ps block:b) --> $doc fn $ps $b
+
+metaOp :s -> {'State': 'getState', 'Scope': 'scope', 'Context': 'context'}[s]
+Meta(metaOp:s) --> meta.$s()
+
+Switch(@e block:ms) --> switch $e $ms
+fin null -> ""
+fin block:f --> finally $f
+
+Try(block:t catchers:c fin:f) --> try $t $c $f
+
+While(@e block:b catcher:c) --> while ($e) $b $c
+
+When(@a block:b catchers:cs fin:f) --> when ($a) -> $b $c $f
+
+SeqExpr(@exprs) -> exprs
+
+SuchThatPattern(@p @e) --> $p ? $e
+ViaPattern(@e @p) --> via ($e) $p
+MapPattern(items:ms opt:tail) --> [$ms] | $tail
+ListPattern(items:ps opt:tail) --> [$ps] + $tail
+
+MapPatternAssoc(@k @v) --> $k => $v
+MapPatternImport(@p) --> => $p
+MapPatternOptional(@a @d) --> $a := $d
+MapPatternRequired(@a) -> a
+
+SlotPattern(@n guard:g) --> &$n $g
+BindingPattern(@n guard:g) --> &&$n $g
+
+FinalPattern(@n guard:g) --> $n $g
+VarPattern(@n guard:g) --> var $n $g
+BindPattern(@n guard:g) --> bind $n $g
+SamePattern(@p) --> ==$p
+IgnorePattern(guard:g) --> _ $g
+
+Pragma(verb:v @s) --> pragma.$v("$s")

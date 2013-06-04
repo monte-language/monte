@@ -2,10 +2,10 @@
 # See LICENSE for details.
 import string
 
-from parsley import ParseError
+from parsley import ParseError, wrapGrammar
 from ometa.grammar import loadGrammar
-from ometa.runtime import expected
-from terml.nodes import termMaker as t
+from ometa.runtime import expected, OMetaBase
+from terml.nodes import Term, Tag, termMaker as t
 
 import monte
 from monte.lexer import reserved, basicKeywords, keywords, makeTokenStream
@@ -36,38 +36,36 @@ def noIgnoreExpressionHole():
     raise RuntimeError()
 
 OPERATORS = {
-    '**': (1, t.Pow),
-    '*': (2, t.Multiply),
-    '/': (2, t.Divide),
-    '//': (2, t.FloorDivide),
-    '%': (2, t.Remainder),
-    '%%': (2, t.Mod),
-    '+': (3, t.Add),
-    '-': (3, t.Subtract),
-    '<<': (4, t.ShiftLeft),
-    '>>': (4, t.ShiftRight),
-    '..': (5, t.Thru),
-    '..!': (5, t.Till),
-    '>': (6, t.GreaterThan),
-    '<': (6, t.LessThan),
-    '>=': (6, t.GreaterThanEqual),
-    '<=': (6, t.LessThanEqual),
-    '<=>': (6, t.AsBigAs),
-    '=~': (7, t.MatchBind),
-    '!~': (7, t.Mismatch),
-    '==': (7, t.Same),
-    '!=': (7, t.NotSame),
-    '&!': (7, t.ButNot),
-    '^': (7, t.BinaryXor),
-    '&': (8, t.BinaryAnd),
-    '|': (8, t.BinaryOr),
-    '&&': (9, t.LogicalAnd),
-    '||': (10, t.LogicalOr)
+    '**': (1, 'Pow'),
+    '*': (2, 'Multiply'),
+    '/': (2, 'Divide'),
+    '//': (2, 'FloorDivide'),
+    '%': (2, 'Remainder'),
+    '%%': (2, 'Mod'),
+    '+': (3, 'Add'),
+    '-': (3, 'Subtract'),
+    '<<': (4, 'ShiftLeft'),
+    '>>': (4, 'ShiftRight'),
+    '..': (5, 'Thru'),
+    '..!': (5, 'Till'),
+    '>': (6, 'GreaterThan'),
+    '<': (6, 'LessThan'),
+    '>=': (6, 'GreaterThanEqual'),
+    '<=': (6, 'LessThanEqual'),
+    '<=>': (6, 'AsBigAs'),
+    '=~': (7, 'MatchBind'),
+    '!~': (7, 'Mismatch'),
+    '==': (7, 'Same'),
+    '!=': (7, 'NotSame'),
+    '&!': (7, 'ButNot'),
+    '^': (7, 'BinaryXor'),
+    '&': (8, 'BinaryAnd'),
+    '|': (8, 'BinaryOr'),
+    '&&': (9, 'LogicalAnd'),
+    '||': (10, 'LogicalOr')
 }
 
-BaseEParser = loadGrammar(monte, "eparser", globals())
-
-class EParser(BaseEParser):
+class EParserBase(OMetaBase):
     """
     A parser for E.
     """
@@ -157,10 +155,10 @@ class EParser(BaseEParser):
                          or op in leftAssociative and
                             opstack[-1][0] <= nextPrec
                          or op in selfAssociative and opstack[-1][2] == op):
-                prec, node, opname = opstack.pop()
+                prec, nodeName, opname = opstack.pop()
                 rhs = output.pop()
                 lhs = output.pop()
-                output.append(node(lhs, rhs))
+                output.append(Term(Tag(nodeName), None, (lhs, rhs), None))
             opstack.append(OPERATORS[op] + (op,))
             if op in ['=~', '!~']:
                 nextTok, err = self.rule_pattern()
@@ -168,10 +166,10 @@ class EParser(BaseEParser):
                 nextTok, err = self.rule_prefix()
             output.append(nextTok)
         while opstack:
-            prec, node, opname = opstack.pop()
+            prec, nodeName, opname = opstack.pop()
             rhs = output.pop()
             lhs = output.pop()
-            output.append(node(lhs, rhs))
+            output.append(Term(Tag(nodeName), None, (lhs, rhs), None))
         assert len(output) == 1
         return output[0], err
 
@@ -181,9 +179,7 @@ class EParser(BaseEParser):
             node = tr[0](node, *tr[1:])
         return node
 
-EParser.globals = {}
-EParser.globals.update(globals())
-
+EParser = loadGrammar(monte, "eparser", globals(), EParserBase)
 def makeParser(source, origin="<string>"):
     stream = makeTokenStream(source, origin)
     return EParser(stream, stream=True)
