@@ -5,8 +5,8 @@ from terml.nodes import Tag, Term, termMaker as t
 ### expansion. Replace all temps with nouns in a single pass at the
 ### end.
 
-TRUE = Term(Tag('true'), None, None, None)
-FALSE = Term(Tag('false'), None, None, None)
+TRUE = t.NounExpr('true')   #Term(Tag('true'), None, None, None)
+FALSE = t.NounExpr('false') #Term(Tag('false'), None, None, None)
 
 class ScopeSet(object):
     def __init__(self, bits=()):
@@ -133,7 +133,7 @@ def foldr(f, a, bs):
         a = f(a, b)
     return a
 
-def verbAssignError(target, parser):
+def verbAssignError(parser, target):
     name = target.tag.name
     if name == "QuasiLiteralExpr":
         err("Can't use update-assign syntax on a \"$\"-hole. "
@@ -147,13 +147,13 @@ def verbAssignError(target, parser):
 def err(msg, parser):
     raise parser.input.error.withMessage([("message", msg)])
 
-def expandCallVerbAssign(verb, args, receiver, methVerb, methArgs):
-    r = mktemp("recip")
+def expandCallVerbAssign(self, verb, args, receiver, methVerb, methArgs):
+    r = self.mktemp("recip")
     prelude = t.Def(t.FinalPattern(r, None), None, receiver)
     seq = [prelude]
     setArgs = []
     for arg in methArgs.args:
-        a = mktemp("arg")
+        a = self.mktemp("arg")
         seq.append(t.Def(t.FinalPattern(a, None), None, arg))
         setArgs.append(a)
     seq.extend(expand(t.Assign(t.MethodCallExpr(r, methVerb, setArgs), t.MethodCallExpr(t.MethodCallExpr(r, methVerb, setArgs),
@@ -161,7 +161,7 @@ def expandCallVerbAssign(verb, args, receiver, methVerb, methArgs):
     return t.SeqExpr(seq)
 
 
-def expandDef(patt, optEj, rval, nouns):
+def expandDef(self, patt, optEj, rval, nouns):
     pattScope = scope(patt)
     defPatts = pattScope.defNames
     varPatts = pattScope.varNames
@@ -169,7 +169,6 @@ def expandDef(patt, optEj, rval, nouns):
     if optEj:
         rvalScope = scope(optEj).add(rvalScope)
     rvalUsed = rvalScope.namesUsed()
-    commonNames = pattScope.outNames() & rvalScope.namesUsed().getKeys()
     if len(varPatts & rvalUsed) != 0:
         raise ParseError("Circular 'var' definition not allowed", None)
     if len(pattScope.namesUsed() & rvalScope.outNames()) != 0:
@@ -182,8 +181,8 @@ def expandDef(patt, optEj, rval, nouns):
         resolves = []
         renamings = {}
         for oldNameStr in conflicts.getKeys():
-            newName = mktemp(oldNameStr)
-            newNameR = mktemp(oldNameStr + "R")
+            newName = self.mktemp(oldNameStr)
+            newNameR = self.mktemp(oldNameStr + "R")
             renamings[oldNameStr] = newName
              # def [newName, newNameR] := Ref.promise()
             pair = [t.FinalPattern(newName, None),
@@ -192,7 +191,7 @@ def expandDef(patt, optEj, rval, nouns):
                                   mcall("Ref", "promise")))
             resolves.append(t.MethodCallExpr(newNameR, "resolve",
                                             [t.NounExpr(oldNameStr)]))
-        resName = mktemp("res")
+        resName = self.mktemp("res")
         resolves.append(resName)
         cr = CycleRenamer([rval])
         cr.renamings = renamings
@@ -333,7 +332,7 @@ qtext = QuasiText(:text) -> (text, None)
 qehole = QuasiExprHole(@expr) -> (None, expr)
 
 SeqExpr([]) -> None
-SeqExpr([(forFx:v ~~forFx -> v)*:exprs @last]) -> t.SeqExpr(exprs + [last])
+SeqExpr(@exprs) -> t.SeqExpr(exprs)
 
 VerbCurryExpr(@receiver :verb) -> mcall("__makeVerbFacet", "curryCall", receiver, t.LiteralExpr(verb))
 GetExpr(@receiver @index) -> t.MethodCallExpr(receiver, "get", index)
@@ -365,10 +364,10 @@ GreaterThanEqual(@left @right) -> mcall("__comparer", "geq", left, right)
 AsBigAs(@left @right) -> mcall("__comparer", "asBigAs", left, right)
 LessThanEqual(@left @right) -> mcall("__comparer", "leq", left, right)
 LessThan(@left @right) -> mcall("__comparer", "lessThan", left, right)
-Coerce(@spec @guard) -> t.MethodCallExpr(mcall("Guard", "coerce", guard, t.NounExpr("null")), "coerce", [spec, t.NounExpr("null")])
+Coerce(@spec @guard) -> t.MethodCallExpr(mcall("ValueGuard", "coerce", guard, t.NounExpr("throw")), "coerce", [spec, t.NounExpr("throw")])
 
-MatchBind(@spec @patt) = matchBind_forValue(spec patt)
-Mismatch(@spec @patt) = matchBind_forValue(spec patt):expr -> t.MethodCallExpr(expr, "not", [])
+MatchBind(@spec @patt) -> expandMatchBind(self, spec, patt)
+Mismatch(@spec @patt) -> t.MethodCallExpr(expandMatchBind(self, spec, patt), "not", [])
 
 Same(@left @right) -> mcall("__equalizer", "sameEver", left, right)
 NotSame(@left @right) -> t.MethodCallExpr(mcall("__equalizer", "sameEver", left, right), "not", [])
@@ -378,10 +377,10 @@ BinaryOr(@left @right) -> binop("or", left, right)
 BinaryAnd(@left @right) -> binop("and", left, right)
 BinaryXor(@left @right) -> binop("xor", left, right)
 
-LogicalAnd(:left :right) -> expandLogicalAnd_forValue(left, right, self.scope)
-LogicalOr(:left :right) -> expandLogicalOr_forValue(left, right, self.scope)
+LogicalAnd(:left :right) -> expandLogicalAnd(self, left, right)
+LogicalOr(:left :right) -> expandLogicalOr(self, left, right)
 
-Def(@pattern @exit @expr) -> expandDef(pattern, exit, expr, self.nouns)
+Def(@pattern @exit @expr) -> expandDef(self, pattern, exit, expr, self.nouns)
 
 Forward(@name) !(t.NounExpr(name.args[0].data + "__Resolver")):rname -> t.SeqExpr([
                                             t.Def(t.ListPattern([
@@ -394,15 +393,15 @@ Forward(@name) !(t.NounExpr(name.args[0].data + "__Resolver")):rname -> t.SeqExp
 
 Assign(@left @right) = ass(left right)
 ass NounExpr(:name) :right -> t.Assign(t.NounExpr(name), right)
-ass MethodCallExpr(@receiver @verb @args):left :right !(mktemp("ares")):ares -> t.SeqExpr([t.MethodCallExpr(receiver, putVerb(verb), args + [t.Def(t.FinalPattern(ares, None), None, right)]), ares])
+ass MethodCallExpr(@receiver @verb @args):left :right !(self.mktemp("ares")):ares -> t.SeqExpr([t.MethodCallExpr(receiver, putVerb(verb), args + [t.Def(t.FinalPattern(ares, None), None, right)]), ares])
 ass :left :right -> err("Assignment can only be done to nouns and collection elements", self)
 
 
 VerbAssign(:verb @target @args) = vass(verb target args)
 
 vass :verb NounExpr(@name) :args -> t.Assign(t.NounExpr(name), mcall(name, verb, *args))
-vass :verb MethodCallExpr(@receiver :methVerb :methArgs) :args -> expandCallVerbAssign(verb, args, receiver, methVerb, methArgs)
-vass :verb :badTarget :args -> verbAssignError(badTarget, self)
+vass :verb MethodCallExpr(@receiver :methVerb :methArgs) :args -> expandCallVerbAssign(self, verb, args, receiver, methVerb, methArgs)
+vass :verb :badTarget :args -> verbAssignError(self, badTarget)
 
 AugAssign(@op :left :right) -> expand(t.VerbAssign(binops[op], left, [right]))
 
@@ -427,7 +426,8 @@ BindPattern(@name @guard) -> t.ViaPattern(mcall("__bind", "run", [name.args[0].d
 
 #FinalPattern(@name @guard) -> t.FinalPattern(name, guard)
 
-#SlotPattern(@name @guard) -> t.SlotPattern(name, guard)
+SlotPattern(@name null) -> t.ViaPattern(t.NounExpr("__slotToBinding"), t.BindingPattern(name))
+SlotPattern(@name @guard) -> t.ViaPattern(t.MethodCallExpr(t.NounExpr("__slotToBinding"), "run", [guard]), t.BindingPattern(name))
 
 MapPattern(@assocs @tail) -> foldr(lambda more, (l, r): t.ViaPattern(l, t.ListPattern([r, more], None)),
                                    tail or t.IgnorePattern(t.NounExpr("__Empty")),
@@ -483,12 +483,12 @@ Object(@doco @name Script(null @guard @implements @methods @matchers)) -> t.Obje
 
 Object(@doco VarPattern(:name :guard):vp Script(@extends @guard @implements @methods @matchers)) transform(vp):exVP
     objectSuper(doco exVP extends guard implements methods matchers [t.SlotExpr(name.args[0].data)]):o
-    -> t.SeqExpr([t.Def(t.SlotPattern(name, None), None, o), name])
+    -> t.SeqExpr([t.Def(slotpatt(name), None, o), name])
 
 Object(@doco @name Script(@extends @guard @implements @methods @matchers)) =
     objectSuper(doco name extends guard implements methods matchers []):o -> t.Def(name, None, o)
 
-objectSuper :doco :name :extends :guard :implements :methods :matchers :maybeSlot !(mktemp("pair")):p -> t.HideExpr(t.SeqExpr([
+objectSuper :doco :name :extends :guard :implements :methods :matchers :maybeSlot !(self.mktemp("pair")):p -> t.HideExpr(t.SeqExpr([
        t.Def(t.FinalPattern(t.NounExpr("super"), None),
            None, extends),
        t.Object(doco, name,
@@ -499,7 +499,7 @@ objectSuper :doco :name :extends :guard :implements :methods :matchers :maybeSlo
 To(:doco @verb @params @guard @block) -> t.Method(doco, verb, params, guard, t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
                                                   t.SeqExpr([block, t.NounExpr("null")]), None))
 
-Accum(@base !(mktemp("accum")):tmp accum(tmp):accumulator) -> t.SeqExpr(
+Accum(@base !(self.mktemp("accum")):tmp accum(tmp):accumulator) -> t.SeqExpr(
     [t.Def(t.VarPattern(tmp, None), None, base), accumulator, tmp])
 
 accum :tmp = (AccumFor(:left :right :expr accum(tmp):body @catcher) forValue(expr body):coll -> expandFor(left, right, coll, body, catcher)
@@ -508,12 +508,10 @@ accum :tmp = (AccumFor(:left :right :expr accum(tmp):body @catcher) forValue(exp
              |AccumOp(@op @expr) -> t.Assign(tmp, binop(binops[op], tmp, expr))
              |AccumCall(:verb @args) -> t.Assign(tmp, t.MethodCallExpr(tmp, verb, args)))
 
-For(:key :value :expr @block @catcher) forValue(expr block):coll
+For(:key :value @coll @block @catcher)
     -> expandFor(self, key, value, coll, block, catcher)
 
-If(:test @consq @alt) -> expandIf(test, consq, alt)
-
-Switch(@expr :matchers) !(mktemp("specimen")):sp -> expand(t.HideExpr(t.SeqExpr([
+Switch(@expr :matchers) !(self.mktemp("specimen")):sp -> expand(t.HideExpr(t.SeqExpr([
                                                         t.Def(t.FinalPattern(sp, None),
                                                             None, expr),
                                                         matchExpr(matchers, sp)])))
@@ -521,7 +519,7 @@ Switch(@expr :matchers) !(mktemp("specimen")):sp -> expand(t.HideExpr(t.SeqExpr(
 Try(@tryblock null null) -> t.HideExpr(tryblock)
 Try(@tryblock null @finallyblock) -> t.Finally(tryblock, finallyblock)
 Try(@tryblock [Catcher(@pattern @block)] @finallyblock) kerneltry(t.KernelTry(tryblock, pattern, block) finallyblock)
-Try(@tryblock :catchers @finallyblock) !(mktemp("sp")):sp kerneltry(t.KernelTry(tryblock, t.FinalPattern(sp, None), expand(matchExpr(catchers, sp))) finallyblock)
+Try(@tryblock :catchers @finallyblock) !(self.mktemp("sp")):sp kerneltry(t.KernelTry(tryblock, t.FinalPattern(sp, None), expand(matchExpr(catchers, sp))) finallyblock)
 
 kerneltry :tryexpr null -> tryexpr
 kerneltry :tryexpr :finallyexpr -> t.Finally(tryexpr, finallyexpr)
@@ -531,29 +529,11 @@ While(:test :block @catcher) -> t.Escape(t.FinalPattern(t.NounExpr("__break"), N
 When([@arg] @block :catchers @finallyblock) expandWhen(arg block catchers finallyblock)
 When(:args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", expand(t.ListExpr(args))) block catchers finallyblock)
 
-expandWhen :arg :block :catchers :finallyblock = expandWhenCatchers(catchers):cs !(mktemp("resolution")):resolution -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, expand(t.Try(t.SeqExpr([t.Def(t.IgnorePattern(None), None, mcall("Ref", "fulfillment", resolution)), block]), [cs], finallyBlock)))]))))
+expandWhen :arg :block :catchers :finallyblock = expandWhenCatchers(catchers):cs !(self.mktemp("resolution")):resolution -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, expand(t.Try(t.SeqExpr([t.Def(t.IgnorePattern(None), None, mcall("Ref", "fulfillment", resolution)), block]), [cs], finallyblock)))]))))
 
-expandWhenCatchers null !(mktemp("ex")):ex -> t.Catch(t.FinalPattern(ex, None), mcall("throw", "run", ex))
-expandWhenCatchers [catcher] -> catcher
-expandWhenCatchers :catchers !(mktemp("specimen")):sp -> t.Catch(t.FinalPattern("specimen", None), matchExpr(catchers, sp))
-
-
-
-forValue MatchBind(@spec @patt) :block -> matchBind_forValue(spec, patt, scope(block))
-forValue @expr :scope -> expr
-
-
-matchBind_forFxOnly :spec :patt :exports !(getExports(scope(spec))):exports (
-    ?(exports) !(mktemp("sp")):sp -> t.SeqExpr([t.Def(t.FinalPattern(sp, None),
-                                                      None, spec),
-                                                expandForFxOnly(
-                                                    t.MatchBind(sp, patt),
-                                                    self.scope)])
-    | -> defaultFxOnlyExpander(self.scope))
-
-matchBind_forControl :spec :patt :ej -> t.Def(patt, ej, spec)
-
-delayed_forControl :node
+expandWhenCatchers null !(self.mktemp("ex")):ex -> t.Catch(t.FinalPattern(ex, None), mcall("throw", "run", ex))
+expandWhenCatchers [@catcher] -> catcher
+expandWhenCatchers :catchers !(self.mktemp("specimen")):sp -> t.Catch(t.FinalPattern("specimen", None), matchExpr(catchers, sp))
 
 """
 
@@ -588,9 +568,9 @@ def validateFor(self, left, right):
 
 def expandFor(self, key, value, coll, block, catcher):
     validateFor(self, scope(key).add(scope(value)), scope(coll))
-    fTemp = mktemp("validFlag")
-    kTemp = mktemp("key")
-    vTemp = mktemp("value")
+    fTemp = self.mktemp("validFlag")
+    kTemp = self.mktemp("key")
+    vTemp = self.mktemp("value")
     body = expand(t.If(t.LogicalAnd(t.MatchBind(kTemp, key)),
                        t.MatchBind(vTemp, value),
                        t.Escape(t.FinalPattern(t.NounExpr("__continue"), None),
@@ -624,22 +604,46 @@ def expandFor(self, key, value, coll, block, catcher):
                    t.NounExpr("null")]),
         catcher)
 
-def expandIf(test, consq, alt):
-    if isDelayedNode(test):
-        ej1 = mktemp("ej")
-        return t.Escape(t.FinalPattern(ej1, None),
-                        t.SeqExpr([delayed_forControl(test, ej1, scope(consq)),
-                                   consq]),
-                        t.Catch(t.IgnorePattern(None), alt))
+def ensureCommutes(self, left, right):
+    if left.outNames() & right.namesUsed():
+        err("Use on right isn't really in scope of definition", self)
+    if right.outNames() & left.namesUsed():
+        err("Use on left would get captured by definition on right", self)
 
-def matchBind_forValue(spec, patt, currentScope):
-    exports = getExports(scope(spec), currentScope)
-    if exports:
-        sp = mktemp("sp")
-        return t.SeqExpr([t.Def(t.FinalPattern(sp, None), None, spec),
-                          expand(t.MatchBind(sp, patt), currentScope)])
-    else:
-        return delayed_forValue(t.MatchBind(spec, patt), currentScope)
+def expandMatchBind(self, spec, patt):
+    pattScope = scope(patt)
+    specScope = scope(spec)
+    conflicts = pattScope.outNames() & specScope.namesUsed()
+    if conflicts:
+        err("Use on left isn't really in scope of matchbind pattern: %s" %
+            (', '.join(conflicts)), self)
+
+    sp = self.mktemp("sp")
+    ejector = self.mktemp("fail")
+    result = self.mktemp("ok")
+    problem = self.mktemp("problem")
+    broken = self.mktemp("b")
+
+    patternNouns = [t.NounExpr(n) for n in pattScope.outNames()]
+    return t.SeqExpr([
+        t.Def(t.FinalPattern(sp, None), None, spec),
+        t.Def(
+            t.ListPattern([t.FinalPattern(result, None)] +
+                          [t.BindingPattern(n) for n in patternNouns], None),
+            None,
+            t.Escape(
+                t.FinalPattern(ejector, None),
+                t.SeqExpr([
+                    t.Def(patt, ejector, sp),
+                    mcall("__makeList", "run",
+                          TRUE, *[t.BindingExpr(n) for n in patternNouns])]),
+                t.Catch(t.FinalPattern(problem, None),
+                        t.SeqExpr([
+                            t.Def(slotpatt(broken), None,
+                                  mcall("Ref", "broken", problem)),
+                            mcall("__makeList", "run",
+                                  FALSE, *([t.BindingExpr(broken)] * len(patternNouns)))])))),
+        result])
 
 def broke(br, ex):
     return t.Def(t.FinalPattern(br, None),
@@ -650,85 +654,45 @@ def slotsTuple(first, rest):
 
 def slotsPattern(first, rest):
     if first:
-        return t.ListPattern([first] + [t.SlotPattern(x, None) for x in rest])
+        return t.ListPattern([first] + [slotpatt(x) for x in rest], None)
     else:
-        return t.ListPattern([t.SlotPattern(x, None) for x in rest])
+        return t.ListPattern([slotpatt(x) for x in rest], None)
 
-def expandForControl(node, ej, sc):
-    if node.tag.name == 'MatchBindExpr':
-        spec, patt = transform(node.args[0]), transform(node.args[1])
-        return t.Def(patt, ej, spec)
-    elif node.tag.name == 'LogicalAnd':
-        left, right = node.args[0], node.args[1]
-        if sc is  None:
-            midscope = None
-        else:
-            midscope = scope(right).add(sc)
-        return t.SeqExpr([expandForControl(left, ej, midscope),
-                          expandForControl(right, ej, sc)])
-    elif node.tag.name == 'LogicalOr':
-        left, right = node.args[0], node.args[1]
-        ej1 = mktep("ej")
-        exports = getExports(sc)
-        if exports:
-            br2 = mktemp("br")
-            ex3 = mktemp("ex")
-            br4 = mktemp("br")
-            rightSkipped = t.LiteralExpr("right side skipped")
-            leftOuts = scope(left).outNames()
-            rightOuts = scope(right).outNames()
-            return t.Def(slotsPattern(None, exports),
-                         t.Escape(t.FinalPattern(ej1, None),
-                                  t.SeqExpr([expandForControl(left, ej1, sc),
-                                             broke(br2, rightSkipped),
-                                             mixOuts(exports, leftOuts, br2)])))
+def slotpatt(n):
+    return t.ViaPattern(t.NounExpr("__slotToBinding"), t.BindingPattern(n))
 
-def delayed_forValue(node, scope):
-    ej1 = mktemp("ej")
-    exports = getExports(scope)
-    ctrl = expandForControl(node, ej1, scope)
-    if exports:
-        ex2 = mktemp("ex")
-        br3 = mktemp("br")
-        rs4 = mktemp("rs")
-        escExpr = t.Escape(t.FinalPattern(ej1, None),
-                           t.SeqExpr(ctrl, slotsTuple(TRUE, exports)),
-                           t.Catch(
-                               t.FinalPattern(ex2, None),
-                               t.SeqExpr([broke(br3, ex2),
-                                          mcall("__makeList", "run", FALSE, br3)])))
-        return t.SeqExpr([t.Def(slotsPattern(t.FinalPattern(rs4), exports), escExpr),
-                          rs4])
-
-binops =  {"Add": "add",
-           "Subtract": "subtract",
-           "Multiply": "multiply",
-           "Divide": "approxDivide",
-           "Remainder": "remainder",
-           "Mod": "mod",
-           "Pow": "pow",
-           "FloorDivide": "floorDivide",
-           "ShiftRight": "shiftRight",
-           "ShiftLeft": "shiftLeft",
-           "BinaryAnd": "and",
-           "BinaryOr": "or",
-           "BinaryXor": "xor",
-           "ButNot": "butNot",
-           }
+binops =  {
+    "Add": "add",
+    "Subtract": "subtract",
+    "Multiply": "multiply",
+    "Divide": "approxDivide",
+    "Remainder": "remainder",
+    "Mod": "mod",
+    "Pow": "pow",
+    "FloorDivide": "floorDivide",
+    "ShiftRight": "shiftRight",
+    "ShiftLeft": "shiftLeft",
+    "BinaryAnd": "and",
+    "BinaryOr": "or",
+    "BinaryXor": "xor",
+    "ButNot": "butNot"
+}
 
 reifier = r"""
-TempNounExpr(:basename :id) -> reifyNoun(self.nouns, basename.data, id)
+TempNounExpr(@basename :o) -> reifyNoun(self, basename, o)
 """
-def reifyNoun(nouns, base, id):
-    count = 1
-    cached = nouns.get((base, id))
-    if cached:
-        return cached
-    noun = "%s__%s" % (base, count)
-    while noun in nouns:
-        count += 1
-        noun = "%s__%s" % (base, count)
-    nouns[base, id] = n = t.NounExpr(noun)
+def reifyNoun(self, base, o):
+    if o in self.cache:
+        return self.cache[o]
+
+    self.id += 1
+    noun = "%s__%s" % (base, self.id)
+    while noun in self.nouns:
+        self.id += 1
+        noun = "%s__%s" % (base, id)
+    self.nouns.add(noun)
+    n = t.NounExpr(noun)
+    self.cache[o] = n
     return n
 
 cycleRenamer = r"""
@@ -740,22 +704,24 @@ def expand(term, scope=None):
     e = Expander([term])
     e.scope = scope
     e.nouns = set()
+    e.counter = 0
     expanded = e.apply("transform")[0]
     r = Reifier([expanded])
-    r.nouns = dict.fromkeys(e.nouns)
+    r.nouns = set(e.nouns)
+    r.cache = {}
+    r.id = 0
     reified = r.apply("transform")[0]
     return reified
 
-counter = 0
-def mktemp(name):
-    global counter
-    counter += 1
-    return t.TempNounExpr(name, counter)
+def mktemp(self, name):
+    self.counter += 1
+    return t.TempNounExpr(name, self.counter)
 
 StaticScopeTransformer = TreeTransformerGrammar.makeGrammar(computeStaticScopeRules, "StaticScopeTransformer").createParserClass(TreeTransformerBase, globals())
 
 
 Expander = TreeTransformerGrammar.makeGrammar(expander, name="EExpander").createParserClass(TreeTransformerBase, globals())
+Expander.mktemp = mktemp
 
 Reifier = TreeTransformerGrammar.makeGrammar(reifier, name="Reifier").createParserClass(TreeTransformerBase, globals())
 
