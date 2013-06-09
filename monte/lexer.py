@@ -945,7 +945,7 @@ class ELexer(object):
             self.skipWhiteSpace()
             if self.currentChar == '*' and self.peekChar() != '/':
                 self.nextChar()
-        bound = self._currentLine.find('*/')
+        bound = self._currentLine.find('*/', self.position)
         buf.append(self._currentLine[self.position:bound])
         self.position = bound
         self.nextChar()

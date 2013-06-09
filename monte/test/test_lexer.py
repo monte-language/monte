@@ -94,9 +94,12 @@ class LexerTests(unittest.TestCase):
         self.assertEqual(lex('<=>'), [Term(Tag('<=>'), None, None, None)])
 
     def test_zap(self):
-        self.assertEqual(lex('>'),   [Term(Tag('>'), None, None, None)])
-        self.assertEqual(lex('>='),  [Term(Tag('>='), None, None, None)])
-        self.assertEqual(lex('>>='), [Term(Tag('>>='), None, None, None)])
+        self.assertEqual(lex('1 >'),   [Term(Tag('.int.'), 1, None, None),
+                                        Term(Tag('>'), None, None, None)])
+        self.assertEqual(lex('1 >='),  [Term(Tag('.int.'), 1, None, None),
+                                        Term(Tag('>='), None, None, None)])
+        self.assertEqual(lex('1 >>='), [Term(Tag('.int.'), 1, None, None),
+                                        Term(Tag('>>='), None, None, None)])
 
     def test_star(self):
         self.assertEqual(lex('*'),   [Term(Tag('*'), None, None, None)])
@@ -112,7 +115,7 @@ class LexerTests(unittest.TestCase):
 
     def test_doccomment(self):
         self.assertEqual(lex('/** hello */'),
-                         [Term(Tag('/**'), ' hello ', None, None)])
+                         [Term(Tag('DOC_COMMENT'), ' hello ', None, None)])
 
     def test_comment(self):
         self.assertEqual(lex('# yes\n1'), [Term(Tag('#'), ' yes', None, None),
