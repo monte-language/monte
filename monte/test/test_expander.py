@@ -82,14 +82,14 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("def x"), ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "x"], None], ["FinalPattern", ["NounExpr", "x__Resolver"], None]], None], None, ["MethodCallExpr", ["NounExpr", "Ref"], "promise", []]], ["NounExpr", "x__Resolver"]]])
 
     def test_noun(self):
-        self.assertEqual(self.parse("x"), ["NounExpr", 'x'])
-        self.assertEqual(self.parse("<x>"), ["NounExpr", 'x__uriGetter'])
         #parens since we're using 'expr' instead of 'start'
         self.assertEqual(self.parse("(x[i] := y; ares__1)"),
-                         ["SeqExpr", [["MethodCallExpr", ["NounExpr", "x"], "put", [["NounExpr", "i"], ["Def", ["FinalPattern", ["NounExpr", "ares__2"], None], None, ["NounExpr", "y"]]]], ["NounExpr", "ares__1"], ["NounExpr", "ares__1"]]])
+                         ["SeqExpr", [["MethodCallExpr", ["NounExpr", "x"], "put", [["NounExpr", "i"], ["Def", ["FinalPattern", ["NounExpr", "ares__2"], None], None, ["NounExpr", "y"]]]], ["NounExpr", "ares__2"], ["NounExpr", "ares__1"]]])
+        self.assertEqual(self.parse("x"), ["NounExpr", 'x'])
+        self.assertEqual(self.parse("<x>"), ["NounExpr", 'x__uriGetter'])
 
     def test_coerce(self):
-        self.assertEqual(self.parse("x :foo"), ["MethodCallExpr", ["NounExpr", "ValueGuard"], "coerce", [["NounExpr", "foo"], ["NounExpr", "throw"]], "coerce", [["NounExpr", "x"], ["NounExpr", "throw"]]])
+        self.assertEqual(self.parse("x :foo"), ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "ValueGuard"], "coerce", [["NounExpr", "foo"], ["NounExpr", "throw"]]], "coerce", [["NounExpr", "x"], ["NounExpr", "throw"]]])
 
     def test_slot(self):
         self.assertEqual(self.parse("&x"), ["MethodCallExpr", ["BindingExpr", ["NounExpr", "x"]], "get", []])
@@ -99,8 +99,8 @@ class ExpanderTest(unittest.TestCase):
             p = makeParser(src)
             r, e = p.apply('pattern')
             return serialize(expand(r))
-        self.assertEqual(pars("&x"), ["ViaPattern", ["NounExpr", " __slotToBinding"], ["BindingPattern", ["NounExpr", "x"]]])
-        self.assertEqual(pars("&x :int"), ["ViaPattern", ["MethodCallExpr", ["NounExpr", " __slotToBinding"], "run", [["NounExpr", "int"]]], ["BindingPattern", ["NounExpr", "x"]]])
+        self.assertEqual(pars("&x"), ["ViaPattern", ["NounExpr", "__slotToBinding"], ["BindingPattern", ["NounExpr", "x"]]])
+        self.assertEqual(pars("&x :int"), ["ViaPattern", ["MethodCallExpr", ["NounExpr", "__slotToBinding"], "run", [["NounExpr", "int"]]], ["BindingPattern", ["NounExpr", "x"]]])
 
     def test_ejector(self):
         self.assertEqual(self.parse("return"), ["MethodCallExpr", ["NounExpr", "__return"], "run", []])
@@ -121,7 +121,7 @@ class ExpanderTest(unittest.TestCase):
                             ["If", ["NounExpr", "x"],
                              ["If", ["NounExpr", "y"],
                               ["MethodCallExpr", ["NounExpr", "__makeList"], "run",
-                               [["NounExpr", "true"]]]
+                               [["NounExpr", "true"]]],
                               ["MethodCallExpr", ["NounExpr", "__booleanFlow"], "failureList",
                                [["LiteralExpr", 0]]]],
                              ["MethodCallExpr", ["NounExpr", "__booleanFlow"], "failureList",
@@ -130,27 +130,27 @@ class ExpanderTest(unittest.TestCase):
         #value w/export
         self.assertEqual(
             self.parse("(def x := 1) && (def y := 2)"),
-            ["SeqExpr", [["Def", ["ListPattern", ["FinalPattern", ["NounExpr", "ok__1"],
-                                                         None],
-                                        ["BindingPattern", ["NounExpr", "y"]]
-                                         ["BindingPattern", ["NounExpr", "x"]]],
+            ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "ok__1"],
+                                                   None],
+                                                  ["BindingPattern", ["NounExpr", "y"]],
+                                                  ["BindingPattern", ["NounExpr", "x"]]]],
                          None,
-                         ["IfExpr", ["Def", ["FinalPattern", ["NounExpr", "x"], None],
-                                                 None, ["LiteralExpr", 1]]
-                          ["IfExpr", ["Def", ["FinalPattern", ["NounExpr", "y"], None],
+                         ["If", ["Def", ["FinalPattern", ["NounExpr", "x"], None],
+                                                 None, ["LiteralExpr", 1]],
+                          ["If", ["Def", ["FinalPattern", ["NounExpr", "y"], None],
                                       None,
                                       ["LiteralExpr", 2]],
                            ["MethodCallExpr", ["NounExpr", "__makeList"],
                             "run",
-                            ["NounExpr", "true"],
+                            [["NounExpr", "true"],
                             ["BindingExpr", ["NounExpr", "y"]],
-                            ["BindingExpr", ["NounExpr", "x"]]],
+                            ["BindingExpr", ["NounExpr", "x"]]]],
                            ["MethodCallExpr", ["NounExpr", "__booleanFlow"],
                             "failureList",
-                            ["LiteralExpr", 2]]],
+                            [["LiteralExpr", 2]]]],
                           ["MethodCallExpr", ["NounExpr", "__booleanFlow"],
-                           "failureList"
-                           ["LiteralExpr", 2]]]],
+                           "failureList",
+                           [["LiteralExpr", 2]]]]],
            ["NounExpr", "ok__1"]]])
 
     def test_or(self):
@@ -158,39 +158,39 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("x || y"),
 ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "ok__1"], None]]],
                       None,
-              ["IfExpr", ["NounExpr", "x"],
-               ["SeqExpr", [["MethodCallExpr", ["NounExpr", ["__makeList"]],
+              ["If", ["NounExpr", "x"],
+               ["SeqExpr", [["MethodCallExpr", ["NounExpr", "__makeList"],
                              "run",
-                             [["NounExpr", ["true"]]]]]],
-               ["IfExpr", ["NounExpr", "y"],
+                             [["NounExpr", "true"]]]]],
+               ["If", ["NounExpr", "y"],
                 ["SeqExpr",
                  [["MethodCallExpr", ["NounExpr", "__makeList"],
                    "run",
                    [["NounExpr", "true"]]]]],
                 ["MethodCallExpr", ["NounExpr", "__booleanFlow"],
                  "failureList",
-                 ["LiteralExpr", 0]]]]],
+                 [["LiteralExpr", 0]]]]]],
              ["NounExpr", "ok__1"]]])
         #value w/ export
         self.assertEqual(
             self.parse("(def x := 1) || (def y := 2)"),
 ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "ok__1"], None],
-                                        ["BindingPattern", ["NounExpr", ["y"]]],
-                                        ["BindingPattern", ["NounExpr", ["x"]]]]],
+                                        ["BindingPattern", ["NounExpr", "y"]],
+                                        ["BindingPattern", ["NounExpr", "x"]]]],
                       None,
-              ["IfExpr", ["Def", ["FinalPattern", ["NounExpr", "x"], None],
+              ["If", ["Def", ["FinalPattern", ["NounExpr", "x"], None],
                           None,
                           ["LiteralExpr", 1]],
-                          ["SeqExpr", [["Def", ["BindingPattern", ["NounExpr", ["y"]]],
+                          ["SeqExpr", [["Def", ["BindingPattern", ["NounExpr", "y"]],
                                         None,
                                         ["MethodCallExpr", ["NounExpr", "__booleanFlow"],
                                          "broken", []]],
-                                       ["MethodCallExpr", ["NounExpr", ["__makeList"]],
+                                       ["MethodCallExpr", ["NounExpr", "__makeList"],
                                         "run",
-                                        [["NounExpr", ["true"]],
+                                        [["NounExpr", "true"],
                                          ["BindingExpr", ["NounExpr", "y"]],
                                          ["BindingExpr", ["NounExpr", "x"]]]]]],
-                           ["IfExpr", ["Def", ["FinalPattern", ["NounExpr", "y"], None],
+                           ["If", ["Def", ["FinalPattern", ["NounExpr", "y"], None],
                                        None,
                                        ["LiteralExpr", 2]],
                             ["SeqExpr",
@@ -205,7 +205,7 @@ class ExpanderTest(unittest.TestCase):
                                 ["BindingExpr", ["NounExpr", "x"]]]]]],
                             ["MethodCallExpr", ["NounExpr", "__booleanFlow"],
                              "failureList",
-                             ["LiteralExpr", 2]]]]],
+                             [["LiteralExpr", 2]]]]]],
              ["NounExpr", "ok__1"]]])
 
     def test_matchbind(self):
@@ -417,7 +417,7 @@ class ExpanderTest(unittest.TestCase):
               "run",
               [["Object", "While loop body",
                 ["IgnorePattern", None],
-                ["Script", None, [],
+                ["Script", None, None, [],
                  [["Method", None, "run", [], ["NounExpr", "boolean"],
                    ["If", ["NounExpr", "x"],
                     ["SeqExpr",
@@ -551,7 +551,8 @@ class ExpanderTest(unittest.TestCase):
                      ["MethodCallExpr", ["NounExpr", "__extract"],
                       "run", [["LiteralExpr", "&b"]]],
                      ["ListPattern",
-                      [["SlotPattern", ["NounExpr", "b"], None],
+                      [["ViaPattern", ["NounExpr", "__slotToBinding"],
+                        ["BindingPattern", ["NounExpr", "b"]]],
                        ["IgnorePattern", ["NounExpr", "__Empty"]]],
                       None]],
              None,
@@ -829,35 +830,12 @@ class ExpanderTest(unittest.TestCase):
 
         self.assertEqual(self.parse("try { x } catch p { y } catch q { z }"),
                          ["KernelTry",
-                          ["NounExpr", "x"],
-                          ["FinalPattern", ["NounExpr", "specimen__1"], None],
-                          ["Escape", ["FinalPattern",
-                                      ["NounExpr", "ej__2"], None],
-                           ["SeqExpr",
-                            [["Def", ["FinalPattern",
-                                    ["NounExpr", "p"], None],
-                              ["NounExpr", "ej__2"],
-                              ["NounExpr", "specimen__1"]],
-                             ["NounExpr", "y"]]],
-                           ["Catch",
-                            ["IgnorePattern", None],
-                            ["Escape", ["FinalPattern",
-                                        ["NounExpr", "ej__3"], None],
-                             ["SeqExpr",
-                              [["Def", ["FinalPattern",
-                                        ["NounExpr", "q"], None],
-                                ["NounExpr", "ej__3"],
-                                ["NounExpr", "specimen__1"]],
-                               ["NounExpr", "z"]]],
-                             ["Catch",
-                              ["IgnorePattern", None],
-                               ["MethodCallExpr",
-                                 ["NounExpr", "throw"],
-                                 "run",
-                                 [["MethodCallExpr",
-                                   ["LiteralExpr", "no match: "],
-                                   "add",
-                                   [["NounExpr", "specimen__1"]]]]]]]]]])
+                          ["KernelTry",
+                           ["NounExpr", "x"],
+                           ["FinalPattern", ["NounExpr", "p"], None],
+                           ["NounExpr", "y"]],
+                          ["FinalPattern", ["NounExpr", "q"], None],
+                          ["NounExpr", "z"]])
 
         self.assertEqual(self.parse("try { x } finally { y }"),
                          ["Finally", ["NounExpr", "x"],
@@ -886,20 +864,18 @@ class ExpanderTest(unittest.TestCase):
                                  [["FinalPattern",
                                    ["NounExpr", "resolution__1"], None]],
                                  None,
-                                 ["KernelTry",
-                                  ["SeqExpr",
-                                   [["Def", ["IgnorePattern", None],
-                                     None,
-                                     ["MethodCallExpr",
-                                      ["NounExpr", "Ref"],
-                                      "fulfillment",
-                                      [["NounExpr", "resolution__1"]]]],
-                                    ["NounExpr", "y"]]],
-                                  ["FinalPattern", ["NounExpr", "ex__2"],
-                                   None],
-                                  ["MethodCallExpr", ["NounExpr", "throw"],
-                                   "run",
-                                   [["NounExpr", "ex__2"]]]]]],
+                                 [["If", ["MethodCallExpr",
+                                         ["NounExpr", "Ref"],
+                                         "isBroken",
+                                         [["NounExpr", "resolution__1"]]],
+                                  ["MethodCallExpr",
+                                   ["NounExpr", "Ref"],
+                                   "broken",
+                                   [["MethodCallExpr",
+                                     ["NounExpr", "Ref"],
+                                     "optProblem",
+                                     [["NounExpr", "resolution__1"]]]]],
+                                   ["NounExpr", "y"]]]]],
                                []]]]]])
         self.assertEqual(self.parse("when (x) -> { y } catch p { z }"),
                          ["HideExpr",
@@ -914,17 +890,20 @@ class ExpanderTest(unittest.TestCase):
                                  [["FinalPattern",
                                    ["NounExpr", "resolution__1"], None]],
                                  None,
-                                 ["KernelTry",
-                                  ["SeqExpr",
-                                   [["Def", ["IgnorePattern", None],
-                                     None,
+                                   [["KernelTry",
+                                     ["If", ["MethodCallExpr",
+                                            ["NounExpr", "Ref"],
+                                            "isBroken",
+                                            [["NounExpr", "resolution__1"]]],
                                      ["MethodCallExpr",
                                       ["NounExpr", "Ref"],
-                                      "fulfillment",
-                                      [["NounExpr", "resolution__1"]]]],
-                                    ["NounExpr", "y"]]],
-                                   ["FinalPattern", ["NounExpr", "p"],
-                                    None],
-                                   ["NounExpr", "z"]]]],
-                               []]]]]])
+                                      "broken",
+                                      [["MethodCallExpr",
+                                        ["NounExpr", "Ref"],
+                                        "optProblem",
+                                        [["NounExpr", "resolution__1"]]]]],
+                                      ["NounExpr", "y"]],
+                                     ["FinalPattern", ["NounExpr", "p"], None],
+                                     ["NounExpr", "z"]]]]],
+                                 []]]]]])
 
