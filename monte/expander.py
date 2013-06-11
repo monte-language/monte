@@ -156,8 +156,7 @@ def expandCallVerbAssign(self, verb, args, receiver, methVerb, methArgs):
         a = self.mktemp("arg")
         seq.append(t.Def(t.FinalPattern(a, None), None, arg))
         setArgs.append(a)
-    seq.extend(expand(t.Assign(t.MethodCallExpr(r, methVerb, setArgs), t.MethodCallExpr(t.MethodCallExpr(r, methVerb, setArgs),
-                               verb, args))).args[0].args)
+    seq.extend(self.apply("transform", [t.Assign(t.MethodCallExpr(r, methVerb, setArgs), t.MethodCallExpr(t.MethodCallExpr(r, methVerb, setArgs), verb, args))])[0][0].args[0].args)
     return t.SeqExpr(seq)
 
 
@@ -396,7 +395,7 @@ vass :verb NounExpr(@name) :args -> t.Assign(t.NounExpr(name), mcall(name, verb,
 vass :verb MethodCallExpr(@receiver :methVerb :methArgs) :args -> expandCallVerbAssign(self, verb, args, receiver, methVerb, methArgs)
 vass :verb :badTarget :args -> verbAssignError(self, badTarget)
 
-AugAssign(@op :left :right) -> expand(t.VerbAssign(binops[op], left, [right]))
+AugAssign(@op @left @right) = vass(binops[op] left [right])
 
 Break(null) -> mcall("__break", "run")
 Break(@expr) -> mcall("__break", "run", expr)
@@ -407,11 +406,12 @@ Continue(@expr) -> mcall("__continue", "run", expr)
 Return(null) -> mcall("__return", "run")
 Return(@expr) -> mcall("__return", "run", expr)
 
-Guard(:expr :subscripts) -> expand(reduce(lambda e, s: t.GetExpr(e, s), subscripts.args, expr))
+Guard(@expr @subscripts) -> reduce(lambda e, s: t.GetExpr(e, s), subscripts, expr)
 
 #IgnorePattern(@guard) -> t.IgnorePattern(guard)
 
-SamePattern(@value) -> t.ViaPattern(mcall("__is", "run", value), t.IgnorePattern(None))
+SamePattern(@value) -> t.ViaPattern(mcall("__matchSame", "run", value), t.IgnorePattern(None))
+NotSamePattern(@value) -> t.ViaPattern(mcall("__matchSame", "different", value), t.IgnorePattern(None))
 
 VarPattern(@name @guard) = -> t.VarPattern(name, guard)
 
@@ -496,7 +496,7 @@ Accum(@base !(self.mktemp("accum")):tmp accum(tmp):accumulator) -> t.SeqExpr(
     [t.Def(t.VarPattern(tmp, None), None, base), accumulator, tmp])
 
 accum :tmp = (AccumFor(:left :right @coll accum(tmp):body @catcher) -> expandFor(self, left, right, coll, body, catcher)
-             |AccumIf(@expr accum(tmp):body) expandIf(expr body)
+             |AccumIf(@expr accum(tmp):body) -> t.If(expr, body, t.NounExpr("null"))
              |AccumWhile(@test accum(tmp):body @catcher) expandWhile(test body catcher)
              |AccumOp(@op @expr) -> t.Assign(tmp, binop(binops[op], tmp, expr))
              |AccumCall(:verb @args) -> t.Assign(tmp, t.MethodCallExpr(tmp, verb, args)))
@@ -504,10 +504,7 @@ accum :tmp = (AccumFor(:left :right @coll accum(tmp):body @catcher) -> expandFor
 For(:key :value @coll @block @catcher)
     -> expandFor(self, key, value, coll, block, catcher)
 
-Switch(@expr :matchers) !(self.mktemp("specimen")):sp -> expand(t.HideExpr(t.SeqExpr([
-                                                        t.Def(t.FinalPattern(sp, None),
-                                                            None, expr),
-                                                        matchExpr(matchers, sp)])))
+Switch(@expr @matchers) -> expandSwitch(self, expr, matchers)
 
 Try(@tryblock [] null) -> t.HideExpr(tryblock)
 Try(@tryblock [(Catch(@p @b) -> (p, b))*:cs]  @finallyblock) kerneltry(expandTryCatch(tryblock, cs) finallyblock)
@@ -515,10 +512,12 @@ Try(@tryblock [(Catch(@p @b) -> (p, b))*:cs]  @finallyblock) kerneltry(expandTry
 kerneltry :tryexpr null -> tryexpr
 kerneltry :tryexpr :finallyexpr -> t.Finally(tryexpr, finallyexpr)
 
-While(:test :block @catcher) -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", t.Object("While loop body", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [], t.NounExpr("boolean"), expand(t.If(test, t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None), t.NounExpr("true")]), t.NounExpr("false"))))], []))), catcher)
+While(@test @block @catcher) = expandWhile(test block catcher)
+
+expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", t.Object("While loop body", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [], t.NounExpr("boolean"), t.If(test, t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None), t.NounExpr("true")]), t.NounExpr("false")))], []))), catcher)
 
 When([@arg] @block :catchers @finallyblock) expandWhen(arg block catchers finallyblock)
-When(:args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", expand(t.ListExpr(args))) block catchers finallyblock)
+When(@args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", t.MethodCallExpr(t.NounExpr("__makeList"), "run", args)) block catchers finallyblock)
 
 expandWhen :arg :block [(Catch(@p @b) -> (p, b))*:catchers] :finallyblock !(self.mktemp("resolution")):resolution kerneltry(expandTryCatch(t.If(mcall("Ref", "isBroken", resolution), mcall("Ref", "broken", mcall("Ref", "optProblem", resolution)), block), catchers), finallyblock):body -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, body)], []))))
 
@@ -533,19 +532,32 @@ def flattenSeqs(xs):
             items.append(x)
     return items
 
+def expandSwitch(self, expr, matchers):
+    sp = self.mktemp("specimen")
+    failures = [self.mktemp("failure") for _ in matchers]
+    return t.HideExpr(t.SeqExpr([
+        t.Def(t.FinalPattern(sp, None),
+              None, expr),
+        matchExpr(self, matchers, sp, failures)]))
+
+def matchExpr(self, matchers, sp, failures):
+    ejs = [self.mktemp("ej") for _ in matchers]
+    block = mcall("__switchFailed", "run", sp, *failures)
+    for m, fail, ej in reversed(zip(matchers, failures, ejs)):
+        block = t.Escape(
+            t.FinalPattern(ej, None),
+            t.SeqExpr([
+                t.Def(m.args[0], ej, sp),
+                m.args[1]]),
+            t.Catch(t.FinalPattern(fail, None),
+                    block))
+    return block
+
 def expandTryCatch(tryblock, catchers):
     block = tryblock
     for (patt, catchblock) in catchers:
         block = t.KernelTry(block, patt, catchblock)
     return block
-
-def matchExpr(matchers, var):
-    result = t.MethodCallExpr(t.NounExpr("throw"), "run",
-                            [t.MethodCallExpr(t.LiteralExpr("no match: "),
-                                            "add", [var])])
-    for m in reversed(matchers.args):
-        result = t.If(t.MatchBind(var, m.args[0]), m.args[1], result)
-    return result
 
 def binop(name, left, right):
     return t.MethodCallExpr(left, name, [right])
@@ -596,30 +608,36 @@ def validateFor(self, left, right):
         err("Use on left would get captured by definition on right", self)
 
 def expandFor(self, key, value, coll, block, catcher):
+    if key.tag.name == "null":
+        key = t.IgnorePattern(None)
     validateFor(self, scope(key).add(scope(value)), scope(coll))
     fTemp = self.mktemp("validFlag")
     kTemp = self.mktemp("key")
     vTemp = self.mktemp("value")
-    body = expand(t.If(t.LogicalAnd(t.MatchBind(kTemp, key)),
-                       t.MatchBind(vTemp, value),
-                       t.Escape(t.FinalPattern(t.NounExpr("__continue"), None),
-                                t.SeqExpr([block, t.NounExpr("null")]),
-                                None),
-                       None))
+    sk = self.mktemp("skip")
     obj = t.Object(
         "For-loop body", t.IgnorePattern(None),
-        t.Script(None, None, [],
-                 [t.Method(None, "run",
-                           [t.FinalPattern(kTemp, None),
-                            t.FinalPattern(vTemp, None)],
-                           None,
-                           t.SeqExpr([
-                               mcall("require", "run", fTemp,
-                                     t.LiteralExpr("For-loop body isn't valid"
-                                                   " after for-loop exits.")),
-                               body])
-                       )],
-                 []))
+        t.Script(
+            None, None, [],
+            [t.Method(None, "run",
+                      [t.FinalPattern(kTemp, None),
+                       t.FinalPattern(vTemp, None)],
+                      None,
+                      t.SeqExpr([
+                          mcall("__validateFor", "run", fTemp),
+                          t.Escape(
+                              t.FinalPattern(t.NounExpr("__continue"), None),
+                              t.SeqExpr([
+                                  t.Escape(
+                                      t.FinalPattern(sk, None),
+                                      t.SeqExpr([
+                                          t.Def(key, sk, kTemp),
+                                          t.Def(value, sk, vTemp),
+                                          block]),
+                                      None),
+                                  t.NounExpr("null")]),
+                              None)]))],
+            []))
     return t.Escape(
         t.FinalPattern(t.NounExpr("__break"), None),
         t.SeqExpr([t.Def(

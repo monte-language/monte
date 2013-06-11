@@ -117,7 +117,7 @@ eqPattern = ('_' optGuard:e -> t.IgnorePattern(e)
               |identifier?:n quasiString:q -> t.QuasiPattern(n, q)
               |namePattern
               |"==" prim:p -> t.SamePattern(p)
-              |"!=" prim:p -> throwSemanticHere("reserved: not-same pattern")
+              |"!=" prim:p -> t.NotSamePattern(p)
               )
 
 patterns = (pattern:p ("," pattern)*:ps -> [p] + ps

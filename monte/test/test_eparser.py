@@ -194,7 +194,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("baz`foo`"), ["QuasiPattern", "baz", [["QuasiText", "foo"]]])
         self.assertEqual(parse("==1"), ["SamePattern", ["LiteralExpr", 1]])
         self.assertEqual(parse("==x"), ["SamePattern", ["NounExpr", "x"]])
-        self.assertRaises(ValueError, parse, "!='a'")
+        self.assertEqual(parse("!=x"), ["NotSamePattern", ["NounExpr", "x"]])
         self.assertEqual(parse("var x"), ["VarPattern", ["NounExpr", "x"], None])
         self.assertEqual(parse("bind y"), ["BindPattern", ["NounExpr", "y"], None])
         self.assertEqual(parse("&z"), ["SlotPattern", ["NounExpr", "z"], None])
