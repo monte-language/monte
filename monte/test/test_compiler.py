@@ -55,7 +55,7 @@ class CompilerTest(unittest.TestCase):
     def test_guardpattern(self):
         self.eq_("def x :float64 := 1",
                  """
-                 x = float64.coerce(1, _monte.throw)
+                 x = _monte.float64.coerce(1, _monte.throw)
                  x
                  """)
 
@@ -67,8 +67,8 @@ class CompilerTest(unittest.TestCase):
                      _g_list2, _g_list3, _g_list4 = _g_total_list1
                  except ValueError, _g_e5:
                      _monte.throw(_g_e5)
-                 x = float64.coerce(_g_list2, _monte.throw)
-                 y = String.coerce(_g_list3, _monte.throw)
+                 x = _monte.float64.coerce(_g_list2, _monte.throw)
+                 y = _monte.String.coerce(_g_list3, _monte.throw)
                  z = _g_list4
                  _g_total_list1
                  """)
@@ -80,8 +80,8 @@ class CompilerTest(unittest.TestCase):
                      _g_list2, _g_list3, _g_list4 = _g_total_list1
                  except ValueError, _g_e5:
                      ej(_g_e5)
-                 x = float64.coerce(_g_list2, ej)
-                 y = String.coerce(_g_list3, ej)
+                 x = _monte.float64.coerce(_g_list2, ej)
+                 y = _monte.String.coerce(_g_list3, ej)
                  z = _g_list4
                  _g_total_list1
                  """)
@@ -109,7 +109,7 @@ class CompilerTest(unittest.TestCase):
              foo
              """)
 
-    def test_nestedObject(self):
+    def test_trivialNestedObject(self):
         self.eq_(
             '''
             def foo {
@@ -120,11 +120,11 @@ class CompilerTest(unittest.TestCase):
                 }
             }''',
              """
+             class _m_boz_Script(_monte.MonteObject):
+                 def blee(self):
+                     return 1
              class _m_foo_Script(_monte.MonteObject):
                  def baz(self, x, y):
-                     class _m_boz_Script(_monte.MonteObject):
-                         def blee(self):
-                             return 1
                      boz = _m_boz_Script()
                      return boz
              foo = _m_foo_Script()
