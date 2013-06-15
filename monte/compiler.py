@@ -18,7 +18,7 @@ class TextWriter(object):
 
 
     def writeln(self, data):
-        if data:
+        if data and not data.isspace():
             self.file.write(" " * (self.indentSteps * self.stepSize))
             self.file.write(data)
         self.file.write("\n")
@@ -27,37 +27,10 @@ class TextWriter(object):
         return TextWriter(self.file, self.indentSteps + 1)
 
     def delay(self):
-        return DelayedTextWriter(self)
-
-class DelayedTextWriter(object):
-    """
-    Sometimes you have to write things out of order.
-    """
-    def __init__(self, tw, indentSteps=0, lines=()):
-        self.parent = tw
-        self.lines = lines or []
-
-    def writeln(self, data):
-        if data:
-            self.lines.append(" " * (self.indentSteps * self.parent.stepSize))
-            self.lines.append(data)
-
-    def flush(self):
-        for ln in self.lines:
-            self.parent.writeln(ln)
-
-    def indent(self):
-        """
-        Note that this will not have to be flushed independently since it
-        shares lines with this.
-        """
-        return DelayedTextWriter(self.parent, self.indentSteps + 1, self.lines)
-
-    def delay(self):
-        """
-        Must be flushed independently of this.
-        """
-        return DelayedTextWriter(self)
+        f = StringIO()
+        def flush():
+            self.file.write(f.getvalue())
+        return TextWriter(f, self.indentSteps), flush
 
 
 mtrans = string.maketrans(string.printable[62:], '_' * 38)
@@ -81,12 +54,21 @@ class SymGenerator(object):
         return GENSYM_PREFIX + base + str(self.gensymCounter)
 
 
+class ScopeLayout(object):
+    def __init__(self):
+        pass
+
+
 class CompilationContext(object):
-    def __init__(self, parent, mode=None):
+    def __init__(self, parent, mode=None, rootWriter=None):
         if mode is None:
             self.mode = getattr(parent, 'mode', VALUE)
         else:
             self.mode = mode
+        if rootWriter is None:
+            self.rootWriter = getattr(parent, 'rootWriter', None)
+        else:
+            self.rootWriter = rootWriter
         self.sg = getattr(parent, 'sg', SymGenerator())
 
     def with_(self, **kwargs):
@@ -94,6 +76,9 @@ class CompilationContext(object):
 
     def gensym(self, base):
         return self.sg.gensym(base)
+
+    def classWriter(self):
+        return self.rootWriter.delay()
 
 
 class PythonWriter(object):
@@ -104,9 +89,12 @@ class PythonWriter(object):
     def __init__(self, tree):
         self.tree = tree
 
-    def output(self, out):
-        val = self._generate(out, CompilationContext(None), self.tree)
-        out.writeln(val)
+    def output(self, origOut):
+        out, flush = origOut.delay()
+        ctx = CompilationContext(None, rootWriter=origOut)
+        val = self._generate(out, ctx, self.tree)
+        flush()
+        origOut.writeln(val)
 
     def _generate(self, out, ctx, node):
         name = node.tag.name
@@ -226,32 +214,35 @@ class PythonWriter(object):
         matchers = script.args[4].args
         objname = mangleNoun(name)
         scriptname = "_m_%s_Script" % (objname,)
-        out.writeln("class %s(_monte.MonteObject):" % (scriptname,))
-        classOut = out.indent()
+        classOut, cflush = ctx.classWriter()
+        classOut.writeln("class %s(_monte.MonteObject):" % (scriptname,))
+        classBodyOut = classOut.indent()
         if doc:
-            classOut.writeln('"""')
+            classBodyOut.writeln('"""')
             for ln in doc.splitlines():
-                classOut.writeln(ln)
-            classOut.writeln('"""')
-        methOut = classOut.indent()
+                classBodyOut.writeln(ln)
+            classBodyOut.writeln('"""')
         for meth in methods:
             mdoc = meth.args[0].data
             verb = meth.args[1].data
             params = meth.args[2].args
             methGuard = meth.args[3]
             body = meth.args[4]
-            paramOut = methOut.delay()
+            methOut = classBodyOut.indent()
+            paramOut, flush = methOut.delay()
             paramNames = [self._generatePatternForParam(paramOut, ctx, None, p)
                           for p in params]
-            classOut.writeln("def %s(%s):" % (mangleNoun(verb),
+            classBodyOut.writeln("def %s(%s):" % (mangleNoun(verb),
                                               ', '.join(['self'] + paramNames)))
             if mdoc:
                 methOut.writeln('"""')
                 for ln in mdoc.splitlines():
                     methOut.writeln(ln)
                 methOut.writeln('"""')
-            paramOut.flush()
-            methOut.writeln("return " + self._generate(methOut, ctx.with_(mode=VALUE), body))
+            flush()
+            rvar = self._generate(methOut, ctx.with_(mode=VALUE), body)
+            methOut.writeln("return " + rvar)
+        cflush()
         out.writeln("%s = %s()" % (objname, scriptname))
         if ctx.mode != FX_ONLY:
             return objname
