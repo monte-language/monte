@@ -80,9 +80,12 @@ class StaticScope(object):
         rightNamesRead = (right.namesRead - self.defNames) - self.varNames
         rightNamesSet = (right.namesSet - self.varNames)
         badAssigns = rightNamesSet & self.defNames
-        #XXX slavishly porting Java code etc
-        if (1 <= len(badAssigns)):
-            rightNamesSet = rightNamesSet - badAssigns
+        if badAssigns:
+            if len(badAssigns) == 1:
+                raise ValueError("Can't assign to final noun %r" % tuple(badAssigns))
+            else:
+                raise ValueError("Can't assign to final nouns %s" % ', '.join(badAssigns))
+            #rightNamesSet = rightNamesSet - badAssigns
 
         return StaticScope(self.namesRead | rightNamesRead,
                            self.namesSet | rightNamesSet,
@@ -169,9 +172,9 @@ def expandDef(self, patt, optEj, rval, nouns):
         rvalScope = scope(optEj).add(rvalScope)
     rvalUsed = rvalScope.namesUsed()
     if len(varPatts & rvalUsed) != 0:
-        raise ParseError("Circular 'var' definition not allowed", None)
+                err("Circular 'var' definition not allowed", self)
     if len(pattScope.namesUsed() & rvalScope.outNames()) != 0:
-        raise ParseError("Pattern may not use var defined on the right", None)
+                err("Pattern may not use var defined on the right", self)
     conflicts = defPatts & rvalUsed
     if len(conflicts) == 0:
         return t.Def(patt, optEj, rval)
@@ -225,7 +228,7 @@ ViaPattern(@exprScope @patternScope) -> exprScope.add(patternScope)
 
 Object(@doco @nameScope
        Script(@extends @implementScopes
-              @methodScopes @matchers)) -> nameScope.add(union(implementsScopes + methodScopes + matcherScopes,
+              @methodScopes @matcherScopes)) -> nameScope.add(union(implementsScopes + methodScopes + matcherScopes,
                                                                StaticScope()))
 Method(@doco @verb @paramsScope @guardScope @blockScope) -> union(paramsScope + [guardScope, blockScope.hide()],
                                                                   StaticScope()).hide()
