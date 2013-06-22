@@ -111,6 +111,7 @@ class CompilerTest(unittest.TestCase):
              class _m_foo_Script(_monte.MonteObject):
                  def baz(foo, x, y):
                      return x
+
              foo = _m_foo_Script()
              foo
              """)
@@ -129,10 +130,42 @@ class CompilerTest(unittest.TestCase):
              class _m_boz_Script(_monte.MonteObject):
                  def blee(boz):
                      return 1
+
              class _m_foo_Script(_monte.MonteObject):
                  def baz(foo, x, y):
                      boz = _m_boz_Script()
                      return boz
+
+             foo = _m_foo_Script()
+             foo
+             """)
+
+    def test_frameFinal(self):
+        self.eq_(
+            '''
+            def foo {
+                method baz(x, y) {
+                    def a := 2
+                    def boz {
+                        method blee() { a + x }
+                    }
+                }
+            }''',
+             """
+             class _m_boz_Script(_monte.MonteObject):
+                 def __init__(boz, a, x):
+                     boz.a = a
+                     boz.x = x
+
+                 def blee(boz):
+                     return boz.a.add(boz.x)
+
+             class _m_foo_Script(_monte.MonteObject):
+                 def baz(foo, x, y):
+                     a = 2
+                     boz = _m_boz_Script(a, x)
+                     return boz
+
              foo = _m_foo_Script()
              foo
              """)
@@ -154,6 +187,7 @@ class CompilerTest(unittest.TestCase):
                     except __return._m_type, _g___return1:
                         _g_escape2 = _g___return1
                     return _g_escape2
+
             foo = _m_foo_Script()
             foo
             """
