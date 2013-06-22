@@ -53,14 +53,17 @@ class SymGenerator(object):
 def mangleIdent(n):
     prefix = '_m_'
     if re.match('[a-zA-Z_]\\w*$', n):
-        if iskeyword(n) or n.startswith((prefix, GENSYM_PREFIX)):
+        #mangles: python keywords, clashes with python __foo__ names,
+        #and clashes with mangled/generated names
+        if (iskeyword(n) or n.startswith((prefix, GENSYM_PREFIX)) or
+            (n.startswith('__') and n.endswith('__'))):
             return prefix + n
         else:
             return n
     else:
         return prefix + n.translate(mtrans)
 
-safeScopeNames = ["null", "false", "true", "throw", "__loop", "__makeList", "__makeMap", "__makeProtocolDesc", "__makeMessageDesc", "__makeParamDesc", "any", "void", "boolean", "__makeOrderedSpace", "Guard", "require", "__makeVerbFacet", "__MatchContext", "__is", "__splitList", "__suchThat", "__bind", "__extract", "__Empty", "__matchBind", "__Test", "NaN", "Infinity", "__identityFunc", "__makeInt", "escape", "for", "if", "try", "while", "__makeFinalSlot", "__makeTwine", "__makeSourceSpan", "__auditedBy", "near", "pbc", "PassByCopy", "DeepPassByCopy", "Data", "Persistent", "DeepFrozen", "int", "float64", "char", "String", "Twine", "TextWriter", "List", "Map", "Set", "nullOk", "Tuple", "__Portrayal", "notNull", "vow", "rcvr", "ref", "nocall", "SturdyRef", "simple__quasiParser", "twine__quasiParser", "rx__quasiParser", "olde__quasiParser", "e__quasiParser", "epatt__quasiParser", "sml__quasiParser", "term__quasiParser", "__equalizer", "__comparer", "Ref", "E", "promiseAllFulfilled", "EIO", "help", "safeScope", "__eval", "resource__uriGetter", "type__uriGetter", "elib__uriGetter", "elang__uriGetter", "opaque__uriGetter", "__abortIncarnation", "when", "persistenceSealer", "import__uriGetter", "traceln"]
+safeScopeNames = set(["null", "false", "true", "throw", "__loop", "__makeList", "__makeMap", "__makeProtocolDesc", "__makeMessageDesc", "__makeParamDesc", "any", "void", "boolean", "__makeOrderedSpace", "Guard", "require", "__makeVerbFacet", "__MatchContext", "__is", "__splitList", "__suchThat", "__bind", "__extract", "__Empty", "__matchBind", "__Test", "NaN", "Infinity", "__identityFunc", "__makeInt", "escape", "for", "if", "try", "while", "__makeFinalSlot", "__makeTwine", "__makeSourceSpan", "__auditedBy", "near", "pbc", "PassByCopy", "DeepPassByCopy", "Data", "Persistent", "DeepFrozen", "int", "float64", "char", "String", "Twine", "TextWriter", "List", "Map", "Set", "nullOk", "Tuple", "__Portrayal", "notNull", "vow", "rcvr", "ref", "nocall", "SturdyRef", "simple__quasiParser", "twine__quasiParser", "rx__quasiParser", "olde__quasiParser", "e__quasiParser", "epatt__quasiParser", "sml__quasiParser", "term__quasiParser", "__equalizer", "__comparer", "Ref", "E", "promiseAllFulfilled", "EIO", "help", "safeScope", "__eval", "resource__uriGetter", "type__uriGetter", "elib__uriGetter", "elang__uriGetter", "opaque__uriGetter", "__abortIncarnation", "when", "persistenceSealer", "import__uriGetter", "traceln"])
 
 class OuterScopeLayout(object):
     parent = None
@@ -75,11 +78,6 @@ class OuterScopeLayout(object):
     def getBinding(self, n):
         if n in self.outers:
             return Binding(t.FinalPattern(t.NounExpr(n), None), OUTER)
-
-    def getPattern(self, name):
-        b = self.getBinding(name)
-        if b:
-            return b.node
 
 class FrameScopeLayout(object):
     def __init__(self, fields, verbs, selfName):
@@ -101,11 +99,6 @@ class FrameScopeLayout(object):
         for f in self.fields:
             if f.name == name:
                 return f
-
-    def getPattern(self, name):
-        b = self.getBinding(name)
-        if b:
-            return b.node
 
 
 #XXX ignoring REPL case for now
@@ -144,18 +137,6 @@ class ScopeLayout(object):
         self.pynames[name] = pyname
         self.nodes[name] = node
         return pyname
-
-    def getPattern(self, name):
-        if name in self.nodes:
-            return self.nodes[name]
-        elif self.parent:
-            return self.parent.getPattern(name)
-        else:
-            n = self.frame.getPattern(name)
-            if n:
-                return n
-            return self.outer.getPattern(name)
-
 
     def _chainGetPyName(self, n):
         p = self.parent
@@ -374,7 +355,7 @@ class PythonWriter(object):
         selfName = ctx.layout.addNoun(name, nameNode)
         ss = scope(self.currentNode)
         used = ss.namesUsed()
-        fields = [ctx.layout.getBinding(n) for n in used]
+        fields = [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
         extends = script.args[0]
         guard = script.args[1]
         implements = script.args[2].args
@@ -392,6 +373,16 @@ class PythonWriter(object):
             for ln in doc.splitlines():
                 classBodyOut.writeln(ln)
             classBodyOut.writeln('"""')
+        fnames = ()
+        if fields:
+            initOut = classBodyOut.indent()
+            fnames = sorted([f.name for f in fields])
+            classBodyOut.writeln("def __init__(%s, %s):" % (selfName,
+                                                            ', '.join(fnames)))
+            for n in fnames:
+                initOut.writeln("%s.%s = %s" % (selfName, n, n))
+            initOut.writeln("")
+
         for meth in methods:
             methctx = ctx.with_(layout=ScopeLayout(None, frame, ctx.layout.outer), mode=VALUE)
             mdoc = meth.args[0].data
@@ -413,9 +404,10 @@ class PythonWriter(object):
                 methOut.writeln('"""')
             flush()
             rvar = self._generate(methOut, methctx, body)
-            methOut.writeln("return " + rvar)
+            methOut.writeln("return " + rvar + "\n")
+
         cflush()
-        out.writeln("%s = %s()" % (selfName, scriptname))
+        out.writeln("%s = %s(%s)" % (selfName, scriptname, ", ".join(fnames)))
         if ctx.mode != FX_ONLY:
             return selfName
 
@@ -425,10 +417,10 @@ class PythonWriter(object):
         v = self._generate(out, ctx.with_(mode=VALUE), expr)
         pyname = ctx.layout.getNoun(name)
         out.writeln("%s = %s" % (pyname, v))
-        p = ctx.layout.getPattern(name)
-        if not p:
+        b = ctx.layout.getBinding(name)
+        if not b:
             self.err("Undefined variable:" + repr(name))
-        if p.tag.name == 'FinalPattern':
+        if b.isFinal:
             self.err("Can't assign to final variable: " + repr(name))
         if ctx.mode != FX_ONLY:
             return pyname
