@@ -5,6 +5,8 @@ from StringIO import StringIO
 from monte.eparser import parse
 from monte.expander import expand, scope
 
+from terml.nodes import termMaker as t
+
 class CompileError(Exception):
     pass
 
@@ -40,15 +42,9 @@ class TextWriter(object):
 
 mtrans = string.maketrans(string.printable[62:], '_' * 38)
 GENSYM_PREFIX = '_g_'
-def mangleNoun(n):
-    prefix = '_m_'
-    if re.match('[a-zA-Z_]\\w*$', n):
-        if iskeyword(n) or n.startswith((prefix, GENSYM_PREFIX)):
-            return prefix + n
-        else:
-            return n
-    return prefix + n.translate(mtrans)
+
 VALUE, CONTROL, FX_ONLY = range(3)
+LOCAL, FRAME, OUTER = range(3)
 
 class SymGenerator(object):
     def __init__(self):
@@ -59,28 +55,185 @@ class SymGenerator(object):
         return GENSYM_PREFIX + base + str(self.gensymCounter)
 
 
+def mangleIdent(n):
+    prefix = '_m_'
+    if re.match('[a-zA-Z_]\\w*$', n):
+        if iskeyword(n) or n.startswith((prefix, GENSYM_PREFIX)):
+            return prefix + n
+        else:
+            return n
+    else:
+        return prefix + n.translate(mtrans)
+
+safeScopeNames = ["null", "false", "true", "throw", "__loop", "__makeList", "__makeMap", "__makeProtocolDesc", "__makeMessageDesc", "__makeParamDesc", "any", "void", "boolean", "__makeOrderedSpace", "Guard", "require", "__makeVerbFacet", "__MatchContext", "__is", "__splitList", "__suchThat", "__bind", "__extract", "__Empty", "__matchBind", "__Test", "NaN", "Infinity", "__identityFunc", "__makeInt", "escape", "for", "if", "try", "while", "__makeFinalSlot", "__makeTwine", "__makeSourceSpan", "__auditedBy", "near", "pbc", "PassByCopy", "DeepPassByCopy", "Data", "Persistent", "DeepFrozen", "int", "float64", "char", "String", "Twine", "TextWriter", "List", "Map", "Set", "nullOk", "Tuple", "__Portrayal", "notNull", "vow", "rcvr", "ref", "nocall", "SturdyRef", "simple__quasiParser", "twine__quasiParser", "rx__quasiParser", "olde__quasiParser", "e__quasiParser", "epatt__quasiParser", "sml__quasiParser", "term__quasiParser", "__equalizer", "__comparer", "Ref", "E", "promiseAllFulfilled", "EIO", "help", "safeScope", "__eval", "resource__uriGetter", "type__uriGetter", "elib__uriGetter", "elang__uriGetter", "opaque__uriGetter", "__abortIncarnation", "when", "persistenceSealer", "import__uriGetter", "traceln"]
+
+class OuterScopeLayout(object):
+    parent = None
+    def __init__(self, gensym, outers):
+        self.gensym = gensym
+        self.outers = outers
+
+    def getNoun(self, n):
+        if n in self.outers:
+            return '_monte.' + mangleIdent(n)
+
+    def getBinding(self, n):
+        if n in self.outers:
+            return Binding(t.FinalPattern(t.NounExpr(n), None), OUTER)
+
+    def getPattern(self, name):
+        b = self.getBinding(name)
+        if b:
+            return b.node
+
+class FrameScopeLayout(object):
+    def __init__(self, fields, verbs, selfName):
+        self.fields = [Binding(f.node, FRAME) for f in fields]
+        self.selfName = selfName
+        self.verbs = verbs
+        self.pynames = {}
+        for f in fields:
+            if f.name in self.verbs:
+                self.pynames[f.name] = self.gensym(mangleIdent(f.name))
+            else:
+                self.pynames[f.name] = mangleIdent(f.name)
+
+    def getNoun(self, name):
+        if name in self.pynames:
+            return "%s.%s" % (self.selfName, self.pynames[name])
+
+    def getBinding(self, name):
+        for f in self.fields:
+            if f.name == name:
+                return f
+
+    def getPattern(self, name):
+        b = self.getBinding(name)
+        if b:
+            return b.node
+
+
+#XXX ignoring REPL case for now
 class ScopeLayout(object):
-    def __init__(self):
+    """
+    `outer` is the current outer scope, which is an unalterable set of
+    bindings for the normal case and a monotonically growing set for
+    the REPL.
+
+    `frame` is the scope of the innermost object expression, which
+    contains all of the non-local non-outer names used in that object
+    expression.
+
+    `parent` is the most immediately enclosing scope. It may be None,
+    if this scope is an immediate child of the outer scope or an
+    object expression.
+    """
+    def __init__(self, parent, frame, outer):
+        self.parent = parent
+        self.frame = frame
+        self.outer = outer
+        self.gensym = outer.gensym
+        self.nodes = {}
+        self.pynames = {}
+
+    def addNoun(self, name, node):
+        if name in self.pynames:
+            raise CompileError("%r already in scope" % (name,))
+        if self.outer.getNoun(name):
+            raise CompileError("Cannot shadow outer-scope name %r" % (name,))
+        if self.parent and self.parent.getNoun(name):
+            # a scope outside this one uses the name.
+            #XXX only needs gensym if the name is a frame var in this context.
+            pyname = self.gensym(mangleIdent(name))
+        pyname = mangleIdent(name)
+        self.pynames[name] = pyname
+        self.nodes[name] = node
+        return pyname
+
+    def getPattern(self, name):
+        if name in self.nodes:
+            return self.nodes[name]
+        elif self.parent:
+            return self.parent.getPattern(name)
+        else:
+            n = self.frame.getPattern(name)
+            if n:
+                return n
+            return self.outer.getPattern(name)
+
+
+    def _chainGetPyName(self, n):
+        p = self.parent
+        while p and n not in getattr(p, 'pynames', ()):
+            p = p.parent
+        if p is not None:
+            return p.pynames[n]
+
+    def getNoun(self, n):
+        if n in self.pynames:
+            return self.pynames[n]
+        else:
+            for gn in [self._chainGetPyName, self.frame.getNoun,
+                       self.outer.getNoun]:
+                pyname = gn(n)
+                if pyname is not None:
+                    return pyname
+
+    def getBinding(self, n):
+        if n in self.nodes:
+            return self._createBinding(n)
+        elif self.parent:
+            return self.parent.getBinding(n)
+        else:
+            b = self.frame.getBinding(n)
+            if b is None:
+                b = self.outer.getBinding(n)
+            return b
+
+    def _createBinding(self, n):
+        return Binding(self.nodes[n], LOCAL)
+
+    def fqnPrefix(self):
+        pass
+
+    def bindings(self):
+        pass
+
+    def isLocal(self, noun):
+        pass
+
+    def metaStateBindings(self):
+        pass
+
+    def optObjectExpr(self):
         pass
 
 
+class Binding(object):
+    def __init__(self, node, kind):
+        self.node = node
+        self.isFinal = node.tag.name == 'FinalPattern'
+        self.guardExpr = node.args[1]
+        self.name = node.args[0].args[0].data
+        self.kind = kind
+
 class CompilationContext(object):
-    def __init__(self, parent, mode=None, rootWriter=None):
+    def __init__(self, parent, mode=None, layout=None, rootWriter=None):
         if mode is None:
             self.mode = getattr(parent, 'mode', VALUE)
         else:
             self.mode = mode
+        if layout is None:
+            self.layout = getattr(parent, 'layout', None)
+        else:
+            self.layout = layout
         if rootWriter is None:
             self.rootWriter = getattr(parent, 'rootWriter', None)
         else:
             self.rootWriter = rootWriter
-        self.sg = getattr(parent, 'sg', SymGenerator())
 
     def with_(self, **kwargs):
         return CompilationContext(self, **kwargs)
-
-    def gensym(self, base):
-        return self.sg.gensym(base)
 
     def classWriter(self):
         return self.rootWriter.delay()
@@ -94,9 +247,16 @@ class PythonWriter(object):
     def __init__(self, tree):
         self.tree = tree
 
+    def err(self, msg):
+        raise CompileError(msg)
+
     def output(self, origOut):
         out, flush = origOut.delay()
-        ctx = CompilationContext(None, rootWriter=origOut)
+        ctx = CompilationContext(
+            None, rootWriter=origOut,
+            layout=ScopeLayout(None, FrameScopeLayout((), None, None),
+                               OuterScopeLayout(SymGenerator().gensym,
+                                                safeScopeNames)))
         val = self._generate(out, ctx, self.tree)
         flush()
         origOut.writeln(val)
@@ -106,22 +266,24 @@ class PythonWriter(object):
         args = node.args
         if name == 'null':
             return 'None'
+        self.currentNode = node
         return getattr(self, "generate_"+name)(out, ctx, *args)
 
     def _generatePattern(self, out, ctx, ej, val, node):
         name = node.tag.name
         args = node.args
+        self.currentNode = node
         return getattr(self, "pattern_"+name)(out, ctx, ej, val, *args)
 
     def _generatePatternForParam(self, out, ctx, ej, node):
         if node.tag.name in ['FinalPattern', 'VarPattern'] and node.args[1].tag.name == 'null':
             #skip assignment entirely, we'll use the requested name directly in the param list
-            return mangleNoun(node.args[0].args[0].data)
+            return ctx.layout.addNoun(node.args[0].args[0].data, node)
         else:
             pattname = node.tag.name
             if pattname.endswith('Pattern'):
                 pattname = pattname[:-7]
-            gen = ctx.gensym(pattname)
+            gen = ctx.layout.gensym(pattname)
             self._generatePattern(out, ctx, ej, gen, node)
             return gen
 
@@ -144,12 +306,14 @@ class PythonWriter(object):
         constants = {"null": "None",
                      "true": "True",
                      "false": "False"}
-        return constants.get(name, mangleNoun(name))
+        if ctx.layout.getNoun(name) is None:
+            self.err("Undefined variable: " + repr(name))
+        return constants.get(name, ctx.layout.getNoun(name))
 
     def generate_BindingExpr(self, out, ctx, bin):
         name = bin.args[0].data
         if ctx.mode != FX_ONLY:
-            return "_monte.getBinding(self, %r)" % (mangleNoun(name),)
+            return "_monte.getBinding(self, %r)" % (mangleIdent(name),)
 
     def generate_SeqExpr(self, out, ctx, seqs):
         exprs = seqs.args
@@ -168,7 +332,7 @@ class PythonWriter(object):
         if verb.data == "run":
             return "%s(%s)" % (rcvrName, ', '.join(argNames))
         else:
-            return "%s.%s(%s)" % (rcvrName, mangleNoun(verb.data), ', '.join(argNames))
+            return "%s.%s(%s)" % (rcvrName, mangleIdent(verb.data), ', '.join(argNames))
 
     def generate_Def(self, out, ctx, patt, ej, expr):
         if ej.tag.name != 'null':
@@ -191,8 +355,8 @@ class PythonWriter(object):
                                        patt)
             out.writeln("try:")
             sub = out.indent()
-            ejTemp = ctx.gensym(name)
-            escapeTemp = ctx.gensym("escape")
+            ejTemp = ctx.layout.gensym(name)
+            escapeTemp = ctx.layout.gensym("escape")
             val = self._generate(sub, ctx, body)
             sub.writeln("%s = %s" % (escapeTemp, val))
             out.writeln("except %s._m_type, %s:" % (ej, ejTemp))
@@ -208,17 +372,23 @@ class PythonWriter(object):
         else:
             return self._generate(out, ctx, body)
 
-    def generate_Object(self, out, ctx, doc, name, script):
+    def generate_Object(self, out, ctx, doc, nameNode, script):
         #TODO replace this gubbish with proper destructuring
         doc = doc.data
-        name = name.args[0].args[0].data
+        name = nameNode.args[0].args[0].data
+        selfName = ctx.layout.addNoun(name, nameNode)
+        ss = scope(self.currentNode)
+        used = ss.namesUsed()
+        fields = [ctx.layout.getBinding(n) for n in used]
         extends = script.args[0]
         guard = script.args[1]
         implements = script.args[2].args
         methods = script.args[3].args
         matchers = script.args[4].args
-        objname = mangleNoun(name)
-        scriptname = "_m_%s_Script" % (objname,)
+        scriptname = "_m_%s_Script" % (selfName,)
+        verbs = [meth.args[1].data for meth in methods]
+        frame = FrameScopeLayout(fields, verbs, selfName)
+
         classOut, cflush = ctx.classWriter()
         classOut.writeln("class %s(_monte.MonteObject):" % (scriptname,))
         classBodyOut = classOut.indent()
@@ -228,6 +398,7 @@ class PythonWriter(object):
                 classBodyOut.writeln(ln)
             classBodyOut.writeln('"""')
         for meth in methods:
+            methctx = ctx.with_(layout=ScopeLayout(None, frame, ctx.layout.outer), mode=VALUE)
             mdoc = meth.args[0].data
             verb = meth.args[1].data
             params = meth.args[2].args
@@ -235,30 +406,37 @@ class PythonWriter(object):
             body = meth.args[4]
             methOut = classBodyOut.indent()
             paramOut, flush = methOut.delay()
-            paramNames = [self._generatePatternForParam(paramOut, ctx, None, p)
+            paramNames = [self._generatePatternForParam(paramOut, methctx, None, p)
                           for p in params]
-            classBodyOut.writeln("def %s(%s):" % (mangleNoun(verb),
-                                              ', '.join(['self'] + paramNames)))
+            classBodyOut.writeln("def %s(%s):" % (
+                mangleIdent(verb),
+                ', '.join([selfName] + paramNames)))
             if mdoc:
                 methOut.writeln('"""')
                 for ln in mdoc.splitlines():
                     methOut.writeln(ln)
                 methOut.writeln('"""')
             flush()
-            rvar = self._generate(methOut, ctx.with_(mode=VALUE), body)
+            rvar = self._generate(methOut, methctx, body)
             methOut.writeln("return " + rvar)
         cflush()
-        out.writeln("%s = %s()" % (objname, scriptname))
+        out.writeln("%s = %s()" % (selfName, scriptname))
         if ctx.mode != FX_ONLY:
-            return objname
+            return selfName
 
 
     def generate_Assign(self, out, ctx, patt, expr):
         name = patt.args[0].data
         v = self._generate(out, ctx.with_(mode=VALUE), expr)
-        out.writeln("%s = %s" % (mangleNoun(name), v))
+        pyname = ctx.layout.getNoun(name)
+        out.writeln("%s = %s" % (pyname, v))
+        p = ctx.layout.getPattern(name)
+        if not p:
+            self.err("Undefined variable:" + repr(name))
+        if p.tag.name == 'FinalPattern':
+            self.err("Can't assign to final variable: " + repr(name))
         if ctx.mode != FX_ONLY:
-            return name
+            return pyname
 
     def pattern_FinalPattern(self, out, ctx, ej, val, name, guard):
         if guard.tag.name != 'null':
@@ -266,18 +444,18 @@ class PythonWriter(object):
             if ej is None:
                 ej = "_monte.throw"
             val = "%s.coerce(%s, %s)" % (guardv, val, ej)
-        n = mangleNoun(name.args[0].data)
-        out.writeln("%s = %s" % (n, val))
-        return n
+        pyname = ctx.layout.addNoun(name.args[0].data, self.currentNode)
+        out.writeln("%s = %s" % (pyname, val))
+        return pyname
 
     pattern_VarPattern = pattern_FinalPattern
 
     def pattern_ListPattern(self, out, ctx, ej, val, pattsTerm, extra):
         #XXX extra
         patts = pattsTerm.args
-        listv = ctx.gensym("total_list")
-        vs = [ctx.gensym("list") for _ in patts]
-        errv = ctx.gensym("e")
+        listv = ctx.layout.gensym("total_list")
+        vs = [ctx.layout.gensym("list") for _ in patts]
+        errv = ctx.layout.gensym("e")
         sub = out.indent()
         out.writeln("%s = %s" % (listv, val))
         out.writeln("try:")

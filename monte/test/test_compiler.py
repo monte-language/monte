@@ -19,14 +19,18 @@ class CompilerTest(unittest.TestCase):
         self.assertEqual(ecompile("100_312"), "100312")
         self.assertEqual(ecompile('"\\u0061"'), "u'a'")
 
-    def test_noun(self):
-        self.assertEqual(ecompile("foo"), "foo")
-        self.assertEqual(ecompile('::"if"'), "_m_if")
-        self.assertEqual(ecompile('_m_if'), "_m__m_if")
-        self.assertEqual(ecompile('::"hello world!"'), "_m_hello_world_")
+    # def test_noun(self):
+    #     self.assertEqual(ecompile("foo"), "foo")
+    #     self.assertEqual(ecompile('::"if"'), "_m_if")
+    #     self.assertEqual(ecompile('_m_if'), "_m__m_if")
+    #     self.assertEqual(ecompile('::"hello world!"'), "_m_hello_world_")
 
     def test_call(self):
-        self.assertEqual(ecompile("foo.baz(blee)"), "foo.baz(blee)")
+        self.eq_("def x := 1; x.baz(2)",
+                 """
+                 x = 1
+                 x.baz(2)
+                 """)
 
     def test_def(self):
         self.eq_("def x := 1",
@@ -51,6 +55,7 @@ class CompilerTest(unittest.TestCase):
             x
             """)
         self.assertRaises(CompileError, ecompile, "def x := 1; x := 2")
+        self.assertRaises(CompileError, ecompile, "x := 2")
 
     def test_guardpattern(self):
         self.eq_("def x :float64 := 1",
@@ -60,9 +65,9 @@ class CompilerTest(unittest.TestCase):
                  """)
 
     def test_listpattern(self):
-        self.eq_("def [x :float64, y :String, z] := foo.baz(a)",
+        self.eq_('def [x :float64, y :String, z] := "foo"',
                  """
-                 _g_total_list1 = foo.baz(a)
+                 _g_total_list1 = u'foo'
                  try:
                      _g_list2, _g_list3, _g_list4 = _g_total_list1
                  except ValueError, _g_e5:
@@ -73,9 +78,10 @@ class CompilerTest(unittest.TestCase):
                  _g_total_list1
                  """)
 
-        self.eq_("def [x :float64, y :String, z] exit ej := foo.baz(a)",
+        self.eq_('def ej := 1; def [x :float64, y :String, z] exit ej := "foo"',
                  """
-                 _g_total_list1 = foo.baz(a)
+                 ej = 1
+                 _g_total_list1 = u'foo'
                  try:
                      _g_list2, _g_list3, _g_list4 = _g_total_list1
                  except ValueError, _g_e5:
@@ -103,7 +109,7 @@ class CompilerTest(unittest.TestCase):
             'def foo { method baz(x, y) { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
-                 def baz(self, x, y):
+                 def baz(foo, x, y):
                      return x
              foo = _m_foo_Script()
              foo
@@ -121,10 +127,10 @@ class CompilerTest(unittest.TestCase):
             }''',
              """
              class _m_boz_Script(_monte.MonteObject):
-                 def blee(self):
+                 def blee(boz):
                      return 1
              class _m_foo_Script(_monte.MonteObject):
-                 def baz(self, x, y):
+                 def baz(foo, x, y):
                      boz = _m_boz_Script()
                      return boz
              foo = _m_foo_Script()
@@ -140,7 +146,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
-                def run(self, x):
+                def run(foo, x):
                     __return = _monte.ejector("__return")
                     try:
                         __return(1)

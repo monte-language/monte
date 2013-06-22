@@ -128,8 +128,10 @@ def getExports(scope, used):
         outs = outs & used.namesUsed()
     return outs
 
-def union(initial, scopes):
-    return reduce(StaticScope.add, scopes, initial)
+def union(scopes, result=StaticScope()):
+    for sc in scopes:
+        result = result.add(sc)
+    return result
 
 def foldr(f, a, bs):
     for b in bs:
@@ -211,7 +213,7 @@ SlotExpr(@name) -> StaticScope(namesRead=[name])
 BindingExpr(NounExpr(@name)) -> StaticScope(namesRead=[name])
 HideExpr(@blockScope) -> blockScope.hide()
 SeqExpr(@scopes) -> reduce(StaticScope.add, scopes)
-MethodCallExpr(@receiverScope :verb @argScopes) -> union(receiverScope, argScopes)
+MethodCallExpr(@receiverScope :verb @argScopes) -> union(argScopes, receiverScope)
 
 Def(@patternScope @exitScope @exprScope) -> patternScope.add(exitScope).add(exprScope)
 Assign(NounExpr(@name) @rightScope) -> StaticScope(namesSet=[name]).add(rightScope)
@@ -222,16 +224,14 @@ VarPattern(NounExpr(@name) @guardScope) -> StaticScope(varNames=[name]).add(guar
 FinalPattern(NounExpr(@name) @guardScope) -> StaticScope(defNames=[name]).add(guardScope)
 SlotPattern(NounExpr(@name) @guardScope) -> StaticScope(varNames=[name]).add(guardScope)
 BindingPattern(NounExpr(@name)) -> StaticScope(varNames=[name])
-ListPattern(@patternScopes null) -> union(StaticScope(), patternScopes)
+ListPattern(@patternScopes null) -> union(patternScopes)
 ViaPattern(@exprScope @patternScope) -> exprScope.add(patternScope)
 
 
 Object(@doco @nameScope
-       Script(@extends @implementScopes
-              @methodScopes @matcherScopes)) -> nameScope.add(union(implementsScopes + methodScopes + matcherScopes,
-                                                               StaticScope()))
-Method(@doco @verb @paramsScope @guardScope @blockScope) -> union(paramsScope + [guardScope, blockScope.hide()],
-                                                                  StaticScope()).hide()
+       Script(@extends @guard @implementsScopes
+              @methodScopes @matcherScopes)) -> nameScope.add(union(implementsScopes + methodScopes + matcherScopes))
+Method(@doco @verb @paramsScope @guardScope @blockScope) -> union(paramsScope + [guardScope, blockScope.hide()]).hide()
 Matcher(@patternScope @blockScope) -> patternScope.add(blockScope).hide()
 
 If(@testScope @consqScope @altScope) -> testScope.add(consqScope).hide().add(altScope).hide()
