@@ -71,32 +71,25 @@ class OuterScopeLayout(object):
         self.gensym = gensym
         self.outers = outers
 
-    def getNoun(self, n):
-        if n in self.outers:
-            return '_monte.' + mangleIdent(n)
-
     def getBinding(self, n):
         if n in self.outers:
-            return Binding(t.FinalPattern(t.NounExpr(n), None), None, OUTER)
+            return Binding(t.FinalPattern(t.NounExpr(n), None),
+                           '_monte.' + mangleIdent(n), None, OUTER)
 
 class FrameScopeLayout(object):
     def __init__(self, fields, verbs, selfName):
-        self.fields = [Binding(
-            f.node,
-            '_monte.getGuard(%s, "%s")' % (selfName, f.name), FRAME)
-                       for f in fields]
         self.selfName = selfName
         self.verbs = verbs
-        self.pynames = {}
-        for f in fields:
-            if f.name in self.verbs:
-                self.pynames[f.name] = self.gensym(mangleIdent(f.name))
-            else:
-                self.pynames[f.name] = mangleIdent(f.name)
+        self.fields = [self._createBinding(f) for f in fields]
 
-    def getNoun(self, name):
-        if name in self.pynames:
-            return "%s.%s" % (self.selfName, self.pynames[name])
+    def _createBinding(self, f):
+        if f.name not in self.verbs:
+            pyname = f.pyname
+        else:
+            pyname =  self.gensym(mangleIdent(f.name))
+        return Binding(f.node, self.selfName + '.' + pyname,
+                       '_monte.getGuard(%s, "%s")' % (self.selfName, f.name),
+                       FRAME)
 
     def getBinding(self, name):
         for f in self.fields:
@@ -131,9 +124,9 @@ class ScopeLayout(object):
     def addNoun(self, name, node, guardname=None):
         if name in self.pynames:
             raise CompileError("%r already in scope" % (name,))
-        if self.outer.getNoun(name):
+        if self.outer.getBinding(name):
             raise CompileError("Cannot shadow outer-scope name %r" % (name,))
-        if self.parent and self.parent.getNoun(name):
+        if self.parent and self.parent.getBinding(name):
             # a scope outside this one uses the name.
             #XXX only needs gensym if the name is a frame var in this context.
             pyname = self.gensym(mangleIdent(name))
@@ -142,23 +135,6 @@ class ScopeLayout(object):
         self.nodes[name] = node
         self.guards[name] = guardname
         return pyname
-
-    def _chainGetPyName(self, n):
-        p = self.parent
-        while p and n not in getattr(p, 'pynames', ()):
-            p = p.parent
-        if p is not None:
-            return p.pynames[n]
-
-    def getNoun(self, n):
-        if n in self.pynames:
-            return self.pynames[n]
-        else:
-            for gn in [self._chainGetPyName, self.frame.getNoun,
-                       self.outer.getNoun]:
-                pyname = gn(n)
-                if pyname is not None:
-                    return pyname
 
     def getBinding(self, n):
         if n in self.nodes:
@@ -172,27 +148,25 @@ class ScopeLayout(object):
             return b
 
     def _createBinding(self, n):
-        return Binding(self.nodes[n], self.guards[n], LOCAL)
+        return Binding(self.nodes[n],  self.pynames[n], self.guards[n], LOCAL)
 
-    def fqnPrefix(self):
-        pass
+    # def fqnPrefix(self):
+    #     pass
 
-    def bindings(self):
-        pass
+    # def bindings(self):
+    #     pass
 
-    def isLocal(self, noun):
-        pass
+    # def metaStateBindings(self):
+    #     pass
 
-    def metaStateBindings(self):
-        pass
-
-    def optObjectExpr(self):
-        pass
+    # def optObjectExpr(self):
+    #     pass
 
 
 class Binding(object):
-    def __init__(self, node, guardname, kind):
+    def __init__(self, node, pyname, guardname, kind):
         self.node = node
+        self.pyname = pyname
         self.isFinal = node.tag.name == 'FinalPattern'
         self.guardExpr = node.args[1]
         self.guardname = guardname
@@ -285,9 +259,15 @@ class PythonWriter(object):
         constants = {"null": "None",
                      "true": "True",
                      "false": "False"}
-        if ctx.layout.getNoun(name) is None:
+        b = ctx.layout.getBinding(name)
+        if b is None:
             self.err("Undefined variable: " + repr(name))
-        return constants.get(name, ctx.layout.getNoun(name))
+        if b.name in constants:
+            return constants[b.name]
+        if b.isFinal or b.kind == FRAME:
+            return b.pyname
+        else:
+            return b.pyname + ".get()"
 
     def generate_BindingExpr(self, out, ctx, node):
         name = node.args[0].args[0].data
@@ -422,7 +402,7 @@ class PythonWriter(object):
                 makeSlots.append("_monte.FinalSlot(%s, %s)" % (mangleIdent(f.name),
                                                                f.guardname))
             else:
-                makeSlots.append("WRONG")
+                makeSlots.append(mangleIdent(f.name))
         out.writeln("%s = %s(%s)" % (selfName, scriptname, ", ".join(makeSlots)))
         if ctx.mode != FX_ONLY:
             return selfName
@@ -432,15 +412,19 @@ class PythonWriter(object):
         patt, expr = node.args
         name = patt.args[0].data
         v = self._generate(out, ctx.with_(mode=VALUE), expr)
-        pyname = ctx.layout.getNoun(name)
-        out.writeln("%s = %s" % (pyname, v))
         b = ctx.layout.getBinding(name)
         if not b:
             self.err("Undefined variable:" + repr(name))
+        temp = ctx.layout.gensym(mangleIdent(b.name))
         if b.isFinal:
             self.err("Can't assign to final variable: " + repr(name))
+        out.writeln("%s = %s" % (temp, v))
+        if b.kind == FRAME:
+            out.writeln("%s = %s" % (b.pyname, temp))
+        else:
+            out.writeln("%s.put(%s)" % (b.pyname, temp))
         if ctx.mode != FX_ONLY:
-            return pyname
+            return temp
 
     def pattern_FinalPattern(self, out, ctx, ej, val, node):
         name, guard = node.args
@@ -456,7 +440,21 @@ class PythonWriter(object):
         out.writeln("%s = %s" % (pyname, val))
         return pyname
 
-    pattern_VarPattern = pattern_FinalPattern
+    def pattern_VarPattern(self, out, ctx, ej, val, node):
+        nameExpr, guard = node.args
+        name = nameExpr.args[0].data
+        if guard.tag.name != 'null':
+            guardv = self._generate(out, ctx.with_(mode=VALUE), guard)
+            guardname = ctx.layout.gensym("guard")
+            out.writeln("%s = %s" % (guardname, guardv))
+        else:
+            guardname = "None"
+        pyname = ctx.layout.addNoun(name, node, guardname)
+        out.writeln("%s = _monte.VarSlot(%s)" % (pyname, guardname))
+        temp = ctx.layout.gensym(mangleIdent(name))
+        out.writeln("%s = %s" % (temp, val))
+        out.writeln("%s.put(%s)" % (pyname, temp))
+        return temp
 
     def pattern_ListPattern(self, out, ctx, ej, val, node):
         #XXX extra

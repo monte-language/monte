@@ -41,17 +41,40 @@ class CompilerTest(unittest.TestCase):
     def test_var(self):
         self.eq_("var x := 1",
         """
-        x = 1
-        x
+        x = _monte.VarSlot(None)
+        _g_x1 = 1
+        x.put(_g_x1)
+        _g_x1
+        """)
+    def test_varNoun(self):
+        self.eq_("var x := 1; x",
+        """
+        x = _monte.VarSlot(None)
+        _g_x1 = 1
+        x.put(_g_x1)
+        x.get()
+        """)
+
+    def test_guardedVar(self):
+        self.eq_("var x :(1..!10) := 1",
+        """
+        _g_guard1 = _monte.__makeOrderedSpace.op__till(1, 10)
+        x = _monte.VarSlot(_g_guard1)
+        _g_x2 = 1
+        x.put(_g_x2)
+        _g_x2
         """)
 
     def test_assign(self):
         self.eq_(
             "var x := 1; x := 2",
             """
-            x = 1
-            x = 2
-            x
+            x = _monte.VarSlot(None)
+            _g_x1 = 1
+            x.put(_g_x1)
+            _g_x2 = 2
+            x.put(_g_x2)
+            _g_x2
             """)
         self.assertRaises(CompileError, ecompile, "def x := 1; x := 2")
         self.assertRaises(CompileError, ecompile, "x := 2")
@@ -180,6 +203,62 @@ class CompilerTest(unittest.TestCase):
              foo
              """)
 
+    def test_sharedVar(self):
+        self.eq_(
+            '''
+            def foo {
+                method baz(x :int, y) {
+                    var a := 1
+                    var b :int := 0
+                    def left {
+                        method inc() { a += 1; b }
+                    }
+                    def right {
+                        method dec() { b -= 1; a }
+                    }
+                    [left, right]
+                }
+            }''',
+             """
+             class _m_left_Script(_monte.MonteObject):
+                 def __init__(left, a_slot, b_slot):
+                     _monte.MonteObject.install(left, 'a', a_slot)
+                     _monte.MonteObject.install(left, 'b', b_slot)
+
+                 def inc(left):
+                     _g_a6 = left.a.add(1)
+                     left.a = _g_a6
+                     return left.b
+
+             class _m_right_Script(_monte.MonteObject):
+                 def __init__(right, a_slot, b_slot):
+                     _monte.MonteObject.install(right, 'a', a_slot)
+                     _monte.MonteObject.install(right, 'b', b_slot)
+
+                 def dec(right):
+                     _g_b7 = right.b.subtract(1)
+                     right.b = _g_b7
+                     return right.a
+
+             class _m_foo_Script(_monte.MonteObject):
+                 def baz(foo, _g_Final1, y):
+                     _g_guard2 = _monte.int
+                     x = _g_guard2.coerce(_g_Final1, _monte.throw)
+                     a = _monte.VarSlot(None)
+                     _g_a3 = 1
+                     a.put(_g_a3)
+                     _g_guard4 = _monte.int
+                     b = _monte.VarSlot(_g_guard4)
+                     _g_b5 = 0
+                     b.put(_g_b5)
+                     left = _m_left_Script(a, b)
+                     right = _m_right_Script(a, b)
+                     return _monte.__makeList(left, right)
+
+             foo = _m_foo_Script()
+             foo
+             """)
+
     def test_function(self):
         self.eq_(
             '''
@@ -219,7 +298,10 @@ class CompilerTest(unittest.TestCase):
             }
             ''',
             """
-            x = 1
-            x = 2
-            x
+            x = _monte.VarSlot(None)
+            _g_x1 = 1
+            x.put(_g_x1)
+            _g_x2 = 2
+            x.put(_g_x2)
+            _g_x2
             """)
