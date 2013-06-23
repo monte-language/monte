@@ -3,7 +3,6 @@
 import textwrap
 
 from twisted.trial import  unittest
-from ometa.runtime import ParseError
 from monte.compiler import ecompile, CompileError
 
 class CompilerTest(unittest.TestCase):
@@ -60,7 +59,8 @@ class CompilerTest(unittest.TestCase):
     def test_guardpattern(self):
         self.eq_("def x :float64 := 1",
                  """
-                 x = _monte.float64.coerce(1, _monte.throw)
+                 _g_guard1 = _monte.float64
+                 x = _g_guard1.coerce(1, _monte.throw)
                  x
                  """)
 
@@ -72,8 +72,10 @@ class CompilerTest(unittest.TestCase):
                      _g_list2, _g_list3, _g_list4 = _g_total_list1
                  except ValueError, _g_e5:
                      _monte.throw(_g_e5)
-                 x = _monte.float64.coerce(_g_list2, _monte.throw)
-                 y = _monte.String.coerce(_g_list3, _monte.throw)
+                 _g_guard6 = _monte.float64
+                 x = _g_guard6.coerce(_g_list2, _monte.throw)
+                 _g_guard7 = _monte.String
+                 y = _g_guard7.coerce(_g_list3, _monte.throw)
                  z = _g_list4
                  _g_total_list1
                  """)
@@ -86,8 +88,10 @@ class CompilerTest(unittest.TestCase):
                      _g_list2, _g_list3, _g_list4 = _g_total_list1
                  except ValueError, _g_e5:
                      ej(_g_e5)
-                 x = _monte.float64.coerce(_g_list2, ej)
-                 y = _monte.String.coerce(_g_list3, ej)
+                 _g_guard6 = _monte.float64
+                 x = _g_guard6.coerce(_g_list2, ej)
+                 _g_guard7 = _monte.String
+                 y = _g_guard7.coerce(_g_list3, ej)
                  z = _g_list4
                  _g_total_list1
                  """)
@@ -144,26 +148,32 @@ class CompilerTest(unittest.TestCase):
         self.eq_(
             '''
             def foo {
-                method baz(x, y) {
+                method baz(x :int, y) {
                     def a := 2
+                    def b :(float64 >= 0) := 3.0
                     def boz {
-                        method blee() { a + x }
+                        method blee() { b.foo(a + x) }
                     }
                 }
             }''',
              """
              class _m_boz_Script(_monte.MonteObject):
-                 def __init__(boz, a, x):
-                     boz.a = a
-                     boz.x = x
+                 def __init__(boz, a_slot, b_slot, x_slot):
+                     _monte.MonteObject.install(boz, 'a', a_slot)
+                     _monte.MonteObject.install(boz, 'b', b_slot)
+                     _monte.MonteObject.install(boz, 'x', x_slot)
 
                  def blee(boz):
-                     return boz.a.add(boz.x)
+                     return boz.b.foo(boz.a.add(boz.x))
 
              class _m_foo_Script(_monte.MonteObject):
-                 def baz(foo, x, y):
+                 def baz(foo, _g_Final1, y):
+                     _g_guard2 = _monte.int
+                     x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      a = 2
-                     boz = _m_boz_Script(a, x)
+                     _g_guard3 = _monte.__comparer.geq(_monte.float64, 0)
+                     b = _g_guard3.coerce(3.0, _monte.throw)
+                     boz = _m_boz_Script(_monte.FinalSlot(a, None), _monte.FinalSlot(b, _g_guard3), _monte.FinalSlot(x, _g_guard2))
                      return boz
 
              foo = _m_foo_Script()
