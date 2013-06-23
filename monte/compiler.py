@@ -82,11 +82,14 @@ class OuterScopeLayout(object):
 
     def getBinding(self, n):
         if n in self.outers:
-            return Binding(t.FinalPattern(t.NounExpr(n), None), OUTER)
+            return Binding(t.FinalPattern(t.NounExpr(n), None), None, OUTER)
 
 class FrameScopeLayout(object):
     def __init__(self, fields, verbs, selfName):
-        self.fields = [Binding(f.node, FRAME) for f in fields]
+        self.fields = [Binding(
+            f.node,
+            '_monte.getGuard(%s, "%s")' % (selfName, f.name), FRAME)
+                       for f in fields]
         self.selfName = selfName
         self.verbs = verbs
         self.pynames = {}
@@ -128,8 +131,9 @@ class ScopeLayout(object):
         self.gensym = outer.gensym
         self.nodes = {}
         self.pynames = {}
+        self.guards = {}
 
-    def addNoun(self, name, node):
+    def addNoun(self, name, node, guardname=None):
         if name in self.pynames:
             raise CompileError("%r already in scope" % (name,))
         if self.outer.getNoun(name):
@@ -141,6 +145,7 @@ class ScopeLayout(object):
         pyname = mangleIdent(name)
         self.pynames[name] = pyname
         self.nodes[name] = node
+        self.guards[name] = guardname
         return pyname
 
     def _chainGetPyName(self, n):
@@ -172,7 +177,7 @@ class ScopeLayout(object):
             return b
 
     def _createBinding(self, n):
-        return Binding(self.nodes[n], LOCAL)
+        return Binding(self.nodes[n], self.guards[n], LOCAL)
 
     def fqnPrefix(self):
         pass
@@ -191,10 +196,11 @@ class ScopeLayout(object):
 
 
 class Binding(object):
-    def __init__(self, node, kind):
+    def __init__(self, node, guardname, kind):
         self.node = node
         self.isFinal = node.tag.name == 'FinalPattern'
         self.guardExpr = node.args[1]
+        self.guardname = guardname
         self.name = node.args[0].args[0].data
         self.kind = kind
 
@@ -244,17 +250,13 @@ class PythonWriter(object):
 
     def _generate(self, out, ctx, node):
         name = node.tag.name
-        args = node.args
         if name == 'null':
             return 'None'
-        self.currentNode = node
-        return getattr(self, "generate_"+name)(out, ctx, *args)
+        return getattr(self, "generate_"+name)(out, ctx, node)
 
     def _generatePattern(self, out, ctx, ej, val, node):
         name = node.tag.name
-        args = node.args
-        self.currentNode = node
-        return getattr(self, "pattern_"+name)(out, ctx, ej, val, *args)
+        return getattr(self, "pattern_"+name)(out, ctx, ej, val, node)
 
     def _generatePatternForParam(self, out, ctx, ej, node):
         if node.tag.name in ['FinalPattern', 'VarPattern'] and node.args[1].tag.name == 'null':
@@ -271,7 +273,8 @@ class PythonWriter(object):
     #The convention is: return an expression, directly write out
     #statements it depends on.
 
-    def generate_LiteralExpr(self, out, ctx, litNode):
+    def generate_LiteralExpr(self, out, ctx, node):
+        litNode = node.args[0]
         if ctx.mode == FX_ONLY:
             return
         if litNode.tag.name == 'Character':
@@ -282,8 +285,8 @@ class PythonWriter(object):
             return repr(unicode(lit))
         return repr(lit)
 
-    def generate_NounExpr(self, out, ctx, noun):
-        name = noun.data
+    def generate_NounExpr(self, out, ctx, node):
+        name = node.args[0].data
         constants = {"null": "None",
                      "true": "True",
                      "false": "False"}
@@ -291,13 +294,13 @@ class PythonWriter(object):
             self.err("Undefined variable: " + repr(name))
         return constants.get(name, ctx.layout.getNoun(name))
 
-    def generate_BindingExpr(self, out, ctx, bin):
-        name = bin.args[0].data
+    def generate_BindingExpr(self, out, ctx, node):
+        name = node.args[0].args[0].data
         if ctx.mode != FX_ONLY:
             return "_monte.getBinding(self, %r)" % (mangleIdent(name),)
 
-    def generate_SeqExpr(self, out, ctx, seqs):
-        exprs = seqs.args
+    def generate_SeqExpr(self, out, ctx, node):
+        exprs = node.args[0].args
         # at toplevel.
         innerctx = ctx.with_(mode=FX_ONLY)
         for e in exprs[:-1]:
@@ -307,7 +310,8 @@ class PythonWriter(object):
 
         return self._generate(out, ctx, exprs[-1])
 
-    def generate_MethodCallExpr(self, out, ctx, rcvr, verb, args):
+    def generate_MethodCallExpr(self, out, ctx, node):
+        rcvr, verb, args = node.args
         rcvrName = self._generate(out, ctx.with_(mode=VALUE), rcvr)
         argNames = [self._generate(out, ctx.with_(mode=VALUE), arg) for arg in args.args]
         if verb.data == "run":
@@ -315,7 +319,8 @@ class PythonWriter(object):
         else:
             return "%s.%s(%s)" % (rcvrName, mangleIdent(verb.data), ', '.join(argNames))
 
-    def generate_Def(self, out, ctx, patt, ej, expr):
+    def generate_Def(self, out, ctx, node):
+        patt, ej, expr = node.args
         if ej.tag.name != 'null':
             ejName = self._generate(out, ctx.with_(mode=VALUE), ej)
         else:
@@ -325,7 +330,8 @@ class PythonWriter(object):
         if ctx.mode != FX_ONLY:
             return n
 
-    def generate_Escape(self, out, ctx, patt, body, catcher):
+    def generate_Escape(self, out, ctx, node):
+        patt, body, catcher = node.args
         bodyScope = scope(body)
         pattScope = scope(patt)
         # only generate ejector code if it's mentioned in the body
@@ -353,12 +359,13 @@ class PythonWriter(object):
         else:
             return self._generate(out, ctx, body)
 
-    def generate_Object(self, out, ctx, doc, nameNode, script):
+    def generate_Object(self, out, ctx, node):
         #TODO replace this gubbish with proper destructuring
+        doc, nameNode, script = node.args
         doc = doc.data
         name = nameNode.args[0].args[0].data
         selfName = ctx.layout.addNoun(name, nameNode)
-        ss = scope(self.currentNode)
+        ss = scope(node)
         used = ss.namesUsed()
         fields = [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
         extends = script.args[0]
@@ -382,10 +389,12 @@ class PythonWriter(object):
         if fields:
             initOut = classBodyOut.indent()
             fnames = sorted([f.name for f in fields])
+            pyfnames = [mangleIdent(n) + "_slot" for n in fnames]
             classBodyOut.writeln("def __init__(%s, %s):" % (selfName,
-                                                            ', '.join(fnames)))
-            for n in fnames:
-                initOut.writeln("%s.%s = %s" % (selfName, n, n))
+                                                            ', '.join(pyfnames)))
+            for name, pyname  in zip(fnames, pyfnames):
+                initOut.writeln("_monte.MonteObject.install(%s, '%s', %s)" % (
+                    selfName, name, pyname))
             initOut.writeln("")
 
         for meth in methods:
@@ -412,12 +421,20 @@ class PythonWriter(object):
             methOut.writeln("return " + rvar + "\n")
 
         cflush()
-        out.writeln("%s = %s(%s)" % (selfName, scriptname, ", ".join(fnames)))
+        makeSlots = []
+        for f in sorted(fields, key=lambda f: f.name):
+            if f.isFinal:
+                makeSlots.append("_monte.FinalSlot(%s, %s)" % (mangleIdent(f.name),
+                                                               f.guardname))
+            else:
+                makeSlots.append("WRONG")
+        out.writeln("%s = %s(%s)" % (selfName, scriptname, ", ".join(makeSlots)))
         if ctx.mode != FX_ONLY:
             return selfName
 
 
-    def generate_Assign(self, out, ctx, patt, expr):
+    def generate_Assign(self, out, ctx, node):
+        patt, expr = node.args
         name = patt.args[0].data
         v = self._generate(out, ctx.with_(mode=VALUE), expr)
         pyname = ctx.layout.getNoun(name)
@@ -430,20 +447,25 @@ class PythonWriter(object):
         if ctx.mode != FX_ONLY:
             return pyname
 
-    def pattern_FinalPattern(self, out, ctx, ej, val, name, guard):
+    def pattern_FinalPattern(self, out, ctx, ej, val, node):
+        name, guard = node.args
+        guardname = None
         if guard.tag.name != 'null':
             guardv = self._generate(out, ctx.with_(mode=VALUE), guard)
+            guardname = ctx.layout.gensym("guard")
+            out.writeln("%s = %s" % (guardname, guardv))
             if ej is None:
                 ej = "_monte.throw"
-            val = "%s.coerce(%s, %s)" % (guardv, val, ej)
-        pyname = ctx.layout.addNoun(name.args[0].data, self.currentNode)
+            val = "%s.coerce(%s, %s)" % (guardname, val, ej)
+        pyname = ctx.layout.addNoun(name.args[0].data, node, guardname)
         out.writeln("%s = %s" % (pyname, val))
         return pyname
 
     pattern_VarPattern = pattern_FinalPattern
 
-    def pattern_ListPattern(self, out, ctx, ej, val, pattsTerm, extra):
+    def pattern_ListPattern(self, out, ctx, ej, val, node):
         #XXX extra
+        pattsTerm, extra = node.args
         patts = pattsTerm.args
         listv = ctx.layout.gensym("total_list")
         vs = [ctx.layout.gensym("list") for _ in patts]
