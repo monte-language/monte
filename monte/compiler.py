@@ -335,7 +335,7 @@ class PythonWriter(object):
             return self._generate(out, ctx, body)
 
     def generate_Object(self, out, ctx, node):
-        #TODO replace this gubbish with proper destructuring
+        #XXX replace this gubbish with proper destructuring
         doc, nameNode, script = node.args
         doc = doc.data
         name = nameNode.args[0].args[0].data
@@ -343,7 +343,6 @@ class PythonWriter(object):
         ss = scope(node)
         used = ss.namesUsed()
         fields = [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
-        extends = script.args[0]
         guard = script.args[1]
         implements = script.args[2].args
         methods = script.args[3].args
@@ -353,8 +352,11 @@ class PythonWriter(object):
         frame = FrameScopeLayout(fields, verbs, selfName)
 
         classOut, cflush = ctx.classWriter()
+        #XXX deal with self slot rebinding in a sane fashion
         classOut.writeln("class %s(_monte.MonteObject):" % (scriptname,))
         classBodyOut = classOut.indent()
+        if not any(methods, matchers, fields, doc):
+            classBodyOut.writeln("pass")
         if doc:
             classBodyOut.writeln('"""')
             for ln in doc.splitlines():
@@ -371,7 +373,6 @@ class PythonWriter(object):
                 initOut.writeln("_monte.MonteObject.install(%s, '%s', %s)" % (
                     selfName, name, pyname))
             initOut.writeln("")
-
         for meth in methods:
             methctx = ctx.with_(layout=ScopeLayout(None, frame, ctx.layout.outer), mode=VALUE)
             mdoc = meth.args[0].data

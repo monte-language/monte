@@ -118,18 +118,6 @@ class CompilerTest(unittest.TestCase):
                  z = _g_list4
                  _g_total_list1
                  """)
-        # self.eq_("def [x, y, z] + blee := foo.baz(a)",
-        #          """
-        #          _g_total_list1 = foo.baz(a)
-        #          try:
-        #              _g_list2, _g_list3, _g_list4 = _g_total_list1
-        #          except ValueError, _g_e5:
-        #              ej(_g_e5)
-        #          x = _monte.float64.coerce(_g_list2, _monte.throw)
-        #          y = _monte.String.coerce(_g_list3, _monte.throw)
-        #          z = _g_list4
-        #          _g_total_list1
-        #          """)
 
     def test_trivialObject(self):
         self.eq_(
@@ -141,6 +129,23 @@ class CompilerTest(unittest.TestCase):
 
              foo = _m_foo_Script()
              foo
+             """)
+
+    def test_trivialVarObject(self):
+        self.eq_(
+            'def var foo { method baz(x, y) { x }}',
+             """
+             class _m_foo_Script(_monte.MonteObject):
+                 def __init__(foo, foo_slot):
+                    _monte.MonteObject.install(foo, 'foo', foo_slot)
+
+                 def baz(foo, x, y):
+                     return x
+
+             foo = _monte.VarSlot(None)
+             _g_foo1 = _m_foo_Script(foo)
+             foo.put(_g_foo1)
+             _g_foo1
              """)
 
     def test_trivialNestedObject(self):
@@ -258,6 +263,47 @@ class CompilerTest(unittest.TestCase):
              foo = _m_foo_Script()
              foo
              """)
+
+    def test_implements(self):
+        self.eq_(
+            '''
+            def foo implements DeepFrozen, Data {}
+            ''',
+            """
+            class _m_foo_Script(_monte.MonteObject):
+                pass
+            foo = _m_foo_Script.withAuditors(_monte.DeepFrozen, _monte.Data)()
+            foo
+            """)
+
+    def test_simpleAs(self):
+        self._eq_(
+            '''
+            def foo as Data implements DeepFrozen {}
+            ''',
+            """
+            class _m_foo_Script(_monte.MonteObject):
+                pass
+            _g_guard1 = _monte.Data
+            foo = _g_guard1.coerce(_m_foo_Script.withAuditors(_monte.DeepFrozen, _monte.Data)(), _monte.throw)o
+            foo
+            """)
+
+    def test_varAs(self):
+        self._eq_(
+            '''
+            def var foo as Data implements DeepFrozen {}
+            ''',
+            """
+            class _m_foo_Script(_monte.MonteObject):
+                def __init__(foo, foo_slot):
+                    _monte.MonteObject.install(foo, 'foo', foo_slot)
+            foo = _monte.VarSlot(_monte.Data)
+            _g_foo1 = _m_foo_Script.withAuditors(_monte.DeepFrozen, _monte.Data)(foo)
+            foo.put(_g_foo1)
+            _g_foo1
+            """)
+
 
     def test_function(self):
         self.eq_(
