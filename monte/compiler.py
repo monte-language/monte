@@ -367,18 +367,30 @@ class PythonWriter(object):
         else:
             paramNames = [selfName] + self._collectSlots(fields)
             fields = [selfBinding] + [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
-        val = "%s(%s)" % (ctor, ", ".join(paramNames))
-        selfName = self._generatePattern(out, ctx, None, val, nameNode, True)
+
         methods = script.args[3].args
         matchers = script.args[4].args
         verbs = [meth.args[1].data for meth in methods]
+        methGuards = ["%s=%s" % (meth.args[1].data, self._generate(out, ctx, meth.args[3]))
+                      for meth in methods
+                      if meth.args[3].tag.name != 'null']
+        if methGuards:
+            ctor += ".withMethodGuards(%s)" % (', '.join(methGuards),)
+        val = "%s(%s)" % (ctor, ", ".join(paramNames))
+        selfName = self._generatePattern(out, ctx, None, val, nameNode, True)
         frame = FrameScopeLayout(fields, verbs, selfName)
 
         classOut, cflush = ctx.classWriter()
         classOut.writeln("class %s(_monte.MonteObject):" % (scriptname,))
         classBodyOut = classOut.indent()
-        if not any([methods, matchers, fields, doc]):
-            classBodyOut.writeln("pass")
+        if implements:
+            classBodyOut.writeln('_m_objectExpr = "%s"' %
+                                 node._unparse().encode('zlib')
+                                                .encode('base64')
+                                                .replace('\n', ''))
+        else:
+            if not any([methods, matchers, fields, doc,]):
+                classBodyOut.writeln("pass")
         if doc:
             classBodyOut.writeln('"""')
             for ln in doc.splitlines():
@@ -416,6 +428,9 @@ class PythonWriter(object):
                 methOut.writeln('"""')
             flush()
             rvar = self._generate(methOut, methctx, body)
+            if methGuard.tag.name != 'null':
+                rvar = "%s._m_guardForMethod(%r).coerce(%s, _monte.throw)" % (
+                    scriptname, verb, rvar)
             methOut.writeln("return " + rvar + "\n")
 
         cflush()
