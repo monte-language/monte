@@ -5,7 +5,7 @@ from StringIO import StringIO
 from monte.eparser import parse
 from monte.expander import expand, scope
 
-from terml.nodes import termMaker as t
+from terml.nodes import Term, termMaker as t
 
 class CompileError(Exception):
     pass
@@ -136,6 +136,11 @@ class ScopeLayout(object):
         self.guards[name] = guardname
         return pyname
 
+    def addObjectGuard(self, name, guard):
+        if name not in self.pynames:
+            raise CompileError("internal compiler error")
+        self.guards[name] = guard
+
     def getBinding(self, n):
         if n in self.nodes:
             return self._createBinding(n)
@@ -223,9 +228,12 @@ class PythonWriter(object):
             return 'None'
         return getattr(self, "generate_"+name)(out, ctx, node)
 
-    def _generatePattern(self, out, ctx, ej, val, node):
+    def _generatePattern(self, out, ctx, ej, val, node, objName=False):
         name = node.tag.name
-        return getattr(self, "pattern_"+name)(out, ctx, ej, val, node)
+        if objName:
+            return getattr(self, "pattern_"+name)(out, ctx, ej, val, node, True)
+        else:
+            return getattr(self, "pattern_"+name)(out, ctx, ej, val, node)
 
     def _generatePatternForParam(self, out, ctx, ej, node):
         if node.tag.name in ['FinalPattern', 'VarPattern'] and node.args[1].tag.name == 'null':
@@ -339,23 +347,37 @@ class PythonWriter(object):
         doc, nameNode, script = node.args
         doc = doc.data
         name = nameNode.args[0].args[0].data
+        guard = script.args[1]
+        implements = script.args[2].args
+        if guard.tag.name != "null":
+            implements = (guard,) + implements
+        nameNode = Term(nameNode.tag, None, (nameNode.args[0], guard), nameNode.span)
         selfName = ctx.layout.addNoun(name, nameNode)
+        scriptname = "_m_%s_Script" % (selfName,)
+        if implements:
+            ctor = "%s.withAuditors(%s)" % (scriptname, ', '.join([self._generate(out, ctx, iface) for iface in implements]))
+        else:
+            ctor = scriptname
         ss = scope(node)
         used = ss.namesUsed()
         fields = [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
-        guard = script.args[1]
-        implements = script.args[2].args
+        selfBinding = ctx.layout.getBinding(name)
+        if nameNode.tag.name == 'FinalPattern':
+            paramNames = self._collectSlots(fields)
+        else:
+            paramNames = [selfName] + self._collectSlots(fields)
+            fields = [selfBinding] + [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
+        val = "%s(%s)" % (ctor, ", ".join(paramNames))
+        selfName = self._generatePattern(out, ctx, None, val, nameNode, True)
         methods = script.args[3].args
         matchers = script.args[4].args
-        scriptname = "_m_%s_Script" % (selfName,)
         verbs = [meth.args[1].data for meth in methods]
         frame = FrameScopeLayout(fields, verbs, selfName)
 
         classOut, cflush = ctx.classWriter()
-        #XXX deal with self slot rebinding in a sane fashion
         classOut.writeln("class %s(_monte.MonteObject):" % (scriptname,))
         classBodyOut = classOut.indent()
-        if not any(methods, matchers, fields, doc):
+        if not any([methods, matchers, fields, doc]):
             classBodyOut.writeln("pass")
         if doc:
             classBodyOut.writeln('"""')
@@ -397,6 +419,10 @@ class PythonWriter(object):
             methOut.writeln("return " + rvar + "\n")
 
         cflush()
+        if ctx.mode != FX_ONLY:
+            return selfName
+
+    def _collectSlots(self, fields):
         makeSlots = []
         for f in sorted(fields, key=lambda f: f.name):
             if f.isFinal:
@@ -404,10 +430,7 @@ class PythonWriter(object):
                                                                f.guardname))
             else:
                 makeSlots.append(mangleIdent(f.name))
-        out.writeln("%s = %s(%s)" % (selfName, scriptname, ", ".join(makeSlots)))
-        if ctx.mode != FX_ONLY:
-            return selfName
-
+        return makeSlots
 
     def generate_Assign(self, out, ctx, node):
         patt, expr = node.args
@@ -427,7 +450,7 @@ class PythonWriter(object):
         if ctx.mode != FX_ONLY:
             return temp
 
-    def pattern_FinalPattern(self, out, ctx, ej, val, node):
+    def pattern_FinalPattern(self, out, ctx, ej, val, node, objname=False):
         name, guard = node.args
         guardname = None
         if guard.tag.name != 'null':
@@ -437,11 +460,15 @@ class PythonWriter(object):
             if ej is None:
                 ej = "_monte.throw"
             val = "%s.coerce(%s, %s)" % (guardname, val, ej)
-        pyname = ctx.layout.addNoun(name.args[0].data, node, guardname)
+        if objname:
+            pyname = ctx.layout.getBinding(name.args[0].data).pyname
+            ctx.layout.addObjectGuard(name.args[0].data, guardname)
+        else:
+            pyname = ctx.layout.addNoun(name.args[0].data, node, guardname)
         out.writeln("%s = %s" % (pyname, val))
         return pyname
 
-    def pattern_VarPattern(self, out, ctx, ej, val, node):
+    def pattern_VarPattern(self, out, ctx, ej, val, node, objname=False):
         nameExpr, guard = node.args
         name = nameExpr.args[0].data
         if guard.tag.name != 'null':
@@ -450,7 +477,11 @@ class PythonWriter(object):
             out.writeln("%s = %s" % (guardname, guardv))
         else:
             guardname = "None"
-        pyname = ctx.layout.addNoun(name, node, guardname)
+        if objname:
+            pyname = ctx.layout.getBinding(name).pyname
+            ctx.layout.addObjectGuard(name, guardname)
+        else:
+            pyname = ctx.layout.addNoun(name, node, guardname)
         out.writeln("%s = _monte.VarSlot(%s)" % (pyname, guardname))
         temp = ctx.layout.gensym(mangleIdent(name))
         out.writeln("%s = %s" % (temp, val))

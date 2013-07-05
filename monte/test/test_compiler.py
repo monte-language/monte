@@ -136,10 +136,10 @@ class CompilerTest(unittest.TestCase):
             'def var foo { method baz(x, y) { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
-                 def __init__(foo, foo_slot):
-                    _monte.MonteObject.install(foo, 'foo', foo_slot)
+                 def __init__(_g_foo1, foo_slot):
+                     _monte.MonteObject.install(_g_foo1, 'foo', foo_slot)
 
-                 def baz(foo, x, y):
+                 def baz(_g_foo1, x, y):
                      return x
 
              foo = _monte.VarSlot(None)
@@ -277,7 +277,7 @@ class CompilerTest(unittest.TestCase):
             """)
 
     def test_simpleAs(self):
-        self._eq_(
+        self.eq_(
             '''
             def foo as Data implements DeepFrozen {}
             ''',
@@ -285,23 +285,25 @@ class CompilerTest(unittest.TestCase):
             class _m_foo_Script(_monte.MonteObject):
                 pass
             _g_guard1 = _monte.Data
-            foo = _g_guard1.coerce(_m_foo_Script.withAuditors(_monte.DeepFrozen, _monte.Data)(), _monte.throw)o
+            foo = _g_guard1.coerce(_m_foo_Script.withAuditors(_monte.Data, _monte.DeepFrozen)(), _monte.throw)
             foo
             """)
 
     def test_varAs(self):
-        self._eq_(
+        self.eq_(
             '''
             def var foo as Data implements DeepFrozen {}
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
-                def __init__(foo, foo_slot):
-                    _monte.MonteObject.install(foo, 'foo', foo_slot)
-            foo = _monte.VarSlot(_monte.Data)
-            _g_foo1 = _m_foo_Script.withAuditors(_monte.DeepFrozen, _monte.Data)(foo)
-            foo.put(_g_foo1)
-            _g_foo1
+                def __init__(_g_foo2, foo_slot):
+                    _monte.MonteObject.install(_g_foo2, 'foo', foo_slot)
+
+            _g_guard1 = _monte.Data
+            foo = _monte.VarSlot(_g_guard1)
+            _g_foo2 = _m_foo_Script.withAuditors(_monte.Data, _monte.DeepFrozen)(foo)
+            foo.put(_g_foo2)
+            _g_foo2
             """)
 
 
