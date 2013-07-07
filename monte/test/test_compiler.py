@@ -319,6 +319,33 @@ class CompilerTest(unittest.TestCase):
              foo
              """)
 
+    def test_matcher(self):
+        self.eq_(
+            'def foo { method baz(x, y) { x } match [verb1, args1] { verb1 } match etc { etc }}',
+             """
+             class _m_foo_Script(_monte.MonteObject):
+                 _m_matcherNames = ['_g_matcher1', '_g_matcher2']
+                 def baz(foo, x, y):
+                     return x
+
+                 def _g_matcher1(foo, _m_message):
+                     _g_total_list3 = _m_message
+                     try:
+                         _g_list4, _g_list5 = _g_total_list3
+                     except ValueError, _g_e6:
+                         _monte.throw(_g_e6)
+                     verb1 = _g_list4
+                     args1 = _g_list5
+                     return verb1
+
+                 def _g_matcher2(foo, _m_message):
+                     etc = _m_message
+                     return etc
+
+             foo = _m_foo_Script()
+             foo
+             """)
+
     def test_function(self):
         self.eq_(
             '''

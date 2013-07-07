@@ -384,10 +384,12 @@ class PythonWriter(object):
         val = "%s(%s)" % (ctor, ", ".join(paramNames))
         selfName = self._generatePattern(out, ctx, None, val, nameNode, True)
         frame = FrameScopeLayout(fields, verbs, selfName)
-
+        matcherNames = [ctx.layout.gensym("matcher") for _ in matchers]
         classOut, cflush = ctx.classWriter()
         classOut.writeln("class %s(_monte.MonteObject):" % (scriptname,))
         classBodyOut = classOut.indent()
+        if matcherNames:
+            classBodyOut.writeln('_m_matcherNames = %r' % (matcherNames,))
         if implements:
             classBodyOut.writeln('_m_objectExpr = "%s"' %
                                  node._unparse().encode('zlib')
@@ -412,6 +414,7 @@ class PythonWriter(object):
                 initOut.writeln("_monte.MonteObject.install(%s, '%s', %s)" % (
                     selfName, name, pyname))
             initOut.writeln("")
+
         for meth in methods:
             methctx = ctx.with_(layout=ScopeLayout(None, frame, ctx.layout.outer), mode=VALUE)
             mdoc = meth.args[0].data
@@ -437,6 +440,18 @@ class PythonWriter(object):
                 rvar = "%s._m_guardForMethod(%r).coerce(%s, _monte.throw)" % (
                     scriptname, verb, rvar)
             methOut.writeln("return " + rvar + "\n")
+
+        for matcherName, mtch in zip(matcherNames, matchers):
+            mtchctx = ctx.with_(layout=ScopeLayout(None, frame, ctx.layout.outer), mode=VALUE)
+            patt = mtch.args[0]
+            body = mtch.args[1]
+            matcherNames.append(matcherName)
+            classBodyOut.writeln("def %s(%s, _m_message):" % (matcherName,
+                                                              selfName))
+            mtchOut = classBodyOut.indent()
+            self._generatePattern(mtchOut, mtchctx, None, "_m_message", patt)
+            rvar = self._generate(mtchOut, mtchctx, body)
+            mtchOut.writeln("return " + rvar + "\n")
 
         cflush()
         if ctx.mode != FX_ONLY:
