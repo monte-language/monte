@@ -91,6 +91,9 @@ class ExpanderTest(unittest.TestCase):
     def test_coerce(self):
         self.assertEqual(self.parse("x :foo"), ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "ValueGuard"], "coerce", [["NounExpr", "foo"], ["NounExpr", "throw"]]], "coerce", [["NounExpr", "x"], ["NounExpr", "throw"]]])
 
+    def test_coerce2(self):
+        self.assertEqual(self.parse("x :foo[baz]"), ["MethodCallExpr", ["MethodCallExpr", ["NounExpr", "ValueGuard"], "coerce", [['MethodCallExpr', ["NounExpr", "foo"], 'get', [['NounExpr', 'baz']]], ["NounExpr", "throw"]]], "coerce", [["NounExpr", "x"], ["NounExpr", "throw"]]])
+
     def test_slot(self):
         self.assertEqual(self.parse("&x"), ["MethodCallExpr", ["BindingExpr", ["NounExpr", "x"]], "get", []])
 
