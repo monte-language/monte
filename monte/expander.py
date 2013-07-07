@@ -409,7 +409,7 @@ Continue(@expr) -> mcall("__continue", "run", expr)
 Return(null) -> mcall("__return", "run")
 Return(@expr) -> mcall("__return", "run", expr)
 
-Guard(@expr @subscripts) -> reduce(lambda e, s: t.GetExpr(e, s), subscripts, expr)
+Guard(@expr @subscripts) -> reduce(lambda e, s: t.MethodCallExpr(e, "get", s), subscripts, expr)
 
 #IgnorePattern(@guard) -> t.IgnorePattern(guard)
 
