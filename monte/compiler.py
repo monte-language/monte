@@ -359,10 +359,6 @@ class PythonWriter(object):
         nameNode = Term(nameNode.tag, None, (nameNode.args[0], guard), nameNode.span)
         selfName = ctx.layout.addNoun(name, nameNode)
         scriptname = "_m_%s_Script" % (selfName,)
-        if implements:
-            ctor = "%s.withAuditors(%s)" % (scriptname, ', '.join([self._generate(out, ctx, iface) for iface in implements]))
-        else:
-            ctor = scriptname
         ss = scope(node)
         used = ss.namesUsed()
         fields = [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
@@ -372,16 +368,18 @@ class PythonWriter(object):
         else:
             paramNames = [selfName] + self._collectSlots(fields)
             fields = [selfBinding] + [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
-
         methods = script.args[3].args
         matchers = script.args[4].args
         verbs = [meth.args[1].data for meth in methods]
-        methGuards = ["%s=%s" % (meth.args[1].data, self._generate(out, ctx, meth.args[3]))
+        methGuards = ["%r: %s" % (meth.args[1].data, self._generate(out, ctx, meth.args[3]))
                       for meth in methods
                       if meth.args[3].tag.name != 'null']
         if methGuards:
-            ctor += ".withMethodGuards(%s)" % (', '.join(methGuards),)
-        val = "%s(%s)" % (ctor, ", ".join(paramNames))
+            paramNames.insert(0, '{%s}' % ', '.join(methGuards))
+        if implements:
+            paramNames.insert(0, '[%s]' % ', '.join([self._generate(out, ctx, iface)
+                                                     for iface in implements]))
+        val = "%s(%s)" % (scriptname, ", ".join(paramNames))
         selfName = self._generatePattern(out, ctx, None, val, nameNode, True)
         frame = FrameScopeLayout(fields, verbs, selfName)
         matcherNames = [ctx.layout.gensym("matcher") for _ in matchers]
@@ -404,12 +402,21 @@ class PythonWriter(object):
                 classBodyOut.writeln(ln)
             classBodyOut.writeln('"""')
         fnames = ()
-        if fields:
+        if any([fields, implements, methGuards]):
             initOut = classBodyOut.indent()
             fnames = sorted([f.name for f in fields])
             pyfnames = [mangleIdent(n) + "_slot" for n in fnames]
+            initParams = pyfnames
+            if methGuards:
+                initParams = ["_m_methodGuards"] + initParams
+            if implements:
+                initParams = ["_m_auditors"] + initParams
             classBodyOut.writeln("def __init__(%s, %s):" % (selfName,
-                                                            ', '.join(pyfnames)))
+                                                            ', '.join(initParams)))
+            if implements:
+                initOut.writeln(selfName + "._m_audit(_m_auditors)")
+            if methGuards:
+                initOut.writeln(selfName + "._m_guardMethods(_m_methodGuards)")
             for name, pyname  in zip(fnames, pyfnames):
                 initOut.writeln("_monte.MonteObject.install(%s, '%s', %s)" % (
                     selfName, name, pyname))
@@ -438,7 +445,7 @@ class PythonWriter(object):
             rvar = self._generate(methOut, methctx, body)
             if methGuard.tag.name != 'null':
                 rvar = "%s._m_guardForMethod(%r).coerce(%s, _monte.throw)" % (
-                    scriptname, verb, rvar)
+                    selfName, verb, rvar)
             methOut.writeln("return " + rvar + "\n")
 
         for matcherName, mtch in zip(matcherNames, matchers):
