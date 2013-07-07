@@ -272,7 +272,10 @@ class CompilerTest(unittest.TestCase):
             """
             class _m_foo_Script(_monte.MonteObject):
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0QMhqh1iU1tcCtKL8qNQ+kBUk8sSRRSTMWqBaMNTUB+zEoKA=="
-            foo = _m_foo_Script.withAuditors(_monte.DeepFrozen, _monte.Data)()
+                def __init__(foo, _m_auditors):
+                    foo._m_audit(_m_auditors)
+
+            foo = _m_foo_Script([_monte.DeepFrozen, _monte.Data])
             foo
             """)
 
@@ -284,8 +287,11 @@ class CompilerTest(unittest.TestCase):
             """
             class _m_foo_Script(_monte.MonteObject):
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0IRS6JJYkgVdFIQqmpBW5F+VWpeUqasUAZMNbUBAD7syYh"
+                def __init__(foo, _m_auditors):
+                    foo._m_audit(_m_auditors)
+
             _g_guard1 = _monte.Data
-            foo = _g_guard1.coerce(_m_foo_Script.withAuditors(_monte.Data, _monte.DeepFrozen)(), _monte.throw)
+            foo = _g_guard1.coerce(_m_foo_Script([_monte.Data, _monte.DeepFrozen]), _monte.throw)
             foo
             """)
 
@@ -297,12 +303,13 @@ class CompilerTest(unittest.TestCase):
             """
             class _m_foo_Script(_monte.MonteObject):
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
-                def __init__(_g_foo2, foo_slot):
+                def __init__(_g_foo2, _m_auditors, foo_slot):
+                    _g_foo2._m_audit(_m_auditors)
                     _monte.MonteObject.install(_g_foo2, 'foo', foo_slot)
 
             _g_guard1 = _monte.Data
             foo = _monte.VarSlot(_g_guard1)
-            _g_foo2 = _m_foo_Script.withAuditors(_monte.Data, _monte.DeepFrozen)(foo)
+            _g_foo2 = _m_foo_Script([_monte.Data, _monte.DeepFrozen], foo)
             foo.put(_g_foo2)
             _g_foo2
             """)
@@ -312,10 +319,13 @@ class CompilerTest(unittest.TestCase):
             'def foo { method baz(x, y) :int { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
-                 def baz(foo, x, y):
-                     return _m_foo_Script._m_guardForMethod('baz').coerce(x, _monte.throw)
+                 def __init__(foo, _m_methodGuards):
+                     foo._m_guardMethods(_m_methodGuards)
 
-             foo = _m_foo_Script.withMethodGuards(baz=_monte.int)()
+                 def baz(foo, x, y):
+                     return foo._m_guardForMethod('baz').coerce(x, _monte.throw)
+
+             foo = _m_foo_Script({'baz': _monte.int})
              foo
              """)
 
