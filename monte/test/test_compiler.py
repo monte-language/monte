@@ -271,9 +271,9 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0QMhqh1iU1tcCtKL8qNQ+kBUk8sSRRSTMWqBaMNTUB+zEoKA=="
                 def __init__(foo, _m_auditors):
                     foo._m_audit(_m_auditors)
+                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0QMhqh1iU1tcCtKL8qNQ+kBUk8sSRRSTMWqBaMNTUB+zEoKA=="
 
             foo = _m_foo_Script([_monte.DeepFrozen, _monte.Data])
             foo
@@ -286,9 +286,9 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0IRS6JJYkgVdFIQqmpBW5F+VWpeUqasUAZMNbUBAD7syYh"
                 def __init__(foo, _m_auditors):
                     foo._m_audit(_m_auditors)
+                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0IRS6JJYkgVdFIQqmpBW5F+VWpeUqasUAZMNbUBAD7syYh"
 
             _g_guard1 = _monte.Data
             foo = _g_guard1.coerce(_m_foo_Script([_monte.Data, _monte.DeepFrozen]), _monte.throw)
@@ -302,10 +302,10 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
                 def __init__(_g_foo2, _m_auditors, foo_slot):
                     _g_foo2._m_audit(_m_auditors)
                     _monte.MonteObject.install(_g_foo2, 'foo', foo_slot)
+                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
 
             _g_guard1 = _monte.Data
             foo = _monte.VarSlot(_g_guard1)
@@ -402,3 +402,41 @@ class CompilerTest(unittest.TestCase):
             x.put(_g_x2)
             _g_x2
             """)
+
+    def test_metacontext(self):
+        self.eq_(
+            '''
+            def foo {
+                method baz(x, y) {
+                    def a := 2
+                    var b := 3
+                    def boz {
+                        method blee() { b := a; meta.context() }
+                    }
+                }
+            }''',
+             """
+             class _m_boz_Script(_monte.MonteObject):
+                 def __init__(boz, a_slot, b_slot):
+                     _monte.MonteObject.install(boz, 'a', a_slot)
+                     _monte.MonteObject.install(boz, 'b', b_slot)
+
+                 def blee(boz):
+                     _g_b2 = boz.a
+                     boz.b = _g_b2
+                     return _monte.StaticContext('__main$foo$boz', ['b', 'a'], _m_boz_Script._m_objectExpr)
+
+                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKyq9S0tRRAKkBUsHJRZkFMB0QMjoWiH1TSzLyU6DiSkk5qalKEBmISHBqIdi0aMfi4sx0FONBhiO4iUqaQD7QtEQNJef8vJLUihIlzVhNTZAdQAoAuNc5Rg=="
+
+             class _m_foo_Script(_monte.MonteObject):
+                 def baz(foo, x, y):
+                     a = 2
+                     b = _monte.VarSlot(None)
+                     _g_b1 = 3
+                     b.put(_g_b1)
+                     boz = _m_boz_Script(_monte.FinalSlot(a, None), b)
+                     return boz
+
+             foo = _m_foo_Script()
+             foo
+             """)
