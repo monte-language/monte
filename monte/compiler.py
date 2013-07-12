@@ -81,11 +81,13 @@ class OuterScopeLayout(object):
             return Binding(t.FinalPattern(t.NounExpr(n), None),
                            '_monte.' + mangleIdent(n), None, OUTER)
 
+
 class FrameScopeLayout(object):
-    def __init__(self, fields, verbs, selfName):
+    def __init__(self, fields, verbs, selfName, fqnPrefix):
         self.selfName = selfName
         self.verbs = verbs
         self.fields = [self._createBinding(f) for f in fields]
+        self.fqnPrefix = fqnPrefix
 
     def _createBinding(self, f):
         if f.name not in self.verbs:
@@ -125,6 +127,7 @@ class ScopeLayout(object):
         self.nodes = {}
         self.pynames = {}
         self.guards = {}
+        self.metaContextExpr = False
 
     def addNoun(self, name, node, guardname=None):
         if name in self.pynames:
@@ -132,8 +135,10 @@ class ScopeLayout(object):
         if self.outer.getBinding(name):
             raise CompileError("Cannot shadow outer-scope name %r" % (name,))
         if self.parent and self.parent.getBinding(name):
-            # a scope outside this one uses the name.
-            #XXX only needs gensym if the name is a frame var in this context.
+            # a scope outside this one uses the name.  XXX only needs
+            #gensym in certain circumstances, such as if the name is a
+            #frame var in this context, or
+            # "def x := 1; f(x, {def x := 2})"
             pyname = self.gensym(mangleIdent(name))
         pyname = mangleIdent(name)
         self.pynames[name] = pyname
@@ -210,8 +215,9 @@ class PythonWriter(object):
     Converts an E syntax tree into Python source.
     """
 
-    def __init__(self, tree):
+    def __init__(self, tree, origin):
         self.tree = tree
+        self.origin = origin
 
     def err(self, msg):
         raise CompileError(msg)
@@ -220,7 +226,7 @@ class PythonWriter(object):
         out, flush = origOut.delay()
         ctx = CompilationContext(
             None, rootWriter=origOut,
-            layout=ScopeLayout(None, FrameScopeLayout((), None, None),
+            layout=ScopeLayout(None, FrameScopeLayout((), None, None, self.origin),
                                OuterScopeLayout(SymGenerator().gensym,
                                                 safeScopeNames)))
         val = self._generate(out, ctx, self.tree)
@@ -381,21 +387,16 @@ class PythonWriter(object):
                                                      for iface in implements]))
         val = "%s(%s)" % (scriptname, ", ".join(paramNames))
         selfName = self._generatePattern(out, ctx, None, val, nameNode, True)
-        frame = FrameScopeLayout(fields, verbs, selfName)
+        frame = FrameScopeLayout(fields, verbs, selfName,
+                                 '%s$%s' % (ctx.layout.frame.fqnPrefix, name))
         matcherNames = [ctx.layout.gensym("matcher") for _ in matchers]
         classOut, cflush = ctx.classWriter()
         classOut.writeln("class %s(_monte.MonteObject):" % (scriptname,))
         classBodyOut = classOut.indent()
+        if not any([methods, matchers, fields, doc, implements]):
+            classBodyOut.writeln("pass")
         if matcherNames:
             classBodyOut.writeln('_m_matcherNames = %r' % (matcherNames,))
-        if implements:
-            classBodyOut.writeln('_m_objectExpr = "%s"' %
-                                 node._unparse().encode('zlib')
-                                                .encode('base64')
-                                                .replace('\n', ''))
-        else:
-            if not any([methods, matchers, fields, doc,]):
-                classBodyOut.writeln("pass")
         if doc:
             classBodyOut.writeln('"""')
             for ln in doc.splitlines():
@@ -421,7 +422,7 @@ class PythonWriter(object):
                 initOut.writeln("_monte.MonteObject.install(%s, '%s', %s)" % (
                     selfName, name, pyname))
             initOut.writeln("")
-
+        metacontext = False
         for meth in methods:
             methctx = ctx.with_(layout=ScopeLayout(None, frame, ctx.layout.outer), mode=VALUE)
             mdoc = meth.args[0].data
@@ -447,6 +448,7 @@ class PythonWriter(object):
                 rvar = "%s._m_guardForMethod(%r).coerce(%s, _monte.throw)" % (
                     selfName, verb, rvar)
             methOut.writeln("return " + rvar + "\n")
+            metacontext = metacontext or methctx.layout.metaContextExpr
 
         for matcherName, mtch in zip(matcherNames, matchers):
             mtchctx = ctx.with_(layout=ScopeLayout(None, frame, ctx.layout.outer), mode=VALUE)
@@ -459,7 +461,13 @@ class PythonWriter(object):
             self._generatePattern(mtchOut, mtchctx, None, "_m_message", patt)
             rvar = self._generate(mtchOut, mtchctx, body)
             mtchOut.writeln("return " + rvar + "\n")
+            metacontext = metacontext or mtchctx.layout.metaContextExpr
 
+        if implements or metacontext:
+            classBodyOut.writeln('_m_objectExpr = "%s"\n' %
+                                 node._unparse().encode('zlib')
+                                                .encode('base64')
+                                                .replace('\n', ''))
         cflush()
         if ctx.mode != FX_ONLY:
             return selfName
@@ -491,6 +499,14 @@ class PythonWriter(object):
             out.writeln("%s.put(%s)" % (b.pyname, temp))
         if ctx.mode != FX_ONLY:
             return temp
+
+    def generate_Meta(self, out, ctx, node):
+        kind = node.args[0].data
+        if kind == 'Context':
+            ctx.layout.metaContextExpr = True
+            f = ctx.layout.frame
+            return "_monte.StaticContext(%r, %r, _m_%s_Script._m_objectExpr)" % (
+                f.fqnPrefix, [b.name for b in f.fields], f.selfName)
 
     def pattern_FinalPattern(self, out, ctx, ej, val, node, objname=False):
         name, guard = node.args
@@ -555,8 +571,8 @@ class PythonWriter(object):
             self._generatePattern(out, ctx, ej, v, patt)
         return listv
 
-def ecompile(source, origin="<string>"):
+def ecompile(source, origin="__main"):
     ast = expand(parse(source))
     f = StringIO()
-    PythonWriter(ast).output(TextWriter(f))
+    PythonWriter(ast, origin).output(TextWriter(f))
     return f.getvalue().strip()
