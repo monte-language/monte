@@ -273,6 +273,7 @@ class CompilerTest(unittest.TestCase):
             class _m_foo_Script(_monte.MonteObject):
                 def __init__(foo, _m_auditors):
                     foo._m_audit(_m_auditors)
+
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0QMhqh1iU1tcCtKL8qNQ+kBUk8sSRRSTMWqBaMNTUB+zEoKA=="
 
             foo = _m_foo_Script([_monte.DeepFrozen, _monte.Data])
@@ -288,6 +289,7 @@ class CompilerTest(unittest.TestCase):
             class _m_foo_Script(_monte.MonteObject):
                 def __init__(foo, _m_auditors):
                     foo._m_audit(_m_auditors)
+
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0IRS6JJYkgVdFIQqmpBW5F+VWpeUqasUAZMNbUBAD7syYh"
 
             _g_guard1 = _monte.Data
@@ -305,6 +307,7 @@ class CompilerTest(unittest.TestCase):
                 def __init__(_g_foo2, _m_auditors, foo_slot):
                     _g_foo2._m_audit(_m_auditors)
                     _monte.MonteObject.install(_g_foo2, 'foo', foo_slot)
+
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
 
             _g_guard1 = _monte.Data
@@ -440,3 +443,93 @@ class CompilerTest(unittest.TestCase):
              foo = _m_foo_Script()
              foo
              """)
+
+    def test_finally(self):
+        self.eq_(
+            '''
+            try { 1 } finally { 2 }
+            ''',
+            """
+            try:
+                _g_finally1 = 1
+            finally:
+                _g_finally1 = 2
+            _g_finally1
+            """)
+
+    def test_catch(self):
+        self.eq_(
+            '''
+            try { 1 } catch p { 2 }
+            ''',
+            """
+            try:
+                _g_catch1 = 1
+            except Exception, _g_exception2:
+                p = _g_exception2
+                _g_catch1 = 2
+            _g_catch1
+            """)
+
+    def test_hide(self):
+        self.eq_(
+            '''
+            def x := 1; {def x := 2}
+            ''',
+            """
+            x = 1
+            _g_x1 = 2
+            _g_x1
+            """)
+
+    def test_if(self):
+        self.eq_(
+            '''
+            if (1) { 2 } else { 3 }
+            ''',
+            """
+            if 1:
+                _g_if1 = 2
+            else:
+                _g_if1 = 3
+            _g_if1
+            """)
+
+    # def test_via(self):
+    #     self.eq_(
+    #         '''
+    #         def a := 3
+    #         def b := 4
+    #         def x via (a) exit b := 1
+    #         ''',
+    #         """
+    #         a = 3
+    #         b = 4
+    #         _g_via1 = 1
+    #         x = a(_g_via1, b)
+    #         _g_via1
+    #         """)
+
+    # def test_bindingexpr(self):
+    #     self.eq_(
+    #         '''
+    #         var x := 1
+    #         &&x
+    #         ''',
+    #         """
+    #         x = _monte.VarSlot(None)
+    #         _g_x1 = 1
+    #         x.put(_g_x1)
+    #         _monte.reifyBinding(x)
+    #         """)
+
+    # def test_bindingpatt(self):
+    #     self.eq_(
+    #         '''
+    #         def &&x := 1
+    #         ''',
+    #         """
+    #         _g_binding1 = 1
+    #         x = _monte.slotFromBinding(_g_binding1)
+    #         _g_binding1
+    #         """)
