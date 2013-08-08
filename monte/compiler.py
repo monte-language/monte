@@ -135,7 +135,8 @@ class ScopeLayout(object):
             #frame var in this context, or
             # "def x := 1; f(x, {def x := 2})"
             pyname = self.gensym(mangleIdent(name))
-        pyname = mangleIdent(name)
+        else:
+            pyname = mangleIdent(name)
         self.pynames[name] = pyname
         self.nodes[name] = node
         self.guards[name] = guardname
@@ -494,6 +495,50 @@ class PythonWriter(object):
             out.writeln("%s.put(%s)" % (b.pyname, temp))
         if ctx.mode != FX_ONLY:
             return temp
+
+    def generate_Finally(self, out, ctx, node):
+        block, fin = node.args
+        sub = out.indent()
+        out.writeln("try:")
+        finTemp = ctx.layout.gensym("finally")
+        val = self._generate(sub, ctx, block)
+        sub.writeln("%s = %s" % (finTemp, val))
+        out.writeln("finally:")
+        val = self._generate(sub, ctx, fin)
+        sub.writeln("%s = %s" % (finTemp, val))
+        return finTemp
+
+    def generate_KernelTry(self, out, ctx, node):
+        block, patt, catchblock = node.args
+        sub = out.indent()
+        out.writeln("try:")
+        catchTemp = ctx.layout.gensym("catch")
+        val = self._generate(sub, ctx, block)
+        sub.writeln("%s = %s" % (catchTemp, val))
+        excTemp = ctx.layout.gensym("exception")
+        out.writeln("except Exception, %s:" % (excTemp,))
+        self._generatePattern(sub, ctx, None, excTemp, patt)
+        val = self._generate(sub, ctx, catchblock)
+        sub.writeln("%s = %s" % (catchTemp, val))
+        return catchTemp
+
+    def generate_HideExpr(self, out, ctx, node):
+        newctx = ctx.with_(layout=ScopeLayout(ctx.layout, ctx.layout.frame, ctx.layout.outer))
+        return self._generate(out, newctx, node.args[0])
+
+    def generate_If(self, out, ctx, node):
+        test, consq, alt = node.args
+        sub = out.indent()
+        tv = self._generate(out, ctx, test)
+        ifTemp = ctx.layout.gensym("if")
+        out.writeln("if %s:" % (tv,))
+        val = self._generate(sub, ctx, consq)
+        sub.writeln("%s = %s" % (ifTemp, val))
+        if alt.tag.name != 'null':
+            out.writeln("else:")
+            val = self._generate(sub, ctx, alt)
+            sub.writeln("%s = %s" % (ifTemp, val))
+        return ifTemp
 
     def generate_Meta(self, out, ctx, node):
         kind = node.args[0].data
