@@ -166,18 +166,6 @@ class ScopeLayout(object):
     def _createBinding(self, n):
         return Binding(self.nodes[n],  self.pynames[n], self.guards[n], LOCAL)
 
-    # def fqnPrefix(self):
-    #     pass
-
-    # def bindings(self):
-    #     pass
-
-    # def metaStateBindings(self):
-    #     pass
-
-    # def optObjectExpr(self):
-    #     pass
-
 
 class Binding(object):
     def __init__(self, node, pyname, guardname, kind):
@@ -561,7 +549,7 @@ class PythonWriter(object):
                 f.fqnPrefix, [b.name for b in f.fields], f.selfName)
         elif kind == 'State':
             f = ctx.layout.frame
-            return '{%s}' % ', '.join('%r: _monte.getSlot(%s, %r)' % ('&' + b.name, f.selfName, b.pyname.split('.')[1])
+            return '_monte.Map((%s))' % ', '.join('(%r, _monte.getSlot(%s, %r))' % ('&' + b.name, f.selfName, b.pyname.split('.')[1])
                                       for b in f.fields)
 
     def pattern_FinalPattern(self, out, ctx, ej, val, node, objname=False):
@@ -617,7 +605,6 @@ class PythonWriter(object):
         return temp
 
     def pattern_ListPattern(self, out, ctx, ej, val, node):
-        #XXX extra
         pattsTerm, extra = node.args
         patts = pattsTerm.args
         listv = ctx.layout.gensym("total_list")

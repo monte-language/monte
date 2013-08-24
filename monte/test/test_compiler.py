@@ -458,7 +458,7 @@ class CompilerTest(unittest.TestCase):
                     _m___return = _monte.ejector("__return")
                     try:
                         x = 1
-                        _m___return({})
+                        _m___return(_monte.Map(()))
                         _g_escape4 = None
                     except _m___return._m_type, _g___return3:
                         _g_escape4 = _g___return3
@@ -494,7 +494,7 @@ class CompilerTest(unittest.TestCase):
 
                 def biz(boz):
                     x = 17
-                    return {'&b': _monte.getSlot(boz, 'b'), '&a': _monte.getSlot(boz, 'a')}
+                    return _monte.Map((('&b', _monte.getSlot(boz, 'b')), ('&a', _monte.getSlot(boz, 'a'))))
 
                 def baz(boz):
                     _g_b5 = boz.b.add(boz.a)
