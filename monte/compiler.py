@@ -56,7 +56,7 @@ def mangleIdent(n):
         #mangles: python keywords, clashes with python __foo__ names,
         #and clashes with mangled/generated names
         if (iskeyword(n) or n.startswith((prefix, GENSYM_PREFIX)) or
-            (n.startswith('__') and n.endswith('__'))):
+            (n.startswith('__'))):
             return prefix + n
         else:
             return n
@@ -353,23 +353,30 @@ class PythonWriter(object):
         #XXX replace this gubbish with proper destructuring
         doc, nameNode, script = node.args
         doc = doc.data
-        name = nameNode.args[0].args[0].data
         guard = script.args[1]
+        if nameNode.tag.name == 'IgnorePattern':
+            name = "_"
+            nameNode = Term(nameNode.tag, None, (guard,), nameNode.span)
+            selfName = ctx.layout.gensym("ignore")
+        else:
+            name = nameNode.args[0].args[0].data
+            nameNode = Term(nameNode.tag, None, (nameNode.args[0], guard), nameNode.span)
+            selfName = ctx.layout.addNoun(name, nameNode)
+
         implements = script.args[2].args
         if guard.tag.name != "null":
             implements = (guard,) + implements
-        nameNode = Term(nameNode.tag, None, (nameNode.args[0], guard), nameNode.span)
-        selfName = ctx.layout.addNoun(name, nameNode)
         scriptname = "_m_%s_Script" % (selfName,)
         ss = scope(node)
         used = ss.namesUsed()
         fields = [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
         selfBinding = ctx.layout.getBinding(name)
-        if nameNode.tag.name == 'FinalPattern':
+        if nameNode.tag.name in ('FinalPattern', 'IgnorePattern'):
             paramNames = self._collectSlots(fields)
         else:
             paramNames = [selfName] + self._collectSlots(fields)
-            fields = [selfBinding] + [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
+            fields = [selfBinding]
+            fields += [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
         methods = script.args[3].args
         matchers = script.args[4].args
         verbs = [meth.args[1].data for meth in methods]
@@ -547,6 +554,10 @@ class PythonWriter(object):
             f = ctx.layout.frame
             return "_monte.StaticContext(%r, %r, _m_%s_Script._m_objectExpr)" % (
                 f.fqnPrefix, [b.name for b in f.fields], f.selfName)
+        elif kind == 'State':
+            f = ctx.layout.frame
+            return '{%s}' % ', '.join('%r: _monte.getSlot(%s, %r)' % ('&' + b.name, f.selfName, b.pyname.split('.')[1])
+                                      for b in f.fields)
 
     def pattern_FinalPattern(self, out, ctx, ej, val, node, objname=False):
         name, guard = node.args
@@ -563,6 +574,20 @@ class PythonWriter(object):
             ctx.layout.addObjectGuard(name.args[0].data, guardname)
         else:
             pyname = ctx.layout.addNoun(name.args[0].data, node, guardname)
+        out.writeln("%s = %s" % (pyname, val))
+        return pyname
+
+    def pattern_IgnorePattern(self, out, ctx, ej, val, node, objname=False):
+        guard = node.args[0]
+        guardname = None
+        if guard.tag.name != 'null':
+            guardv = self._generate(out, ctx.with_(mode=VALUE), guard)
+            guardname = ctx.layout.gensym("guard")
+            out.writeln("%s = %s" % (guardname, guardv))
+            if ej is None:
+                ej = "_monte.throw"
+            val = "%s.coerce(%s, %s)" % (guardname, val, ej)
+        pyname = ctx.layout.gensym("ignore")
         out.writeln("%s = %s" % (pyname, val))
         return pyname
 
