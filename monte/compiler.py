@@ -618,6 +618,12 @@ class PythonWriter(object):
             self._generatePattern(out, ctx, ej, v, patt)
         return listv
 
+    def pattern_ViaPattern(self, out, ctx, ej, val, node):
+        lval = self._generate(out, ctx.with_(mode=VALUE), node.args[0])
+        newval = "%s(%s, %s)" % (lval, val, ej)
+        self._generatePattern(out, ctx, ej, newval, node.args[1])
+        return val
+
 def ecompile(source, origin="__main"):
     ast = expand(parse(source))
     f = StringIO()

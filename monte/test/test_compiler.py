@@ -574,20 +574,19 @@ class CompilerTest(unittest.TestCase):
             _g_if1
             """)
 
-    # def test_via(self):
-    #     self.eq_(
-    #         '''
-    #         def a := 3
-    #         def b := 4
-    #         def x via (a) exit b := 1
-    #         ''',
-    #         """
-    #         a = 3
-    #         b = 4
-    #         _g_via1 = 1
-    #         x = a(_g_via1, b)
-    #         _g_via1
-    #         """)
+    def test_via(self):
+        self.eq_(
+            '''
+            def a := 3
+            def b := 4
+            def via (a + 1) x exit b := 2
+            ''',
+            """
+            a = 3
+            b = 4
+            x = a.add(1)(2, b)
+            2
+            """)
 
     # def test_bindingexpr(self):
     #     self.eq_(
