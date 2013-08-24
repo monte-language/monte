@@ -58,7 +58,7 @@ class CompilerTest(unittest.TestCase):
     def test_guardedVar(self):
         self.eq_("var x :(1..!10) := 1",
         """
-        _g_guard1 = _monte.__makeOrderedSpace.op__till(1, 10)
+        _g_guard1 = _monte._m___makeOrderedSpace.op__till(1, 10)
         x = _monte.VarSlot(_g_guard1)
         _g_x2 = 1
         x.put(_g_x2)
@@ -199,7 +199,7 @@ class CompilerTest(unittest.TestCase):
                      _g_guard2 = _monte.int
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      a = 2
-                     _g_guard3 = _monte.__comparer.geq(_monte.float64, 0)
+                     _g_guard3 = _monte._m___comparer.geq(_monte.float64, 0)
                      b = _g_guard3.coerce(3.0, _monte.throw)
                      boz = _m_boz_Script(_monte.FinalSlot(a, None), _monte.FinalSlot(b, _g_guard3), _monte.FinalSlot(x, _g_guard2))
                      return boz
@@ -258,7 +258,7 @@ class CompilerTest(unittest.TestCase):
                      b.put(_g_b5)
                      left = _m_left_Script(a, b)
                      right = _m_right_Script(a, b)
-                     return _monte.__makeList(left, right)
+                     return _monte._m___makeList(left, right)
 
              foo = _m_foo_Script()
              foo
@@ -369,11 +369,11 @@ class CompilerTest(unittest.TestCase):
             """
             class _m_foo_Script(_monte.MonteObject):
                 def run(foo, x):
-                    __return = _monte.ejector("__return")
+                    _m___return = _monte.ejector("__return")
                     try:
-                        __return(1)
+                        _m___return(1)
                         _g_escape2 = None
-                    except __return._m_type, _g___return1:
+                    except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1
                     return _g_escape2
 
@@ -443,6 +443,85 @@ class CompilerTest(unittest.TestCase):
              foo = _m_foo_Script()
              foo
              """)
+
+    def test_metastate_empty(self):
+        self.eq_(
+            '''
+            def _() :any { def x := 1; return meta.getState() }()
+            ''',
+            """
+            class _m__g_ignore1_Script(_monte.MonteObject):
+                def __init__(_g_ignore2, _m_methodGuards):
+                    _g_ignore2._m_guardMethods(_m_methodGuards)
+
+                def run(_g_ignore2):
+                    _m___return = _monte.ejector("__return")
+                    try:
+                        x = 1
+                        _m___return({})
+                        _g_escape4 = None
+                    except _m___return._m_type, _g___return3:
+                        _g_escape4 = _g___return3
+                    return _g_ignore2._m_guardForMethod('run').coerce(_g_escape4, _monte.throw)
+
+            _g_ignore2 = _m__g_ignore1_Script({'run': _monte.any})
+            _g_ignore2()
+            """)
+
+    def test_metastate(self):
+        self.eq_(
+            '''
+            def foo() {
+                def a := 1;
+                var b := 2;
+                var c := 3;
+                return def boz {
+                    method biz() {
+                        def x := 17
+                        meta.getState()
+                    }
+                    method baz() {
+                        b += a
+                    }
+                }
+            }
+            ''',
+            """
+            class _m_boz_Script(_monte.MonteObject):
+                def __init__(boz, a_slot, b_slot):
+                    _monte.MonteObject.install(boz, 'a', a_slot)
+                    _monte.MonteObject.install(boz, 'b', b_slot)
+
+                def biz(boz):
+                    x = 17
+                    return {'&b': _monte.getSlot(boz, 'b'), '&a': _monte.getSlot(boz, 'a')}
+
+                def baz(boz):
+                    _g_b5 = boz.b.add(boz.a)
+                    boz.b = _g_b5
+                    return _g_b5
+
+            class _m_foo_Script(_monte.MonteObject):
+                def run(foo):
+                    _m___return = _monte.ejector("__return")
+                    try:
+                        a = 1
+                        b = _monte.VarSlot(None)
+                        _g_b3 = 2
+                        b.put(_g_b3)
+                        c = _monte.VarSlot(None)
+                        _g_c4 = 3
+                        c.put(_g_c4)
+                        boz = _m_boz_Script(_monte.FinalSlot(a, None), b)
+                        _m___return(boz)
+                        _g_escape2 = None
+                    except _m___return._m_type, _g___return1:
+                        _g_escape2 = _g___return1
+                    return _g_escape2
+
+            foo = _m_foo_Script()
+            foo
+            """)
 
     def test_finally(self):
         self.eq_(

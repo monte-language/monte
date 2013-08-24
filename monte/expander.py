@@ -221,7 +221,7 @@ Def(@patternScope @exitScope @exprScope) -> patternScope.add(exitScope).add(expr
 Assign(NounExpr(@name) @rightScope) -> StaticScope(namesSet=[name]).add(rightScope)
 Assign(TempNounExpr(@name @idx) @rightScope) -> StaticScope(namesSet=[name + str(idx)]).add(rightScope)
 
-IgnorePattern(@guardScope) -> guardScope
+IgnorePattern(@guardScope) -> guardScope or StaticScope()
 VarPattern(NounExpr(@name) @guardScope) -> StaticScope(varNames=[name]).add(guardScope)
 FinalPattern(NounExpr(@name) @guardScope) -> StaticScope(defNames=[name]).add(guardScope)
 SlotPattern(NounExpr(@name) @guardScope) -> StaticScope(varNames=[name]).add(guardScope)
