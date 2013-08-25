@@ -626,13 +626,15 @@ class CompilerTest(unittest.TestCase):
             foo
 
             """)
-    # def test_bindingpatt(self):
-    #     self.eq_(
-    #         '''
-    #         def &&x := 1
-    #         ''',
-    #         """
-    #         _g_binding1 = 1
-    #         x = _monte.slotFromBinding(_g_binding1)
-    #         _g_binding1
-    #         """)
+
+    def test_bindingpatt(self):
+        self.eq_(
+            '''
+            def a := 1
+            def &&x := &&a
+            ''',
+            """
+            a = 1
+            x = _monte.slotFromBinding(_monte.reifyBinding(_monte.FinalSlot(a)))
+            x
+            """)

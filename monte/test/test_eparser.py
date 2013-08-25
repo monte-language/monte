@@ -198,7 +198,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("var x"), ["VarPattern", ["NounExpr", "x"], None])
         self.assertEqual(parse("bind y"), ["BindPattern", ["NounExpr", "y"], None])
         self.assertEqual(parse("&z"), ["SlotPattern", ["NounExpr", "z"], None])
-        self.assertEqual(parse("&&z"), ["BindingPattern", ["NounExpr", "z"], None])
+        self.assertEqual(parse("&&z"), ["BindingPattern", ["NounExpr", "z"]])
         self.assertEqual(parse("var x :int"), ["VarPattern", ["NounExpr", "x"], ["Guard", ["NounExpr", "int"], []]])
         self.assertEqual(parse("bind y :float64"), ["BindPattern", ["NounExpr", "y"], ["Guard", ["NounExpr", "float64"], []]])
         self.assertEqual(parse("&z :Foo"), ["SlotPattern", ["NounExpr", "z"], ["Guard", ["NounExpr", "Foo"], []]])

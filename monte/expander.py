@@ -305,7 +305,7 @@ nameAndString = NounExpr(:name):e !(self.nouns.add(name)) -> e, name.data
      | BindPattern(name:name :guard):p transform(p):e -> e, name
      | FinalPattern(name:name :guard):p transform(p):e -> e, name
      | SlotPattern(name:name :guard):p transform(p):e -> e, '&' + name
-     | BindingPattern(name:name :guard):p transform(p):e -> e, '&&' + name
+     | BindingPattern(name:name):p transform(p):e -> e, '&&' + name
 
 name = NounExpr(:name) !(self.nouns.add(name)) -> name.data
      | SlotExpr(:name) -> '&' + name.data
