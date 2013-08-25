@@ -12,11 +12,11 @@ class CompilerTest(unittest.TestCase):
                                   textwrap.dedent(pysrc).strip())
 
     def test_literal(self):
-        self.assertEqual(ecompile("1"), "1")
-        self.assertEqual(ecompile('"foo"'), "u'foo'")
+        self.assertEqual(ecompile("1"), "_monte.wrap(1)")
+        self.assertEqual(ecompile('"foo"'), "_monte.wrap(u'foo')")
         self.assertEqual(ecompile("'x'"), "_monte.Character('x')")
-        self.assertEqual(ecompile("100_312"), "100312")
-        self.assertEqual(ecompile('"\\u0061"'), "u'a'")
+        self.assertEqual(ecompile("100_312"), "_monte.wrap(100312)")
+        self.assertEqual(ecompile('"\\u0061"'), "_monte.wrap(u'a')")
 
     # def test_noun(self):
     #     self.assertEqual(ecompile("foo"), "foo")
@@ -27,14 +27,14 @@ class CompilerTest(unittest.TestCase):
     def test_call(self):
         self.eq_("def x := 1; x.baz(2)",
                  """
-                 x = 1
-                 x.baz(2)
+                 x = _monte.wrap(1)
+                 x.baz(_monte.wrap(2))
                  """)
 
     def test_def(self):
         self.eq_("def x := 1",
         """
-        x = 1
+        x = _monte.wrap(1)
         x
         """)
 
@@ -42,7 +42,7 @@ class CompilerTest(unittest.TestCase):
         self.eq_("var x := 1",
         """
         x = _monte.VarSlot(None)
-        _g_x1 = 1
+        _g_x1 = _monte.wrap(1)
         x.put(_g_x1)
         _g_x1
         """)
@@ -50,7 +50,7 @@ class CompilerTest(unittest.TestCase):
         self.eq_("var x := 1; x",
         """
         x = _monte.VarSlot(None)
-        _g_x1 = 1
+        _g_x1 = _monte.wrap(1)
         x.put(_g_x1)
         x.get()
         """)
@@ -58,9 +58,9 @@ class CompilerTest(unittest.TestCase):
     def test_guardedVar(self):
         self.eq_("var x :(1..!10) := 1",
         """
-        _g_guard1 = _monte._m___makeOrderedSpace.op__till(1, 10)
+        _g_guard1 = _monte._m___makeOrderedSpace.op__till(_monte.wrap(1), _monte.wrap(10))
         x = _monte.VarSlot(_g_guard1)
-        _g_x2 = 1
+        _g_x2 = _monte.wrap(1)
         x.put(_g_x2)
         _g_x2
         """)
@@ -70,9 +70,9 @@ class CompilerTest(unittest.TestCase):
             "var x := 1; x := 2",
             """
             x = _monte.VarSlot(None)
-            _g_x1 = 1
+            _g_x1 = _monte.wrap(1)
             x.put(_g_x1)
-            _g_x2 = 2
+            _g_x2 = _monte.wrap(2)
             x.put(_g_x2)
             _g_x2
             """)
@@ -83,14 +83,14 @@ class CompilerTest(unittest.TestCase):
         self.eq_("def x :float64 := 1",
                  """
                  _g_guard1 = _monte.float64
-                 x = _g_guard1.coerce(1, _monte.throw)
+                 x = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
                  x
                  """)
 
     def test_listpattern(self):
         self.eq_('def [x :float64, y :String, z] := "foo"',
                  """
-                 _g_total_list1 = u'foo'
+                 _g_total_list1 = _monte.wrap(u'foo')
                  try:
                      _g_list2, _g_list3, _g_list4 = _g_total_list1
                  except ValueError, _g_e5:
@@ -105,8 +105,8 @@ class CompilerTest(unittest.TestCase):
 
         self.eq_('def ej := 1; def [x :float64, y :String, z] exit ej := "foo"',
                  """
-                 ej = 1
-                 _g_total_list1 = u'foo'
+                 ej = _monte.wrap(1)
+                 _g_total_list1 = _monte.wrap(u'foo')
                  try:
                      _g_list2, _g_list3, _g_list4 = _g_total_list1
                  except ValueError, _g_e5:
@@ -161,7 +161,7 @@ class CompilerTest(unittest.TestCase):
              """
              class _m_boz_Script(_monte.MonteObject):
                  def blee(boz):
-                     return 1
+                     return _monte.wrap(1)
 
              class _m_foo_Script(_monte.MonteObject):
                  def baz(foo, x, y):
@@ -198,9 +198,9 @@ class CompilerTest(unittest.TestCase):
                  def baz(foo, _g_Final1, y):
                      _g_guard2 = _monte.int
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
-                     a = 2
-                     _g_guard3 = _monte._m___comparer.geq(_monte.float64, 0)
-                     b = _g_guard3.coerce(3.0, _monte.throw)
+                     a = _monte.wrap(2)
+                     _g_guard3 = _monte._m___comparer.geq(_monte.float64, _monte.wrap(0))
+                     b = _g_guard3.coerce(_monte.wrap(3.0), _monte.throw)
                      boz = _m_boz_Script(_monte.FinalSlot(a, None), _monte.FinalSlot(b, _g_guard3), _monte.FinalSlot(x, _g_guard2))
                      return boz
 
@@ -231,7 +231,7 @@ class CompilerTest(unittest.TestCase):
                      _monte.MonteObject.install(left, 'b', b_slot)
 
                  def inc(left):
-                     _g_a6 = left.a.add(1)
+                     _g_a6 = left.a.add(_monte.wrap(1))
                      left.a = _g_a6
                      return left.b
 
@@ -241,7 +241,7 @@ class CompilerTest(unittest.TestCase):
                      _monte.MonteObject.install(right, 'b', b_slot)
 
                  def dec(right):
-                     _g_b7 = right.b.subtract(1)
+                     _g_b7 = right.b.subtract(_monte.wrap(1))
                      right.b = _g_b7
                      return right.a
 
@@ -250,11 +250,11 @@ class CompilerTest(unittest.TestCase):
                      _g_guard2 = _monte.int
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      a = _monte.VarSlot(None)
-                     _g_a3 = 1
+                     _g_a3 = _monte.wrap(1)
                      a.put(_g_a3)
                      _g_guard4 = _monte.int
                      b = _monte.VarSlot(_g_guard4)
-                     _g_b5 = 0
+                     _g_b5 = _monte.wrap(0)
                      b.put(_g_b5)
                      left = _m_left_Script(a, b)
                      right = _m_right_Script(a, b)
@@ -371,7 +371,7 @@ class CompilerTest(unittest.TestCase):
                 def run(foo, x):
                     _m___return = _monte.ejector("__return")
                     try:
-                        _m___return(1)
+                        _m___return(_monte.wrap(1))
                         _g_escape2 = None
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1
@@ -399,9 +399,9 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             x = _monte.VarSlot(None)
-            _g_x1 = 1
+            _g_x1 = _monte.wrap(1)
             x.put(_g_x1)
-            _g_x2 = 2
+            _g_x2 = _monte.wrap(2)
             x.put(_g_x2)
             _g_x2
             """)
@@ -433,9 +433,9 @@ class CompilerTest(unittest.TestCase):
 
              class _m_foo_Script(_monte.MonteObject):
                  def baz(foo, x, y):
-                     a = 2
+                     a = _monte.wrap(2)
                      b = _monte.VarSlot(None)
-                     _g_b1 = 3
+                     _g_b1 = _monte.wrap(3)
                      b.put(_g_b1)
                      boz = _m_boz_Script(_monte.FinalSlot(a, None), b)
                      return boz
@@ -457,7 +457,7 @@ class CompilerTest(unittest.TestCase):
                 def run(_g_ignore2):
                     _m___return = _monte.ejector("__return")
                     try:
-                        x = 1
+                        x = _monte.wrap(1)
                         _m___return(_monte.Map(()))
                         _g_escape4 = None
                     except _m___return._m_type, _g___return3:
@@ -493,7 +493,7 @@ class CompilerTest(unittest.TestCase):
                     _monte.MonteObject.install(boz, 'b', b_slot)
 
                 def biz(boz):
-                    x = 17
+                    x = _monte.wrap(17)
                     return _monte.Map((('&b', _monte.getSlot(boz, 'b')), ('&a', _monte.getSlot(boz, 'a'))))
 
                 def baz(boz):
@@ -505,12 +505,12 @@ class CompilerTest(unittest.TestCase):
                 def run(foo):
                     _m___return = _monte.ejector("__return")
                     try:
-                        a = 1
+                        a = _monte.wrap(1)
                         b = _monte.VarSlot(None)
-                        _g_b3 = 2
+                        _g_b3 = _monte.wrap(2)
                         b.put(_g_b3)
                         c = _monte.VarSlot(None)
-                        _g_c4 = 3
+                        _g_c4 = _monte.wrap(3)
                         c.put(_g_c4)
                         boz = _m_boz_Script(_monte.FinalSlot(a, None), b)
                         _m___return(boz)
@@ -530,9 +530,9 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             try:
-                _g_finally1 = 1
+                _g_finally1 = _monte.wrap(1)
             finally:
-                _g_finally1 = 2
+                _g_finally1 = _monte.wrap(2)
             _g_finally1
             """)
 
@@ -543,10 +543,10 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             try:
-                _g_catch1 = 1
+                _g_catch1 = _monte.wrap(1)
             except Exception, _g_exception2:
                 p = _g_exception2
-                _g_catch1 = 2
+                _g_catch1 = _monte.wrap(2)
             _g_catch1
             """)
 
@@ -556,8 +556,8 @@ class CompilerTest(unittest.TestCase):
             def x := 1; {def x := 2}
             ''',
             """
-            x = 1
-            _g_x1 = 2
+            x = _monte.wrap(1)
+            _g_x1 = _monte.wrap(2)
             _g_x1
             """)
 
@@ -567,10 +567,10 @@ class CompilerTest(unittest.TestCase):
             if (1) { 2 } else { 3 }
             ''',
             """
-            if 1:
-                _g_if1 = 2
+            if _monte.wrap(1):
+                _g_if1 = _monte.wrap(2)
             else:
-                _g_if1 = 3
+                _g_if1 = _monte.wrap(3)
             _g_if1
             """)
 
@@ -582,10 +582,10 @@ class CompilerTest(unittest.TestCase):
             def via (a + 1) x exit b := 2
             ''',
             """
-            a = 3
-            b = 4
-            x = a.add(1)(2, b)
-            2
+            a = _monte.wrap(3)
+            b = _monte.wrap(4)
+            x = a.add(_monte.wrap(1))(_monte.wrap(2), b)
+            _monte.wrap(2)
             """)
 
     def test_bindingexpr_local(self):
@@ -596,7 +596,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             x = _monte.VarSlot(None)
-            _g_x1 = 1
+            _g_x1 = _monte.wrap(1)
             x.put(_g_x1)
             _monte.reifyBinding(x)
             """)
@@ -620,7 +620,7 @@ class CompilerTest(unittest.TestCase):
                     return _monte.getBinding(foo, 'x')
 
             x = _monte.VarSlot(None)
-            _g_x1 = 1
+            _g_x1 = _monte.wrap(1)
             x.put(_g_x1)
             foo = _m_foo_Script(x)
             foo
@@ -634,7 +634,7 @@ class CompilerTest(unittest.TestCase):
             def &&x := &&a
             ''',
             """
-            a = 1
+            a = _monte.wrap(1)
             x = _monte.slotFromBinding(_monte.reifyBinding(_monte.FinalSlot(a)))
             x
             """)
