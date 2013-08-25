@@ -588,19 +588,44 @@ class CompilerTest(unittest.TestCase):
             2
             """)
 
-    # def test_bindingexpr(self):
-    #     self.eq_(
-    #         '''
-    #         var x := 1
-    #         &&x
-    #         ''',
-    #         """
-    #         x = _monte.VarSlot(None)
-    #         _g_x1 = 1
-    #         x.put(_g_x1)
-    #         _monte.reifyBinding(x)
-    #         """)
+    def test_bindingexpr_local(self):
+        self.eq_(
+            '''
+            var x := 1
+            &&x
+            ''',
+            """
+            x = _monte.VarSlot(None)
+            _g_x1 = 1
+            x.put(_g_x1)
+            _monte.reifyBinding(x)
+            """)
 
+    def test_bindingexpr_frame(self):
+        self.eq_(
+            '''
+            var x := 1
+            def foo {
+              method baz() {
+                &&x
+              }
+            }
+            ''',
+            """
+            class _m_foo_Script(_monte.MonteObject):
+                def __init__(foo, x_slot):
+                    _monte.MonteObject.install(foo, 'x', x_slot)
+
+                def baz(foo):
+                    return _monte.getBinding(foo, 'x')
+
+            x = _monte.VarSlot(None)
+            _g_x1 = 1
+            x.put(_g_x1)
+            foo = _m_foo_Script(x)
+            foo
+
+            """)
     # def test_bindingpatt(self):
     #     self.eq_(
     #         '''

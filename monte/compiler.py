@@ -273,9 +273,18 @@ class PythonWriter(object):
             return b.pyname + ".get()"
 
     def generate_BindingExpr(self, out, ctx, node):
-        name = node.args[0].args[0].data
-        if ctx.mode != FX_ONLY:
-            return "_monte.getBinding(self, %r)" % (mangleIdent(name),)
+        name = node.args[0].data
+        if (ctx.layout.frame and
+            name in [f.name for f in ctx.layout.frame.fields]):
+            return "_monte.getBinding(%s, %r)" % (ctx.layout.frame.selfName,
+                                                  mangleIdent(name),)
+        else:
+            b = ctx.layout.getBinding(name)
+            if b.isFinal:
+                bn = "_monte.FinalSlot(%s)" % (b.pyname,)
+            else:
+                bn = b.pyname
+            return "_monte.reifyBinding(%s)" % (bn,)
 
     def generate_SeqExpr(self, out, ctx, node):
         exprs = node.args[0].args
