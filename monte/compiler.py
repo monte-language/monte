@@ -259,8 +259,8 @@ class PythonWriter(object):
         lit = litNode.data
         if isinstance(lit, basestring):
             #either already unicode, or ascii bytes
-            return repr(unicode(lit))
-        return repr(lit)
+            lit = unicode(lit)
+        return '_monte.wrap(%r)' % (lit,)
 
     def generate_NounExpr(self, out, ctx, node):
         name = node.args[0].data
