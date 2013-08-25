@@ -130,7 +130,7 @@ namePattern = (keywordPattern
               |noun:n optGuard:g -> t.FinalPattern(n, g)
               |reifyPattern)
 
-reifyPattern = ("&&" noun:n optGuard:g -> t.BindingPattern(n, g)
+reifyPattern = ("&&" noun:n -> t.BindingPattern(n)
                |"&" noun:n optGuard:g -> t.SlotPattern(n, g))
 
 mapPatternAddressing = (key:k "=>" pattern:v -> t.MapPatternAssoc(k, v)

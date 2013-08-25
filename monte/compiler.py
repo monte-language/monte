@@ -633,6 +633,12 @@ class PythonWriter(object):
         self._generatePattern(out, ctx, ej, newval, node.args[1])
         return val
 
+    def pattern_BindingPattern(self, out, ctx, ej, val, node):
+        name = node.args[0].args[0].data
+        pyname = ctx.layout.addNoun(name, node)
+        out.writeln("%s = _monte.slotFromBinding(%s)" % (pyname, val))
+        return pyname
+
 def ecompile(source, origin="__main"):
     ast = expand(parse(source))
     f = StringIO()
