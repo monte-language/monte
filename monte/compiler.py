@@ -49,6 +49,13 @@ class SymGenerator(object):
         self.gensymCounter += 1
         return GENSYM_PREFIX + base + str(self.gensymCounter)
 
+def decimalize(s):
+    safe = string.letters  + '_'
+    for c in s:
+        if c in safe:
+            yield c
+        else:
+            yield str(ord(c))
 
 def mangleIdent(n):
     prefix = '_m_'
@@ -57,11 +64,11 @@ def mangleIdent(n):
         #and clashes with mangled/generated names
         if (iskeyword(n) or n.startswith((prefix, GENSYM_PREFIX)) or
             (n.startswith('__'))):
-            return prefix + n
+            return prefix + ''.join(decimalize(n))
         else:
             return n
     else:
-        return prefix + n.translate(mtrans)
+        return prefix + ''.join(decimalize(n))
 
 safeScopeNames = set(["null", "false", "true", "throw", "__loop", "__makeList", "__makeMap", "__makeProtocolDesc", "__makeMessageDesc", "__makeParamDesc", "any", "void", "boolean", "__makeOrderedSpace", "Guard", "require", "__makeVerbFacet", "__MatchContext", "__is", "__splitList", "__suchThat", "__bind", "__extract", "__Empty", "__matchBind", "__Test", "NaN", "Infinity", "__identityFunc", "__makeInt", "escape", "for", "if", "try", "while", "__makeFinalSlot", "__makeTwine", "__makeSourceSpan", "__auditedBy", "near", "pbc", "PassByCopy", "DeepPassByCopy", "Data", "Persistent", "DeepFrozen", "int", "float64", "char", "String", "Twine", "TextWriter", "List", "Map", "Set", "nullOk", "Tuple", "__Portrayal", "notNull", "vow", "rcvr", "ref", "nocall", "SturdyRef", "simple__quasiParser", "twine__quasiParser", "rx__quasiParser", "olde__quasiParser", "e__quasiParser", "epatt__quasiParser", "sml__quasiParser", "term__quasiParser", "__equalizer", "__comparer", "Ref", "E", "promiseAllFulfilled", "EIO", "help", "safeScope", "__eval", "resource__uriGetter", "type__uriGetter", "elib__uriGetter", "elang__uriGetter", "opaque__uriGetter", "__abortIncarnation", "when", "persistenceSealer", "import__uriGetter", "traceln"])
 
@@ -419,7 +426,7 @@ class PythonWriter(object):
             if methGuards:
                 initOut.writeln(selfName + "._m_guardMethods(_m_methodGuards)")
             for name, pyname  in zip(fnames, pyfnames):
-                initOut.writeln("_monte.MonteObject.install(%s, '%s', %s)" % (
+                initOut.writeln("_monte.MonteObject._m_install(%s, '%s', %s)" % (
                     selfName, name, pyname))
             initOut.writeln("")
         metacontext = False
@@ -458,7 +465,7 @@ class PythonWriter(object):
             classBodyOut.writeln("def %s(%s, _m_message):" % (matcherName,
                                                               selfName))
             mtchOut = classBodyOut.indent()
-            self._generatePattern(mtchOut, mtchctx, None, "_m_message", patt)
+            self._generatePattern(mtchOut, mtchctx, '_monte.matcherFail', "_m_message", patt)
             rvar = self._generate(mtchOut, mtchctx, body)
             mtchOut.writeln("return " + rvar + "\n")
             metacontext = metacontext or mtchctx.layout.metaContextExpr
@@ -591,6 +598,8 @@ class PythonWriter(object):
     def pattern_VarPattern(self, out, ctx, ej, val, node, objname=False):
         nameExpr, guard = node.args
         name = nameExpr.args[0].data
+        if ej is None:
+            ej = "_monte.throw"
         if guard.tag.name != 'null':
             guardv = self._generate(out, ctx.with_(mode=VALUE), guard)
             guardname = ctx.layout.gensym("guard")
@@ -600,12 +609,15 @@ class PythonWriter(object):
         if objname:
             pyname = ctx.layout.getBinding(name).pyname
             ctx.layout.addObjectGuard(name, guardname)
+            temp = ctx.layout.gensym(mangleIdent(name))
+            out.writeln("%s = _monte.VarSlot(%s)" % (pyname, guardname))
+            out.writeln("%s = %s" % (temp, val))
+            out.writeln("%s._m_init(%s, %s)" % (pyname, temp, ej))
         else:
             pyname = ctx.layout.addNoun(name, node, guardname)
-        out.writeln("%s = _monte.VarSlot(%s)" % (pyname, guardname))
-        temp = ctx.layout.gensym(mangleIdent(name))
-        out.writeln("%s = %s" % (temp, val))
-        out.writeln("%s.put(%s)" % (pyname, temp))
+            temp = ctx.layout.gensym(mangleIdent(name))
+            out.writeln("%s = %s" % (temp, val))
+            out.writeln("%s = _monte.VarSlot(%s, %s, %s)" % (pyname, guardname, temp, ej))
         return temp
 
     def pattern_ListPattern(self, out, ctx, ej, val, node):
@@ -623,13 +635,14 @@ class PythonWriter(object):
             sub.writeln("_monte.throw(%s)" % (errv,))
         else:
             sub.writeln("%s(%s)" % (ej, errv))
+            sub.writeln('raise RuntimeError("Ejector did not exit")')
         for v, patt in zip(vs, patts):
             self._generatePattern(out, ctx, ej, v, patt)
         return listv
 
     def pattern_ViaPattern(self, out, ctx, ej, val, node):
         lval = self._generate(out, ctx.with_(mode=VALUE), node.args[0])
-        newval = "%s(%s, %s)" % (lval, val, ej)
+        newval = "%s(%s, _monte.wrapEjector(%s))" % (lval, val, ej)
         self._generatePattern(out, ctx, ej, newval, node.args[1])
         return val
 
