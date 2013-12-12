@@ -60,10 +60,12 @@ class MonteObject(object):
         else:
             raise AttributeError(verb)
 
+
 class _MonteMatcher(object):
     def __init__(self, obj, verb):
         self.obj = obj
         self.verb = verb
+
     def __call__(self, *a):
         for name in self.obj._m_matcherNames:
             try:
@@ -107,26 +109,32 @@ def wrap(pyobj):
     if isinstance(pyobj, frozenset):
         return Set(pyobj)
 
+
 def getGuard(o, name):
     """
     Returns the guard object for a name in a Monte object's frame.
     """
+
 
 def getBinding(o, name):
     """
     Returns the binding object for a name in a Monte object's frame.
     """
 
+
 def reifyBinding(slot):
     """
     Create a binding object from a slot object.
     """
 
+
 class MonteEjection(Exception):
     pass
 
+
 def throw(val):
     raise RuntimeError(val)
+
 
 def ejector(name):
     class ejtype(MonteEjection):
@@ -139,12 +147,14 @@ def ejector(name):
 
     return eject
 
+
 class StaticContext(object):
 
     def __init__(self, fqn, fields, objectExpr):
         self.fqn = fqn
         self.fields = fields
         self.objectExpr = objectExpr
+
 
 class FinalSlot(object):
     def __init__(self, guard, val, ej):
@@ -156,6 +166,7 @@ class FinalSlot(object):
 
     def get(self):
         return self.val
+
 
 class VarSlot(object):
     def __init__(self, guard, val=_absent, ej=None):
@@ -182,14 +193,17 @@ class VarSlot(object):
 def slotFromBinding(b):
     pass
 
+
 def wrapEjector(e):
     def ej(val):
         e(val)
         raise RuntimeError("Ejector did not exit")
     return ej
 
+
 class _MatchFailure(Exception):
     pass
+
 
 def matcherFail(v):
     raise _MatchFailure(v)
