@@ -1,5 +1,0 @@
-class(safe,
-        "com.twistedmatrix.ecru.FloatHexer",
-        statics(method("toHexString(double)")),
-        methods
-        )
