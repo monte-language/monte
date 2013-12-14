@@ -126,28 +126,12 @@ def twineSlice(twine, start, stop):
 
 uriChars = string.letters + string.digits + '_;/?:@&=+$,-.!~*\()%\\#\'|'
 EOF = object()
-reserved = set(["delegate", "module", "abstract", "an", "as", "assert", "attribute",
-           "be", "begin", "behalf", "belief", "believe", "believes", "case",
-           "class", "const", "constructor", "declare", "default", "define",
-           "defmacro", "delicate", "deprecated", "dispatch", "do", "encapsulate",
-           "encapsulated", "encapsulates", "end", "ensure", "enum", "eventual",
-           "eventually", "export", "facet", "forall", "function", "given",
-           "hidden", "hides", "inline", "is", "know", "knows", "lambda", "let",
-           "methods", "namespace", "native", "obeys", "octet", "oneway",
-           "operator", "package", "private", "protected", "public",
-           "raises", "reliance", "reliant", "relies", "rely", "reveal", "sake",
-           "signed", "static", "struct", "suchthat", "supports", "suspect",
-           "suspects", "synchronized", "this", "transient", "truncatable",
-           "typedef", "unsigned", "unum", "uses", "using", "utf8", "utf16",
-           "virtual", "volatile", "wstring"])
-basicKeywords = set(["bind", "break", "catch", "continue", "def", "else", "escape", "exit",
-           "extends", "finally", "fn", "for", "guards", "if", "implements", "in",
-           "interface", "match", "meta", "method", "pragma", "return", "switch",
-           "to", "try", "var", "via", "when", "while", "accum", "module", "on",
-           "select", "throws", "thunk"])
+keywords = set([
+    "and", "bind", "break", "catch", "continue", "def", "else", "escape",
+    "exit", "extends", "finally", "fn", "for", "guards", "if", "implements",
+    "in", "interface", "match", "meta", "method", "object", "or", "pass",
+    "pragma", "return", "switch", "to", "try", "var", "via", "when", "while"])
 
-
-keywords = reserved | basicKeywords
 
 def isKeyword(key):
     return key.lower() in keywords
@@ -223,7 +207,7 @@ class Indenter(object):
         if self.stack.pop()[3]:
             self.nestLevel -= 1
 
-class ELexer(object):
+class MonteLexer(object):
 
     def __init__(self, input):
         self.input = input

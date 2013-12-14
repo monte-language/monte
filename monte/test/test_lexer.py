@@ -1,12 +1,13 @@
-from twisted.trial import unittest
-from monte.lexer import ELexer, StringFeeder
+import unittest
+from monte.lexer import MonteLexer, StringFeeder
 from terml.nodes import Tag, Term
 
 def lex(s):
-    toks = list(ELexer(StringFeeder(s, '<test data>')))
+    toks = list(MonteLexer(StringFeeder(s, '<test data>')))
     if toks[-1].tag.name == 'EOL':
         del toks[-1]
     return toks
+
 
 class LexerTests(unittest.TestCase):
 
@@ -145,3 +146,128 @@ class LexerTests(unittest.TestCase):
         self.assertEqual(lex('|'),   [Term(Tag('|'), None, None, None)])
         self.assertEqual(lex('|='),  [Term(Tag('|='), None, None, None)])
         self.assertEqual(lex('||'),  [Term(Tag('||'), None, None, None)])
+
+
+SIMPLE_INDENT = """
+foo:
+  baz
+"""
+
+SIMPLE_DEDENT = """
+foo:
+  baz
+blee
+"""
+VERTICAL_SPACE = """
+foo:
+
+  baz
+
+
+blee
+"""
+
+MULTI_INDENT = """
+foo:
+  baz:
+     biz
+blee
+"""
+
+UNBALANCED = """
+foo:
+  baz:
+     biz
+ blee
+"""
+
+UNBALANCED2 = """
+foo:
+  baz
+   blee
+"""
+
+PARENS = """
+(foo,
+ baz:
+  blee
+ )
+"""
+
+#TODO decide whether to follow python's "no indent tokens inside
+#parens" strategy or have ways to jump in/out of indentation-awareness
+CONTINUATION = """
+foo (
+  baz
+    biz
+ )
+blee
+"""
+class IndentLexerTests(unittest.TestCase):
+    def test_simple(self):
+        self.assertEqual(lex(SIMPLE_INDENT),
+                         [Term(Tag('EOL'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "foo", None, None),
+                          Term(Tag(':'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('INDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('DEDENT'), None, None, None)])
+
+    def test_dedent(self):
+        self.assertEqual(lex(SIMPLE_DEDENT),
+                         [Term(Tag('EOL'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "foo", None, None),
+                          Term(Tag(':'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('INDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('DEDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "blee", None, None)])
+
+    def test_dedent(self):
+        self.assertEqual(lex(SIMPLE_DEDENT), lex(VERTICAL_SPACE))
+
+    def test_multi(self):
+        self.assertEqual(lex(MULTI_INDENT),
+                         [Term(Tag('EOL'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "foo", None, None),
+                          Term(Tag(':'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('INDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag(':'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('INDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "biz", None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('DEDENT'), None, None, None),
+                          Term(Tag('DEDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "blee", None, None),
+                          Term(Tag('EOL'), None, None, None),])
+
+    def test_unbalanced(self):
+        e = self.assertRaises(IndentationError, lex, UNBALANCED)
+        self.assertIn(str(e),
+                      "unindent does not match any outer indentation level")
+
+    def test_unbalanced2(self):
+        e = self.assertRaises(IndentationError, lex, UNBALANCED2)
+        self.assertIn(str(e), "Unexpected indent")
+
+    def test_wacky_parens(self):
+        e = self.assertRaises(IndentationError, lex, PARENS)
+        self.assertIn(str(e),
+                      "Indented blocks only allowed in statement positions")
+
+    def test_continuation(self):
+        self.assertEqual(lex(MULTI_INDENT),
+                         [Term(Tag('EOL'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "foo", None, None),
+                          Term(Tag('('), None, None, None),
+                          Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('IDENTIFIER'), "biz", None, None),
+                          Term(Tag(')'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "blee", None, None)])
