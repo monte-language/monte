@@ -621,6 +621,10 @@ class MonteLexer(object):
                 return leafTag('-=', self.endSpan())
             if nex == '>':
                 self.nextChar()
+                if  all(c in ' \n' for c in self._currentLine[self.position:]):
+                    # this is an arrow ending a line, and should be
+                    # followed by an indent
+                    self._canStartIndentedBlock = True
                 return leafTag('->', self.endSpan())
             return leafTag('-', self.endSpan())
 

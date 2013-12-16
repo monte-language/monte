@@ -152,6 +152,11 @@ foo:
   baz
 """
 
+ARROW_INDENT = """
+foo ->
+  baz
+"""
+
 SIMPLE_DEDENT = """
 foo:
   baz
@@ -214,6 +219,18 @@ class IndentLexerTests(unittest.TestCase):
                          [Term(Tag('EOL'), None, None, None),
                           Term(Tag('IDENTIFIER'), "foo", None, None),
                           Term(Tag(':'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('INDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('DEDENT'), None, None, None)])
+
+    def test_arrow(self):
+        self.assertEqual(lex(ARROW_INDENT),
+                         [Term(Tag('EOL'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "foo", None, None),
+                          Term(Tag('->'), None, None, None),
                           Term(Tag('EOL'), None, None, None),
                           Term(Tag('INDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "baz", None, None),
