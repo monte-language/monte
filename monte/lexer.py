@@ -458,7 +458,10 @@ class MonteLexer(object):
             self.nextChar()
             self._delayedNextChar = False
             self.skipWhiteSpace()
-            if self._canStartIndentedBlock and not all(c in ' \n' for c in self._currentLine):
+            if self._canStartIndentedBlock and not self.currentChar == '\n':
+                if not self.bracer.inStatementPosition():
+                    self.syntaxError("Indented blocks only allowed "
+                                     "in statement positions")
                 if self.position > self._indentPositionStack[-1]:
                     self._indentPositionStack.append(self.position)
                     self.openBracket('DEDENT', 'INDENT')
@@ -473,7 +476,8 @@ class MonteLexer(object):
             return self.quasiPart()
 
         self.skipWhiteSpace()
-        if (self._currentLine and self.bracer.inStatementPosition()
+        if (self._currentLine
+            and self.bracer.inStatementPosition()
             and all(c == ' ' for c in self._currentLine[:self.position])
             and self.position < (len(self._currentLine) - 1)):
             if self.position > self._indentPositionStack[-1]:
@@ -489,7 +493,12 @@ class MonteLexer(object):
         cur = self.currentChar
 
         if cur is EOF:
-            raise StopIteration()
+            if len(self._indentPositionStack) > 1:
+                self._indentPositionStack.pop()
+                self.bracer.pop(self, 'DEDENT', '')
+                return leafTag('DEDENT', None)
+            else:
+                raise StopIteration()
 
         # Updoc.
         if cur in '?>' and (self.position == 0 or self._currentLine[:self.position].isspace()):
@@ -626,8 +635,7 @@ class MonteLexer(object):
             if  all(c in ' \n' for c in self._currentLine[self.position:]):
                 # this is a colon ending a line, and should be
                 # followed by an indent
-                if self.bracer.inStatementPosition():
-                    self._canStartIndentedBlock = True
+                self._canStartIndentedBlock = True
             return leafTag(':', self.endSpan())
 
         if cur == '<':

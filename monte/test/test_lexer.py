@@ -1,5 +1,5 @@
-import unittest
-from monte.lexer import MonteLexer, StringFeeder
+from monte.test import unittest
+from monte.lexer import MonteLexer, StringFeeder, ParseError
 from terml.nodes import Tag, Term
 
 def lex(s):
@@ -218,6 +218,7 @@ class IndentLexerTests(unittest.TestCase):
                           Term(Tag('INDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "baz", None, None),
                           Term(Tag('EOL'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
                           Term(Tag('DEDENT'), None, None, None)])
 
     def test_dedent(self):
@@ -271,26 +272,30 @@ class IndentLexerTests(unittest.TestCase):
                           Term(Tag('EOL'), None, None, None),])
 
     def test_unbalanced(self):
-        e = self.assertRaises(IndentationError, lex, UNBALANCED)
-        self.assertIn(str(e),
-                      "unindent does not match any outer indentation level")
+        e = self.assertRaises(ParseError, lex, UNBALANCED)
+        self.assertIn("unindent does not match any outer indentation level",
+                      str(e))
 
     def test_unbalanced2(self):
-        e = self.assertRaises(IndentationError, lex, UNBALANCED2)
-        self.assertIn(str(e), "Unexpected indent")
+        e = self.assertRaises(ParseError, lex, UNBALANCED2)
+        self.assertIn("Unexpected indent", str(e))
 
     def test_wacky_parens(self):
-        e = self.assertRaises(IndentationError, lex, PARENS)
-        self.assertIn(str(e),
-                      "Indented blocks only allowed in statement positions")
+        e = self.assertRaises(ParseError, lex, PARENS)
+        self.assertIn("Indented blocks only allowed in statement positions",
+                      str(e))
 
     def test_continuation(self):
-        self.assertEqual(lex(MULTI_INDENT),
+        self.assertEqual(lex(CONTINUATION),
                          [Term(Tag('EOL'), None, None, None),
                           Term(Tag('IDENTIFIER'), "foo", None, None),
                           Term(Tag('('), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
                           Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('EOL'), None, None, None),
                           Term(Tag('IDENTIFIER'), "biz", None, None),
+                          Term(Tag('EOL'), None, None, None),
                           Term(Tag(')'), None, None, None),
                           Term(Tag('EOL'), None, None, None),
-                          Term(Tag('IDENTIFIER'), "blee", None, None)])
+                          Term(Tag('IDENTIFIER'), "blee", None, None),
+                          Term(Tag('EOL'), None, None, None)])
