@@ -4,7 +4,9 @@ from ometa.runtime import InputStream, ParseError as ParsleyParseError
 from terml.nodes import Term, Tag
 
 class ParseError(ParsleyParseError):
-
+    """
+    Represents where and why a parse error happened.
+    """
     def __init__(self, line, msg, lineNum, colStart, colBound):
         ParsleyParseError.__init__(self, line, None, msg)
         self.line = line
@@ -14,7 +16,8 @@ class ParseError(ParsleyParseError):
 
     def formatError(self):
         reason = self.formatReason()
-        return ('\n' + self.line + '\n' + (' ' * self.colStart + '^' * self.colBound) +
+        return ('\n' + self.line + '\n' +
+                (' ' * self.colStart + '^' * self.colBound) +
                 "\nParse error at line %s, column %s: %s.\n"
                 % (self.lineNum, self.colStart, reason))
 
@@ -23,8 +26,11 @@ _SourceSpan = namedtuple("SourceSpan",
                          "uri isOneToOne startLine startCol endLine endCol")
 class SourceSpan(_SourceSpan):
     """
-    Information about the original location of a span of text.
-    Twines use this to remember where they came from.
+    Information about the original location of a span of text. Twines use
+    this to remember where they came from.
+
+    (Used in this file as a field on tokens, and as part of a (string,
+    span) pair.)
 
     uri: Name of document this text came from.
 
@@ -36,6 +42,7 @@ class SourceSpan(_SourceSpan):
 
     startCol, endCol: Column numbers for the beginning and end of the
     span. Column numbers start at 0.
+
     """
     def __new__(*args, **kwargs):
         ss = _SourceSpan.__new__(*args, **kwargs)
@@ -97,6 +104,9 @@ def spanCover(a, b):
 
 
 def twineAdd(left, right):
+    """
+    Concatenate strings and combine their spans.
+    """
     # Poor approximation of the real thing since it doesn't accomodate
     # later slicing.
     leftText, leftSpan = left
@@ -106,6 +116,9 @@ def twineAdd(left, right):
 
 
 def twineSlice(twine, start, stop):
+    """
+    Slice a string and create an appropriate span for the slice.
+    """
     text, span = twine
     if start is None:
         start = 0
@@ -149,14 +162,24 @@ def isIdentifierStart(c):
 
 
 def leafTag(tagName, span):
+    """
+    Create a token with no data.
+    """
     return Term(Tag(tagName), None, None, span)
 
 
 def composite(tagName, data, span):
+    """
+    Create a token with a name and data.
+    """
     return Term(Tag(tagName), data, None, span)
 
 
 class StringFeeder(object):
+    """
+    Input abstraction for lexer.
+    Interactive mode still TODO.
+    """
     def __init__(self, data, url):
         self.data = data + '\n'
         self.url = url
@@ -175,7 +198,14 @@ class StringFeeder(object):
 
         yield (None, None)
 
-class Indenter(object):
+
+class Bracer(object):
+    """
+    Tracks brace state. Will also be used by interactive mode to
+    indent properly at prompt.
+
+    """
+
     def __init__(self):
         # opener, closer, indent, nested
         self.stack = [(None, None, 0, True)]
@@ -195,7 +225,8 @@ class Indenter(object):
         if len(self.stack) <= 1:
             lexer.syntaxError("unmatched closing bracket %r" % (closerChar,))
         if self.closer() != closerChar:
-            lexer.syntaxError("mismatch: %r vs %r" % (self.stack[-1][0], closerChar))
+            lexer.syntaxError("mismatch: %r vs %r" % (self.stack[-1][0],
+                                                      closerChar))
         if self.stack.pop()[3]:
             self.nestLevel -= 1
 
@@ -207,7 +238,33 @@ class Indenter(object):
         if self.stack.pop()[3]:
             self.nestLevel -= 1
 
+    def inStatementPosition(self):
+        return self.stack[-1][0] in ('{', 'INDENT', None)
+
+
 class MonteLexer(object):
+    """Tokenizer for Monte language.
+
+    @ivar input: an L{InputFeeder}.
+    @ivar currentChar: The last character read.
+    @ivar position: The current column. Starts at -1, corresponds to
+    index of currentChar.
+    @ivar bracer: A L{Bracer}.
+
+    @ivar _delayedNextChar: Whether consuming the previous character
+    was delayed or not. Set at the end of lines.
+
+    @ivar _startPos: Beginning column for token currently being lexed.
+    @ivar _startText: Text from previous lines for current token, if
+    token spans multiple lines.
+
+    @ivar _canStartIndentedBlock: Whether an indent token is expected
+    next (i.e., after a colon and newline).
+    @ivar _indentPositionStack: Columns indented blocks began at.
+
+    @ivar _currentLine: The line of text currently being tokenized.
+    @ivar _currentSpan: The source span for the current line.
+    """
 
     def __init__(self, input):
         self.input = input
@@ -216,14 +273,14 @@ class MonteLexer(object):
         #last char read
         self.currentChar = None
 
-        self.indenter = Indenter()
-        self.continueCount = 0
+        self.bracer = Bracer()
 
         self._delayedNextChar = False
         self._startPos = -1
         self._startText = None
 
-        self.inQuasi = False
+        self._canStartIndentedBlock = False
+        self._indentPositionStack = [0]
 
         self.setLine(self.input.nextLine())
         self.nextChar()
@@ -239,13 +296,18 @@ class MonteLexer(object):
         return self._currentLine is None
 
     def nextLine(self):
+        """
+        Advance to the next line, saving text for a partially completed
+        token if needed.
+        """
         if self.isEndOfFile():
             self.currentChar = EOF
             return
         if self._startPos == -1:
             if self._startText is not None:
                 # current token already started
-                self._startText = twineAdd(self._startText, (self._currentLine, self._currentSpan))
+                self._startText = twineAdd(self._startText, (self._currentLine,
+                                                             self._currentSpan))
             # else no current token, do nothing
         else:
             # current token started on this line
@@ -258,6 +320,9 @@ class MonteLexer(object):
         self.currentChar = '\n'
 
     def nextChar(self):
+        """
+        Advance to the next character, loading a new line if needed.
+        """
         while True:
             if self.isEndOfFile():
                 self.currentChar = EOF
@@ -270,21 +335,33 @@ class MonteLexer(object):
                 self.nextLine()
 
     def peekChar(self):
+        """
+        Look at the next character on the current line.
+        """
         if self.isEndOfFile() or self.currentChar == '\n':
             raise ValueError()
         return self._currentLine[self.position + 1]
 
     def getSpan(self, start, bound, err="unexpected end of file"):
+        """
+        Get a source span for a slice of the current line.
+        """
         if self.isEndOfFile():
             raise ValueError(err)
         return twineSlice((self._currentLine, self._currentSpan), start, bound)
 
     def startToken(self):
+        """
+        Begin tracking a new token.
+        """
         if self._startPos >= 0 or self._startText:
             raise RuntimeError("Token already started")
         self._startPos = self.position
 
     def endToken(self):
+        """
+        Create a token from text consumed since L{startToken} was called.
+        """
         pos = self.position
         if self._delayedNextChar:
             self.position += 1
@@ -307,22 +384,25 @@ class MonteLexer(object):
         return self.endToken()[1]
 
     def openBracket(self, closer, opener=None):
+        """
+        Record an open bracket and the token that will close it.
+        """
         c = opener or self.currentChar
         if not opener:
             self.nextChar()
             opener = self.endToken()
         if self._currentLine and self._currentLine[self.position:].isspace():
-            self.indenter.nestLevel += 1
-            self.indenter.push(opener, closer, self.indenter.nestLevel * 4, True)
+            self.bracer.nestLevel += 1
+            self.bracer.push(opener, closer, self.bracer.nestLevel * 4, True)
         else:
-            self.indenter.push(opener, closer, self.position, True)
+            self.bracer.push(opener, closer, self.position, True)
         return leafTag(c, opener[1])
 
     def closeBracket(self):
         closerChar = self.currentChar
         self.nextChar()
         closer, span = self.endToken()
-        self.indenter.pop(self, closerChar, closer)
+        self.bracer.pop(self, closerChar, closer)
         return leafTag(closerChar, span)
 
     def skipWhiteSpace(self):
@@ -342,13 +422,13 @@ class MonteLexer(object):
         self._delayedNextChar = True
 
     def leafEOL(self):
-        if self.indenter.indent() == 0 and self.continueCount == 0:
-            # return leafTag('EOTLU', self.endSpan())
-            return leafTag('EOL', self.endSpan())
-        else:
-            return leafTag('EOL', self.endSpan())
+        return leafTag('EOL', self.endSpan())
 
     def syntaxError(self, msg):
+        """
+        Collect information to indicate where tokenization failure
+        happened and why.
+        """
         if self._startPos == -1:
             start = self.position - 1
         else:
@@ -359,6 +439,9 @@ class MonteLexer(object):
                          self.input.lineNum, start, bound)
 
     def next(self):
+        """
+        Iterator method.
+        """
         try:
             result = self.getNextToken()
         finally:
@@ -367,14 +450,41 @@ class MonteLexer(object):
         return result
 
     def getNextToken(self):
+        """
+        The main event. Consumes text until a token can be created, then
+        returns it.
+        """
         if self._delayedNextChar:
             self.nextChar()
             self._delayedNextChar = False
-        if self.indenter.closer() == '`':
+            self.skipWhiteSpace()
+            if self._canStartIndentedBlock and not all(c in ' \n' for c in self._currentLine):
+                if self.position > self._indentPositionStack[-1]:
+                    self._indentPositionStack.append(self.position)
+                    self.openBracket('DEDENT', 'INDENT')
+                    self._canStartIndentedBlock = False
+                    return leafTag('INDENT', self.getSpan(self._indentPositionStack[-1],
+                                                          self.position))
+                else:
+                    self.syntaxError("Expected an indented block")
+
+        if self.bracer.closer() == '`':
             self.startToken()
             return self.quasiPart()
 
         self.skipWhiteSpace()
+        if (self._currentLine and self.bracer.inStatementPosition()
+            and all(c == ' ' for c in self._currentLine[:self.position])
+            and self.position < (len(self._currentLine) - 1)):
+            if self.position > self._indentPositionStack[-1]:
+                self.syntaxError("Unexpected indent")
+            if self.position < self._indentPositionStack[-1]:
+                if self.position not in self._indentPositionStack:
+                    self.syntaxError("unindent does not match any outer indentation level")
+                self._indentPositionStack.pop()
+                self.bracer.pop(self, 'DEDENT', '')
+                return leafTag('DEDENT', self.getSpan(self.position, self.position))
+
         self.startToken()
         cur = self.currentChar
 
@@ -407,7 +517,7 @@ class MonteLexer(object):
 
         if cur == '}':
             result = self.closeBracket()
-            self.indenter.popIf('$')
+            self.bracer.popIf('$')
             return result
 
         if cur == ')':
@@ -432,7 +542,7 @@ class MonteLexer(object):
                 if isKeyword(key):
                     self.nextChar()
                     self.syntaxError(key + "is a keyword")
-                self.indenter.popIf('$')
+                self.bracer.popIf('$')
                 return composite('DOLLAR_IDENT', key, span)
             else:
                 # for $$ or $0
@@ -447,7 +557,7 @@ class MonteLexer(object):
             elif nex == '_' and not isIdentifierPart(self.peekChar()):
                 self.nextChar()
                 name, span = self.endToken()
-                self.indenter.popIf('$')
+                self.bracer.popIf('$')
                 return composite('AT_IDENT', '_', span)
             elif isIdentifierStart(nex):
                 # quasi hole of form @blee
@@ -459,7 +569,7 @@ class MonteLexer(object):
                 if isKeyword(key):
                     self.nextChar()
                     self.syntaxError(key + "is a keyword")
-                self.indenter.popIf('$')
+                self.bracer.popIf('$')
                 return composite('AT_IDENT', key, span)
             else:
                 # for @@ or @0
@@ -513,6 +623,11 @@ class MonteLexer(object):
             if nex == '=':
                 self.nextChar()
                 return leafTag(':=', self.endSpan())
+            if  all(c in ' \n' for c in self._currentLine[self.position:]):
+                # this is a colon ending a line, and should be
+                # followed by an indent
+                if self.bracer.inStatementPosition():
+                    self._canStartIndentedBlock = True
             return leafTag(':', self.endSpan())
 
         if cur == '<':
@@ -593,7 +708,8 @@ class MonteLexer(object):
                     self.nextChar()
                     self.nextChar()
                     return self.docComment()
-                self.syntaxError("/*..*/ comments are reserved. Use '#' on each line instead")
+                self.syntaxError("/*..*/ comments are reserved. Use '#' on "
+                                 "each line instead")
             return leafTag('/', self.endSpan())
 
         if cur == '#':
@@ -613,7 +729,8 @@ class MonteLexer(object):
                     self.syntaxError("file ends in continued line")
                 else:
                     return result
-            self.syntaxError("unexpected character %r after line continuation character" % self.currentChar)
+            self.syntaxError("unexpected character %r after line continuation"
+                             " character" % self.currentChar)
 
         if cur == '%':
             nex = self.nextChar()
@@ -676,10 +793,7 @@ class MonteLexer(object):
 
         if cur == '|':
             nex = self.nextChar()
-            if nex == '|':
-                self.nextChar()
-                return leafTag('||', self.endSpan())
-            elif nex == '=':
+            if nex == '=':
                 self.nextChar()
                 return leafTag('|=', self.endSpan())
             return leafTag('|', self.endSpan())
@@ -694,7 +808,7 @@ class MonteLexer(object):
             self.nextChar()
             opener = self.getSpan(self._startPos, self.position,
                                   "File ends inside quasiliteral")
-            self.indenter.push(opener, '`', 0)
+            self.bracer.push(opener, '`', 0)
             return self.quasiPart()
 
         if cur in string.digits:
@@ -706,12 +820,18 @@ class MonteLexer(object):
             self.nextChar()
             return leafTag(cur, self.endSpan())
 
+        if cur == '\t':
+            self.syntaxError("Tab characters are not permitted in Monte source")
+
         if isIdentifierStart(cur):
             return self.identifier()
         else:
             self.syntaxError("unrecognized character %r" % (cur,))
 
     def identifier(self):
+        """
+        Recognize an identifier and create a token for it.
+        """
         while isIdentifierPart(self.nextChar()):
             pass
 
@@ -731,6 +851,9 @@ class MonteLexer(object):
             return composite('IDENTIFIER', token, span)
 
     def charConstant(self):
+        """
+        Parse character escape syntax.
+        """
         if self.currentChar == '\\':
             nex = self.nextChar()
             if nex == 'u':
@@ -764,12 +887,6 @@ class MonteLexer(object):
                 return c
         if self.currentChar == EOF:
             self.syntaxError("end of file in middle of literal")
-        elif self.inQuasi and self.currentChar in '$@':
-            c = self.currentChar
-            if c != self.nextChar():
-                self.syntaxError("When quasi-parsing, %r must be doubled" % (c,))
-            self.nextChar()
-            return c
         elif self.currentChar == '\t':
             self.syntaxError('Quoted tabs must be written as \\t.')
         else:
@@ -778,6 +895,9 @@ class MonteLexer(object):
             return c
 
     def charLiteral(self):
+        """
+        Recognize a character literal and create a token for it.
+        """
         self.nextChar()
         c = self.charConstant()
         while c is None:
@@ -788,9 +908,13 @@ class MonteLexer(object):
         return composite('.char.', c, self.endSpan())
 
     def stringLiteral(self):
+        """
+        Recognize a string literal and create a token for it.
+        """
         self.nextChar()
-        self.indenter.push(self.getSpan(self._startPos, self.position,
-                                        "file ends inside string literal"), '"', 0)
+        self.bracer.push(self.getSpan(self._startPos, self.position,
+                                        "file ends inside string literal"),
+                         '"', 0)
         buf = []
         while self.currentChar != '"':
             if self.isEndOfFile():
@@ -800,10 +924,13 @@ class MonteLexer(object):
                 buf.append(cc)
         self.nextChar()
         closer = self.endToken()
-        self.indenter.pop(self, '"', closer)
+        self.bracer.pop(self, '"', closer)
         return composite('.String.', ''.join(buf), closer[1])
 
     def numberLiteral(self):
+        """
+        Recognize a numeric literal and create a token for it.
+        """
         radix = 10
         floating = False
         if self.currentChar == '0':
@@ -853,7 +980,7 @@ class MonteLexer(object):
             elif self.currentChar == '`':
                 self.nextChar()
                 closer = self.endToken()
-                self.indenter.pop(self, '`', closer)
+                self.bracer.pop(self, '`', closer)
                 return composite('QUASI_CLOSE', ''.join(buf), closer[1])
             elif self.peekChar() == '`':
                 buf.append(self.currentChar())
@@ -865,8 +992,8 @@ class MonteLexer(object):
                     buf.append(cc)
             else:
                 opener = self.endToken()
-                self.indenter.nestLevel += 1
-                self.indenter.push(opener, '$', self.indenter.nestLevel * 4, True)
+                self.bracer.nestLevel += 1
+                self.bracer.push(opener, '$', self.bracer.nestLevel * 4, True)
                 if not buf:
                     result = self.getNextToken()
                     if result is EOF:
@@ -877,6 +1004,9 @@ class MonteLexer(object):
                     return composite('QUASI_OPEN', ''.join(buf), opener[1])
 
     def digits(self, radix):
+        """
+        Get the set of digits valid for the given base.
+        """
         if radix == 10:
             digs = string.digits
         elif radix == 16:
@@ -889,6 +1019,9 @@ class MonteLexer(object):
         return True
 
     def uri(self):
+        """
+        Recognize a URI literal and create a token for it.
+        """
         length = len(self._currentLine)
         pos = self.position + 1
         while pos < length and isIdentifierPart(self._currentLine[pos]):
@@ -910,15 +1043,19 @@ class MonteLexer(object):
         while self.currentChar in uriChars:
             self.nextChar()
         if self.currentChar != '>':
-            self.syntaxError("Can't use %r in a URI body" % (self.currentChar,))
+            self.syntaxError("Can't use %r in a URI body" %
+                             (self.currentChar,))
         self.nextChar()
         source, span = self.endToken()
         return composite('URI', source[1:-1], span)
 
     def docComment(self):
+        """
+        Recognize a docstring and create a token for it.
+        """
         opener = self.getSpan(self._startPos, self.position,
                               "File ends inside doc-comment")
-        self.indenter.push(opener, '*', self.position - 2)
+        self.bracer.push(opener, '*', self.position - 2)
         buf = []
         while '*/' not in self._currentLine:
             buf.append(self._currentLine[self.position:])
@@ -935,11 +1072,12 @@ class MonteLexer(object):
         self.nextChar()
         self.nextChar()
         closer = self.endToken()
-        self.indenter.pop(self, '*', closer)
+        self.bracer.pop(self, '*', closer)
         return composite('DOC_COMMENT', ''.join(buf), closer[1])
 
 
 def makeTokenStream(text, origin="<string>"):
     lexer = ELexer(StringFeeder(text, origin))
-    toks = [tok for tok in lexer if tok.tag.name != '#' and tok.tag.name != 'UPDOC']
+    toks = [tok for tok in lexer if tok.tag.name != '#'
+            and tok.tag.name != 'UPDOC']
     return InputStream.fromIterable(toks)
