@@ -145,7 +145,6 @@ class LexerTests(unittest.TestCase):
     def test_or(self):
         self.assertEqual(lex('|'),   [Term(Tag('|'), None, None, None)])
         self.assertEqual(lex('|='),  [Term(Tag('|='), None, None, None)])
-        self.assertEqual(lex('||'),  [Term(Tag('||'), None, None, None)])
 
 
 SIMPLE_INDENT = """
@@ -164,6 +163,12 @@ foo:
   baz
 
 
+blee
+"""
+
+HORIZ_SPACE = """
+foo:    
+  baz
 blee
 """
 
@@ -223,11 +228,29 @@ class IndentLexerTests(unittest.TestCase):
                           Term(Tag('EOL'), None, None, None),
                           Term(Tag('INDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('EOL'), None, None, None),
                           Term(Tag('DEDENT'), None, None, None),
-                          Term(Tag('IDENTIFIER'), "blee", None, None)])
+                          Term(Tag('IDENTIFIER'), "blee", None, None),
+                          Term(Tag('EOL'), None, None, None)])
 
-    def test_dedent(self):
-        self.assertEqual(lex(SIMPLE_DEDENT), lex(VERTICAL_SPACE))
+    def test_vertical(self):
+        self.assertEqual(lex(VERTICAL_SPACE),
+                         [Term(Tag('EOL'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "foo", None, None),
+                          Term(Tag(':'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('INDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('DEDENT'), None, None, None),
+                          Term(Tag('IDENTIFIER'), "blee", None, None),
+                          Term(Tag('EOL'), None, None, None)])
+
+    def test_horizontal(self):
+        self.assertEqual(lex(SIMPLE_DEDENT), lex(HORIZ_SPACE))
 
     def test_multi(self):
         self.assertEqual(lex(MULTI_INDENT),
