@@ -140,7 +140,7 @@ def twineSlice(twine, start, stop):
 uriChars = string.letters + string.digits + '_;/?:@&=+$,-.!~*\()%\\#\'|'
 EOF = object()
 keywords = set([
-    "and", "bind", "break", "catch", "continue", "def", "else", "escape",
+    "as", "and", "bind", "break", "catch", "continue", "def", "else", "escape",
     "exit", "extends", "finally", "fn", "for", "guards", "if", "implements",
     "in", "interface", "match", "meta", "method", "object", "or", "pass",
     "pragma", "return", "switch", "to", "try", "var", "via", "when", "while"])
@@ -1089,7 +1089,7 @@ class MonteLexer(object):
 
 
 def makeTokenStream(text, origin="<string>"):
-    lexer = ELexer(StringFeeder(text, origin))
+    lexer = MonteLexer(StringFeeder(text, origin))
     toks = [tok for tok in lexer if tok.tag.name != '#'
             and tok.tag.name != 'UPDOC']
     return InputStream.fromIterable(toks)

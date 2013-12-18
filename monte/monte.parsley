@@ -1,4 +1,4 @@
-EOL = tok('EOL')
+EOL = tok('EOL') ^(end of line)
 EOLs = EOL+
 br = EOL*
 
@@ -33,10 +33,13 @@ reifyExpr = ("&&" verb:v -> t.BindingExpr(v)
 
 verb = identifier | string
 
-listAndMap = "[" (assoc:x ("," assoc)*:xs ","? ']' -> t.MapExpr([x] + xs)
-                   |(seq:s ("," seq)*:ss ","? ']')-> t.ListExpr([s] + ss)
-                   | ']' -> t.ListExpr([]))
-assoc = (seq:k "=>" seq:v -> t.MapExprAssoc(k, v)
+comprehension = 'for' forPattern:p 'in' br assign:a -> p + [a]
+listAndMap = "[" ( expr:e br comprehension:c ('if' expr)?:f -> t.ListComp(*(c + [f, e]))
+                 | expr:k "=>" expr:v br comprehension:c ('if' expr)?:f -> t.MapComp(*(c + [f, k, v]))
+                 | assoc:x ("," assoc)*:xs ","? ']' -> t.MapExpr([x] + xs)
+                 | (expr:s ("," expr)*:ss ","? ']')-> t.ListExpr([s] + ss)
+                 | ']' -> t.ListExpr([]))
+assoc = (expr:k "=>" expr:v -> t.MapExprAssoc(k, v)
           |"=>" (noun | reifyExpr):n -> t.MapExprExport(n)
                 | "def" noun:n ~":="
                   !(throwSemanticHere("Reserved syntax: forward export")))
@@ -53,14 +56,20 @@ prim = ( literal
        | listAndMap
        )
 
-parenExpr = "(" seq:s ')' -> s
+parenExpr = "(" expr:s ')' -> s
 block = "{" (seq |-> t.SeqExpr([])):s '}' -> s
+indentBlock = ':' EOL tok('INDENT') pass (indentSeq |-> t.SeqExpr([])):s br
+               tok('DEDENT') -> s
+pass = tok('pass')?
 
-seqSep = (";"| tok('EOL'))+
-seq = expr:e ((seqSep expr)+:es seqSep? -> t.SeqExpr(filter(None, [e] + es))
-                 |seqSep? -> e)
+seqSep = (";"| EOL)+
+seq = blockExpr:e ((seqSep blockExpr)+:es seqSep? -> t.SeqExpr(filter(None, [e] + es))
+                  |seqSep? -> e)
+indentSeq = blockExpr:e ((EOLs blockExpr)+:es seqSep? -> t.SeqExpr(filter(None, [e] + es))
+                        | br -> e)
+blockExpr = indentDocoDef | indentEscapeExpr | indentForExpr | indentIfExpr | indentSwitchExpr | indentTryExpr | indentWhileExpr | indentWhenExpr | expr
 parenArgs = "(" args:a ')' -> a
-args = (seq:s ("," seq)*:ss -> [s] + ss
+args = (expr:s ("," expr)*:ss -> [s] + ss
          |-> [])
 
 call = (prim:p ("." verb:v (parenArgs:x -> (t.MethodCallExpr, v, x)
@@ -72,7 +81,7 @@ call = (prim:p ("." verb:v (parenArgs:x -> (t.MethodCallExpr, v, x)
                | -> (t.SendCurryExpr, v)))
                )*:ts -> self.collapseTrailers(p, ts)
          )
-guarded = call:c (":" guard:g -> t.Coerce(c, g)
+guarded = call:c (':' guard:g -> t.Coerce(c, g)
                  | -> c)
 prefix = (guarded
            | "-" prim:c -> t.Minus(c)
@@ -112,7 +121,7 @@ ejector = ('break' -> t.Break
              (("(" ')' -> None) | assign)?:val -> ej(val)
 
 guard = (noun | parenExpr):e ("[" args:x ']' -> x)*:xs -> t.Guard(e, xs)
-optGuard = (":" guard)?
+optGuard = (':' guard)?
 eqPattern = ('_' optGuard:e -> t.IgnorePattern(e)
               |identifier?:n quasiString:q -> t.QuasiPattern(n, q)
               |namePattern
@@ -149,60 +158,71 @@ listPattern = (
 pattern = listPattern:p ("?" order:e -> t.SuchThatPattern(p, e)
                             | -> p)
 
-basic = docoDef | accumExpr | escapeExpr | forExpr | ifExpr | lambdaExpr | metaExpr | switchExpr | tryExpr | whileExpr | whenExpr
+basic = docoDef | escapeExpr | forExpr | ifExpr | lambdaExpr | metaExpr | switchExpr | tryExpr | whileExpr | whenExpr
 
 docoDef = br doco?:doc (objectExpr:o -> t.Object(doc, *o)
                        |interfaceExpr:i -> t.Interface(doc, *i))
+
+indentDocoDef = br doco?:doc (indentObjectExpr:o -> t.Object(doc, *o)
+                             |indentInterfaceExpr:i -> t.Interface(doc, *i))
+
 doco = tok('DOC_COMMENT'):doc br -> doc.strip()
-objectExpr = (('def' objectName:n) | keywordPattern:n) objectTail:tail -> [n, tail]
+objectExpr = (('object' objectName:n) | keywordPattern:n) objectTail:tail -> [n, tail]
+indentObjectExpr = (('object' objectName:n) | keywordPattern:n)
+                   indentObjectTail:tail -> [n, tail]
+
 objectName = ('_' optGuard:e -> t.IgnorePattern(e)
                |namePattern)
 objectTail = (functionTail
                |(('extends' br order)?:e oAs?:g oImplements:oi scriptPair:s
                   -> t.Script(e, g, oi, *s)))
+indentObjectTail = (indentFunctionTail
+                   |(('extends' br order)?:e oAs?:g oImplements:oi indentScriptPair:s
+                     -> t.Script(e, g, oi, *s)))
+
 oAs = 'as' br order
 oImplements = ('implements' br order:x ("," order)*:xs -> [x] + xs
                | -> [])
 functionTail = parenParamList:ps optResultGuard:g oImplements:fi block:b -> t.Function(ps, g, fi, b)
+indentFunctionTail = parenParamList:ps optResultGuard:g oImplements:fi indentBlock:b -> t.Function(ps, g, fi, b)
+
 parenParamList = "(" (pattern:p ("," pattern)*:ps ')' -> [p] +  ps
                        | ')' -> [])
-optResultGuard = (":" guard)?
+optResultGuard = (':' guard)?
 scriptPair = "{" method*:methods matcher*:matchers br '}' -> [methods, matchers]
+indentScriptPair = ':' EOL tok('INDENT') pass indentMethod*:methods indentMatcher*:matchers br tok('DEDENT') -> [methods, matchers]
+
 method = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g block:b  -> to(doc, v, ps, g, b))
+indentMethod = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g indentBlock:b  -> to(doc, v, ps, g, b))
 matcher = 'match' pattern:p block:b -> t.Matcher(p, b)
+indentMatcher = 'match' pattern:p indentBlock:b -> t.Matcher(p, b)
 
 interfaceExpr = ('interface' objectName:n iguards?:g ((multiExtends:es oImplements:oi iscript:s -> [n, g, es, oi, s])
+                       |parenParamDescList:ps optGuard:rg -> [n, g, [], [], t.InterfaceFunction(ps, rg)]))
+indentInterfaceExpr = ('interface' objectName:n iguards?:g ((multiExtends:es oImplements:oi indentIScript:s -> [n, g, es, oi, s])
                        |parenParamDescList:ps optGuard:rg -> [n, g, [], [], t.InterfaceFunction(ps, rg)]))
 iguards = 'guards' pattern
 multiExtends = (('extends' br order:x ("," order)*:xs -> [x] + xs)
                  | -> [])
 iscript = "{" (messageDesc:m br -> m)*:ms '}' -> ms
+indentIScript = ':' EOL tok('INDENT') pass (messageDesc:m br -> m)*:ms br tok('DEDENT') -> ms
 messageDesc = br (doco?:doc ("to" | "method"):to verb?:v parenParamDescList:ps optGuard:g
                 -> t.MessageDesc(doc, to, v, ps, g))
 paramDesc = (justNoun | ('_') -> None):n optGuard:g -> t.ParamDesc(n, g)
 parenParamDescList = "(" paramDesc:p ("," paramDesc)*:ps ')' -> [p] +  ps
 
-accumExpr = 'accum' call:c accumulator:a -> t.Accum(c, a)
-accumulator = ((('for' forPattern:p 'in' logical:a accumBody:b catcher?:c -> t.AccumFor(*(p + [a, b, c]))))
-                |('if' parenExpr:e accumBody:a -> t.AccumIf(e, a))
-                |('while' parenExpr:e accumBody:a catcher?:c -> t.AccumWhile(e, a, c)))
-
-accumBody = "{" ('_' (accumOp:op assign:a -> t.AccumOp(op, a)
-                               |"." verb:v parenArgs:ps -> t.AccumCall(v, ps))
-                  | accumulator):ab br '}' -> ab
-accumOp = ("+" -> "Add"
-            |"*" -> "Multiply"
-            |"&" -> "BinaryAnd"
-            |"|" -> "BinaryOr")
-
 escapeExpr = 'escape' pattern:p block:b catcher?:c -> t.Escape(p, b, c)
+indentEscapeExpr = 'escape' pattern:p indentBlock:b indentCatcher?:c -> t.Escape(p, b, c)
 
 forExpr = 'for' forPattern:p 'in' br assign:a block:b catcher?:c -> t.For(*(p + [a, b, c]))
+indentForExpr = 'for' forPattern:p 'in' br assign:a indentBlock:b indentCatcher?:c -> t.For(*(p + [a, b, c]))
 
 forPattern = pattern:p (br "=>" pattern:px -> [p, px]
                            | -> [None, p])
 
 ifExpr = 'if' parenExpr:p br block:b ('else' (ifExpr | block) | -> None):e -> t.If(p, b, e)
+
+indentIfExpr = 'if' parenExpr:p br indentBlock:b ('else' (ifExpr | indentBlock) | -> None):e -> t.If(p, b, e)
 
 lambdaExpr = br doco?:doc 'fn' patterns:ps block:b -> t.Lambda(doc, ps, b)
 
@@ -210,13 +230,20 @@ metaExpr = 'meta' "." identifier:i (?(i == 'getState') -> "State"
                                    |?(i == 'scope') -> "Scope"
                                    |?(i == 'context') -> "Context"):s "(" ')' -> t.Meta(s)
 switchExpr = 'switch' parenExpr:e "{" (matcher:m br -> m)*:ms '}' -> t.Switch(e, ms)
+indentSwitchExpr = 'switch' parenExpr:e ':' EOL tok('INDENT') (indentMatcher:m br -> m)*:ms tok('DEDENT') -> t.Switch(e, ms)
 
 tryExpr = 'try' block:tb catcher*:cs ('finally' block)?:fb -> t.Try(tb, cs, fb)
+indentTryExpr = 'try' indentBlock:tb indentCatcher*:cs ('finally' indentBlock)?:fb -> t.Try(tb, cs, fb)
 catcher = 'catch' pattern:p block:b -> t.Catch(p, b)
+indentCatcher = 'catch' pattern:p indentBlock:b -> t.Catch(p, b)
 
 whileExpr = 'while' parenExpr:e block:b catcher?:c -> t.While(e, b, c)
+indentWhileExpr = 'while' parenExpr:e indentBlock:b catcher?:c -> t.While(e, b, c)
 
 whenExpr = 'when' parenArgs:a br "->" block:b catcher*:cs ('finally' block)?:fb -> t.When(a, b, cs, fb)
+indentWhenBlock = '->' EOL tok('INDENT') pass (indentSeq |-> t.SeqExpr([])):s br
+               tok('DEDENT') -> s
+indentWhenExpr = 'when' parenArgs:a br indentWhenBlock:b indentCatcher*:cs ('finally' indentBlock)?:fb -> t.When(a, b, cs, fb)
 
 topSeq = topExpr:x (seqSep topExpr)*:xs seqSep? -> t.SeqExpr([x] + xs)
 pragma = 'pragma' "." verb:v "(" string:s ')' -> t.Pragma(v, s)

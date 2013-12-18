@@ -8,7 +8,7 @@ from ometa.runtime import expected, OMetaBase
 from terml.nodes import Term, Tag, termMaker as t
 
 import monte
-from monte.lexer import reserved, basicKeywords, keywords, makeTokenStream
+from monte.lexer import keywords, makeTokenStream
 
 
 def quasiHoleKeywordCheck(n):
@@ -61,8 +61,8 @@ OPERATORS = {
     '^': (7, 'BinaryXor'),
     '&': (8, 'BinaryAnd'),
     '|': (8, 'BinaryOr'),
-    '&&': (9, 'LogicalAnd'),
-    '||': (10, 'LogicalOr')
+    'and': (9, 'LogicalAnd'),
+    'or': (10, 'LogicalOr')
 }
 
 class EParserBase(OMetaBase):
@@ -101,9 +101,7 @@ class EParserBase(OMetaBase):
         """
         Ensure an identifier isn't a keyword or reserved word.
         """
-        if ident in reserved:
-            raise ParseError(self.input, self.input.position, ident + " is a reserved word")
-        elif ident in basicKeywords:
+        if ident in keywords:
             raise ParseError(self.input, self.input.position, ident + " is a keyword")
         else:
             return ident
