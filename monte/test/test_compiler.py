@@ -131,7 +131,7 @@ class CompilerTest(unittest.TestCase):
 
     def test_trivialObject(self):
         self.eq_(
-            'def foo { method baz(x, y) { x }}',
+            'object foo { method baz(x, y) { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
                  def baz(foo, x, y):
@@ -143,7 +143,7 @@ class CompilerTest(unittest.TestCase):
 
     def test_trivialVarObject(self):
         self.eq_(
-            'def var foo { method baz(x, y) { x }}',
+            'object var foo { method baz(x, y) { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
                  def __init__(_g_foo1, foo_slot):
@@ -161,9 +161,9 @@ class CompilerTest(unittest.TestCase):
     def test_trivialNestedObject(self):
         self.eq_(
             '''
-            def foo {
+            object foo {
                 method baz(x, y) {
-                    def boz {
+                    object boz {
                         method blee() { 1 }
                     }
                 }
@@ -185,11 +185,11 @@ class CompilerTest(unittest.TestCase):
     def test_frameFinal(self):
         self.eq_(
             '''
-            def foo {
+            object foo {
                 method baz(x :int, y) {
                     def a := 2
                     def b :(float64 >= 0) := 3.0
-                    def boz {
+                    object boz {
                         method blee() { b.foo(a + x) }
                     }
                 }
@@ -221,14 +221,14 @@ class CompilerTest(unittest.TestCase):
     def test_sharedVar(self):
         self.eq_(
             '''
-            def foo {
+            object foo {
                 method baz(x :int, y) {
                     var a := 1
                     var b :int := 0
-                    def left {
+                    object left {
                         method inc() { a += 1; b }
                     }
-                    def right {
+                    object right {
                         method dec() { b -= 1; a }
                     }
                     [left, right]
@@ -275,7 +275,7 @@ class CompilerTest(unittest.TestCase):
     def test_implements(self):
         self.eq_(
             '''
-            def foo implements DeepFrozen, Data {}
+            object foo implements DeepFrozen, Data {}
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
@@ -291,7 +291,7 @@ class CompilerTest(unittest.TestCase):
     def test_simpleAs(self):
         self.eq_(
             '''
-            def foo as Data implements DeepFrozen {}
+            object foo as Data implements DeepFrozen {}
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
@@ -308,7 +308,7 @@ class CompilerTest(unittest.TestCase):
     def test_varAs(self):
         self.eq_(
             '''
-            def var foo as Data implements DeepFrozen {}
+            object var foo as Data implements DeepFrozen {}
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
@@ -327,7 +327,7 @@ class CompilerTest(unittest.TestCase):
 
     def test_methGuard(self):
         self.eq_(
-            'def foo { method baz(x, y) :int { x }}',
+            'object foo { method baz(x, y) :int { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
                  def __init__(foo, _m_methodGuards):
@@ -342,7 +342,7 @@ class CompilerTest(unittest.TestCase):
 
     def test_matcher(self):
         self.eq_(
-            'def foo { method baz(x, y) { x } match [verb1, args1] { verb1 } match etc { etc }}',
+            'object foo { method baz(x, y) { x } match [verb1, args1] { verb1 } match etc { etc }}',
              """
              class _m_foo_Script(_monte.MonteObject):
                  _m_matcherNames = ['_g_matcher1', '_g_matcher2']
@@ -417,11 +417,11 @@ class CompilerTest(unittest.TestCase):
     def test_metacontext(self):
         self.eq_(
             '''
-            def foo {
+            object foo {
                 method baz(x, y) {
                     def a := 2
                     var b := 3
-                    def boz {
+                    object boz {
                         method blee() { b := a; meta.context() }
                     }
                 }
@@ -482,7 +482,7 @@ class CompilerTest(unittest.TestCase):
                 def a := 1;
                 var b := 2;
                 var c := 3;
-                return def boz {
+                return object boz {
                     method biz() {
                         def x := 17
                         meta.getState()
@@ -609,7 +609,7 @@ class CompilerTest(unittest.TestCase):
         self.eq_(
             '''
             var x := 1
-            def foo {
+            object foo {
               method baz() {
                 &&x
               }

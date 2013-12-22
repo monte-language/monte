@@ -730,20 +730,6 @@ class MonteLexer(object):
             comment, span = self.endToken()
             return composite('#', comment[1:], span)
 
-        if cur == '\\':
-            self.nextChar()
-            self.skipWhiteSpace()
-            if self.currentChar == '\n':
-                self.skipLine()
-                self.stopToken()
-                result = self.getNextToken()
-                if result is EOF:
-                    self.syntaxError("file ends in continued line")
-                else:
-                    return result
-            self.syntaxError("unexpected character %r after line continuation"
-                             " character" % self.currentChar)
-
         if cur == '%':
             nex = self.nextChar()
             if nex == '%':

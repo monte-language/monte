@@ -2,7 +2,7 @@ import re, string
 from keyword import iskeyword
 
 from StringIO import StringIO
-from monte.eparser import parse
+from monte.parser import parse
 from monte.expander import expand, scope
 
 from terml.nodes import Term, termMaker as t

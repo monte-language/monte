@@ -160,10 +160,12 @@ pattern = listPattern:p ("?" order:e -> t.SuchThatPattern(p, e)
 
 basic = docoDef | escapeExpr | forExpr | ifExpr | lambdaExpr | metaExpr | switchExpr | tryExpr | whileExpr | whenExpr
 
-docoDef = br doco?:doc (objectExpr:o -> t.Object(doc, *o)
+docoDef = br doco?:doc (functionExpr:o -> t.Object(doc, *o)
+                       |objectExpr:o -> t.Object(doc, *o)
                        |interfaceExpr:i -> t.Interface(doc, *i))
 
-indentDocoDef = br doco?:doc (indentObjectExpr:o -> t.Object(doc, *o)
+indentDocoDef = br doco?:doc (indentFunctionExpr:o -> t.Object(doc, *o)
+                             |indentObjectExpr:o -> t.Object(doc, *o)
                              |indentInterfaceExpr:i -> t.Interface(doc, *i))
 
 doco = tok('DOC_COMMENT'):doc br -> doc.strip()
@@ -171,14 +173,15 @@ objectExpr = (('object' objectName:n) | keywordPattern:n) objectTail:tail -> [n,
 indentObjectExpr = (('object' objectName:n) | keywordPattern:n)
                    indentObjectTail:tail -> [n, tail]
 
+functionExpr = (('def' objectName:n) | keywordPattern:n) functionTail:tail -> [n, tail]
+indentFunctionExpr = (('def' objectName:n) | keywordPattern:n) indentFunctionTail:tail -> [n, tail]
+
 objectName = ('_' optGuard:e -> t.IgnorePattern(e)
                |namePattern)
-objectTail = (functionTail
-               |(('extends' br order)?:e oAs?:g oImplements:oi scriptPair:s
-                  -> t.Script(e, g, oi, *s)))
-indentObjectTail = (indentFunctionTail
-                   |(('extends' br order)?:e oAs?:g oImplements:oi indentScriptPair:s
-                     -> t.Script(e, g, oi, *s)))
+objectTail = (('extends' br order)?:e oAs?:g oImplements:oi scriptPair:s
+                  -> t.Script(e, g, oi, *s))
+indentObjectTail = (('extends' br order)?:e oAs?:g oImplements:oi indentScriptPair:s
+                     -> t.Script(e, g, oi, *s))
 
 oAs = 'as' br order
 oImplements = ('implements' br order:x ("," order)*:xs -> [x] + xs

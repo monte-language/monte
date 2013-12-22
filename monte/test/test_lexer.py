@@ -80,10 +80,12 @@ class LexerTests(unittest.TestCase):
     def test_minus(self):
         self.assertEqual(lex('-'),   [Term(Tag('-'), None, None, None)])
         self.assertEqual(lex('-='),  [Term(Tag('-='), None, None, None)])
-        self.assertEqual(lex('->'),  [Term(Tag('->'), None, None, None)])
+        self.assertEqual(lex('-> {'),  [Term(Tag('->'), None, None, None),
+                                        Term(Tag('{'), None, None, None)])
 
     def test_colon(self):
-        self.assertEqual(lex(':'),   [Term(Tag(':'), None, None, None)])
+        self.assertEqual(lex(':x'),   [Term(Tag(':'), None, None, None),
+                                       Term(Tag('IDENTIFIER'), 'x', None, None)])
         self.assertEqual(lex(':='),  [Term(Tag(':='), None, None, None)])
         self.assertEqual(lex('::'),  [Term(Tag('::'), None, None, None)])
 
@@ -122,9 +124,6 @@ class LexerTests(unittest.TestCase):
         self.assertEqual(lex('# yes\n1'), [Term(Tag('#'), ' yes', None, None),
                                            Term(Tag('EOL'), None, None, None),
                                            Term(Tag('.int.'), 1, None, None)])
-
-    def test_backslash(self):
-        self.assertEqual(lex('foo\\\n   baz'), lex('foo baz'))
 
     def test_bang(self):
         self.assertEqual(lex('!'),   [Term(Tag('!'), None, None, None)])

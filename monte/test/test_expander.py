@@ -1,13 +1,14 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 
-from twisted.trial import unittest
+from monte.test import unittest
 from ometa.runtime import ParseError
-from monte.eparser import makeParser
+from monte.parser import makeParser
 from monte.expander import expand
-from monte.test.test_eparser import serialize
+from monte.test.test_parser import serialize
 
 class ExpanderTest(unittest.TestCase):
+    maxDiff = None
 
     def parse(self, src):
         p = makeParser(src)
@@ -82,9 +83,9 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("def x"), ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "x"], None], ["FinalPattern", ["NounExpr", "x__Resolver"], None]], None], None, ["MethodCallExpr", ["NounExpr", "Ref"], "promise", []]], ["NounExpr", "x__Resolver"]]])
 
     def test_noun(self):
-        #parens since we're using 'expr' instead of 'start'
-        self.assertEqual(self.parse("(x[i] := y; ares__1)"),
-                         ["SeqExpr", [["MethodCallExpr", ["NounExpr", "x"], "put", [["NounExpr", "i"], ["Def", ["FinalPattern", ["NounExpr", "ares__2"], None], None, ["NounExpr", "y"]]]], ["NounExpr", "ares__2"], ["NounExpr", "ares__1"]]])
+        #braces since we're using 'expr' instead of 'start'
+        self.assertEqual(self.parse("{x[i] := y; ares__1}"),
+                         ["HideExpr", ["SeqExpr", [["MethodCallExpr", ["NounExpr", "x"], "put", [["NounExpr", "i"], ["Def", ["FinalPattern", ["NounExpr", "ares__2"], None], None, ["NounExpr", "y"]]]], ["NounExpr", "ares__2"], ["NounExpr", "ares__1"]]]])
         self.assertEqual(self.parse("x"), ["NounExpr", 'x'])
         self.assertEqual(self.parse("<x>"), ["NounExpr", 'x__uriGetter'])
 
@@ -116,7 +117,7 @@ class ExpanderTest(unittest.TestCase):
 
     def test_and(self):
         #value
-        self.assertEqual(self.parse("x && y"),
+        self.assertEqual(self.parse("x and y"),
                          ["SeqExpr",
                           [["Def", ["ListPattern",
                                     [["FinalPattern", ["NounExpr", "ok__1"], None]]],
@@ -132,7 +133,7 @@ class ExpanderTest(unittest.TestCase):
                            ["NounExpr", "ok__1"]]])
         #value w/export
         self.assertEqual(
-            self.parse("(def x := 1) && (def y := 2)"),
+            self.parse("(def x := 1) and (def y := 2)"),
             ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "ok__1"],
                                                    None],
                                                   ["BindingPattern", ["NounExpr", "y"]],
@@ -158,7 +159,7 @@ class ExpanderTest(unittest.TestCase):
 
     def test_or(self):
         #value
-        self.assertEqual(self.parse("x || y"),
+        self.assertEqual(self.parse("x or y"),
 ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "ok__1"], None]]],
                       None,
               ["If", ["NounExpr", "x"],
@@ -176,7 +177,7 @@ class ExpanderTest(unittest.TestCase):
              ["NounExpr", "ok__1"]]])
         #value w/ export
         self.assertEqual(
-            self.parse("(def x := 1) || (def y := 2)"),
+            self.parse("(def x := 1) or (def y := 2)"),
 ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "ok__1"], None],
                                         ["BindingPattern", ["NounExpr", "y"]],
                                         ["BindingPattern", ["NounExpr", "x"]]]],
@@ -250,163 +251,129 @@ class ExpanderTest(unittest.TestCase):
                                      None],
                           ["SeqExpr",
                            [["Def", ["VarPattern",
-                                    ["NounExpr", "validFlag__1"],
-                                    None],
-                            None,
-                                   ["NounExpr", "true"]],
-                           ["Finally",
-                            ["MethodCallExpr", ["NounExpr", "y"], "iterate",
-                             [["Object", "For-loop body",
-                              ["IgnorePattern", None],
-                              ["Script", None, None, [],
-                               [["Method", None,
-                                 "run",
-                                 [["FinalPattern", ["NounExpr", "key__2"],
-                                   None],
-                                  ["FinalPattern", ["NounExpr", "value__3"],
-                                   None]],
-                                 None,
-                                 ["SeqExpr",
-                                  [["MethodCallExpr", ["NounExpr", "__validateFor"],
-                                    "run", [["NounExpr", "validFlag__1"]]],
-                                   ["Escape", ["FinalPattern",
-                                                  ["NounExpr", "__continue"],
-                                                  None],
-                                    ["SeqExpr",
-                                     [["Escape", ["FinalPattern", ["NounExpr", "skip__4"], None],
-                                       ["SeqExpr",
-                                     [["Def", ["IgnorePattern", None],
-                                       ["NounExpr", "skip__4"],
-                                       ["NounExpr", "key__2"]],
-                                      ['Def',
-                                       ['FinalPattern', ['NounExpr', 'x'], None],
-                                       ['NounExpr', 'skip__4'],
-                                       ['NounExpr', 'value__3']],
-                                      ['NounExpr', 'z']]],
-                                       None],
-                                      ['NounExpr', 'null']]],
-                                    None]]]]],
-                               []]]]],
-                            ['Assign', ['NounExpr', 'validFlag__1'],
-                             ['NounExpr', 'false']]],
+                                     ["NounExpr", "validFlag__1"],
+                                     None],
+                             None,
+                             ["NounExpr", "true"]],
+                            ["Finally",
+                             ["MethodCallExpr", ["NounExpr", "__loop"], "run",
+                              [["NounExpr", "y"],
+                               ["Object", "For-loop body",
+                                ["IgnorePattern", None],
+                                ["Script", None, None, [],
+                                 [["Method", None,
+                                   "run",
+                                   [["FinalPattern", ["NounExpr", "key__2"],
+                                     None],
+                                    ["FinalPattern", ["NounExpr", "value__3"],
+                                     None]],
+                                   None,
+                                   ["SeqExpr",
+                                    [["MethodCallExpr", ["NounExpr", "__validateFor"],
+                                      "run", [["NounExpr", "validFlag__1"]]],
+                                     ["Escape", ["FinalPattern",
+                                                 ["NounExpr", "__continue"],
+                                                 None],
+                                      ["SeqExpr",
+                                       [["Def", ["IgnorePattern", None],
+                                         None,
+                                         ["NounExpr", "key__2"]],
+                                        ['Def',
+                                         ['FinalPattern', ['NounExpr', 'x'], None],
+                                         None,
+                                         ['NounExpr', 'value__3']],
+                                        ['NounExpr', 'z'],
+                                        ['NounExpr', 'null']]],
+                                      None]]]]],
+                                 []]]]],
+                             ['Assign', ['NounExpr', 'validFlag__1'],
+                              ['NounExpr', 'false']]],
                             ['NounExpr', 'null']]],
                           None])
 
-    def test_accum(self):
+    def test_listcomp(self):
         self.assertEqual(
-            self.parse(
-                "accum a for x in y { _.foo() }"),
-            ['SeqExpr',
-             [['Def',
-               ['VarPattern', ['NounExpr', 'accum__1'], None],
-               None,
-               ['NounExpr', 'a']],
-              ['Escape',
-               ['FinalPattern', ['NounExpr', '__break'], None],
-               ['SeqExpr',
-                [['Def',
-                  ['VarPattern', ['NounExpr', 'validFlag__2'], None],
-                  None,
-                  ['NounExpr', 'true']],
-                 ['Finally',
-                  ['MethodCallExpr',
-                   ['NounExpr', 'y'],
-                   'iterate',
-                   [['Object',
-                     'For-loop body',
-                     ['IgnorePattern', None],
-                     ['Script',
-                      None,
-                      None,
-                      [],
-                      [['Method',
-                        None,
-                        'run',
-                        [['FinalPattern', ['NounExpr', 'key__3'], None],
-                         ['FinalPattern', ['NounExpr', 'value__4'], None]],
-                        None,
-                        ['SeqExpr',
-                         [['MethodCallExpr',
-                           ['NounExpr', '__validateFor'],
-                           'run',
-                           [['NounExpr', 'validFlag__2']]],
-                          ['Escape',
-                           ['FinalPattern',
-                            ['NounExpr', '__continue'],
-                            None],
-                           ['SeqExpr',
-                            [['Escape',
-                              ['FinalPattern',
-                               ['NounExpr', 'skip__5'],
-                               None],
-                              ['SeqExpr',
-                               [['Def',
-                                 ['IgnorePattern', None],
-                                 ['NounExpr', 'skip__5'],
-                                 ['NounExpr', 'key__3']],
-                                ['Def',
-                                 ['FinalPattern',
-                                  ['NounExpr', 'x'],
-                                  None],
-                                 ['NounExpr', 'skip__5'],
-                                 ['NounExpr', 'value__4']],
-                                ['Assign',
-                                 ['NounExpr', 'accum__1'],
-                                 ['MethodCallExpr',
-                                  ['NounExpr', 'accum__1'],
-                                  'foo',
-                                  []]]]],
-                              None],
-                             ['NounExpr', 'null']]],
-                           None]]]]],
-                      []]]]],
-                  ['Assign', ['NounExpr', 'validFlag__2'], ['NounExpr', 'false']]],
-                 ['NounExpr', 'null']]],
-               None],
-              ['NounExpr', 'accum__1']]])
+            self.parse("[x for y in z if a]"),
+                          ["SeqExpr",
+                           [["Def", ["VarPattern",
+                                     ["NounExpr", "validFlag__1"],
+                                     None],
+                             None,
+                             ["NounExpr", "true"]],
+                            ["Finally",
+                             ["MethodCallExpr", ["NounExpr", "__accumulateList"], "run",
+                              [["NounExpr", "z"],
+                               ["Object", "For-loop body",
+                                ["IgnorePattern", None],
+                                ["Script", None, None, [],
+                                 [["Method", None,
+                                   "run",
+                                   [["FinalPattern", ["NounExpr", "key__2"],
+                                     None],
+                                    ["FinalPattern", ["NounExpr", "value__3"],
+                                     None],
+                                    ["FinalPattern", ["NounExpr", "skip__4"],
+                                     None]],
+                                   None,
+                                   ["SeqExpr",
+                                    [["MethodCallExpr", ["NounExpr", "__validateFor"],
+                                      "run", [["NounExpr", "validFlag__1"]]],
+                                     ["If", ["NounExpr", "a"],
+                                      ["SeqExpr",
+                                       [["Def", ["IgnorePattern", None],
+                                         None,
+                                         ["NounExpr", "key__2"]],
+                                        ['Def',
+                                         ['FinalPattern', ['NounExpr', 'y'], None],
+                                         None,
+                                         ['NounExpr', 'value__3']],
+                                        ['NounExpr', 'x']]],
+                                      ["MethodCallExpr", ["NounExpr", "skip__4"], "run", []]]]]]],
+                                 []]]]],
+                               ['Assign', ['NounExpr', 'validFlag__1'],
+                                ['NounExpr', 'false']]]]])
 
-        self.assertEqual(self.parse("accum a if (b) { _.foo() }"),
-                    ["SeqExpr",
-                     [["Def", ["VarPattern", ["NounExpr", "accum__1"], None],
-                       None, ["NounExpr", "a"]],
-                      ["If",
-                       ["NounExpr", "b"],
-                       ["Assign", ["NounExpr", "accum__1"],
-                        ["MethodCallExpr",
-                         ["NounExpr", "accum__1"],
-                         "foo", []]],
-                       ["NounExpr", "null"]],
-                      ["NounExpr", "accum__1"]]])
-
+    def test_mapcomp(self):
         self.assertEqual(
-            self.parse("accum x while (y) { _.foo() }"),
-                    ["SeqExpr",
-                     [["Def", ["VarPattern", ["NounExpr", "accum__1"], None],
-                       None, ["NounExpr", "x"]],
-                      ["Escape",
-                       ["FinalPattern", ["NounExpr", "__break"], None],
-                       ["MethodCallExpr", ["NounExpr", "__loop"],
-                        "run",
-                        [["Object", "While loop body",
-                          ["IgnorePattern", None],
-                          ["Script", None, None, [],
-                           [["Method", None, "run", [], ["NounExpr", "boolean"],
-                             ["If", ["NounExpr", "y"],
-                              ["SeqExpr",
-                               [["Escape", ["FinalPattern",
-                                            ["NounExpr", "__continue"],
-                                            None],
-                       ["Assign", ["NounExpr", "accum__1"],
-                        ["MethodCallExpr",
-                         ["NounExpr", "accum__1"],
-                         "foo", []]],
-                                 None],
-                                ["NounExpr", "true"]]],
-                              ["NounExpr", "false"]]]],
-                           []]]]], None],
-                      ["NounExpr", "accum__1"]]])
-
-
+            self.parse("[k => v for y in z if a]"),
+                          ["SeqExpr",
+                           [["Def", ["VarPattern",
+                                     ["NounExpr", "validFlag__1"],
+                                     None],
+                             None,
+                             ["NounExpr", "true"]],
+                            ["Finally",
+                             ["MethodCallExpr", ["NounExpr", "__accumulateMap"], "run",
+                              [["NounExpr", "z"],
+                               ["Object", "For-loop body",
+                                ["IgnorePattern", None],
+                                ["Script", None, None, [],
+                                 [["Method", None,
+                                   "run",
+                                   [["FinalPattern", ["NounExpr", "key__2"],
+                                     None],
+                                    ["FinalPattern", ["NounExpr", "value__3"],
+                                     None],
+                                    ["FinalPattern", ["NounExpr", "skip__4"],
+                                     None]],
+                                   None,
+                                   ["SeqExpr",
+                                    [["MethodCallExpr", ["NounExpr", "__validateFor"],
+                                      "run", [["NounExpr", "validFlag__1"]]],
+                                     ["If", ["NounExpr", "a"],
+                                      ["SeqExpr",
+                                       [["Def", ["IgnorePattern", None],
+                                         None,
+                                         ["NounExpr", "key__2"]],
+                                        ['Def',
+                                         ['FinalPattern', ['NounExpr', 'y'], None],
+                                         None,
+                                         ['NounExpr', 'value__3']],
+                                        ['MethodCallExpr', ['NounExpr', '__makeList'], 'run', [['NounExpr', 'k'], ['NounExpr', 'v']]]]],
+                                      ["MethodCallExpr", ["NounExpr", "skip__4"], "run", []]]]]]],
+                                 []]]]],
+                             ['Assign', ['NounExpr', 'validFlag__1'],
+                              ['NounExpr', 'false']]]]])
 
     def test_if(self):
         self.assertEqual(
@@ -422,19 +389,22 @@ class ExpanderTest(unittest.TestCase):
              ["FinalPattern", ["NounExpr", "__break"], None],
              ["MethodCallExpr", ["NounExpr", "__loop"],
               "run",
-              [["Object", "While loop body",
+              [["MethodCallExpr", ["NounExpr", "__iterWhile"], "run",
+                [["Object", None, ["IgnorePattern", None],
+                 ["Script", None, None, [],
+                  [["Method", None, "run", [], None,
+                    ["NounExpr", "x"]]], []]]]],
+               ["Object", "While loop body",
                 ["IgnorePattern", None],
                 ["Script", None, None, [],
                  [["Method", None, "run", [], ["NounExpr", "boolean"],
-                   ["If", ["NounExpr", "x"],
-                    ["SeqExpr",
-                     [["Escape", ["FinalPattern",
-                                  ["NounExpr", "__continue"],
-                                  None],
-                       ["NounExpr", "y"],
-                       None],
-                      ["NounExpr", "true"]]],
-                    ["NounExpr", "false"]]]],
+                   ["SeqExpr",
+                    [["Escape", ["FinalPattern",
+                                 ["NounExpr", "__continue"],
+                                 None],
+                      ["NounExpr", "y"],
+                      None],
+                      ["NounExpr", "true"]]]]],
                  []]]]], None])
 
     def test_comparison(self):
@@ -591,12 +561,12 @@ class ExpanderTest(unittest.TestCase):
 
 
     def test_object(self):
-        self.assertEqual(self.parse("def foo {}"),
+        self.assertEqual(self.parse("object foo {}"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
                           ["Script", None, None, [],
                            [], []]])
-        self.assertEqual(self.parse("def foo extends baz {}"),
+        self.assertEqual(self.parse("object foo extends baz {}"),
                          ["Def", ["FinalPattern", ["NounExpr", "foo"], None],
                           None,
                           ["HideExpr",
@@ -608,7 +578,7 @@ class ExpanderTest(unittest.TestCase):
                              ["Object", None,
                               ["FinalPattern", ["NounExpr", "foo"], None],
                               ["Script", None, None, [],
-                               [], 
+                               [],
                                [["Matcher",
                                  ["FinalPattern", ["NounExpr", "pair__1"], None],
                                  ["MethodCallExpr", ["NounExpr", "E"],
@@ -617,7 +587,7 @@ class ExpanderTest(unittest.TestCase):
                                    ["NounExpr", "pair__1"]]]]]]]]]]])
 
     def test_to(self):
-        self.assertEqual(self.parse("def foo { to baz() { x } }"),
+        self.assertEqual(self.parse("object foo { to baz() { x } }"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
                           ["Script", None, None, [],
@@ -633,7 +603,7 @@ class ExpanderTest(unittest.TestCase):
                              []]])
 
     def test_method(self):
-        self.assertEqual(self.parse("def foo { method baz(x) { y } }"),
+        self.assertEqual(self.parse("object foo { method baz(x) { y } }"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
                           ["Script", None, None, [],
@@ -643,7 +613,7 @@ class ExpanderTest(unittest.TestCase):
                              []]])
 
     def test_matcher(self):
-        self.assertEqual(self.parse("def foo { match x { y } }"),
+        self.assertEqual(self.parse("object foo { match x { y } }"),
                          ["Object", None,
                           ["FinalPattern", ["NounExpr", "foo"], None],
                           ["Script", None, None, [], [],
