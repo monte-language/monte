@@ -655,6 +655,7 @@ def expandFor(self, key, value, coll, block, catcher):
 def expandComprehension(self, key, value, coll, filtr, exp, collector):
     if key is None:
         key = t.IgnorePattern(None)
+    validateFor(self, scope(exp), scope(coll))
     validateFor(self, scope(key).add(scope(value)), scope(coll))
     fTemp = self.mktemp("validFlag")
     kTemp = self.mktemp("key")

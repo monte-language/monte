@@ -291,6 +291,17 @@ class ExpanderTest(unittest.TestCase):
                             ['NounExpr', 'null']]],
                           None])
 
+    def test_forScope(self):
+        self.assertRaises(ParseError, self.parse, "for foo in foo {}")
+
+    def test_listCompScope(self):
+        self.assertRaises(ParseError, self.parse, "[1 for foo in foo]")
+        self.assertRaises(ParseError, self.parse, "[def foo := 1 for x in foo]")
+
+    def test_mapCompScope(self):
+        self.assertRaises(ParseError, self.parse, "[1 => 2 for foo in foo]")
+        self.assertRaises(ParseError, self.parse, "[1 => def foo := 1 for x in foo]")
+
     def test_listcomp(self):
         self.assertEqual(
             self.parse("[x for y in z if a]"),
