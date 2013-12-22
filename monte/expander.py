@@ -439,7 +439,7 @@ ListPattern(@patterns null) -> t.ListPattern(patterns, None)
 ListPattern(@patterns @tail) -> t.ViaPattern(mcall("__splitList", "run", t.LiteralExpr(len(patterns))), patterns)
 
 SuchThatPattern(@pattern @expr) -> t.ViaPattern(t.NounExpr("__suchThat"),
-                                      t.ListPattern([pattern, t.ViaPattern(mcall("__suchThat", "run", expr))], None))
+                                      t.ListPattern([pattern, t.ViaPattern(mcall("__suchThat", "run", expr), t.IgnorePattern(None))], None))
 
 Interface(@doco nameAndString:nameAnd @guard @extends @implements
           InterfaceFunction(:params :resultGuard))
@@ -497,17 +497,16 @@ objectSuper :doco :name :extends :guard :implements :methods :matchers :maybeSlo
 To(:doco @verb @params @guard @block) -> t.Method(doco, verb, params, guard, t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
                                                   t.SeqExpr([block, t.NounExpr("null")]), None))
 
-Accum(@base !(self.mktemp("accum")):tmp accum(tmp):accumulator) -> t.SeqExpr(
-    [t.Def(t.VarPattern(tmp, None), None, base), accumulator, tmp])
-
-accum :tmp = (AccumFor(:left :right @coll accum(tmp):body @catcher) -> expandFor(self, left, right, coll, body, catcher)
-             |AccumIf(@expr accum(tmp):body) -> t.If(expr, body, t.NounExpr("null"))
-             |AccumWhile(@test accum(tmp):body @catcher) expandWhile(test body catcher)
-             |AccumOp(@op @expr) -> t.Assign(tmp, binop(binops[op], tmp, expr))
-             |AccumCall(:verb @args) -> t.Assign(tmp, t.MethodCallExpr(tmp, verb, args)))
-
 For(:key :value @coll @block @catcher)
     -> expandFor(self, key, value, coll, block, catcher)
+ListComp(@key @value @iterable @filter @exp) -> expandComprehension(self, key,
+                                                    value, iterable, filter, exp,
+                                                "__accumulateList")
+
+MapComp(@key @value @iterable @filter @kexp @vexp) -> expandComprehension(self, key,
+                                                        value, iterable, filter,
+                                                        mcall("__makeList", "run", kexp, vexp),
+                                                        "__accumulateMap")
 
 Switch(@expr @matchers) -> expandSwitch(self, expr, matchers)
 
@@ -519,7 +518,7 @@ kerneltry :tryexpr :finallyexpr -> t.Finally(tryexpr, finallyexpr)
 
 While(@test @block @catcher) = expandWhile(test block catcher)
 
-expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", t.Object("While loop body", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [], t.NounExpr("boolean"), t.If(test, t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None), t.NounExpr("true")]), t.NounExpr("false")))], []))), catcher)
+expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", mcall("__iterWhile", "run", t.Object(None, t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [], None, test)], []))), t.Object("While loop body", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [], t.NounExpr("boolean"),  t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None), t.NounExpr("true")]))], []))), catcher)
 
 When([@arg] @block :catchers @finallyblock) expandWhen(arg block catchers finallyblock)
 When(@args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", t.MethodCallExpr(t.NounExpr("__makeList"), "run", args)) block catchers finallyblock)
@@ -619,7 +618,6 @@ def expandFor(self, key, value, coll, block, catcher):
     fTemp = self.mktemp("validFlag")
     kTemp = self.mktemp("key")
     vTemp = self.mktemp("value")
-    sk = self.mktemp("skip")
     obj = t.Object(
         "For-loop body", t.IgnorePattern(None),
         t.Script(
@@ -633,13 +631,9 @@ def expandFor(self, key, value, coll, block, catcher):
                           t.Escape(
                               t.FinalPattern(t.NounExpr("__continue"), None),
                               t.SeqExpr([
-                                  t.Escape(
-                                      t.FinalPattern(sk, None),
-                                      t.SeqExpr([
-                                          t.Def(key, sk, kTemp),
-                                          t.Def(value, sk, vTemp),
-                                          block]),
-                                      None),
+                                  t.Def(key, None, kTemp),
+                                  t.Def(value, None, vTemp),
+                                  block,
                                   t.NounExpr("null")]),
                               None)]))],
             []))
@@ -650,17 +644,51 @@ def expandFor(self, key, value, coll, block, catcher):
             t.NounExpr("true")),
                    t.Finally(
                        t.MethodCallExpr(
-                           coll, "iterate",
-                           [obj]),
+                           t.NounExpr("__loop"),
+                           "run",
+                           [coll, obj]),
                        t.Assign(fTemp, t.NounExpr("false"))),
                    t.NounExpr("null")]),
         catcher)
 
-def ensureCommutes(self, left, right):
-    if left.outNames() & right.namesUsed():
-        err("Use on right isn't really in scope of definition", self)
-    if right.outNames() & left.namesUsed():
-        err("Use on left would get captured by definition on right", self)
+
+def expandComprehension(self, key, value, coll, filtr, exp, collector):
+    if key is None:
+        key = t.IgnorePattern(None)
+    validateFor(self, scope(key).add(scope(value)), scope(coll))
+    fTemp = self.mktemp("validFlag")
+    kTemp = self.mktemp("key")
+    vTemp = self.mktemp("value")
+    skip = self.mktemp("skip")
+    obj = t.Object(
+        "For-loop body", t.IgnorePattern(None),
+        t.Script(
+            None, None, [],
+            [t.Method(None, "run",
+                      [t.FinalPattern(kTemp, None),
+                       t.FinalPattern(vTemp, None),
+                       t.FinalPattern(skip, None)],
+                      None,
+                      t.SeqExpr([
+                          mcall("__validateFor", "run", fTemp),
+                          t.If(filtr,
+                               t.SeqExpr([
+                                   t.Def(key, None, kTemp),
+                                   t.Def(value, None, vTemp),
+                                   exp]),
+                               t.MethodCallExpr(skip, "run", []))]))],
+            []))
+    return t.SeqExpr([
+        t.Def(
+            t.VarPattern(fTemp, None), None,
+            t.NounExpr("true")),
+        t.Finally(
+            t.MethodCallExpr(
+                t.NounExpr(collector),
+                "run",
+                [coll, obj]),
+            t.Assign(fTemp, t.NounExpr("false")))])
+
 
 def expandMatchBind(self, spec, patt):
     pattScope = scope(patt)
