@@ -177,6 +177,9 @@ class EParserBase(OMetaBase):
             node = tr[0](node, *tr[1:])
         return node
 
+def trace():
+    import pdb; pdb.set_trace()
+
 EParser = loadGrammar(monte, "monte", globals(), EParserBase)
 def makeParser(source, origin="<string>"):
     stream = makeTokenStream(source, origin)

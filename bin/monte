@@ -12,6 +12,3 @@ while os.path.dirname(path) != path:
 from monte.repl import startRepl
 
 startRepl()
-
-
-

@@ -495,6 +495,19 @@ class ParserTest(unittest.TestCase):
         """
         parse = self.getParser("start")
         self.assertEqual(parse("x := 1; y"), ["SeqExpr", [["Assign", ["NounExpr", "x"], ["LiteralExpr", 1]], ["NounExpr", "y"]]])
+        self.assertEqual(parse("def foo():\n return 3\ndef baz():\n return 4\nfoo() + baz()"),
+                         ['SeqExpr',
+                          [['Object',
+                            None,
+                            ['FinalPattern', ['NounExpr', 'foo'], None],
+                            ['Function', [], None, [], ['Return', ['LiteralExpr', 3]]]],
+                           ['Object',
+                            None,
+                            ['FinalPattern', ['NounExpr', 'baz'], None],
+                            ['Function', [], None, [], ['Return', ['LiteralExpr', 4]]]],
+                           ['Add',
+                            ['FunctionCallExpr', ['NounExpr', 'foo'], []],
+                            ['FunctionCallExpr', ['NounExpr', 'baz'], []]]]])
 
     def test_meta(self):
         """

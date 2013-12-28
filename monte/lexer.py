@@ -281,6 +281,7 @@ class MonteLexer(object):
 
         self._canStartIndentedBlock = False
         self._indentPositionStack = [0]
+        self._queuedTokens = []
 
         self.setLine(self.input.nextLine())
         self.nextChar()
@@ -419,7 +420,6 @@ class MonteLexer(object):
             self.position = len(self._currentLine) - 1
             self.currentChar = self._currentLine[self.position]
             assert self.currentChar == '\n'
-        self._delayedNextChar = True
 
     def leafEOL(self):
         return leafTag('EOL', self.endSpan())
@@ -454,41 +454,18 @@ class MonteLexer(object):
         The main event. Consumes text until a token can be created, then
         returns it.
         """
+        if self._queuedTokens:
+            return self._queuedTokens.pop()
         if self._delayedNextChar:
             self.nextChar()
             self._delayedNextChar = False
             self.skipWhiteSpace()
-            if self._canStartIndentedBlock and not self.currentChar == '\n':
-                if not self.bracer.inStatementPosition():
-                    self.syntaxError("Indented blocks only allowed "
-                                     "in statement positions")
-                if self.position > self._indentPositionStack[-1]:
-                    self._indentPositionStack.append(self.position)
-                    self.openBracket('DEDENT', 'INDENT')
-                    self._canStartIndentedBlock = False
-                    return leafTag('INDENT', self.getSpan(self._indentPositionStack[-1],
-                                                          self.position))
-                else:
-                    self.syntaxError("Expected an indented block")
 
         if self.bracer.closer() == '`':
             self.startToken()
             return self.quasiPart()
 
         self.skipWhiteSpace()
-        if (self._currentLine
-            and self.bracer.inStatementPosition()
-            and all(c == ' ' for c in self._currentLine[:self.position])
-            and self.position < (len(self._currentLine) - 1)):
-            if self.position > self._indentPositionStack[-1]:
-                self.syntaxError("Unexpected indent")
-            if self.position < self._indentPositionStack[-1]:
-                if self.position not in self._indentPositionStack:
-                    self.syntaxError("unindent does not match any outer indentation level")
-                self._indentPositionStack.pop()
-                self.bracer.pop(self, 'DEDENT', '')
-                return leafTag('DEDENT', self.getSpan(self.position, self.position))
-
         self.startToken()
         cur = self.currentChar
 
@@ -512,8 +489,62 @@ class MonteLexer(object):
             return leafTag(cur, self.endSpan())
 
         if cur == '\n':
-            self._delayedNextChar = True
-            return self.leafEOL()
+            if self._canStartIndentedBlock:
+                self.nextChar()
+                self.skipWhiteSpace()
+                while self.currentChar == '\n':
+                    self._queuedTokens.insert(0, self.leafEOL())
+                    self.startToken()
+                    self.nextChar()
+                    self.skipWhiteSpace()
+                if not self.bracer.inStatementPosition():
+                    self.syntaxError("Indented blocks only allowed "
+                                     "in statement positions")
+                if self.position > self._indentPositionStack[-1]:
+                    self._indentPositionStack.append(self.position)
+                    self.openBracket('DEDENT', 'INDENT')
+                    self._canStartIndentedBlock = False
+                    self._queuedTokens.insert(0,
+                        leafTag('INDENT', self.getSpan(self._indentPositionStack[-1],
+                                                       self.position)))
+                    return self.leafEOL()
+                else:
+                    self.syntaxError("Expected an indented block")
+
+            if not self.bracer.inStatementPosition():
+                # no need to account for dedents, bail
+                self._delayedNextChar = True
+                return self.leafEOL()
+            else:
+                #look at next line
+                tok = self.leafEOL()
+                self._queuedTokens.insert(0, tok)
+                self.startToken()
+                self.nextChar()
+                self.skipWhiteSpace()
+                while self.currentChar == '\n':
+                    self._queuedTokens.insert(0, self.leafEOL())
+                    self.startToken()
+                    self.nextChar()
+                    self.skipWhiteSpace()
+                if self.position > self._indentPositionStack[-1]:
+                    self.syntaxError("Unexpected indent")
+                if self.isEndOfFile():
+                    while len(self._indentPositionStack) > 1:
+                        self._indentPositionStack.pop()
+                        self.bracer.pop(self, 'DEDENT', '')
+                        self._queuedTokens.append(leafTag('DEDENT', tok[1]))
+                    return self._queuedTokens.pop()
+
+                while self.position < self._indentPositionStack[-1]:
+                    if self.position not in self._indentPositionStack:
+                        self.syntaxError("unindent does not match any outer indentation level")
+                    self._indentPositionStack.pop()
+                    self.bracer.pop(self, 'DEDENT', '')
+                    self._queuedTokens.append(leafTag('DEDENT',
+                                                      self.getSpan(self.position,
+                                                                   self.position)))
+                return self._queuedTokens.pop()
 
         if cur == '(':
             return self.openBracket(')')

@@ -225,7 +225,7 @@ forPattern = pattern:p (br "=>" pattern:px -> [p, px]
 
 ifExpr = 'if' parenExpr:p br block:b ('else' (ifExpr | block) | -> None):e -> t.If(p, b, e)
 
-indentIfExpr = 'if' parenExpr:p br indentBlock:b ('else' (ifExpr | indentBlock) | -> None):e -> t.If(p, b, e)
+indentIfExpr = 'if' parenExpr:p br indentBlock:b (br 'else' (ifExpr | indentBlock) | -> None):e -> t.If(p, b, e)
 
 lambdaExpr = br doco?:doc 'fn' patterns:ps block:b -> t.Lambda(doc, ps, b)
 
@@ -236,19 +236,19 @@ switchExpr = 'switch' parenExpr:e "{" (matcher:m br -> m)*:ms '}' -> t.Switch(e,
 indentSwitchExpr = 'switch' parenExpr:e ':' EOL tok('INDENT') (indentMatcher:m br -> m)*:ms tok('DEDENT') -> t.Switch(e, ms)
 
 tryExpr = 'try' block:tb catcher*:cs ('finally' block)?:fb -> t.Try(tb, cs, fb)
-indentTryExpr = 'try' indentBlock:tb indentCatcher*:cs ('finally' indentBlock)?:fb -> t.Try(tb, cs, fb)
+indentTryExpr = 'try' indentBlock:tb indentCatcher*:cs (br 'finally' indentBlock)?:fb -> t.Try(tb, cs, fb)
 catcher = 'catch' pattern:p block:b -> t.Catch(p, b)
-indentCatcher = 'catch' pattern:p indentBlock:b -> t.Catch(p, b)
+indentCatcher = br 'catch' pattern:p indentBlock:b -> t.Catch(p, b)
 
 whileExpr = 'while' parenExpr:e block:b catcher?:c -> t.While(e, b, c)
-indentWhileExpr = 'while' parenExpr:e indentBlock:b catcher?:c -> t.While(e, b, c)
+indentWhileExpr = 'while' parenExpr:e indentBlock:b indentCatcher?:c -> t.While(e, b, c)
 
 whenExpr = 'when' parenArgs:a br "->" block:b catcher*:cs ('finally' block)?:fb -> t.When(a, b, cs, fb)
-indentWhenBlock = '->' EOL tok('INDENT') pass (indentSeq |-> t.SeqExpr([])):s br
+indentWhenBlock = '->' br tok('INDENT') pass (indentSeq |-> t.SeqExpr([])):s br
                tok('DEDENT') -> s
-indentWhenExpr = 'when' parenArgs:a br indentWhenBlock:b indentCatcher*:cs ('finally' indentBlock)?:fb -> t.When(a, b, cs, fb)
+indentWhenExpr = 'when' parenArgs:a indentWhenBlock:b indentCatcher*:cs (br 'finally' indentBlock)?:fb -> t.When(a, b, cs, fb)
 
 topSeq = topExpr:x (seqSep topExpr)*:xs seqSep? -> t.SeqExpr([x] + xs)
 pragma = 'pragma' "." verb:v "(" string:s ')' -> t.Pragma(v, s)
-topExpr = (pragma -> t.NounExpr("null")) | expr
+topExpr = (pragma -> t.NounExpr("null")) | blockExpr
 start = br topSeq?
