@@ -1,4 +1,8 @@
+import linecache, sys, uuid
+from types import ModuleType as module
+
 from terml.parser import parseTerm
+from monte.compiler import ecompile
 
 _absent = object()
 
@@ -46,9 +50,11 @@ class MonteObject(object):
         return self.op__cmp(other)
 
     def __eq__(self, other):
-            return equalizer.sameEver(self, other)
+        raise NotImplementedError()
+        return equalizer.sameEver(self, other)
 
     def __hash__(self):
+        raise NotImplementedError()
         if Selfless.stamped(self):
             return hash(self.getSpreadUncall())
         else:
@@ -87,15 +93,36 @@ class _SlotDescriptor(object):
         return self.slot.put(val)
 
 
+class MonteInt(int):
+    add = int.__add__
+    subtract = int.__sub__
+    multiply = int.__mul__
+    approxDivide = int.__truediv__
+    floorDivide = int.__floordiv__
+    shiftLeft = int.__lshift__
+    shiftRight = int.__rshift__
+    mod = int.__mod__
+    _m_and = int.__and__
+    _m_or = int.__or__
+    xor = int.__xor__
+    pow = int.__pow__
+    #butNot
+    #remainder
+
+class String(unicode):
+    add = unicode.__add__
+    multiply = unicode.__mul__
+
+
 def wrap(pyobj):
     if isinstance(pyobj, str):
         return Bytes(pyobj)
     if isinstance(pyobj, unicode):
         return String(pyobj)
     if isinstance(pyobj, int):
-        return EInt(pyobj)
+        return MonteInt(pyobj)
     if isinstance(pyobj, float):
-        return EFloat64(pyobj)
+        return MonteFloat64(pyobj)
     if isinstance(pyobj, list):
         return FlexList(pyobj)
     if isinstance(pyobj, tuple):
@@ -207,3 +234,31 @@ class _MatchFailure(Exception):
 
 def matcherFail(v):
     raise _MatchFailure(v)
+
+
+class GeneratedCodeLoader(object):
+    """
+    Object for use as a module's __loader__, to display generated
+    source.
+    """
+    def __init__(self, source):
+        self.source = source
+    def get_source(self, name):
+        return self.source
+
+pyeval = eval
+def eval(source):
+    name = uuid.uuid4().hex
+    mod = module(name)
+    mod.__name__ = name
+    mod.__loader__ = GeneratedCodeLoader(source)
+    pysrc1 = ecompile(source)
+    pysrc2, _, lastline = pysrc1.rpartition('\n')
+    pysrc = '\n'.join(["from monte import runtime as _monte",
+                       pysrc2,
+                       "_m_evalResult = " + lastline])
+    code = compile(pysrc, name + '.py', "exec")
+    pyeval(code, mod.__dict__)
+    sys.modules[name] = mod
+    linecache.getlines(name + '.py', mod.__dict__)
+    return mod._m_evalResult

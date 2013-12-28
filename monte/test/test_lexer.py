@@ -149,11 +149,13 @@ class LexerTests(unittest.TestCase):
 SIMPLE_INDENT = """
 foo:
   baz
+
 """
 
 ARROW_INDENT = """
 foo ->
   baz
+
 """
 
 SIMPLE_DEDENT = """
@@ -221,9 +223,9 @@ class IndentLexerTests(unittest.TestCase):
                           Term(Tag('EOL'), None, None, None),
                           Term(Tag('INDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('DEDENT'), None, None, None),
                           Term(Tag('EOL'), None, None, None),
-                          Term(Tag('EOL'), None, None, None),
-                          Term(Tag('DEDENT'), None, None, None)])
+                          Term(Tag('EOL'), None, None, None)])
 
     def test_arrow(self):
         self.assertEqual(lex(ARROW_INDENT),
@@ -233,9 +235,9 @@ class IndentLexerTests(unittest.TestCase):
                           Term(Tag('EOL'), None, None, None),
                           Term(Tag('INDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "baz", None, None),
+                          Term(Tag('DEDENT'), None, None, None),
                           Term(Tag('EOL'), None, None, None),
-                          Term(Tag('EOL'), None, None, None),
-                          Term(Tag('DEDENT'), None, None, None)])
+                          Term(Tag('EOL'), None, None, None)])
 
     def test_dedent(self):
         self.assertEqual(lex(SIMPLE_DEDENT),
@@ -245,8 +247,8 @@ class IndentLexerTests(unittest.TestCase):
                           Term(Tag('EOL'), None, None, None),
                           Term(Tag('INDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "baz", None, None),
-                          Term(Tag('EOL'), None, None, None),
                           Term(Tag('DEDENT'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
                           Term(Tag('IDENTIFIER'), "blee", None, None),
                           Term(Tag('EOL'), None, None, None)])
 
@@ -259,10 +261,10 @@ class IndentLexerTests(unittest.TestCase):
                           Term(Tag('EOL'), None, None, None),
                           Term(Tag('INDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "baz", None, None),
-                          Term(Tag('EOL'), None, None, None),
-                          Term(Tag('EOL'), None, None, None),
-                          Term(Tag('EOL'), None, None, None),
                           Term(Tag('DEDENT'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
+                          Term(Tag('EOL'), None, None, None),
                           Term(Tag('IDENTIFIER'), "blee", None, None),
                           Term(Tag('EOL'), None, None, None)])
 
@@ -281,9 +283,9 @@ class IndentLexerTests(unittest.TestCase):
                           Term(Tag('EOL'), None, None, None),
                           Term(Tag('INDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "biz", None, None),
+                          Term(Tag('DEDENT'), None, None, None),
+                          Term(Tag('DEDENT'), None, None, None),
                           Term(Tag('EOL'), None, None, None),
-                          Term(Tag('DEDENT'), None, None, None),
-                          Term(Tag('DEDENT'), None, None, None),
                           Term(Tag('IDENTIFIER'), "blee", None, None),
                           Term(Tag('EOL'), None, None, None),])
 
