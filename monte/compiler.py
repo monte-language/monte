@@ -352,7 +352,7 @@ class PythonWriter(object):
                 val = self._generate(sub, ctx, catcher.args[1])
                 sub.writeln("%s = %s" % (escapeTemp, val))
             else:
-                sub.writeln("%s = %s" % (escapeTemp, ejTemp))
+                sub.writeln("%s = %s.args[0]" % (escapeTemp, ejTemp))
             if ctx.mode != FX_ONLY:
                 return escapeTemp
         else:

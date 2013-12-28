@@ -66,6 +66,9 @@ class MonteObject(object):
         else:
             raise AttributeError(verb)
 
+    def __call__(self, *args):
+        return self.run(*args)
+
 
 class _MonteMatcher(object):
     def __init__(self, obj, verb):
@@ -163,9 +166,9 @@ def throw(val):
     raise RuntimeError(val)
 
 
-def ejector(name):
+def ejector(_name):
     class ejtype(MonteEjection):
-        name = name
+        name = _name
         pass
 
     def eject(val):
