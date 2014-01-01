@@ -22,12 +22,5 @@ class EvalTest(unittest.TestCase):
             """)),
             7)
 
-
-
-
-
-
-
-
-
-
+    def test_scope(self):
+        self.assertEqual(monte_eval("if (true) {1} else {2}"), 1)

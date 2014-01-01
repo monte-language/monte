@@ -86,7 +86,7 @@ class OuterScopeLayout(object):
     def getBinding(self, n):
         if n in self.outers:
             return Binding(t.FinalPattern(t.NounExpr(n), None),
-                           '_monte.' + mangleIdent(n), None, OUTER)
+                           '_m_outerScope["%s"]' % mangleIdent(n), None, OUTER)
 
 
 class FrameScopeLayout(object):
@@ -211,9 +211,10 @@ class PythonWriter(object):
     Converts an E syntax tree into Python source.
     """
 
-    def __init__(self, tree, origin):
+    def __init__(self, tree, origin, outerScope):
         self.tree = tree
         self.origin = origin
+        self.outerScope = outerScope
 
     def err(self, msg):
         raise CompileError(msg)
@@ -224,7 +225,7 @@ class PythonWriter(object):
             None, rootWriter=origOut,
             layout=ScopeLayout(None, FrameScopeLayout((), None, None, self.origin),
                                OuterScopeLayout(SymGenerator().gensym,
-                                                safeScopeNames)))
+                                                self.outerScope.keys())))
         val = self._generate(out, ctx, self.tree)
         flush()
         origOut.writeln(val)
@@ -662,8 +663,8 @@ class PythonWriter(object):
         out.writeln("%s = _monte.slotFromBinding(%s)" % (pyname, val))
         return pyname
 
-def ecompile(source, origin="__main"):
+def ecompile(source, scope, origin="__main"):
     ast = expand(parse(source))
     f = StringIO()
-    PythonWriter(ast, origin).output(TextWriter(f))
+    PythonWriter(ast, origin, scope).output(TextWriter(f))
     return f.getvalue().strip()

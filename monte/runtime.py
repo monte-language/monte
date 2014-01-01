@@ -250,15 +250,21 @@ class GeneratedCodeLoader(object):
         return self.source
 
 pyeval = eval
-def eval(source):
+jacklegScope = {
+    'true': True,
+    'false': False,
+    'null': None
+}
+
+def eval(source, scope=jacklegScope):
     name = uuid.uuid4().hex
     mod = module(name)
     mod.__name__ = name
     mod.__loader__ = GeneratedCodeLoader(source)
-    pysrc1 = ecompile(source)
-    pysrc2, _, lastline = pysrc1.rpartition('\n')
+    mod._m_outerScope = scope
+    pysrc, _, lastline = ecompile(source, scope).rpartition('\n')
     pysrc = '\n'.join(["from monte import runtime as _monte",
-                       pysrc2,
+                       pysrc,
                        "_m_evalResult = " + lastline])
     code = compile(pysrc, name + '.py', "exec")
     pyeval(code, mod.__dict__)
