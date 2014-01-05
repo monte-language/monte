@@ -255,13 +255,13 @@ def getIterator(coll):
     if isinstance(coll, dict):
         return coll.iteritems()
     elif isinstance(coll, (tuple, list)):
-        return enumerate(coll)
+        return ((wrap(i), v) for (i, v) in enumerate(coll))
     else:
         gi = getattr(coll, "getIterator", None)
         if gi is not None:
             return gi()
         else:
-            return enumerate(coll)
+            return ((wrap(i), v) for (i, v) in enumerate(coll))
 
 def monteLooper(coll, obj):
     it = getIterator(coll)
