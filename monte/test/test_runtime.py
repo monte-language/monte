@@ -41,3 +41,4 @@ class EvalTest(unittest.TestCase):
 
     def test_listcomp(self):
         self.assertEqual(monte_eval("[x + 1 for x in [0, 1]]"), (1, 2))
+        self.assertEqual(monte_eval("[k + v for k => v in [3, 4, 7]]"), (3, 5, 9))
