@@ -20,7 +20,7 @@ class MonteObject(object):
         return self._m_methodGuards[name]
 
     def _m_install(self, name, slot):
-        self.__class__.__dict__[name] = _SlotDescriptor(slot)
+        setattr(self.__class__, name, _SlotDescriptor(slot))
 
     def __mul__(self, other):
         return self.multiply(other)
@@ -89,10 +89,10 @@ class _SlotDescriptor(object):
     def __init__(self, slot):
         self.slot = slot
 
-    def __get__(self):
+    def __get__(self, obj, typ):
         return self.slot.get()
 
-    def __put__(self, val):
+    def __set__(self, obj, val):
         return self.slot.put(val)
 
 
@@ -171,7 +171,7 @@ def ejector(_name):
         name = _name
         pass
 
-    def eject(val):
+    def eject(val=None):
         raise ejtype(val)
     eject._m_type = ejtype
 
@@ -187,7 +187,7 @@ class StaticContext(object):
 
 
 class FinalSlot(object):
-    def __init__(self, guard, val, ej):
+    def __init__(self, val, guard=None, ej=throw):
         self.guard = guard
         if self.guard is not None:
             self.val = self.guard.coerce(self.val, ej)
@@ -250,24 +250,64 @@ class GeneratedCodeLoader(object):
         return self.source
 
 pyeval = eval
+
+def getIterator(coll):
+    if isinstance(coll, dict):
+        return coll.iteritems()
+    elif isinstance(coll, (tuple, list)):
+        return enumerate(coll)
+    else:
+        gi = getattr(coll, "getIterator", None)
+        if gi is not None:
+            return gi()
+        else:
+            return enumerate(coll)
+
+def monteLooper(coll, obj):
+    it = getIterator(coll)
+    for key, item in it:
+        obj.run(key, item)
+
+def makeMonteList(*items):
+    return items
+
+def validateFor(flag):
+    if not flag:
+        raise RuntimeError("For-loop body isn't valid after for-loop exits.")
+
+def accumulateList(coll, obj):
+    it = getIterator(coll)
+    acc = []
+    skip = ejector("listcomp_skip")
+    for key, item in it:
+        try:
+            acc.append(obj.run(key, item, skip))
+        except skip._m_type:
+            continue
+    return tuple(acc)
+
 jacklegScope = {
     'true': True,
     'false': False,
-    'null': None
+    'null': None,
+    '__makeList': makeMonteList,
+    '__loop': monteLooper,
+    '__validateFor': validateFor,
+    '__accumulateList': accumulateList,
 }
 
 def eval(source, scope=jacklegScope):
-    name = uuid.uuid4().hex
+    name = uuid.uuid4().hex + '.py'
     mod = module(name)
     mod.__name__ = name
-    mod.__loader__ = GeneratedCodeLoader(source)
     mod._m_outerScope = scope
     pysrc, _, lastline = ecompile(source, scope).rpartition('\n')
     pysrc = '\n'.join(["from monte import runtime as _monte",
                        pysrc,
                        "_m_evalResult = " + lastline])
-    code = compile(pysrc, name + '.py', "exec")
+    mod.__loader__ = GeneratedCodeLoader(pysrc)
+    code = compile(pysrc, name, "exec")
     pyeval(code, mod.__dict__)
     sys.modules[name] = mod
-    linecache.getlines(name + '.py', mod.__dict__)
+    linecache.getlines(name, mod.__dict__)
     return mod._m_evalResult

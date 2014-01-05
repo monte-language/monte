@@ -86,7 +86,7 @@ class OuterScopeLayout(object):
     def getBinding(self, n):
         if n in self.outers:
             return Binding(t.FinalPattern(t.NounExpr(n), None),
-                           '_m_outerScope["%s"]' % mangleIdent(n), None, OUTER)
+                           '_m_outerScope["%s"]' % n, None, OUTER)
 
 
 class FrameScopeLayout(object):
@@ -433,7 +433,7 @@ class PythonWriter(object):
                 initOut.writeln(selfName + "._m_guardMethods(_m_methodGuards)")
             for name, pyname  in zip(fnames, pyfnames):
                 initOut.writeln("_monte.MonteObject._m_install(%s, '%s', %s)" % (
-                    selfName, name, pyname))
+                    selfName, mangleIdent(name), pyname))
             initOut.writeln("")
         metacontext = False
         for meth in methods:
@@ -522,7 +522,7 @@ class PythonWriter(object):
         sub.writeln("%s = %s" % (finTemp, val))
         out.writeln("finally:")
         val = self._generate(sub, ctx, fin)
-        sub.writeln("%s = %s" % (finTemp, val))
+        sub.writeln(val)
         return finTemp
 
     def generate_KernelTry(self, out, ctx, node):
