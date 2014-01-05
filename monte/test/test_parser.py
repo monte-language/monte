@@ -440,6 +440,7 @@ class ParserTest(unittest.TestCase):
         parse = self.getParser("expr")
         self.assertEqual(parse("[1 for k => v in x]"), ["ListComp", ["FinalPattern", ["NounExpr", "k"], None], ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], None, ["LiteralExpr", 1]])
         self.assertEqual(parse("[1 for v in x]"), ["ListComp", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], None, ["LiteralExpr", 1]])
+        self.assertEqual(parse("[1 for v in x][0]"), ["GetExpr", ["ListComp", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], None, ["LiteralExpr", 1]], [["LiteralExpr", 0]]])
         self.assertEqual(parse("[1 for v in x if y]"), ["ListComp", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["NounExpr", "y"], ["LiteralExpr", 1]])
 
     def test_mapcomp(self):

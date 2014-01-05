@@ -3,12 +3,14 @@
 import textwrap
 
 from twisted.trial import  unittest
-from monte.compiler import ecompile, CompileError, mangleIdent
+from monte.compiler import ecompile, CompileError, mangleIdent, safeScopeNames
+
+fakeScope = dict.fromkeys(safeScopeNames)
 
 class CompilerTest(unittest.TestCase):
     maxDiff = None
     def eq_(self, esrc, pysrc):
-        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip()),
+        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip(), fakeScope),
                                   textwrap.dedent(pysrc).strip())
 
     def test_mangle(self):
@@ -24,17 +26,17 @@ class CompilerTest(unittest.TestCase):
         self.assertEqual(mangleIdent("jim!bob"), "_m_jim33bob")
 
     def test_literal(self):
-        self.assertEqual(ecompile("1"), "_monte.wrap(1)")
-        self.assertEqual(ecompile('"foo"'), "_monte.wrap(u'foo')")
-        self.assertEqual(ecompile("'x'"), "_monte.Character('x')")
-        self.assertEqual(ecompile("100_312"), "_monte.wrap(100312)")
-        self.assertEqual(ecompile('"\\u0061"'), "_monte.wrap(u'a')")
+        self.assertEqual(ecompile("1", {}), "_monte.wrap(1)")
+        self.assertEqual(ecompile('"foo"', {}), "_monte.wrap(u'foo')")
+        self.assertEqual(ecompile("'x'", {}), "_monte.Character('x')")
+        self.assertEqual(ecompile("100_312", {}), "_monte.wrap(100312)")
+        self.assertEqual(ecompile('"\\u0061"', {}), "_monte.wrap(u'a')")
 
-    # def test_noun(self):
-    #     self.assertEqual(ecompile("foo"), "foo")
-    #     self.assertEqual(ecompile('::"if"'), "_m_if")
-    #     self.assertEqual(ecompile('_m_if'), "_m__m_if")
-    #     self.assertEqual(ecompile('::"hello world!"'), "_m_hello_world_")
+    def test_noun(self):
+         self.assertEqual(ecompile("foo", {'foo': None}), '_m_outerScope["foo"]')
+         self.assertEqual(ecompile('::"if"', {'if': None}),  '_m_outerScope["if"]')
+         self.assertEqual(ecompile('::"hello world!"', {'hello world!': None}),
+                          '_m_outerScope["hello world!"]')
 
     def test_call(self):
         self.eq_("def x := 1; x.baz(2)",
@@ -68,7 +70,7 @@ class CompilerTest(unittest.TestCase):
     def test_guardedVar(self):
         self.eq_("var x :(1..!10) := 1",
         """
-        _g_guard1 = _monte._m___makeOrderedSpace.op__till(_monte.wrap(1), _monte.wrap(10))
+        _g_guard1 = _m_outerScope["__makeOrderedSpace"].op__till(_monte.wrap(1), _monte.wrap(10))
         _g_x2 = _monte.wrap(1)
         x = _monte.VarSlot(_g_guard1, _g_x2, _monte.throw)
         _g_x2
@@ -84,13 +86,13 @@ class CompilerTest(unittest.TestCase):
             x.put(_g_x2)
             _g_x2
             """)
-        self.assertRaises(CompileError, ecompile, "def x := 1; x := 2")
-        self.assertRaises(CompileError, ecompile, "x := 2")
+        self.assertRaises(CompileError, ecompile, "def x := 1; x := 2", {})
+        self.assertRaises(CompileError, ecompile, "x := 2", {})
 
     def test_guardpattern(self):
         self.eq_("def x :float64 := 1",
                  """
-                 _g_guard1 = _monte.float64
+                 _g_guard1 = _m_outerScope["float64"]
                  x = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
                  x
                  """)
@@ -104,9 +106,9 @@ class CompilerTest(unittest.TestCase):
                  except ValueError, _g_e5:
                      _monte.throw(_g_e5)
                      raise RuntimeError("Ejector did not exit")
-                 _g_guard6 = _monte.float64
+                 _g_guard6 = _m_outerScope["float64"]
                  x = _g_guard6.coerce(_g_list2, _monte.throw)
-                 _g_guard7 = _monte.String
+                 _g_guard7 = _m_outerScope["String"]
                  y = _g_guard7.coerce(_g_list3, _monte.throw)
                  z = _g_list4
                  _g_total_list1
@@ -121,9 +123,9 @@ class CompilerTest(unittest.TestCase):
                  except ValueError, _g_e5:
                      ej(_g_e5)
                      raise RuntimeError("Ejector did not exit")
-                 _g_guard6 = _monte.float64
+                 _g_guard6 = _m_outerScope["float64"]
                  x = _g_guard6.coerce(_g_list2, ej)
-                 _g_guard7 = _monte.String
+                 _g_guard7 = _m_outerScope["String"]
                  y = _g_guard7.coerce(_g_list3, ej)
                  z = _g_list4
                  _g_total_list1
@@ -206,10 +208,10 @@ class CompilerTest(unittest.TestCase):
 
              class _m_foo_Script(_monte.MonteObject):
                  def baz(foo, _g_Final1, y):
-                     _g_guard2 = _monte.int
+                     _g_guard2 = _m_outerScope["int"]
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      a = _monte.wrap(2)
-                     _g_guard3 = _monte._m___comparer.geq(_monte.float64, _monte.wrap(0))
+                     _g_guard3 = _m_outerScope["__comparer"].geq(_m_outerScope["float64"], _monte.wrap(0))
                      b = _g_guard3.coerce(_monte.wrap(3.0), _monte.throw)
                      boz = _m_boz_Script(_monte.FinalSlot(a, None), _monte.FinalSlot(b, _g_guard3), _monte.FinalSlot(x, _g_guard2))
                      return boz
@@ -257,16 +259,16 @@ class CompilerTest(unittest.TestCase):
 
              class _m_foo_Script(_monte.MonteObject):
                  def baz(foo, _g_Final1, y):
-                     _g_guard2 = _monte.int
+                     _g_guard2 = _m_outerScope["int"]
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      _g_a3 = _monte.wrap(1)
                      a = _monte.VarSlot(None, _g_a3, _monte.throw)
-                     _g_guard4 = _monte.int
+                     _g_guard4 = _m_outerScope["int"]
                      _g_b5 = _monte.wrap(0)
                      b = _monte.VarSlot(_g_guard4, _g_b5, _monte.throw)
                      left = _m_left_Script(a, b)
                      right = _m_right_Script(a, b)
-                     return _monte._m___makeList(left, right)
+                     return _m_outerScope["__makeList"](left, right)
 
              foo = _m_foo_Script()
              foo
@@ -284,7 +286,7 @@ class CompilerTest(unittest.TestCase):
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0QMhqh1iU1tcCtKL8qNQ+kBUk8sSRRSTMWqBaMNTUB+zEoKA=="
 
-            foo = _m_foo_Script([_monte.DeepFrozen, _monte.Data])
+            foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]])
             foo
             """)
 
@@ -300,8 +302,8 @@ class CompilerTest(unittest.TestCase):
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0IRS6JJYkgVdFIQqmpBW5F+VWpeUqasUAZMNbUBAD7syYh"
 
-            _g_guard1 = _monte.Data
-            foo = _g_guard1.coerce(_m_foo_Script([_monte.Data, _monte.DeepFrozen]), _monte.throw)
+            _g_guard1 = _m_outerScope["Data"]
+            foo = _g_guard1.coerce(_m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]]), _monte.throw)
             foo
             """)
 
@@ -318,9 +320,9 @@ class CompilerTest(unittest.TestCase):
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
 
-            _g_guard1 = _monte.Data
+            _g_guard1 = _m_outerScope["Data"]
             foo = _monte.VarSlot(_g_guard1)
-            _g_foo2 = _m_foo_Script([_monte.Data, _monte.DeepFrozen], foo)
+            _g_foo2 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], foo)
             foo._m_init(_g_foo2, _monte.throw)
             _g_foo2
             """)
@@ -336,7 +338,7 @@ class CompilerTest(unittest.TestCase):
                  def baz(foo, x, y):
                      return foo._m_guardForMethod('baz').coerce(x, _monte.throw)
 
-             foo = _m_foo_Script({'baz': _monte.int})
+             foo = _m_foo_Script({'baz': _m_outerScope["int"]})
              foo
              """)
 
@@ -383,7 +385,7 @@ class CompilerTest(unittest.TestCase):
                         _m___return(_monte.wrap(1))
                         _g_escape2 = None
                     except _m___return._m_type, _g___return1:
-                        _g_escape2 = _g___return1
+                        _g_escape2 = _g___return1.args[0]
                     return _g_escape2
 
             foo = _m_foo_Script()
@@ -468,10 +470,10 @@ class CompilerTest(unittest.TestCase):
                         _m___return(_monte.Map(()))
                         _g_escape4 = None
                     except _m___return._m_type, _g___return3:
-                        _g_escape4 = _g___return3
+                        _g_escape4 = _g___return3.args[0]
                     return _g_ignore2._m_guardForMethod('run').coerce(_g_escape4, _monte.throw)
 
-            _g_ignore2 = _m__g_ignore1_Script({'run': _monte.any})
+            _g_ignore2 = _m__g_ignore1_Script({'run': _m_outerScope["any"]})
             _g_ignore2()
             """)
 
@@ -521,7 +523,7 @@ class CompilerTest(unittest.TestCase):
                         _m___return(boz)
                         _g_escape2 = None
                     except _m___return._m_type, _g___return1:
-                        _g_escape2 = _g___return1
+                        _g_escape2 = _g___return1.args[0]
                     return _g_escape2
 
             foo = _m_foo_Script()
@@ -537,7 +539,7 @@ class CompilerTest(unittest.TestCase):
             try:
                 _g_finally1 = _monte.wrap(1)
             finally:
-                _g_finally1 = _monte.wrap(2)
+                _monte.wrap(2)
             _g_finally1
             """)
 

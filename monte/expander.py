@@ -661,6 +661,12 @@ def expandComprehension(self, key, value, coll, filtr, exp, collector):
     kTemp = self.mktemp("key")
     vTemp = self.mktemp("value")
     skip = self.mktemp("skip")
+    value = t.SeqExpr([
+        t.Def(key, None, kTemp),
+        t.Def(value, None, vTemp),
+        exp])
+    if filtr:
+        value = t.If(filtr, value, t.MethodCallExpr(skip, "run", []))
     obj = t.Object(
         "For-loop body", t.IgnorePattern(None),
         t.Script(
@@ -672,12 +678,7 @@ def expandComprehension(self, key, value, coll, filtr, exp, collector):
                       None,
                       t.SeqExpr([
                           mcall("__validateFor", "run", fTemp),
-                          t.If(filtr,
-                               t.SeqExpr([
-                                   t.Def(key, None, kTemp),
-                                   t.Def(value, None, vTemp),
-                                   exp]),
-                               t.MethodCallExpr(skip, "run", []))]))],
+                          value]))],
             []))
     return t.SeqExpr([
         t.Def(
