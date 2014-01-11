@@ -551,7 +551,9 @@ class CompilerTest(unittest.TestCase):
             """
             try:
                 _g_catch1 = _monte.wrap(1)
-            except Exception, _g_exception2:
+            except _monte.MonteEjection:
+                raise
+            except BaseException, _g_exception2:
                 p = _g_exception2
                 _g_catch1 = _monte.wrap(2)
             _g_catch1

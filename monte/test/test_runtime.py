@@ -42,3 +42,25 @@ class EvalTest(unittest.TestCase):
     def test_listcomp(self):
         self.assertEqual(monte_eval("[x + 1 for x in [0, 1]]"), (1, 2))
         self.assertEqual(monte_eval("[k + v for k => v in [3, 4, 7]]"), (3, 5, 9))
+
+    def test_map(self):
+        self.assertEqual(monte_eval('["a" => 3, "b" => 4]["a"]'), 3)
+
+    def test_mapcomp(self):
+        self.assertEqual(monte_eval('[x => x + 1 for x in [1, 2]][2]'), 3)
+
+    def test_tryDoesntCatchEjections(self):
+        self.assertEqual(
+            monte_eval(
+                'var x := 0; escape e { try { e(1) } catch p { x := p } }; x'),
+            0)
+
+    def test_scopesDontOverlap(self):
+        self.assertEqual(
+            monte_eval(
+                'def x := 1; if (true) { def x := 2}; x'),
+            1)
+
+
+
+

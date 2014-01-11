@@ -70,7 +70,68 @@ def mangleIdent(n):
     else:
         return prefix + ''.join(decimalize(n))
 
-safeScopeNames = set(["null", "false", "true", "throw", "__loop", "__makeList", "__makeMap", "__makeProtocolDesc", "__makeMessageDesc", "__makeParamDesc", "any", "void", "boolean", "__makeOrderedSpace", "Guard", "require", "__makeVerbFacet", "__MatchContext", "__is", "__splitList", "__suchThat", "__bind", "__extract", "__Empty", "__matchBind", "__Test", "NaN", "Infinity", "__identityFunc", "__makeInt", "escape", "for", "if", "try", "while", "__makeFinalSlot", "__makeTwine", "__makeSourceSpan", "__auditedBy", "near", "pbc", "PassByCopy", "DeepPassByCopy", "Data", "Persistent", "DeepFrozen", "int", "float64", "char", "String", "Twine", "TextWriter", "List", "Map", "Set", "nullOk", "Tuple", "__Portrayal", "notNull", "vow", "rcvr", "ref", "nocall", "SturdyRef", "simple__quasiParser", "twine__quasiParser", "rx__quasiParser", "olde__quasiParser", "e__quasiParser", "epatt__quasiParser", "sml__quasiParser", "term__quasiParser", "__equalizer", "__comparer", "Ref", "E", "promiseAllFulfilled", "EIO", "help", "safeScope", "__eval", "resource__uriGetter", "type__uriGetter", "elib__uriGetter", "elang__uriGetter", "opaque__uriGetter", "__abortIncarnation", "when", "persistenceSealer", "import__uriGetter", "traceln"])
+safeScopeNames = set([
+    #essentials
+    "null", "false", "true", "NaN", "Infinity",
+
+    #default ejector
+    "throw",
+
+    #collections and iteration
+    "__loop", "__makeList", "__makeMap",
+    "__accumulateList", "__iterWhile",
+
+    #interface poop
+    "__makeProtocolDesc", "__makeMessageDesc", "__makeParamDesc",
+
+    #guards
+    "any", "void", "boolean", "__makeOrderedSpace", "Guard",
+    "near", "pbc", "PassByCopy", "DeepPassByCopy", "Data", "Persistent",
+    "DeepFrozen", "int", "float64", "char", "String", "Twine", "TextWriter",
+    "List", "Map", "Set", "nullOk", "Tuple", "__Portrayal", "notNull", "vow",
+    "rcvr", "ref",
+
+    # testing/debugging tools
+    "require", "traceln"
+
+    # more syntax expansion
+    "__makeVerbFacet", "__MatchContext", "__is", "__splitList", "__suchThat", "__bind",
+    "__extract", "__Empty", "__matchBind", "__Test",
+    "__identityFunc", "__makeInt",
+
+    #lambda-args experiments
+    "escape", "for", "if", "try", "while", "when",
+
+    "__makeFinalSlot", "__makeTwine", "__makeSourceSpan",
+
+    # Auditing
+    "__auditedBy",
+
+    "nocall", "SturdyRef",
+
+    "simple__quasiParser", "twine__quasiParser", "rx__quasiParser",
+    "olde__quasiParser", "e__quasiParser", "epatt__quasiParser",
+    "sml__quasiParser", "term__quasiParser",
+
+
+    #ref stuff
+    "__equalizer", "__comparer", "Ref", "E", "promiseAllFulfilled",
+
+    #EIO
+    "EIO",
+
+    # user info
+    "help", "safeScope",
+
+    # eval
+    "__eval",
+
+    # uri getters
+    "resource__uriGetter", "type__uriGetter", "elib__uriGetter",
+    "elang__uriGetter", "opaque__uriGetter",  "import__uriGetter",
+
+    # persistence
+    "__abortIncarnation", "persistenceSealer"])
 
 class OuterScopeLayout(object):
     parent = None
@@ -168,6 +229,8 @@ class ScopeLayout(object):
     def _createBinding(self, n):
         return Binding(self.nodes[n],  self.pynames[n], self.guards[n], LOCAL)
 
+    def makeInner(self):
+        return ScopeLayout(self, self.frame, self.outer)
 
 class Binding(object):
     def __init__(self, node, pyname, guardname, kind):
@@ -339,7 +402,8 @@ class PythonWriter(object):
             sub = out.indent()
             ejTemp = ctx.layout.gensym(name)
             escapeTemp = ctx.layout.gensym("escape")
-            val = self._generate(sub, ctx, body)
+            newctx = ctx.with_(layout=ctx.layout.makeInner())
+            val = self._generate(sub, newctx, body)
             sub.writeln("%s = %s" % (escapeTemp, val))
             out.writeln("except %s._m_type, %s:" % (ej, ejTemp))
             if catcher.tag.name != 'null':
@@ -513,10 +577,12 @@ class PythonWriter(object):
         sub = out.indent()
         out.writeln("try:")
         finTemp = ctx.layout.gensym("finally")
-        val = self._generate(sub, ctx, block)
+        newctx = ctx.with_(layout=ctx.layout.makeInner())
+        val = self._generate(sub, newctx, block)
         sub.writeln("%s = %s" % (finTemp, val))
         out.writeln("finally:")
-        val = self._generate(sub, ctx, fin)
+        newctx = ctx.with_(layout=ctx.layout.makeInner())
+        val = self._generate(sub, newctx, fin)
         sub.writeln(val)
         return finTemp
 
@@ -525,17 +591,21 @@ class PythonWriter(object):
         sub = out.indent()
         out.writeln("try:")
         catchTemp = ctx.layout.gensym("catch")
-        val = self._generate(sub, ctx, block)
+        newctx = ctx.with_(layout=ctx.layout.makeInner())
+        val = self._generate(sub, newctx, block)
         sub.writeln("%s = %s" % (catchTemp, val))
+        out.writeln("except _monte.MonteEjection:")
+        sub.writeln("raise")
         excTemp = ctx.layout.gensym("exception")
-        out.writeln("except Exception, %s:" % (excTemp,))
+        out.writeln("except BaseException, %s:" % (excTemp,))
         self._generatePattern(sub, ctx, None, excTemp, patt)
-        val = self._generate(sub, ctx, catchblock)
+        newctx = ctx.with_(layout=ctx.layout.makeInner())
+        val = self._generate(sub, newctx, catchblock)
         sub.writeln("%s = %s" % (catchTemp, val))
         return catchTemp
 
     def generate_HideExpr(self, out, ctx, node):
-        newctx = ctx.with_(layout=ScopeLayout(ctx.layout, ctx.layout.frame, ctx.layout.outer))
+        newctx = ctx.with_(layout=ctx.layout.makeInner())
         return self._generate(out, newctx, node.args[0])
 
     def generate_If(self, out, ctx, node):
@@ -544,11 +614,13 @@ class PythonWriter(object):
         tv = self._generate(out, ctx, test)
         ifTemp = ctx.layout.gensym("if")
         out.writeln("if %s:" % (tv,))
-        val = self._generate(sub, ctx, consq)
+        newctx = ctx.with_(layout=ctx.layout.makeInner())
+        val = self._generate(sub, newctx, consq)
         sub.writeln("%s = %s" % (ifTemp, val))
         if alt.tag.name != 'null':
             out.writeln("else:")
-            val = self._generate(sub, ctx, alt)
+            newctx = ctx.with_(layout=ctx.layout.makeInner())
+            val = self._generate(sub, newctx, alt)
             sub.writeln("%s = %s" % (ifTemp, val))
         return ifTemp
 
