@@ -158,7 +158,7 @@ def reifyBinding(slot):
     """
 
 
-class MonteEjection(Exception):
+class MonteEjection(BaseException):
     pass
 
 
@@ -271,6 +271,17 @@ def monteLooper(coll, obj):
 def makeMonteList(*items):
     return items
 
+class MonteMap(dict):
+
+    __setitem__ = None
+    get = dict.__getitem__
+
+
+class mapMaker(object):
+    @staticmethod
+    def fromPairs(pairs):
+        return MonteMap(pairs)
+
 def validateFor(flag):
     if not flag:
         raise RuntimeError("For-loop body isn't valid after for-loop exits.")
@@ -286,14 +297,19 @@ def accumulateList(coll, obj):
             continue
     return tuple(acc)
 
+def accumulateMap(coll, obj):
+    return mapMaker.fromPairs(accumulateList(coll, obj))
+
 jacklegScope = {
     'true': True,
     'false': False,
     'null': None,
     '__makeList': makeMonteList,
+    '__makeMap': mapMaker,
     '__loop': monteLooper,
     '__validateFor': validateFor,
     '__accumulateList': accumulateList,
+    '__accumulateMap': accumulateMap,
 }
 
 def eval(source, scope=jacklegScope):
