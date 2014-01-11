@@ -25,6 +25,13 @@ class EvalTest(unittest.TestCase):
     def test_scope(self):
         self.assertEqual(monte_eval("if (true) {1} else {2}"), 1)
 
+    def test_comparer(self):
+        self.assertEqual(monte_eval("1 < 2"), True)
+        self.assertEqual(monte_eval("1 > 2"), False)
+        self.assertEqual(monte_eval("3 >= 3"), True)
+        self.assertEqual(monte_eval("3 <= 3"), True)
+        self.assertEqual(monte_eval("3 <=> 4"), False)
+
     def test_list(self):
         self.assertEqual(monte_eval("[0, 1]"), (0, 1))
 
@@ -49,6 +56,9 @@ class EvalTest(unittest.TestCase):
     def test_mapcomp(self):
         self.assertEqual(monte_eval('[x => x + 1 for x in [1, 2]][2]'), 3)
 
+    def test_while(self):
+        self.assertEqual(monte_eval('var x := 0; while (x <= 3) { x += 1}; x'), 4)
+
     def test_tryDoesntCatchEjections(self):
         self.assertEqual(
             monte_eval(
@@ -60,7 +70,3 @@ class EvalTest(unittest.TestCase):
             monte_eval(
                 'def x := 1; if (true) { def x := 2}; x'),
             1)
-
-
-
-
