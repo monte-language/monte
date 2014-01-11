@@ -8,6 +8,9 @@ _absent = object()
 
 class MonteObject(object):
     _m_matcherNames = ()
+    def _conformTo(self, guard):
+        return self
+
     def _m_audit(self, auditors):
         expr = parseTerm(self._m_objectExpr.decode('base64').decode('zlib'))
         for auditor in auditors:
@@ -97,11 +100,16 @@ class _SlotDescriptor(object):
 
 
 class MonteInt(int):
-    add = int.__add__
-    subtract = int.__sub__
-    multiply = int.__mul__
-    approxDivide = int.__truediv__
-    floorDivide = int.__floordiv__
+    def add(self, other):
+        return MonteInt(self + other)
+    def subtract(self, other):
+        return MonteInt(self - other)
+    def multiply(self, other):
+        return MonteInt(self * other)
+    def approxDivide(self, other):
+        return MonteInt(int.__truediv__(self, other))
+    def floorDivide(self, other):
+        return MonteInt(int.__floordiv__(self, other))
     shiftLeft = int.__lshift__
     shiftRight = int.__rshift__
     mod = int.__mod__
@@ -170,12 +178,16 @@ def ejector(_name):
     class ejtype(MonteEjection):
         name = _name
         pass
-
+    active = [True]
     def eject(val=None):
+        if not active[0]:
+            throw("Ejector is not active")
         raise ejtype(val)
     eject._m_type = ejtype
 
-    return eject
+    def disable():
+        active[0] = False
+    return eject, disable
 
 
 class StaticContext(object):
@@ -300,16 +312,69 @@ def accumulateList(coll, obj):
 def accumulateMap(coll, obj):
     return mapMaker.fromPairs(accumulateList(coll, obj))
 
+def iterWhile(f):
+    return (v for v in iter(f, False))
+
+class Comparer(MonteObject):
+    def greaterThan(self, left, right):
+        return left > right
+
+    def geq(self, left, right):
+        return left >= right
+
+    def lessThan(self, left, right):
+        return left < right
+
+    def leq(self, left, right):
+        return left <= right
+
+    def asBigAs(self, left, right):
+        return (left <= right) and (left >= right)
+
+comparer = Comparer()
+
+class BooleanGuard(MonteObject):
+    def coerce(self, specimen, ej):
+        # XXX SHORTEN
+        tryej, trydisable = ejector("coercion")
+        try:
+            return self._subCoerce(specimen, tryej)
+        except tryej._m_type, p:
+            problem = p.args[0]
+        finally:
+            trydisable()
+        newspec = specimen._conformTo(self)
+        if newspec is not specimen:
+            return self._subCoerce(newspec, ej)
+        tryej(problem)
+
+    def _subCoerce(self, specimen, ej):
+        if specimen is True or specimen is False:
+            return specimen
+        ejector("%r is not a boolean" % (specimen,))
+
+booleanGuard = BooleanGuard()
+
 jacklegScope = {
     'true': True,
     'false': False,
     'null': None,
+    'NaN': float('nan'),
+    'Infinity': float('inf'),
+
+    '__comparer': comparer,
+
+    'throw': throw,
+
     '__makeList': makeMonteList,
     '__makeMap': mapMaker,
     '__loop': monteLooper,
     '__validateFor': validateFor,
     '__accumulateList': accumulateList,
     '__accumulateMap': accumulateMap,
+    '__iterWhile': iterWhile,
+
+    'boolean': booleanGuard
 }
 
 def eval(source, scope=jacklegScope):

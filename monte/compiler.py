@@ -138,16 +138,23 @@ safeScopeNames = set([
     # persistence
     "__abortIncarnation", "persistenceSealer"])
 
+_absent = object()
+
 class OuterScopeLayout(object):
     parent = None
     def __init__(self, gensym, outers):
         self.gensym = gensym
         self.outers = outers
 
-    def getBinding(self, n):
+    def getBinding(self, n, default=_absent):
         if n in self.outers:
             return Binding(t.FinalPattern(t.NounExpr(n), None),
                            '_m_outerScope["%s"]' % n, None, OUTER)
+        else:
+            if default is _absent:
+                raise CompileError("No global named " + repr(n))
+            else:
+                return default
 
 
 class FrameScopeLayout(object):
@@ -166,7 +173,7 @@ class FrameScopeLayout(object):
                        '_monte.getGuard(%s, "%s")' % (self.selfName, f.name),
                        FRAME)
 
-    def getBinding(self, name):
+    def getBinding(self, name, default=_absent):
         for f in self.fields:
             if f.name == name:
                 return f
@@ -200,9 +207,9 @@ class ScopeLayout(object):
     def addNoun(self, name, node, guardname=None):
         if name in self.pynames:
             raise CompileError("%r already in scope" % (name,))
-        if self.outer.getBinding(name):
+        if name in self.outer.outers:
             raise CompileError("Cannot shadow outer-scope name %r" % (name,))
-        if self.parent and self.parent.getBinding(name):
+        if self.parent and self.parent.getBinding(name, default=None):
             # a scope outside this one uses the name.  XXX only needs
             #gensym in certain circumstances, such as if the name is a
             #frame var in this context, or
@@ -220,15 +227,15 @@ class ScopeLayout(object):
             raise CompileError("internal compiler error")
         self.guards[name] = guard
 
-    def getBinding(self, n):
+    def getBinding(self, n, default=_absent):
         if n in self.nodes:
             return self._createBinding(n)
         elif self.parent:
-            return self.parent.getBinding(n)
+            return self.parent.getBinding(n, default)
         else:
-            b = self.frame.getBinding(n)
+            b = self.frame.getBinding(n, default)
             if b is None:
-                b = self.outer.getBinding(n)
+                b = self.outer.getBinding(n, default)
             return b
 
     def _createBinding(self, n):
@@ -339,8 +346,6 @@ class PythonWriter(object):
                      "true": "True",
                      "false": "False"}
         b = ctx.layout.getBinding(name)
-        if b is None:
-            self.err("Undefined variable: " + repr(name))
         if b.name in constants:
             return constants[b.name]
         if b.isFinal or b.kind == FRAME:
@@ -444,7 +449,8 @@ class PythonWriter(object):
         ss = scope(node)
         used = ss.namesUsed()
         fields = [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
-        selfBinding = ctx.layout.getBinding(name)
+        if nameNode.tag.name != 'IgnorePattern':
+            selfBinding = ctx.layout.getBinding(name)
         if nameNode.tag.name in ('FinalPattern', 'IgnorePattern'):
             paramNames = self._collectSlots(fields)
         else:
@@ -564,8 +570,6 @@ class PythonWriter(object):
         name = patt.args[0].data
         v = self._generate(out, ctx.with_(mode=VALUE), expr)
         b = ctx.layout.getBinding(name)
-        if not b:
-            self.err("Undefined variable:" + repr(name))
         temp = ctx.layout.gensym(mangleIdent(b.name))
         if b.isFinal:
             self.err("Can't assign to final variable: " + repr(name))
