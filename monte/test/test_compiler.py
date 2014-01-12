@@ -386,6 +386,8 @@ class CompilerTest(unittest.TestCase):
                         _g_escape2 = None
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
+                    finally:
+                        _m___return.disable()
                     return _g_escape2
 
             foo = _m_foo_Script()
@@ -471,6 +473,8 @@ class CompilerTest(unittest.TestCase):
                         _g_escape4 = None
                     except _m___return._m_type, _g___return3:
                         _g_escape4 = _g___return3.args[0]
+                    finally:
+                        _m___return.disable()
                     return _g_ignore2._m_guardForMethod('run').coerce(_g_escape4, _monte.throw)
 
             _g_ignore2 = _m__g_ignore1_Script({'run': _m_outerScope["any"]})
@@ -524,6 +528,8 @@ class CompilerTest(unittest.TestCase):
                         _g_escape2 = None
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
+                    finally:
+                        _m___return.disable()
                     return _g_escape2
 
             foo = _m_foo_Script()

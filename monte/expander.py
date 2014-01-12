@@ -436,7 +436,7 @@ MapPatternImport(nameAndString:nameAnd) -> [t.LiteralExpr(nameAnd[1]), nameAnd[0
 MapPatternOptional(@assoc @default) -> [mcall("__extract", "depr", assoc[0], default), assoc[1]]
 MapPatternRequired(@assoc) -> (mcall("__extract", "run", assoc[0]), assoc[1])
 ListPattern(@patterns null) -> t.ListPattern(patterns, None)
-ListPattern(@patterns @tail) -> t.ViaPattern(mcall("__splitList", "run", t.LiteralExpr(len(patterns))), patterns)
+ListPattern(@patterns @tail) -> t.ViaPattern(mcall("__splitList", "run", t.LiteralExpr(len(patterns))), t.ListPattern(patterns + [tail], None))
 
 SuchThatPattern(@pattern @expr) -> t.ViaPattern(t.NounExpr("__suchThat"),
                                       t.ListPattern([pattern, t.ViaPattern(mcall("__suchThat", "run", expr), t.IgnorePattern(None))], None))

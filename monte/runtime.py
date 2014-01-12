@@ -178,16 +178,19 @@ def ejector(_name):
     class ejtype(MonteEjection):
         name = _name
         pass
-    active = [True]
-    def eject(val=None):
-        if not active[0]:
-            throw("Ejector is not active")
-        raise ejtype(val)
-    eject._m_type = ejtype
+    class ej(MonteObject):
+        _m_type = ejtype
+        _m_active = True
 
-    def disable():
-        active[0] = False
-    return eject, disable
+        def __call__(self, val=None):
+            if not self._m_active:
+                throw("Ejector is not active")
+            raise ejtype(val)
+
+        def disable(self):
+            self._m_active = False
+
+    return ej()
 
 
 class StaticContext(object):
@@ -336,13 +339,13 @@ comparer = Comparer()
 class BooleanGuard(MonteObject):
     def coerce(self, specimen, ej):
         # XXX SHORTEN
-        tryej, trydisable = ejector("coercion")
+        tryej = ejector("coercion")
         try:
             return self._subCoerce(specimen, tryej)
         except tryej._m_type, p:
             problem = p.args[0]
         finally:
-            trydisable()
+            tryej.disable()
         newspec = specimen._conformTo(self)
         if newspec is not specimen:
             return self._subCoerce(newspec, ej)
@@ -354,6 +357,74 @@ class BooleanGuard(MonteObject):
         ejector("%r is not a boolean" % (specimen,))
 
 booleanGuard = BooleanGuard()
+
+class MakeVerbFacet(MonteObject):
+    def curryCall(self, obj, verb):
+        def facet(*a):
+            return getattr(obj, verb)(*a)
+        return facet
+
+makeVerbFacet = MakeVerbFacet()
+
+def matchSame(expected):
+    def sameMatcher(specimen, ej):
+        #XXX equalizer
+        if specimen == expected:
+            return expected
+        else:
+            ej("%r is not %r" % (specimen, expected))
+    return sameMatcher
+
+def switchFailed(specimen, *failures):
+    raise RuntimeError("%s did not match any option: [%s]" % (
+        specimen,
+        " ".join(str(f) for f in failures)))
+
+
+def suchThat(x, y=_absent):
+    if y is _absent:
+        # 1-arg invocation.
+        def suchThatMatcher(specimen, ejector):
+            if not x:
+                ejector("such-that expression was false")
+        return suchThatMatcher
+    else:
+        return [x, None]
+
+def extract(x, instead=_absent):
+    if instead is _absent:
+        # 1-arg invocation.
+        def extractor(specimen, ejector):
+            value = specimen[x]
+            without = dict(specimen)
+            del without[x]
+            return [value, without]
+        return extractor
+    else:
+        def extractor(specimen, ejector):
+            value = specimen.get(x, _absent)
+            if value is _absent:
+                return [instead(), specimen]
+            without = dict(specimen)
+            del without[x]
+            return [value, without]
+        return extractor
+
+class Empty:
+    def coerce(self, specimen, ej):
+        if len(specimen) == 0:
+            return specimen
+        else:
+            ej("Not empty: %s" % specimen)
+
+def splitList(cut):
+    def listSplitter(specimen, ej):
+        #XXX coerce to list
+        if len(specimen) < cut:
+            ej("A %s size list doesn't match a >= %s size list pattern" % (len(specimen), cut))
+        return specimen[:cut] + (specimen[cut:],)
+
+    return listSplitter
 
 jacklegScope = {
     'true': True,
@@ -374,7 +445,15 @@ jacklegScope = {
     '__accumulateMap': accumulateMap,
     '__iterWhile': iterWhile,
 
-    'boolean': booleanGuard
+    'boolean': booleanGuard,
+
+    '__makeVerbFacet': makeVerbFacet,
+    '__matchSame': matchSame,
+    '__switchFailed': switchFailed,
+    '__suchThat': suchThat,
+    '__extract': extract,
+    '__Empty': Empty(),
+    '__splitList': splitList,
 }
 
 def eval(source, scope=jacklegScope):
@@ -392,3 +471,6 @@ def eval(source, scope=jacklegScope):
     sys.modules[name] = mod
     linecache.getlines(name, mod.__dict__)
     return mod._m_evalResult
+
+
+
