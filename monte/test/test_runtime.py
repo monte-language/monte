@@ -2,6 +2,7 @@ from textwrap import dedent
 from monte.test import unittest
 
 from monte.runtime import eval as monte_eval
+from twisted.trial.unittest import SkipTest
 
 class EvalTest(unittest.TestCase):
 
@@ -70,3 +71,36 @@ class EvalTest(unittest.TestCase):
             monte_eval(
                 'def x := 1; if (true) { def x := 2}; x'),
             1)
+
+    def test_verbFacet(self):
+        self.assertEqual(monte_eval("def foo() { return 1 }; def x := foo.run; x()"), 1)
+
+    def test_matchsame(self):
+        self.assertEqual(monte_eval("def ==1 := 1"), 1)
+        self.assertRaises(RuntimeError, monte_eval, "def ==1 := 2")
+
+    def test_bind(self):
+        raise SkipTest
+        self.assertEqual(monte_eval("def x; bind x := 1; x"), 1)
+
+    def test_map_patt(self):
+        self.assertEqual(monte_eval('def ["a" => a, "b" => c] := ["a" => 1, "b" => 3]; c - a'), 2)
+#        self.assertEqual(monte_eval('def ["a" => a, "b" => c, "e" => e default {9}] := ["a" => 1, "b" => 3]; e'), 9)
+        self.assertRaises(RuntimeError, monte_eval,
+                          'def ["a" => a, "b" => c] := ["a" => 1, "b" => 3, "e" => 4]')
+
+        self.assertEqual(monte_eval(
+            'def ["a" => a, "b" => c] | d := ["a" => 1, "b" => 3, "e" => 4]; d'),
+            {'e': 4})
+
+    def test_list_patt(self):
+        self.assertEqual(monte_eval('def [a, b, c] := [2, 3, 4]; c - a'), 2)
+        self.assertEqual(monte_eval('def [a, b, c] + d := [2, 3, 4, 7, 6]; d'), (7, 6))
+
+    def test_suchthat(self):
+        self.assertEqual(monte_eval('def a ? (a > 0) := 1; a'), 1)
+        self.assertRaises(RuntimeError, monte_eval, 'def a ? (a > 10) := 1')
+
+    def test_switch(self):
+        self.assertEqual(monte_eval('switch (1) { match ==0 { 1} match ==1 { 2}}'), 2)
+        self.assertRaises(RuntimeError, monte_eval, 'switch (2) { match ==0 { 1} match ==1 { 2}}')

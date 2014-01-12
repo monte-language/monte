@@ -73,7 +73,7 @@ def mangleIdent(n):
 safeScopeNames = set([
     #essentials
     "null", "false", "true", "NaN", "Infinity",
-
+    "__makeInt",
     #default ejector
     "throw",
 
@@ -95,9 +95,9 @@ safeScopeNames = set([
     "require", "traceln"
 
     # more syntax expansion
-    "__makeVerbFacet", "__MatchContext", "__is", "__splitList", "__suchThat", "__bind",
-    "__extract", "__Empty", "__matchBind", "__Test",
-    "__identityFunc", "__makeInt",
+    "__makeVerbFacet", "__splitList", "__suchThat", "__bind",
+    "__extract", "__Empty", "__switchFailed", "__validateFor", "__slotToBinding",
+    "__booleanFlow", "__matchSame",
 
     #lambda-args experiments
     "escape", "for", "if", "try", "while", "when",
@@ -418,6 +418,8 @@ class PythonWriter(object):
                 sub.writeln("%s = %s" % (escapeTemp, val))
             else:
                 sub.writeln("%s = %s.args[0]" % (escapeTemp, ejTemp))
+            out.writeln("finally:")
+            sub.writeln("%s.disable()" % ej)
             if ctx.mode != FX_ONLY:
                 return escapeTemp
         else:
