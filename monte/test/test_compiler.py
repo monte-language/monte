@@ -98,11 +98,23 @@ class CompilerTest(unittest.TestCase):
                  """)
 
     def test_listpattern(self):
+        self.eq_('def [x] := "a"',
+                 """
+                 _g_total_list1 = _monte.wrap(u'a')
+                 try:
+                     _g_list2, = _g_total_list1
+                 except ValueError, _g_e3:
+                     _monte.throw(_g_e3)
+                     raise RuntimeError("Ejector did not exit")
+                 x = _g_list2
+                 _g_total_list1
+                 """)
+
         self.eq_('def [x :float64, y :String, z] := "foo"',
                  """
                  _g_total_list1 = _monte.wrap(u'foo')
                  try:
-                     _g_list2, _g_list3, _g_list4 = _g_total_list1
+                     _g_list2, _g_list3, _g_list4, = _g_total_list1
                  except ValueError, _g_e5:
                      _monte.throw(_g_e5)
                      raise RuntimeError("Ejector did not exit")
@@ -119,7 +131,7 @@ class CompilerTest(unittest.TestCase):
                  ej = _monte.wrap(1)
                  _g_total_list1 = _monte.wrap(u'foo')
                  try:
-                     _g_list2, _g_list3, _g_list4 = _g_total_list1
+                     _g_list2, _g_list3, _g_list4, = _g_total_list1
                  except ValueError, _g_e5:
                      ej(_g_e5)
                      raise RuntimeError("Ejector did not exit")
@@ -354,7 +366,7 @@ class CompilerTest(unittest.TestCase):
                  def _g_matcher1(foo, _m_message):
                      _g_total_list3 = _m_message
                      try:
-                         _g_list4, _g_list5 = _g_total_list3
+                         _g_list4, _g_list5, = _g_total_list3
                      except ValueError, _g_e6:
                          _monte.matcherFail(_g_e6)
                          raise RuntimeError("Ejector did not exit")

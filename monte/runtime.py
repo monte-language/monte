@@ -170,9 +170,17 @@ class MonteEjection(BaseException):
     pass
 
 
-def throw(val):
-    raise RuntimeError(val)
+class Throw(MonteObject):
+    def __call__(self, val):
+        raise RuntimeError(val)
+    def eject(self, ej, val):
+        #XXX this should coerce ej to Ejector
+        if ej is None:
+            throw(val)
+        else:
+            wrapEjector(ej)(val)
 
+throw = Throw()
 
 def ejector(_name):
     class ejtype(MonteEjection):
@@ -278,13 +286,25 @@ def getIterator(coll):
         else:
             return ((wrap(i), v) for (i, v) in enumerate(coll))
 
+
 def monteLooper(coll, obj):
     it = getIterator(coll)
     for key, item in it:
         obj.run(key, item)
 
+
 def makeMonteList(*items):
-    return items
+    return ConstList(items)
+
+
+class ConstList(tuple):
+    def __repr__(self):
+        orig = tuple.__repr__(self)
+        return '[' + orig[1:-1] + ']'
+
+    def __str__(self):
+        return self.__repr__()
+
 
 class MonteMap(dict):
 
@@ -310,7 +330,7 @@ def accumulateList(coll, obj):
             acc.append(obj.run(key, item, skip))
         except skip._m_type:
             continue
-    return tuple(acc)
+    return ConstList(acc)
 
 def accumulateMap(coll, obj):
     return mapMaker.fromPairs(accumulateList(coll, obj))
@@ -357,6 +377,11 @@ class BooleanGuard(MonteObject):
         ejector("%r is not a boolean" % (specimen,))
 
 booleanGuard = BooleanGuard()
+
+class AnyGuard(MonteObject):
+    def coerce(self, specimen, ej):
+        return specimen
+
 
 class MakeVerbFacet(MonteObject):
     def curryCall(self, obj, verb):
@@ -415,16 +440,121 @@ class Empty:
         if len(specimen) == 0:
             return specimen
         else:
-            ej("Not empty: %s" % specimen)
+            throw.eject(ej, "Not empty: %s" % specimen)
 
 def splitList(cut):
     def listSplitter(specimen, ej):
         #XXX coerce to list
         if len(specimen) < cut:
-            ej("A %s size list doesn't match a >= %s size list pattern" % (len(specimen), cut))
+            throw.eject(ej, "A %s size list doesn't match a >= %s size list pattern" % (len(specimen), cut))
         return specimen[:cut] + (specimen[cut:],)
 
     return listSplitter
+
+
+def findOneOf(elts, specimen, start):
+    for i, c in enumerate(specimen[start:]):
+        if c in elts:
+            return i + start
+    return -1
+
+class Substituter(MonteObject):
+    def __init__(self, template):
+        self.template = template
+        self.segments = segs = []
+        last = 0
+        i = 0
+        while i < len(template):
+            i = findOneOf('$@', template, last)
+            if i == -1:
+                if last < len(template) - 1:
+                    segs.append(('literal', self.template[last:]))
+                break
+            if self.template[i + 1] == self.template[i]:
+                segs.append(('literal', self.template[last:i]))
+                last = i
+            elif self.template[i + 1] != '{':
+                i -= 1
+            else:
+                if last != i and last < len(template) - 1:
+                    segs.append(('literal', self.template[last:i]))
+                    last = i
+                if self.template[i] == '@':
+                    typ = 'pattern'
+                else:
+                    typ = 'value'
+                i += 2
+                sub = i
+                while True:
+                    i += 1
+                    c = self.template[i]
+                    if c == '}':
+                        break
+                    elif not c.isdigit():
+                        raise RuntimeError("Missing '}'", template)
+                segs.append((typ, int(self.template[sub:i])))
+                last = i + 1
+
+    def substitute(self, values):
+        return "".join(self._sub(values))
+
+    def _sub(self, values):
+        for typ, val in self.segments:
+            if typ == 'literal':
+                yield val
+            elif typ == 'value':
+                yield str(values[val])
+            else:
+                raise RuntimeError("Can't substitute with a pattern")
+
+    def matchBind(self, values, specimen, ej):
+        #XXX maybe put this on a different object?
+        i = 0
+        bindings = []
+        for n in range(len(self.segments)):
+            typ, val = self.segments[n]
+            if typ == 'literal':
+                j = i + len(val)
+                if specimen[i:j] != val:
+                    throw.eject(ej, "expected %r..., found %r" % (
+                        val, specimen[i:j]))
+            elif typ == 'value':
+                j = i + len(values[val])
+                if specimen[i:j] != values[val]:
+                    throw.eject(ej, "expected %r... ($-hole %s), found %r" % (
+                        values[val], val, specimen[i:j]))
+            elif typ == 'pattern':
+                nextVal = None
+                if n == len(self.segments) - 1:
+                    bindings.append(specimen[i:])
+                    continue
+                nextType, nextVal = self.segments[n + 1]
+                if nextType == 'value':
+                    nextVal = values[nextVal]
+                elif nextType == 'pattern':
+                    bindings.append("")
+                    continue
+                j = specimen.find(nextVal)
+                if j == -1:
+                    throw.eject(ej, "expected %r..., found %r" % (nextVal, specimen[i:]))
+                bindings.append(specimen[i:j])
+            i = j
+        print "@@", bindings
+        return ConstList(bindings)
+
+class SimpleQuasiParser(MonteObject):
+    def valueMaker(self, template):
+        return Substituter(template)
+
+    def matchMaker(self, template):
+        return Substituter(template)
+
+
+def quasiMatcher(matchMaker, values):
+    def matchit(specimen, ej):
+        return matchMaker.matchBind(values, specimen, ej)
+    return matchit
+
 
 jacklegScope = {
     'true': True,
@@ -444,8 +574,11 @@ jacklegScope = {
     '__accumulateList': accumulateList,
     '__accumulateMap': accumulateMap,
     '__iterWhile': iterWhile,
+    '__quasiMatcher': quasiMatcher,
 
+    'any': AnyGuard(),
     'boolean': booleanGuard,
+    'ValueGuard': AnyGuard(),
 
     '__makeVerbFacet': makeVerbFacet,
     '__matchSame': matchSame,
@@ -454,6 +587,8 @@ jacklegScope = {
     '__extract': extract,
     '__Empty': Empty(),
     '__splitList': splitList,
+
+    'simple__quasiParser': SimpleQuasiParser()
 }
 
 def eval(source, scope=jacklegScope):
