@@ -275,17 +275,20 @@ def putVerb(verb):
     elif verb.startswith("__get"):
         return "__set"+verb[5:]
 
-def buildQuasiExpr(pairs):
+def buildQuasi(pairs):
     textParts = []
     exprParts = []
-    for text, expr in pairs:
+    patternParts = []
+    for text, expr, patt in pairs:
         if expr:
             textParts.append("${%s}" % (len(exprParts),))
             exprParts.append(expr)
+        elif patt:
+            textParts.append("@{%s}" % (len(patternParts),))
+            patternParts.append(patt)
         else:
-            textParts.append(text)
-    return ''.join(textParts), exprParts
-
+            textParts.append(text.data)
+    return t.LiteralExpr(''.join(textParts)), exprParts, patternParts
 
 #implicit rules:
 # data transforms to itself
@@ -321,12 +324,14 @@ MapExprExport(nameAndString:pair) -> [t.LiteralExpr(pair[1]), pair[0]]
 
 ListExpr(@items) -> mcall("__makeList", "run", *items)
 
-QuasiExpr(null quasis:qs) -> mcall(mcall("simple__quasiParser", "valueMaker", qs[0]), "substitute", qs[1])
-QuasiExpr(:name quasis:qs) -> mcall(mcall(name + "__quasiParser", "valueMaker", qs[0]), "substitute", qs[1])
+QuasiExpr(null [qexpr:qs]) -> t.MethodCallExpr(mcall("simple__quasiParser", "valueMaker", qs[0]), "substitute", [mcall("__makeList", "run", *qs[1])])
+QuasiExpr(:name [qexpr:qs]) -> t.MethodCallExpr(mcall(name + "__quasiParser", "valueMaker", qs[0]), "substitute", [mcall("__makeList", "run", *qs[1])])
 
-quasis = (qtext | qehole)*:pairs -> buildQuasiExpr(pairs)
-qtext = QuasiText(:text) -> (text, None)
-qehole = QuasiExprHole(@expr) -> (None, expr)
+qexpr = (qtext | qehole)*:pairs -> buildQuasi(pairs)
+qpatt = (qtext | qehole | qphole)*:pairs -> buildQuasi(pairs)
+qtext = QuasiText(:text) -> (text, None, None)
+qehole = QuasiExprHole(@expr) -> (None, expr, None)
+qphole = QuasiPatternHole(@patt) -> (None, None, patt)
 
 SeqExpr([]) -> None
 SeqExpr(@exprs) -> t.SeqExpr(flattenSeqs(exprs))
@@ -440,6 +445,9 @@ ListPattern(@patterns @tail) -> t.ViaPattern(mcall("__splitList", "run", t.Liter
 
 SuchThatPattern(@pattern @expr) -> t.ViaPattern(t.NounExpr("__suchThat"),
                                       t.ListPattern([pattern, t.ViaPattern(mcall("__suchThat", "run", expr), t.IgnorePattern(None))], None))
+
+QuasiPattern(null [qpatt:qs]) -> t.ViaPattern(mcall("__quasiMatcher", "run", mcall("simple__quasiParser", "matchMaker", qs[0]), mcall("__makeList", "run", *qs[1])), t.ListPattern(qs[2], None))
+QuasiPattern(null [qpatt:qs]) -> t.ViaPattern(mcall("__quasiMatcher", mcall(name + "__quasiParser", "matchMaker", qs[0]), "run", mcall("__makeList", "run", *qs[1])), t.ListPattern(qs[2], None))
 
 Interface(@doco nameAndString:nameAnd @guard @extends @implements
           InterfaceFunction(:params :resultGuard))

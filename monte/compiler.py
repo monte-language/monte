@@ -708,7 +708,7 @@ class PythonWriter(object):
         sub = out.indent()
         out.writeln("%s = %s" % (listv, val))
         out.writeln("try:")
-        sub.writeln("%s = %s" % (', '.join(vs), listv))
+        sub.writeln("%s, = %s" % (', '.join(vs), listv))
         out.writeln("except ValueError, %s:" % (errv,))
         if ej is None:
             sub.writeln("_monte.throw(%s)" % (errv,))

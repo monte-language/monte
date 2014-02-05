@@ -104,3 +104,21 @@ class EvalTest(unittest.TestCase):
     def test_switch(self):
         self.assertEqual(monte_eval('switch (1) { match ==0 { 1} match ==1 { 2}}'), 2)
         self.assertRaises(RuntimeError, monte_eval, 'switch (2) { match ==0 { 1} match ==1 { 2}}')
+
+    def test_coerce(self):
+        self.assertEqual(monte_eval('true :boolean'), True)
+
+    def test_simple_quasiParser_value(self):
+        self.assertEqual(monte_eval('def x := 1; def y := [2, 3]; `one $x and $y and two`'),
+                         "one 1 and [2, 3] and two")
+
+    def test_simple_quasiParser_pattern(self):
+        self.assertEqual(
+            monte_eval('def `one @x and @y and two` := "one foo and bar and two"; [x, y]'),
+            ("foo", "bar"))
+        self.assertEqual(
+            monte_eval('def `foo @x@y` := "foo baz"; [x, y]'),
+            ("", "baz"))
+        self.assertEqual(
+            monte_eval('def a := "baz"; def `foo @x$a` := "foo baz"; x'),
+            "")
