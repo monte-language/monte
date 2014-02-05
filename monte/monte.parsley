@@ -28,8 +28,8 @@ subquasi = ('QUASI_OPEN':q -> t.QuasiText(q)
            |'@{' br pattern:s '}' -> t.QuasiPatternHole(s)
            |"AT_IDENT":id -> t.QuasiPatternHole(t.FinalPattern(t.NounExpr(id), None)))
 
-reifyExpr = ("&&" verb:v -> t.BindingExpr(v)
-            |"&" verb:v -> t.SlotExpr(v))
+reifyExpr = ("&&" noun:v -> t.BindingExpr(v)
+            |"&" noun:v -> t.SlotExpr(v))
 
 verb = identifier | string
 

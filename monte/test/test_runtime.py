@@ -122,3 +122,21 @@ class EvalTest(unittest.TestCase):
         self.assertEqual(
             monte_eval('def a := "baz"; def `foo @x$a` := "foo baz"; x'),
             "")
+
+    def test_and(self):
+        self.assertEqual(monte_eval("true and false"), False)
+        self.assertEqual(monte_eval("[(def x := true) and true, x]"), (True, True))
+
+    def test_or(self):
+        self.assertEqual(monte_eval("true or false"), True)
+        self.assertEqual(monte_eval("[(def x := true) or true, x]"), (True, True))
+
+
+
+
+
+
+
+
+
+
