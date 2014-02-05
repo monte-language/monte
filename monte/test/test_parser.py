@@ -118,7 +118,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("[]"), ["ListExpr", []])
         self.assertEqual(parse("[1, a]"), ["ListExpr", [["LiteralExpr", 1], ["NounExpr", "a"]]])
         self.assertEqual(parse("[1=> a, 2 => b]"), ["MapExpr", [["MapExprAssoc", ["LiteralExpr", 1], ["NounExpr", "a"]], ["MapExprAssoc", ["LiteralExpr", 2], ["NounExpr", "b"]]]])
-        self.assertEqual(parse("[1=> a, => &x, => y]"), ["MapExpr", [["MapExprAssoc", ["LiteralExpr", 1], ["NounExpr", "a"]], ["MapExprExport", ["SlotExpr", "x"]], ["MapExprExport", ["NounExpr", "y"]]]])
+        self.assertEqual(parse("[1=> a, => &x, => y]"), ["MapExpr", [["MapExprAssoc", ["LiteralExpr", 1], ["NounExpr", "a"]], ["MapExprExport", ["SlotExpr", ["NounExpr", "x"]]], ["MapExprExport", ["NounExpr", "y"]]]])
 
     def test_body(self):
         """
@@ -153,8 +153,8 @@ class ParserTest(unittest.TestCase):
         parse = self.getParser("prefix")
         self.assertEqual(parse("!x.a()"), ["LogicalNot", ["MethodCallExpr", ["NounExpr", "x"], "a", []]])
         self.assertEqual(parse("~17"), ["BinaryNot", ["LiteralExpr", 17]])
-        self.assertEqual(parse("&x"), ["SlotExpr", "x"])
-        self.assertEqual(parse("&&x"), ["BindingExpr", "x"])
+        self.assertEqual(parse("&x"), ["SlotExpr", ["NounExpr", "x"]])
+        self.assertEqual(parse("&&x"), ["BindingExpr", ["NounExpr" ,"x"]])
         self.assertEqual(parse("-(3.pow(2))"), ["Minus", ["MethodCallExpr", ["LiteralExpr", 3], "pow", [["LiteralExpr", 2]]]])
         self.assertEqual(parse("-(3.14.pow(2))"), ["Minus", ["MethodCallExpr", ["LiteralExpr", 3.14], "pow", [["LiteralExpr", 2]]]])
 

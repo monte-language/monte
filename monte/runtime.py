@@ -6,6 +6,9 @@ from monte.compiler import ecompile
 
 _absent = object()
 
+def traceln(x):
+    print x
+
 class MonteObject(object):
     _m_matcherNames = ()
     def _conformTo(self, guard):
@@ -148,22 +151,30 @@ def wrap(pyobj):
         return Set(pyobj)
 
 
+class Binding(MonteObject):
+    def __init__(self, slot):
+        self.slot = slot
+
+
 def getGuard(o, name):
     """
     Returns the guard object for a name in a Monte object's frame.
     """
+    raise RuntimeError()
 
 
 def getBinding(o, name):
     """
     Returns the binding object for a name in a Monte object's frame.
     """
+    raise RuntimeError()
 
 
 def reifyBinding(slot):
     """
     Create a binding object from a slot object.
     """
+    return Binding(slot)
 
 
 class MonteEjection(BaseException):
@@ -244,7 +255,7 @@ class VarSlot(object):
 
 
 def slotFromBinding(b):
-    pass
+    return b.slot
 
 
 def wrapEjector(e):
@@ -382,6 +393,14 @@ class AnyGuard(MonteObject):
     def coerce(self, specimen, ej):
         return specimen
 
+anyGuard = AnyGuard()
+
+class VoidGuard(MonteObject):
+    def coerce(self, specimen, ej):
+        if specimen is not None:
+            throw.eject(ej, "%r is not null" % (specimen,))
+
+voidGuard = VoidGuard()
 
 class MakeVerbFacet(MonteObject):
     def curryCall(self, obj, verb):
@@ -539,7 +558,6 @@ class Substituter(MonteObject):
                     throw.eject(ej, "expected %r..., found %r" % (nextVal, specimen[i:]))
                 bindings.append(specimen[i:j])
             i = j
-        print "@@", bindings
         return ConstList(bindings)
 
 class SimpleQuasiParser(MonteObject):
@@ -555,6 +573,16 @@ def quasiMatcher(matchMaker, values):
         return matchMaker.matchBind(values, specimen, ej)
     return matchit
 
+class BooleanFlow(MonteObject):
+    def broken(self):
+        #XXX should return broken ref
+        return object()
+
+    def failureList(self, size):
+        #XXX needs broken ref
+        return [False] + [object()] * size
+
+booleanFlow = BooleanFlow()
 
 jacklegScope = {
     'true': True,
@@ -563,30 +591,41 @@ jacklegScope = {
     'NaN': float('nan'),
     'Infinity': float('inf'),
 
-    '__comparer': comparer,
+    'any': anyGuard,
+    'void': voidGuard,
+    'boolean': booleanGuard,
+    'ValueGuard': anyGuard,
 
+
+    #E
+    #Ref
     'throw': throw,
+    '__loop': monteLooper,
+
+    'traceln': traceln,
+
+    '__iterWhile': iterWhile,
+    '__accumulateList': accumulateList,
+    '__accumulateMap': accumulateMap,
 
     '__makeList': makeMonteList,
     '__makeMap': mapMaker,
-    '__loop': monteLooper,
-    '__validateFor': validateFor,
-    '__accumulateList': accumulateList,
-    '__accumulateMap': accumulateMap,
-    '__iterWhile': iterWhile,
-    '__quasiMatcher': quasiMatcher,
 
-    'any': AnyGuard(),
-    'boolean': booleanGuard,
-    'ValueGuard': AnyGuard(),
-
+    #__bind
+    '__booleanFlow': booleanFlow,
+    '__comparer': comparer,
     '__makeVerbFacet': makeVerbFacet,
+    '__mapEmpty': Empty(),
+    '__mapExtract': extract,
     '__matchSame': matchSame,
-    '__switchFailed': switchFailed,
-    '__suchThat': suchThat,
-    '__extract': extract,
-    '__Empty': Empty(),
+    '__quasiMatcher': quasiMatcher,
+    '__slotToBinding': reifyBinding,
     '__splitList': splitList,
+    '__suchThat': suchThat,
+    '__switchFailed': switchFailed,
+    #__promiseAllFulfilled
+    '__validateFor': validateFor,
+
 
     'simple__quasiParser': SimpleQuasiParser()
 }
@@ -606,6 +645,13 @@ def eval(source, scope=jacklegScope):
     sys.modules[name] = mod
     linecache.getlines(name, mod.__dict__)
     return mod._m_evalResult
+
+
+
+
+
+
+
 
 
 

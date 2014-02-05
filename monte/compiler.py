@@ -234,17 +234,18 @@ class ScopeLayout(object):
             return b
 
     def _createBinding(self, n):
-        return Binding(self.nodes[n],  self.pynames[n], self.guards[n], LOCAL)
+        #XXX deal with def/var binding guards
+        return Binding(self.nodes[n],  self.pynames[n], self.guards.get(n, None), LOCAL, "custom")
 
     def makeInner(self):
         return ScopeLayout(self, self.frame, self.outer)
 
 class Binding(object):
-    def __init__(self, node, pyname, guardname, kind):
+    def __init__(self, node, pyname, guardname, kind, guardExpr=None):
         self.node = node
         self.pyname = pyname
         self.isFinal = node.tag.name == 'FinalPattern'
-        self.guardExpr = node.args[1]
+        self.guardExpr = guardExpr or node.args[1]
         self.guardname = guardname
         self.name = node.args[0].args[0].data
         self.kind = kind
@@ -349,7 +350,7 @@ class PythonWriter(object):
             return b.pyname + ".get()"
 
     def generate_BindingExpr(self, out, ctx, node):
-        name = node.args[0].data
+        name = node.args[0].args[0].data
         if (ctx.layout.frame and
             name in [f.name for f in ctx.layout.frame.fields]):
             return "_monte.getBinding(%s, %r)" % (ctx.layout.frame.selfName,
@@ -617,15 +618,16 @@ class PythonWriter(object):
     def generate_If(self, out, ctx, node):
         test, consq, alt = node.args
         sub = out.indent()
-        tv = self._generate(out, ctx, test)
+        ifctx = ctx.with_(layout=ctx.layout.makeInner())
+        tv = self._generate(out, ifctx, test)
         ifTemp = ctx.layout.gensym("if")
         out.writeln("if %s:" % (tv,))
-        newctx = ctx.with_(layout=ctx.layout.makeInner())
+        newctx = ifctx.with_(layout=ifctx.layout.makeInner())
         val = self._generate(sub, newctx, consq)
         sub.writeln("%s = %s" % (ifTemp, val))
         if alt.tag.name != 'null':
             out.writeln("else:")
-            newctx = ctx.with_(layout=ctx.layout.makeInner())
+            newctx = ifctx.with_(layout=ifctx.layout.makeInner())
             val = self._generate(sub, newctx, alt)
             sub.writeln("%s = %s" % (ifTemp, val))
         return ifTemp

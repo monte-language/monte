@@ -210,7 +210,7 @@ LiteralExpr(:val) -> StaticScope()
 NounExpr(@name) -> StaticScope(namesRead=[name])
 TempNounExpr(@name @idx) -> StaticScope(namesRead=[name + str(idx)])
 SlotExpr(@name) -> StaticScope(namesRead=[name])
-BindingExpr(@name) -> StaticScope(namesRead=[name])
+BindingExpr(@b) -> b
 HideExpr(@blockScope) -> blockScope.hide()
 Meta("Context") -> StaticScope()
 Meta("State") -> StaticScope(metaStateExprFlag=True)
@@ -301,8 +301,8 @@ expander = """
 null = anything:t ?(t is None or t.tag.name == 'null')
 
 nameAndString = NounExpr(:name):e !(self.nouns.add(name)) -> e, name.data
-     | SlotExpr(:name):e -> e, '&' + name.data
-     | BindingExpr(:name):e -> e, '&&' + name.data
+     | SlotExpr(NounExpr(:name)):e -> e, '&' + name.data
+     | BindingExpr(NounExpr(:name)):e -> e, '&&' + name.data
 
      | VarPattern(name:name :guard):p transform(p):e -> e, name
      | BindPattern(name:name :guard):p transform(p):e -> e, name
@@ -312,7 +312,7 @@ nameAndString = NounExpr(:name):e !(self.nouns.add(name)) -> e, name.data
 
 name = NounExpr(:name) !(self.nouns.add(name)) -> name.data
      | SlotExpr(:name) -> '&' + name.data
-     | BindingExpr(:name) -> '&&' + name.data
+     | BindingExpr(NounExpr(:name)) -> '&&' + name.data
 
 
 NounExpr(@name) !(self.nouns.add(name)) -> t.NounExpr(name)
@@ -428,18 +428,18 @@ VarPattern(@name @guard) = -> t.VarPattern(name, guard)
 BindPattern(@name @guard) -> t.ViaPattern(mcall("__bind", "run", [name.args[0].data + "__Resolver", guard]), t.IgnorePattern(None))
 
 #FinalPattern(@name @guard) -> t.FinalPattern(name, guard)
-SlotExpr(@name) -> slot(t.NounExpr(name))
+SlotExpr(@name) -> slot(name)
 SlotPattern(@name null) -> t.ViaPattern(t.NounExpr("__slotToBinding"), t.BindingPattern(name))
 SlotPattern(@name @guard) -> t.ViaPattern(t.MethodCallExpr(t.NounExpr("__slotToBinding"), "run", [guard]), t.BindingPattern(name))
 
 MapPattern(@assocs @tail) -> foldr(lambda more, (l, r): t.ViaPattern(l, t.ListPattern([r, more], None)),
-                                   tail or t.IgnorePattern(t.NounExpr("__Empty")),
+                                   tail or t.IgnorePattern(t.NounExpr("__mapEmpty")),
                                    reversed(assocs))
 
 MapPatternAssoc(@key @value) -> [key, value]
 MapPatternImport(nameAndString:nameAnd) -> [t.LiteralExpr(nameAnd[1]), nameAnd[0]]
-MapPatternOptional(@assoc @default) -> [mcall("__extract", "depr", assoc[0], default), assoc[1]]
-MapPatternRequired(@assoc) -> (mcall("__extract", "run", assoc[0]), assoc[1])
+MapPatternOptional(@assoc @default) -> [mcall("__mapExtract", "depr", assoc[0], default), assoc[1]]
+MapPatternRequired(@assoc) -> (mcall("__mapExtract", "run", assoc[0]), assoc[1])
 ListPattern(@patterns null) -> t.ListPattern(patterns, None)
 ListPattern(@patterns @tail) -> t.ViaPattern(mcall("__splitList", "run", t.LiteralExpr(len(patterns))), t.ListPattern(patterns + [tail], None))
 
@@ -585,7 +585,7 @@ def expandLogical(self, left, right, fn):
 
     return t.SeqExpr([
         t.Def(t.ListPattern([t.FinalPattern(result, None)] +
-                            [t.BindingPattern(n) for n in both]),
+                            [t.BindingPattern(n) for n in both], None),
               None,
               fn(left, right, success, failure, leftmap, rightmap)),
         result])
@@ -739,14 +739,6 @@ def broke(br, ex):
     return t.Def(t.FinalPattern(br, None),
                  mcall("Ref", "broken", mcall("__makeList", "run", ex)))
 
-def slotsTuple(first, rest):
-    return mcall("__makeList", "run", first, *[slot(x) for x in rest])
-
-def slotsPattern(first, rest):
-    if first:
-        return t.ListPattern([first] + [slotpatt(x) for x in rest], None)
-    else:
-        return t.ListPattern([slotpatt(x) for x in rest], None)
 
 def slot(n):
     return t.MethodCallExpr(t.BindingExpr(n), 'get', [])
