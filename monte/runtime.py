@@ -126,6 +126,7 @@ class MonteInt(int):
 class String(unicode):
     add = unicode.__add__
     multiply = unicode.__mul__
+    size = unicode.__len__
 
 
 def wrap(pyobj):
@@ -584,6 +585,12 @@ class BooleanFlow(MonteObject):
 
 booleanFlow = BooleanFlow()
 
+class Equalizer(MonteObject):
+    def sameEver(self, left, right):
+        return left == right
+
+equalizer = Equalizer()
+
 jacklegScope = {
     'true': True,
     'false': False,
@@ -614,6 +621,7 @@ jacklegScope = {
     #__bind
     '__booleanFlow': booleanFlow,
     '__comparer': comparer,
+    '__equalizer': equalizer,
     '__makeVerbFacet': makeVerbFacet,
     '__mapEmpty': Empty(),
     '__mapExtract': extract,
@@ -645,13 +653,3 @@ def eval(source, scope=jacklegScope):
     sys.modules[name] = mod
     linecache.getlines(name, mod.__dict__)
     return mod._m_evalResult
-
-
-
-
-
-
-
-
-
-
