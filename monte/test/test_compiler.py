@@ -412,6 +412,50 @@ class CompilerTest(unittest.TestCase):
             # """
         )
 
+    def test_selfreference(self):
+        self.eq_(
+            '''
+            def foo(x) {
+                return foo(x)
+            }
+            ''',
+            """
+            class _m_foo_Script(_monte.MonteObject):
+                def run(foo, x):
+                    _m___return = _monte.ejector("__return")
+                    try:
+                        _m___return(foo(x))
+                        _g_escape2 = None
+                    except _m___return._m_type, _g___return1:
+                        _g_escape2 = _g___return1.args[0]
+                    finally:
+                        _m___return.disable()
+                    return _g_escape2
+
+            foo = _m_foo_Script()
+            foo
+            """
+        )
+
+    def test_var_selfreference(self):
+        self.eq_(
+            'object var foo { method baz(x, y) { foo := 1; x }}',
+             """
+             class _m_foo_Script(_monte.MonteObject):
+                 def __init__(_g_foo1, foo_slot):
+                     _monte.MonteObject._m_install(_g_foo1, 'foo', foo_slot)
+
+                 def baz(_g_foo1, x, y):
+                     _g_foo2 = _monte.wrap(1)
+                     _g_foo1.put(_g_foo2)
+                     return x
+
+             foo = _monte.VarSlot(None)
+             _g_foo1 = _m_foo_Script(foo)
+             foo._m_init(_g_foo1, _monte.throw)
+             _g_foo1
+             """)
+
     def test_unusedEscape(self):
         self.eq_(
             '''

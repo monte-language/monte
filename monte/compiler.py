@@ -153,9 +153,15 @@ class OuterScopeLayout(object):
 
 
 class FrameScopeLayout(object):
-    def __init__(self, fields, verbs, selfName, fqnPrefix):
+    def __init__(self, fields, verbs, selfName, selfNameNode, fqnPrefix):
         self.selfName = selfName
         self.verbs = verbs
+        if selfNameNode and selfNameNode.tag.name != 'IgnorePattern':
+            self.selfBinding = Binding(selfNameNode, selfName,
+                                       '_monte.getObjectGuard(%s)' % selfName,
+                                       FRAME)
+        else:
+            self.selfBinding = None
         self.fields = [self._createBinding(f) for f in fields]
         self.fqnPrefix = fqnPrefix
 
@@ -169,6 +175,8 @@ class FrameScopeLayout(object):
                        FRAME)
 
     def getBinding(self, name, default=_absent):
+        if self.selfBinding and name == self.selfBinding.name:
+            return self.selfBinding
         for f in self.fields:
             if f.name == name:
                 return f
@@ -289,7 +297,7 @@ class PythonWriter(object):
         out, flush = origOut.delay()
         ctx = CompilationContext(
             None, rootWriter=origOut,
-            layout=ScopeLayout(None, FrameScopeLayout((), None, None, self.origin),
+            layout=ScopeLayout(None, FrameScopeLayout((), None, None, None, self.origin),
                                OuterScopeLayout(SymGenerator().gensym,
                                                 self.outerScope.keys())))
         val = self._generate(out, ctx, self.tree)
@@ -468,7 +476,7 @@ class PythonWriter(object):
                                                      for iface in implements]))
         val = "%s(%s)" % (scriptname, ", ".join(paramNames))
         selfName = self._generatePattern(out, ctx, None, val, nameNode, True)
-        frame = FrameScopeLayout(fields, verbs, selfName,
+        frame = FrameScopeLayout(fields, verbs, selfName, nameNode,
                                  '%s$%s' % (ctx.layout.frame.fqnPrefix, name))
         matcherNames = [ctx.layout.gensym("matcher") for _ in matchers]
         classOut, cflush = ctx.classWriter()
@@ -572,7 +580,7 @@ class PythonWriter(object):
         if b.isFinal:
             self.err("Can't assign to final variable: " + repr(name))
         out.writeln("%s = %s" % (temp, v))
-        if b.kind == FRAME:
+        if b.kind == FRAME and b.pyname != ctx.layout.frame.selfName:
             out.writeln("%s = %s" % (b.pyname, temp))
         else:
             out.writeln("%s.put(%s)" % (b.pyname, temp))
