@@ -170,6 +170,10 @@ class FrameScopeLayout(object):
             pyname = f.pyname
         else:
             pyname =  self.gensym(mangleIdent(f.name))
+        if f.kind == FRAME:
+            return Binding(f.node, self.selfName + '.' + pyname.rpartition('.')[2],
+                           '_monte.getGuard(%s, "%s")' % (self.selfName, f.name),
+                           FRAME)
         return Binding(f.node, self.selfName + '.' + pyname,
                        '_monte.getGuard(%s, "%s")' % (self.selfName, f.name),
                        FRAME)
