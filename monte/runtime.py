@@ -101,6 +101,9 @@ class _SlotDescriptor(object):
     def __set__(self, obj, val):
         return self.slot.put(val)
 
+    def getGuard(self):
+        return self.slot.guard
+
 
 class MonteInt(int):
     def add(self, other):
@@ -161,7 +164,7 @@ def getGuard(o, name):
     """
     Returns the guard object for a name in a Monte object's frame.
     """
-    raise RuntimeError()
+    return o.__class__.__dict__[name].getGuard()
 
 
 def getBinding(o, name):
