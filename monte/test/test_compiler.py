@@ -412,7 +412,7 @@ class CompilerTest(unittest.TestCase):
             # """
         )
 
-    def test_selfreference(self):
+    def test_selfReference(self):
         self.eq_(
             '''
             def foo(x) {
@@ -437,7 +437,7 @@ class CompilerTest(unittest.TestCase):
             """
         )
 
-    def test_var_selfreference(self):
+    def test_varSelfReference(self):
         self.eq_(
             'object var foo { method baz(x, y) { foo := 1; x }}',
              """
@@ -642,6 +642,19 @@ class CompilerTest(unittest.TestCase):
                 _g_if1 = _monte.wrap(2)
             else:
                 _g_if1 = _monte.wrap(3)
+            _g_if1
+            """)
+
+    def test_oneArmedIf(self):
+        self.eq_(
+            '''
+            if (1) { 2 }
+            ''',
+            """
+            if _monte.wrap(1):
+                _g_if1 = _monte.wrap(2)
+            else:
+                _g_if1 = None
             _g_if1
             """)
 

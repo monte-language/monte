@@ -638,11 +638,13 @@ class PythonWriter(object):
         newctx = ifctx.with_(layout=ifctx.layout.makeInner())
         val = self._generate(sub, newctx, consq)
         sub.writeln("%s = %s" % (ifTemp, val))
+        out.writeln("else:")
         if alt.tag.name != 'null':
-            out.writeln("else:")
             newctx = ifctx.with_(layout=ifctx.layout.makeInner())
             val = self._generate(sub, newctx, alt)
-            sub.writeln("%s = %s" % (ifTemp, val))
+        else:
+            val = 'None'
+        sub.writeln("%s = %s" % (ifTemp, val))
         return ifTemp
 
     def generate_Meta(self, out, ctx, node):
