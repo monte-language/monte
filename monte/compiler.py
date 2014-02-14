@@ -162,6 +162,7 @@ class FrameScopeLayout(object):
                                        FRAME)
         else:
             self.selfBinding = None
+        self.gensym = SymGenerator().gensym
         self.fields = [self._createBinding(f) for f in fields]
         self.fqnPrefix = fqnPrefix
 
@@ -169,7 +170,7 @@ class FrameScopeLayout(object):
         if f.name not in self.verbs:
             pyname = f.pyname
         else:
-            pyname =  self.gensym(mangleIdent(f.name))
+            pyname = self.gensym(mangleIdent(f.name))
         if f.kind == FRAME:
             return Binding(f.node, self.selfName + '.' + pyname.rpartition('.')[2],
                            '_monte.getGuard(%s, "%s")' % (self.selfName, f.name),
