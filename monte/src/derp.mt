@@ -1,111 +1,126 @@
+object bool:
+    to coerce(x, ejector) :any:
+        if (x == true | x == false):
+            return x
+        else:
+            throw.eject(ejector, "Must be an integer")
+    to MakeSlot(x :bool) :any:
+        var v := x
+        object slot:
+            to getValue():
+                return v
+            to setValue(x :bool):
+                return v := x
+        return slot
+
 object empty:
     to derive(c):
-        empty
-    to isEmpty():
-        true
-    to nullable():
-        false
-    to onlyNull():
-        false
+        return empty
+    to isEmpty() :bool:
+        return true
+    to nullable() :bool:
+        return false
+    to onlyNull() :bool:
+        return false
     to trees():
-        []
+        return []
 
 object nullSet:
     to derive(c):
-        empty
-    to isEmpty():
-        false
-    to nullable():
-        true
-    to onlyNull():
-        true
+        return empty
+    to isEmpty() :bool:
+        return false
+    to nullable() :bool:
+        return true
+    to onlyNull() :bool:
+        return true
     to trees():
-        [null]
+        return [null]
 
 def term(ts):
     object o:
         to derive(c):
-            empty
-        to empty():
-            false
-        to nullable():
-            true
-        to onlyNull():
-            true
+            return empty
+        to isEmpty() :bool:
+            return false
+        to nullable() :bool:
+            return true
+        to onlyNull() :bool:
+            return true
         to trees():
-            ts
-    o
+            return ts
+    return o
 
 object anything:
     to derive(c):
-        term([c])
-    to isEmpty():
-        false
-    to nullable():
-        false
-    to onlyNull():
-        false
+        return term([c])
+    to isEmpty() :bool:
+        return false
+    to nullable() :bool:
+        return false
+    to onlyNull() :bool:
+        return false
     to trees():
-        []
+        return []
 
 def ex(t):
-    object o:
+    object exInner:
         to derive(c):
             if (c == t):
-                term([c])
+                return term([c])
             else:
-                empty
-        to empty():
-            false
-        to nullable():
-            false
-        to onlyNull():
-            false
+                return empty
+        to isEmpty() :bool:
+            return false
+        to nullable() :bool:
+            return false
+        to onlyNull() :bool:
+            return false
         to trees():
-            []
-    o
+            return []
+    return exInner
 
 def red(l, f):
-    object o:
+    object redInner:
         to derive(c):
             def d := l.derive(c)
-            if (d.empty()):
+            if (d.isEmpty()):
                 return empty
             if (d.onlyNull()):
                 return term([f(t) for t in d.trees()])
             return red(d, f)
-        to empty():
-            l.empty()
-        to nullable():
-            l.nullable()
-        to onlyNull():
-            l.onlyNull()
+        to isEmpty() :bool:
+            return l.isEmpty()
+        to nullable() :bool:
+            return l.nullable()
+        to onlyNull() :bool:
+            return l.onlyNull()
         to trees():
-            [f(t) for t in l.trees()]
-    o
+            return [f(t) for t in l.trees()]
+    return redInner
 
 def alt(a, b):
     if (a == empty):
         return b
     if (b == empty):
         return a
-    object o:
+    object altInner:
         to derive(c):
-            alt(a.derive(c), b.derive(c))
-        to empty():
-            a.empty() & b.empty()
-        to nullable():
-            a.nullable() | b.nullable()
-        to onlyNull():
-            a.onlyNull() & b.onlyNull()
+            return alt(a.derive(c), b.derive(c))
+        to isEmpty() :bool:
+            return a.isEmpty() & b.isEmpty()
+        to nullable() :bool:
+            return a.nullable() | b.nullable()
+        to onlyNull() :bool:
+            return a.onlyNull() & b.onlyNull()
         to trees():
-            a.trees() + b.trees()
-    return o
+            return a.trees() + b.trees()
+    return altInner
 
 def cat(a, b):
-    object o:
+    object catInner:
         to derive(c):
-            if (a.empty()):
+            if (a.isEmpty()):
                 return empty
             if (b == empty):
                 return empty
@@ -113,40 +128,55 @@ def cat(a, b):
             def l := cat(da, b)
             if (a.nullable()):
                 def db := b.derive(c)
-                alt(l, cat(term(a.trees()), db))
-        to empty():
-            a.empty() | b.empty()
-        to nullable():
-            a.nullable() & b.nullable()
-        to onlyNull():
-            a.onlyNull() & b.onlyNull()
+                return alt(l, cat(term(a.trees()), db))
+            return l
+        to isEmpty() :bool:
+            return a.isEmpty() | b.isEmpty()
+        to nullable() :bool:
+            return a.nullable() & b.nullable()
+        to onlyNull() :bool:
+            return a.onlyNull() & b.onlyNull()
         to trees():
             def l := [].diverge()
             for x in a.trees():
                 for y in b.trees():
                     l.append([x, y])
-            l
-    o
+            return l
+    return catInner
 
 def rep(l):
     if (l == empty):
         return empty
-    object o:
+    object repInner:
         to derive(c):
-            cat(l.derive(c), rep(l))
-        to empty():
-            l.empty()
-        to nullable():
-            true
-        to onlyNull():
-            false
+            return cat(l.derive(c), rep(l))
+        to isEmpty() :bool:
+            return l.isEmpty()
+        to nullable() :bool:
+            return true
+        to onlyNull() :bool:
+            return false
         to trees():
-            [null]
-    return o
+            return [null]
+    return repInner
 
-def parse(var l, cs):
+def parse(language, cs):
+    var l := language
     for c in cs:
+        traceln(`Character: $c`)
         l := l.derive(c)
-    l.trees()
+        if (l.isEmpty()):
+            traceln("Language is empty!")
+    return l.trees()
 
+# throw("abort")
+traceln("~~~")
+traceln(parse(ex("x"), "x"))
+traceln("~~~")
+traceln(parse(alt(ex("x"), ex("y")), "x"))
+traceln("~~~")
+traceln(parse(alt(ex("x"), ex("y")), "y"))
+traceln("~~~")
+traceln(parse(cat(ex("x"), ex("y")), "xy"))
+traceln("~~~")
 traceln(parse(rep(ex("x")), "xxx"))
