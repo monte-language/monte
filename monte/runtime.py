@@ -224,6 +224,15 @@ def getGuard(o, name):
     return o.__class__.__dict__[name].getGuard()
 
 
+def getObjectGuard(o):
+    """
+    Returns the guard for an object.
+    """
+
+    # XXX haha what
+    return anyGuard
+
+
 def getBinding(o, name):
     """
     Returns the binding object for a name in a Monte object's frame.
