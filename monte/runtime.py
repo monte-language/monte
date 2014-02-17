@@ -1,4 +1,4 @@
-import linecache, sys, uuid
+import linecache, sys, uuid, os
 from types import ModuleType as module
 
 from terml.parser import parseTerm
@@ -675,6 +675,13 @@ class Equalizer(MonteObject):
 
 equalizer = Equalizer()
 
+def monteImport(name):
+    path = os.path.join(os.path.dirname(__file__), 'src',
+                        name.replace('.', '/') + '.mt')
+    if not os.path.exists(path):
+        raise RuntimeError("%s does not exist" % path)
+    return eval(open(path).read(), origin=name)
+
 jacklegScope = {
     'true': true,
     'false': false,
@@ -719,15 +726,17 @@ jacklegScope = {
     '__validateFor': validateFor,
 
 
-    'simple__quasiParser': SimpleQuasiParser()
+    'simple__quasiParser': SimpleQuasiParser(),
+
+    'import': monteImport,
 }
 
-def eval(source, scope=jacklegScope):
+def eval(source, scope=jacklegScope, origin="__main"):
     name = uuid.uuid4().hex + '.py'
     mod = module(name)
     mod.__name__ = name
     mod._m_outerScope = scope
-    pysrc, _, lastline = ecompile(source, scope).rpartition('\n')
+    pysrc, _, lastline = ecompile(source, scope, origin).rpartition('\n')
     pysrc = '\n'.join(["from monte import runtime as _monte",
                        pysrc,
                        "_m_evalResult = " + lastline])
