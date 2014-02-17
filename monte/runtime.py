@@ -142,6 +142,20 @@ def bwrap(b):
     return true if b else false
 
 
+class MonteNull(MonteObject):
+    """
+    The null object.
+
+    null has no methods.
+    """
+
+    def __eq__(self, other):
+        return self is other
+
+
+null = MonteNull()
+
+
 class MonteInt(int):
     def add(self, other):
         return MonteInt(self + other)
@@ -632,9 +646,15 @@ class Equalizer(MonteObject):
 equalizer = Equalizer()
 
 jacklegScope = {
+<<<<<<< HEAD
     'true': true,
     'false': false,
     'null': None,
+=======
+    'true': True,
+    'false': False,
+    'null': null,
+>>>>>>> MostAwesomeDude/null-object
     'NaN': float('nan'),
     'Infinity': float('inf'),
 
