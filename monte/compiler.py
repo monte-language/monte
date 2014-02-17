@@ -352,8 +352,8 @@ class PythonWriter(object):
     def generate_NounExpr(self, out, ctx, node):
         name = node.args[0].data
         constants = {"null": "None",
-                     "true": "True",
-                     "false": "False"}
+                     "true": "_monte.true",
+                     "false": "_monte.false"}
         b = ctx.layout.getBinding(name)
         if b.name in constants:
             return constants[b.name]

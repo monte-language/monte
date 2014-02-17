@@ -105,6 +105,43 @@ class _SlotDescriptor(object):
         return self.slot.guard
 
 
+class MonteBool(MonteObject):
+
+    def __init__(self, value):
+        self._b = value
+
+    def __eq__(self, other):
+        if not isinstance(other, MonteBool):
+            return false
+        return bwrap(self._b == other._b)
+
+    def _m_and(self, other):
+        if not isinstance(other, MonteBool):
+            raise RuntimeError("Bools can't be compared with non-bools")
+        return bwrap(self._b and other._b)
+
+    def _m_or(self, other):
+        if not isinstance(other, MonteBool):
+            raise RuntimeError("Bools can't be compared with non-bools")
+        return bwrap(self._b or other._b)
+
+    def _m_not(self):
+        return bwrap(not self._b)
+
+    def xor(self, other):
+        if not isinstance(other, MonteBool):
+            raise RuntimeError("Bools can't be compared with non-bools")
+        return bwrap(self._b != other._b)
+
+
+false = MonteBool(False)
+true = MonteBool(True)
+
+
+def bwrap(b):
+    return true if b else false
+
+
 class MonteInt(int):
     def add(self, other):
         return MonteInt(self + other)
@@ -387,7 +424,7 @@ class BooleanGuard(MonteObject):
         tryej(problem)
 
     def _subCoerce(self, specimen, ej):
-        if specimen is True or specimen is False:
+        if specimen is true or specimen is false:
             return specimen
         ejector("%r is not a boolean" % (specimen,))
 
@@ -595,8 +632,8 @@ class Equalizer(MonteObject):
 equalizer = Equalizer()
 
 jacklegScope = {
-    'true': True,
-    'false': False,
+    'true': true,
+    'false': false,
     'null': None,
     'NaN': float('nan'),
     'Infinity': float('inf'),
