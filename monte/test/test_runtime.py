@@ -11,8 +11,6 @@ class NullPropertiesTest(unittest.TestCase):
         self.assertTrue(monte_eval("null == null"))
 
     def test_inequal(self):
-        # XXX Should pass after fixing up bool objects
-        raise SkipTest
         self.assertFalse(monte_eval("null != null"))
 
 

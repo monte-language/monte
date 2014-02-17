@@ -110,6 +110,12 @@ class MonteBool(MonteObject):
     def __init__(self, value):
         self._b = value
 
+    def __repr__(self):
+        return "MonteBool(%r)" % self._b
+
+    def __nonzero__(self):
+        return self._b
+
     def __eq__(self, other):
         if not isinstance(other, MonteBool):
             return false
@@ -641,7 +647,7 @@ booleanFlow = BooleanFlow()
 
 class Equalizer(MonteObject):
     def sameEver(self, left, right):
-        return left == right
+        return bwrap(left == right)
 
 equalizer = Equalizer()
 
