@@ -75,6 +75,9 @@ class MonteObject(object):
     def __call__(self, *args):
         return self.run(*args)
 
+    def __repr__(self):
+        return '<' + self._m_fqn + '>'
+
 
 class _MonteMatcher(object):
     def __init__(self, obj, verb):
@@ -139,6 +142,12 @@ class MonteBool(MonteObject):
             raise RuntimeError("Bools can't be compared with non-bools")
         return bwrap(self._b != other._b)
 
+    def __nonzero__(self):
+        return self._b
+
+    def __repr__(self):
+        return ["false", "true"][self._b]
+
 
 false = MonteBool(False)
 true = MonteBool(True)
@@ -157,6 +166,9 @@ class MonteNull(MonteObject):
 
     def __eq__(self, other):
         return self is other
+
+    def __repr__(self):
+        return "null"
 
 
 null = MonteNull()
@@ -453,7 +465,7 @@ class BooleanGuard(MonteObject):
         newspec = specimen._conformTo(self)
         if newspec is not specimen:
             return self._subCoerce(newspec, ej)
-        tryej(problem)
+        throw.eject(tryej, problem)
 
     def _subCoerce(self, specimen, ej):
         if specimen is true or specimen is false:
@@ -653,7 +665,7 @@ class BooleanFlow(MonteObject):
 
     def failureList(self, size):
         #XXX needs broken ref
-        return [False] + [object()] * size
+        return [false] + [object()] * size
 
 booleanFlow = BooleanFlow()
 

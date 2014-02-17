@@ -148,6 +148,7 @@ class CompilerTest(unittest.TestCase):
             'object foo { method baz(x, y) { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  def baz(foo, x, y):
                      return x
 
@@ -160,6 +161,7 @@ class CompilerTest(unittest.TestCase):
             'object var foo { method baz(x, y) { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  def __init__(_g_foo1, foo_slot):
                      _monte.MonteObject._m_install(_g_foo1, 'foo', foo_slot)
 
@@ -184,10 +186,12 @@ class CompilerTest(unittest.TestCase):
             }''',
              """
              class _m_boz_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo$boz'
                  def blee(boz):
                      return _monte.wrap(1)
 
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  def baz(foo, x, y):
                      boz = _m_boz_Script()
                      return boz
@@ -210,6 +214,7 @@ class CompilerTest(unittest.TestCase):
             }''',
              """
              class _m_boz_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo$boz'
                  def __init__(boz, a_slot, b_slot, x_slot):
                      _monte.MonteObject._m_install(boz, 'a', a_slot)
                      _monte.MonteObject._m_install(boz, 'b', b_slot)
@@ -219,6 +224,7 @@ class CompilerTest(unittest.TestCase):
                      return boz.b.foo(boz.a.add(boz.x))
 
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  def baz(foo, _g_Final1, y):
                      _g_guard2 = _m_outerScope["int"]
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
@@ -250,6 +256,7 @@ class CompilerTest(unittest.TestCase):
             }''',
              """
              class _m_left_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo$left'
                  def __init__(left, a_slot, b_slot):
                      _monte.MonteObject._m_install(left, 'a', a_slot)
                      _monte.MonteObject._m_install(left, 'b', b_slot)
@@ -260,6 +267,7 @@ class CompilerTest(unittest.TestCase):
                      return left.b
 
              class _m_right_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo$right'
                  def __init__(right, a_slot, b_slot):
                      _monte.MonteObject._m_install(right, 'a', a_slot)
                      _monte.MonteObject._m_install(right, 'b', b_slot)
@@ -270,6 +278,7 @@ class CompilerTest(unittest.TestCase):
                      return right.a
 
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  def baz(foo, _g_Final1, y):
                      _g_guard2 = _m_outerScope["int"]
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
@@ -293,6 +302,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
+                _m_fqn = '__main$foo'
                 def __init__(foo, _m_auditors):
                     foo._m_audit(_m_auditors)
 
@@ -309,6 +319,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
+                _m_fqn = '__main$foo'
                 def __init__(foo, _m_auditors):
                     foo._m_audit(_m_auditors)
 
@@ -326,6 +337,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
+                _m_fqn = '__main$foo'
                 def __init__(_g_foo2, _m_auditors, foo_slot):
                     _g_foo2._m_audit(_m_auditors)
                     _monte.MonteObject._m_install(_g_foo2, 'foo', foo_slot)
@@ -344,6 +356,7 @@ class CompilerTest(unittest.TestCase):
             'object foo { method baz(x, y) :int { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  def __init__(foo, _m_methodGuards):
                      foo._m_guardMethods(_m_methodGuards)
 
@@ -359,6 +372,7 @@ class CompilerTest(unittest.TestCase):
             'object foo { method baz(x, y) { x } match [verb1, args1] { verb1 } match etc { etc }}',
              """
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  _m_matcherNames = ['_g_matcher1', '_g_matcher2']
                  def baz(foo, x, y):
                      return x
@@ -391,6 +405,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
+                _m_fqn = '__main$foo'
                 def run(foo, x):
                     _m___return = _monte.ejector("__return")
                     try:
@@ -421,6 +436,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
+                _m_fqn = '__main$foo'
                 def run(foo, x):
                     _m___return = _monte.ejector("__return")
                     try:
@@ -442,6 +458,7 @@ class CompilerTest(unittest.TestCase):
             'object var foo { method baz(x, y) { foo := 1; x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  def __init__(_g_foo1, foo_slot):
                      _monte.MonteObject._m_install(_g_foo1, 'foo', foo_slot)
 
@@ -488,6 +505,7 @@ class CompilerTest(unittest.TestCase):
             }''',
              """
              class _m_boz_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo$boz'
                  def __init__(boz, a_slot, b_slot):
                      _monte.MonteObject._m_install(boz, 'a', a_slot)
                      _monte.MonteObject._m_install(boz, 'b', b_slot)
@@ -500,6 +518,7 @@ class CompilerTest(unittest.TestCase):
                  _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKyq9S0tRRAKkBUsHJRZkFMB0QMjoWiH1TSzLyU6DiSkk5qalKEBmISHBqIdi0aMfi4sx0FONBhiO4iUqaQD7QtEQNJef8vJLUihIlzVhNTZAdQAoAuNc5Rg=="
 
              class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
                  def baz(foo, x, y):
                      a = _monte.wrap(2)
                      _g_b1 = _monte.wrap(3)
@@ -518,6 +537,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m__g_ignore1_Script(_monte.MonteObject):
+                _m_fqn = '__main$_'
                 def __init__(_g_ignore2, _m_methodGuards):
                     _g_ignore2._m_guardMethods(_m_methodGuards)
 
@@ -557,6 +577,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_boz_Script(_monte.MonteObject):
+                _m_fqn = '__main$foo$boz'
                 def __init__(boz, a_slot, b_slot):
                     _monte.MonteObject._m_install(boz, 'a', a_slot)
                     _monte.MonteObject._m_install(boz, 'b', b_slot)
@@ -571,6 +592,7 @@ class CompilerTest(unittest.TestCase):
                     return _g_b5
 
             class _m_foo_Script(_monte.MonteObject):
+                _m_fqn = '__main$foo'
                 def run(foo):
                     _m___return = _monte.ejector("__return")
                     try:
@@ -638,7 +660,7 @@ class CompilerTest(unittest.TestCase):
             if (1) { 2 } else { 3 }
             ''',
             """
-            if _monte.wrap(1):
+            if _monte.booleanGuard.coerce(_monte.wrap(1), None):
                 _g_if1 = _monte.wrap(2)
             else:
                 _g_if1 = _monte.wrap(3)
@@ -651,7 +673,7 @@ class CompilerTest(unittest.TestCase):
             if (1) { 2 }
             ''',
             """
-            if _monte.wrap(1):
+            if _monte.booleanGuard.coerce(_monte.wrap(1), None):
                 _g_if1 = _monte.wrap(2)
             else:
                 _g_if1 = _monte.null
@@ -696,6 +718,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             class _m_foo_Script(_monte.MonteObject):
+                _m_fqn = '__main$foo'
                 def __init__(foo, x_slot):
                     _monte.MonteObject._m_install(foo, 'x', x_slot)
 

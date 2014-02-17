@@ -1,7 +1,6 @@
 from textwrap import dedent
 from monte.test import unittest
-
-from monte.runtime import eval as monte_eval, wrap
+from monte.runtime import false, true, eval as monte_eval
 from twisted.trial.unittest import SkipTest
 
 
@@ -116,7 +115,7 @@ class EvalTest(unittest.TestCase):
         self.assertRaises(RuntimeError, monte_eval, 'switch (2) { match ==0 { 1} match ==1 { 2}}')
 
     def test_coerce(self):
-        self.assertEqual(monte_eval('true :boolean'), wrap(True))
+        self.assertEqual(monte_eval('true :boolean'), true)
 
     def test_simple_quasiParser_value(self):
         self.assertEqual(monte_eval('def x := 1; def y := [2, 3]; `one $x and $y and two`'),
@@ -134,11 +133,9 @@ class EvalTest(unittest.TestCase):
             "")
 
     def test_and(self):
-        self.assertEqual(monte_eval("true and false"), False)
-        self.assertEqual(monte_eval("[(def x := true) and true, x]"),
-                         wrap([wrap(True), wrap(True)]))
+        self.assertEqual(monte_eval("true and false"), false)
+        self.assertEqual(monte_eval("[(def x := true) and true, x]"), (true, true))
 
     def test_or(self):
-        self.assertEqual(monte_eval("true or false"), wrap(True))
-        self.assertEqual(monte_eval("[(def x := true) or true, x]"),
-                         wrap([wrap(True), wrap(True)]))
+        self.assertEqual(monte_eval("true or false"), true)
+        self.assertEqual(monte_eval("[(def x := true) or true, x]"), (true, true))
