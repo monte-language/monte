@@ -395,7 +395,7 @@ class CompilerTest(unittest.TestCase):
                     _m___return = _monte.ejector("__return")
                     try:
                         _m___return(_monte.wrap(1))
-                        _g_escape2 = None
+                        _g_escape2 = _monte.wrap(None)
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
                     finally:
@@ -425,7 +425,7 @@ class CompilerTest(unittest.TestCase):
                     _m___return = _monte.ejector("__return")
                     try:
                         _m___return(foo(x))
-                        _g_escape2 = None
+                        _g_escape2 = _monte.wrap(None)
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
                     finally:
@@ -526,7 +526,7 @@ class CompilerTest(unittest.TestCase):
                     try:
                         x = _monte.wrap(1)
                         _m___return(_monte.Map(()))
-                        _g_escape4 = None
+                        _g_escape4 = _monte.wrap(None)
                     except _m___return._m_type, _g___return3:
                         _g_escape4 = _g___return3.args[0]
                     finally:
@@ -581,7 +581,7 @@ class CompilerTest(unittest.TestCase):
                         c = _monte.VarSlot(None, _g_c4, _monte.throw)
                         boz = _m_boz_Script(_monte.FinalSlot(a, None), b)
                         _m___return(boz)
-                        _g_escape2 = None
+                        _g_escape2 = _monte.wrap(None)
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
                     finally:

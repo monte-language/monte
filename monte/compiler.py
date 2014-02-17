@@ -356,7 +356,7 @@ class PythonWriter(object):
                      "false": "False"}
         b = ctx.layout.getBinding(name)
         if b.name in constants:
-            return constants[b.name]
+            return "_monte.wrap(%s)" % constants[b.name]
         if b.isFinal or b.kind == FRAME:
             return b.pyname
         else:
