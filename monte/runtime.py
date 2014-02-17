@@ -194,14 +194,17 @@ def wrap(pyobj):
         return Bytes(pyobj)
     if isinstance(pyobj, unicode):
         return String(pyobj)
+    # Perform bool check before int because bool subclasses int.
+    if isinstance(pyobj, bool):
+        return MonteBool(pyobj)
     if isinstance(pyobj, int):
         return MonteInt(pyobj)
     if isinstance(pyobj, float):
         return MonteFloat64(pyobj)
     if isinstance(pyobj, list):
-        return FlexList(pyobj)
+        return ConstList(pyobj) # XXX FlexList(pyobj)
     if isinstance(pyobj, tuple):
-        return List(pyobj)
+        return ConstList(pyobj)
     if isinstance(pyobj, dict):
         # probably need to make it flex here since other python code
         # can mutate it and we don't want surprises
