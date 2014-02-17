@@ -351,7 +351,7 @@ class PythonWriter(object):
 
     def generate_NounExpr(self, out, ctx, node):
         name = node.args[0].data
-        constants = {"null": "None",
+        constants = {"null": "_monte.null",
                      "true": "True",
                      "false": "False"}
         b = ctx.layout.getBinding(name)
@@ -643,7 +643,7 @@ class PythonWriter(object):
             newctx = ifctx.with_(layout=ifctx.layout.makeInner())
             val = self._generate(sub, newctx, alt)
         else:
-            val = 'None'
+            val = '_monte.null'
         sub.writeln("%s = %s" % (ifTemp, val))
         return ifTemp
 
