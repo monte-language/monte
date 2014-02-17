@@ -577,7 +577,7 @@ class PythonWriter(object):
         makeSlots = []
         for f in sorted(fields, key=lambda f: f.name):
             if f.isFinal:
-                makeSlots.append("_monte.FinalSlot(%s, %s)" % (mangleIdent(f.name),
+                makeSlots.append("_monte.FinalSlot(%s, %s)" % (f.pyname,
                                                                f.guardname))
             else:
                 makeSlots.append(mangleIdent(f.name))
