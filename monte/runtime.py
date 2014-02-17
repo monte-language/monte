@@ -170,6 +170,9 @@ class MonteNull(MonteObject):
     def __repr__(self):
         return "null"
 
+class Character(unicode):
+    def __iter__(self):
+        return None
 
 null = MonteNull()
 
@@ -199,6 +202,7 @@ class String(unicode):
     add = unicode.__add__
     multiply = unicode.__mul__
     size = unicode.__len__
+    get = unicode.__getitem__
 
 
 def wrap(pyobj):
