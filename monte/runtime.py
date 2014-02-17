@@ -108,6 +108,75 @@ class _SlotDescriptor(object):
         return self.slot.guard
 
 
+class MonteBool(MonteObject):
+
+    def __init__(self, value):
+        self._b = value
+
+    def __repr__(self):
+        return "MonteBool(%r)" % self._b
+
+    def __nonzero__(self):
+        return self._b
+
+    def __eq__(self, other):
+        if not isinstance(other, MonteBool):
+            return false
+        return bwrap(self._b == other._b)
+
+    def _m_and(self, other):
+        if not isinstance(other, MonteBool):
+            raise RuntimeError("Bools can't be compared with non-bools")
+        return bwrap(self._b and other._b)
+
+    def _m_or(self, other):
+        if not isinstance(other, MonteBool):
+            raise RuntimeError("Bools can't be compared with non-bools")
+        return bwrap(self._b or other._b)
+
+    def _m_not(self):
+        return bwrap(not self._b)
+
+    def xor(self, other):
+        if not isinstance(other, MonteBool):
+            raise RuntimeError("Bools can't be compared with non-bools")
+        return bwrap(self._b != other._b)
+
+    def __nonzero__(self):
+        return self._b
+
+    def __repr__(self):
+        return ["false", "true"][self._b]
+
+
+false = MonteBool(False)
+true = MonteBool(True)
+
+
+def bwrap(b):
+    return true if b else false
+
+
+class MonteNull(MonteObject):
+    """
+    The null object.
+
+    null has no methods.
+    """
+
+    def __eq__(self, other):
+        return self is other
+
+    def __repr__(self):
+        return "null"
+
+class Character(unicode):
+    def __iter__(self):
+        return None
+
+null = MonteNull()
+
+
 class MonteInt(int):
     def add(self, other):
         return MonteInt(self + other)
@@ -133,6 +202,7 @@ class String(unicode):
     add = unicode.__add__
     multiply = unicode.__mul__
     size = unicode.__len__
+    get = unicode.__getitem__
 
 
 def wrap(pyobj):
