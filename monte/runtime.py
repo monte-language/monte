@@ -167,7 +167,10 @@ def getGuard(o, name):
     """
     Returns the guard object for a name in a Monte object's frame.
     """
-    return o.__class__.__dict__[name].getGuard()
+    b = o.__class__.__dict__.get(name)
+    if b is not None:
+        return b.getGuard()
+    return anyGuard
 
 
 def getBinding(o, name):
@@ -231,7 +234,7 @@ class FinalSlot(object):
     def __init__(self, val, guard=None, ej=throw):
         self.guard = guard
         if self.guard is not None:
-            self.val = self.guard.coerce(self.val, ej)
+            self.val = self.guard.coerce(val, ej)
         else:
             self.val = val
 
@@ -390,9 +393,12 @@ class BooleanGuard(MonteObject):
         throw.eject(tryej, problem)
 
     def _subCoerce(self, specimen, ej):
-        if specimen is True or specimen is False:
+        if specimen in [true, false]:
             return specimen
-        ejector("%r is not a boolean" % (specimen,))
+        elif specimen in [True, False]:
+            return bwrap(specimen)
+        else:
+            throw.eject(ej, "%r is not a boolean" % (specimen,))
 
 booleanGuard = BooleanGuard()
 
