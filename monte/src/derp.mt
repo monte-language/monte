@@ -25,6 +25,13 @@ object empty:
     to trees():
         return []
 
+def testEmpty(assert):
+    def testEmptyDerive():
+        assert.equal(empty.derive('x'), empty)
+    return [
+        testEmptyDerive,
+    ]
+
 object nullSet:
     to derive(c):
         return empty
@@ -80,6 +87,13 @@ def ex(t):
             return []
     return exInner
 
+def testExactly(assert):
+    def testExactlyDerive():
+        assert.equal(ex('x').derive('x').trees(), ['x'])
+    return [
+        testExactlyDerive,
+    ]
+
 def red(l, f):
     object redInner:
         to derive(c):
@@ -98,6 +112,15 @@ def red(l, f):
         to trees():
             return [f(t) for t in l.trees()]
     return redInner
+
+def testReduce(assert):
+    def plusOne(x):
+        return x + 1
+    def testReduceDerive():
+        assert.equal(red(ex('x'), plusOne).derive('x').trees(), ['y'])
+    return [
+        testReduceDerive,
+    ]
 
 def alt(a, b):
     if (a == empty):
@@ -171,12 +194,35 @@ def parse(language, cs):
 
 # throw("abort")
 traceln("~~~")
-traceln(parse(ex("x"), "x"))
+traceln(parse(ex('x'), "x"))
 traceln("~~~")
-traceln(parse(alt(ex("x"), ex("y")), "x"))
+traceln(parse(alt(ex('x'), ex('y')), "x"))
 traceln("~~~")
-traceln(parse(alt(ex("x"), ex("y")), "y"))
+traceln(parse(alt(ex('x'), ex('y')), "y"))
 traceln("~~~")
-traceln(parse(cat(ex("x"), ex("y")), "xy"))
+traceln(parse(cat(ex('x'), ex('y')), "xy"))
 traceln("~~~")
-traceln(parse(rep(ex("x")), "xxx"))
+traceln(parse(rep(ex('x')), "xxx"))
+
+
+object unitTestAssertions:
+    to equal(left, right):
+        if (left != right):
+            throw(`assertion failure: $left != $right`)
+    to inequal(left, right):
+        if (left == right):
+            throw(`assertion failure: $left == $right`)
+
+def runTests(suites):
+    for s in suites:
+        traceln(`testing suite $s`)
+        def tests := s(unitTestAssertions)
+        for t in tests:
+            traceln(`$t`)
+            t()
+
+runTests([
+    testEmpty,
+    testExactly,
+    testReduce,
+])
