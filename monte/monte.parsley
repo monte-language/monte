@@ -118,7 +118,8 @@ expr =  assign | ejector
 ejector = ('break' -> t.Break
              | 'continue' -> t.Continue
              | 'return' -> t.Return):ej
-             (("(" ')' -> None) | assign)?:val -> ej(val)
+             (("(" ')' -> None) | assign
+              | indentObjectExpr:o -> t.Object("", *o))?:val -> ej(val)
 
 guard = (noun | parenExpr):e ("[" args:x ']' -> x)*:xs -> t.Guard(e, xs)
 optGuard = (':' guard)?
