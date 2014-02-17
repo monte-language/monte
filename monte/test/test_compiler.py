@@ -514,6 +514,32 @@ class CompilerTest(unittest.TestCase):
              _g_foo1
              """)
 
+    def test_escape(self):
+        self.eq_(
+            '''
+            var x := 1
+            escape e {
+              e(2)
+            } catch v {
+              x := v
+            }
+            ''',
+            """
+            _g_x1 = _monte.wrap(1)
+            x = _monte.VarSlot(None, _g_x1, _monte.throw)
+            e = _monte.ejector("e")
+            try:
+                _g_escape3 = e(_monte.wrap(2))
+            except e._m_type, _g_e2:
+                v = _g_e2.args[0]
+                _g_x4 = v
+                x.put(_g_x4)
+                _g_escape3 = _g_x4
+            finally:
+                e.disable()
+            _g_escape3
+            """)
+
     def test_unusedEscape(self):
         self.eq_(
             '''

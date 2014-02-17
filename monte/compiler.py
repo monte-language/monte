@@ -431,7 +431,7 @@ class PythonWriter(object):
             out.writeln("except %s._m_type, %s:" % (ej, ejTemp))
             if catcher.tag.name != 'null':
                 self._generatePattern(sub, ctx, None,
-                                      ejTemp, catcher.args[0])
+                                      ejTemp + '.args[0]', catcher.args[0])
                 val = self._generate(sub, ctx, catcher.args[1])
                 sub.writeln("%s = %s" % (escapeTemp, val))
             else:
