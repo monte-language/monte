@@ -4,6 +4,18 @@ from monte.test import unittest
 from monte.runtime import eval as monte_eval
 from twisted.trial.unittest import SkipTest
 
+
+class NullPropertiesTest(unittest.TestCase):
+
+    def test_equal(self):
+        self.assertTrue(monte_eval("null == null"))
+
+    def test_inequal(self):
+        # XXX Should pass after fixing up bool objects
+        raise SkipTest
+        self.assertFalse(monte_eval("null != null"))
+
+
 class EvalTest(unittest.TestCase):
 
     def test_base(self):
@@ -130,13 +142,3 @@ class EvalTest(unittest.TestCase):
     def test_or(self):
         self.assertEqual(monte_eval("true or false"), True)
         self.assertEqual(monte_eval("[(def x := true) or true, x]"), (True, True))
-
-
-
-
-
-
-
-
-
-

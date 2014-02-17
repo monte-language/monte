@@ -105,6 +105,20 @@ class _SlotDescriptor(object):
         return self.slot.guard
 
 
+class MonteNull(MonteObject):
+    """
+    The null object.
+
+    null has no methods.
+    """
+
+    def __eq__(self, other):
+        return self is other
+
+
+null = MonteNull()
+
+
 class MonteInt(int):
     def add(self, other):
         return MonteInt(self + other)
@@ -597,7 +611,7 @@ equalizer = Equalizer()
 jacklegScope = {
     'true': True,
     'false': False,
-    'null': None,
+    'null': null,
     'NaN': float('nan'),
     'Infinity': float('inf'),
 
