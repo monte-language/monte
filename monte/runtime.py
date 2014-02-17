@@ -75,6 +75,9 @@ class MonteObject(object):
     def __call__(self, *args):
         return self.run(*args)
 
+    def __repr__(self):
+        return '<' + self._m_fqn + '>'
+
 
 class _MonteMatcher(object):
     def __init__(self, obj, verb):
@@ -384,7 +387,7 @@ class BooleanGuard(MonteObject):
         newspec = specimen._conformTo(self)
         if newspec is not specimen:
             return self._subCoerce(newspec, ej)
-        tryej(problem)
+        throw.eject(tryej, problem)
 
     def _subCoerce(self, specimen, ej):
         if specimen is True or specimen is False:
@@ -584,7 +587,7 @@ class BooleanFlow(MonteObject):
 
     def failureList(self, size):
         #XXX needs broken ref
-        return [False] + [object()] * size
+        return [false] + [object()] * size
 
 booleanFlow = BooleanFlow()
 

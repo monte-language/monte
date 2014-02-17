@@ -491,6 +491,9 @@ class PythonWriter(object):
         classOut, cflush = ctx.classWriter()
         classOut.writeln("class %s(_monte.MonteObject):" % (scriptname,))
         classBodyOut = classOut.indent()
+        classBodyOut.writeln("_m_fqn = '%s$%s'" % (
+            ctx.layout.frame.fqnPrefix,
+            name.encode('string-escape')))
         if not any([methods, matchers, fields, doc, implements]):
             classBodyOut.writeln("pass")
         if matcherNames:
@@ -638,7 +641,7 @@ class PythonWriter(object):
         ifctx = ctx.with_(layout=ctx.layout.makeInner())
         tv = self._generate(out, ifctx, test)
         ifTemp = ctx.layout.gensym("if")
-        out.writeln("if %s:" % (tv,))
+        out.writeln("if _monte.booleanGuard.coerce(%s, None):" % (tv,))
         newctx = ifctx.with_(layout=ifctx.layout.makeInner())
         val = self._generate(sub, newctx, consq)
         sub.writeln("%s = %s" % (ifTemp, val))
