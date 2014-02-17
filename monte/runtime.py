@@ -646,15 +646,9 @@ class Equalizer(MonteObject):
 equalizer = Equalizer()
 
 jacklegScope = {
-<<<<<<< HEAD
     'true': true,
     'false': false,
-    'null': None,
-=======
-    'true': True,
-    'false': False,
     'null': null,
->>>>>>> MostAwesomeDude/null-object
     'NaN': float('nan'),
     'Infinity': float('inf'),
 
