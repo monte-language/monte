@@ -200,6 +200,47 @@ class CompilerTest(unittest.TestCase):
              foo
              """)
 
+    def test_tripleNest(self):
+        self.eq_(
+            '''
+            object outer:
+                method run(f):
+                    object o:
+                        method inner(x):
+                            object q:
+                                method do():
+                                    f
+                            q.do()
+            outer(0).inner(1)
+            ''',
+            """
+            class _m_q_Script(_monte.MonteObject):
+                _m_fqn = '__main$outer$o$q'
+                def __init__(q, f_slot):
+                    _monte.MonteObject._m_install(q, 'f', f_slot)
+
+                def do(q):
+                    return q.f
+
+            class _m_o_Script(_monte.MonteObject):
+                _m_fqn = '__main$outer$o'
+                def __init__(o, f_slot):
+                    _monte.MonteObject._m_install(o, 'f', f_slot)
+
+                def inner(o, x):
+                    q = _m_q_Script(_monte.FinalSlot(o.f, _monte.getGuard(o, "f")))
+                    return q.do()
+
+            class _m_outer_Script(_monte.MonteObject):
+                _m_fqn = '__main$outer'
+                def run(outer, f):
+                    o = _m_o_Script(_monte.FinalSlot(f, None))
+                    return o
+
+            outer = _m_outer_Script()
+            outer(_monte.wrap(0)).inner(_monte.wrap(1))
+            """)
+
     def test_frameFinal(self):
         self.eq_(
             '''
