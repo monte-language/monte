@@ -45,7 +45,7 @@ object nullSet:
         return [null]
 
 def term(ts):
-    object o:
+    return object o:
         to derive(c):
             return empty
         to isEmpty() :bool:
@@ -56,7 +56,6 @@ def term(ts):
             return true
         to trees():
             return ts
-    return o
 
 object anything:
     to derive(c):
@@ -71,7 +70,7 @@ object anything:
         return []
 
 def ex(t):
-    object exInner:
+    return object exInner:
         to derive(c):
             if (c == t):
                 return term([c])
@@ -85,7 +84,6 @@ def ex(t):
             return false
         to trees():
             return []
-    return exInner
 
 def testExactly(assert):
     def testExactlyDerive():
@@ -95,7 +93,7 @@ def testExactly(assert):
     ]
 
 def red(l, f):
-    object redInner:
+    return object redInner:
         to derive(c):
             def d := l.derive(c)
             if (d.isEmpty()):
@@ -111,7 +109,6 @@ def red(l, f):
             return l.onlyNull()
         to trees():
             return [f(t) for t in l.trees()]
-    return redInner
 
 def testReduce(assert):
     def plusOne(x):
@@ -127,7 +124,7 @@ def alt(a, b):
         return b
     if (b == empty):
         return a
-    object altInner:
+    return object altInner:
         to derive(c):
             return alt(a.derive(c), b.derive(c))
         to isEmpty() :bool:
@@ -138,7 +135,15 @@ def alt(a, b):
             return a.onlyNull() & b.onlyNull()
         to trees():
             return a.trees() + b.trees()
-    return altInner
+
+def testAlternation(assert):
+    def testAlternationDerive():
+        def l := alt(ex('x'), ex('y'))
+        assert.equal(l.derive('x').trees(), ['x'])
+        assert.equal(l.derive('y').trees(), ['y'])
+    return [
+        testAlternationDerive,
+    ]
 
 def cat(a, b):
     object catInner:
@@ -192,18 +197,6 @@ def parse(language, cs):
             traceln("Language is empty!")
     return l.trees()
 
-# throw("abort")
-traceln("~~~")
-traceln(parse(ex('x'), "x"))
-traceln("~~~")
-traceln(parse(alt(ex('x'), ex('y')), "x"))
-traceln("~~~")
-traceln(parse(alt(ex('x'), ex('y')), "y"))
-traceln("~~~")
-traceln(parse(cat(ex('x'), ex('y')), "xy"))
-traceln("~~~")
-traceln(parse(rep(ex('x')), "xxx"))
-
 
 object unitTestAssertions:
     to equal(left, right):
@@ -215,14 +208,16 @@ object unitTestAssertions:
 
 def runTests(suites):
     for s in suites:
-        traceln(`testing suite $s`)
+        traceln(`Testing suite $s`)
         def tests := s(unitTestAssertions)
         for t in tests:
             traceln(`$t`)
             t()
+            traceln("Passed!")
 
 runTests([
     testEmpty,
     testExactly,
     testReduce,
+    testAlternation,
 ])
