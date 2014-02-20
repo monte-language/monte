@@ -14,6 +14,10 @@ class MonteObject(object):
     def _conformTo(self, guard):
         return self
 
+    def _getAllegedType(self):
+        # XXX so wrong
+        return type(self)
+
     def _m_audit(self, auditors):
         expr = parseTerm(self._m_objectExpr.decode('base64').decode('zlib'))
         for auditor in auditors:
@@ -198,6 +202,26 @@ class MonteInt(int):
     #butNot
     #remainder
 
+class MonteFloat(float):
+    def add(self, other):
+        return MonteFloat(self + other)
+    def subtract(self, other):
+        return MonteFloat(self - other)
+    def multiply(self, other):
+        return MonteFloat(self * other)
+    def approxDivide(self, other):
+        return MonteFloat(float.__truediv__(self, other))
+    def floorDivide(self, other):
+        return MonteFloat(float.__floordiv__(self, other))
+    mod = float.__mod__
+    pow = float.__pow__
+    #butNot
+    #remainder
+    def _conformTo(self, guard):
+        if guard is intGuard:
+            return MonteInt(self)
+        return self
+
 class String(unicode):
     add = unicode.__add__
     multiply = unicode.__mul__
@@ -213,7 +237,7 @@ def wrap(pyobj):
     if isinstance(pyobj, int):
         return MonteInt(pyobj)
     if isinstance(pyobj, float):
-        return MonteFloat64(pyobj)
+        return MonteFloat(pyobj)
     if isinstance(pyobj, list):
         return FlexList(pyobj)
     if isinstance(pyobj, tuple):
@@ -396,6 +420,10 @@ class ConstList(tuple):
     def __str__(self):
         return self.__repr__()
 
+    #XXX Is this a good name/API? no idea.
+    def contains(item):
+        return item in self
+
 
 class MonteMap(dict):
 
@@ -447,7 +475,7 @@ class Comparer(MonteObject):
 
 comparer = Comparer()
 
-class BooleanGuard(MonteObject):
+class Guard(MonteObject):
     def coerce(self, specimen, ej):
         # XXX SHORTEN
         tryej = ejector("coercion")
@@ -457,11 +485,16 @@ class BooleanGuard(MonteObject):
             problem = p.args[0]
         finally:
             tryej.disable()
-        newspec = specimen._conformTo(self)
-        if newspec is not specimen:
-            return self._subCoerce(newspec, ej)
-        throw.eject(tryej, problem)
+        conform = getattr(specimen, '_conformTo', None)
+        if conform is not None:
+            newspec = conform(self)
+            if newspec is not specimen:
+                return self._subCoerce(newspec, ej)
+        throw.eject(ej, problem)
 
+
+class BooleanGuard(Guard):
+    _m_fqn = "bool"
     def _subCoerce(self, specimen, ej):
         if specimen in [true, false]:
             return specimen
@@ -473,19 +506,56 @@ class BooleanGuard(MonteObject):
 booleanGuard = BooleanGuard()
 
 class AnyGuard(MonteObject):
+    _m_fqn = "any"
     def coerce(self, specimen, ej):
         return specimen
 
+    def get(self, *guards):
+        return UnionGuard(guards)
+
 anyGuard = AnyGuard()
 
+class UnionGuard(MonteObject):
+    _m_fqn = "any$UnionGuard"
+    def __init__(self, guards):
+        self.guards = guards
+
+    def coerce(self, specimen, ej):
+        cej = ejector("next")
+        for guard in self.guards:
+            try:
+                return guard.coerce(specimen, cej)
+            except cej._m_type:
+                continue
+        throw.eject(ej, "doesn't match any of %s" % (self.guards,))
+
+
 class VoidGuard(MonteObject):
+    _m_fqn = "void"
     def coerce(self, specimen, ej):
         if specimen is not None:
             throw.eject(ej, "%r is not null" % (specimen,))
 
 voidGuard = VoidGuard()
 
+class PythonTypeGuard(Guard):
+    def __init__(self, typ, name):
+        self.typ = typ
+        self._m_fqn = name
+    def _subCoerce(self, specimen, ej):
+        if isinstance(specimen, self.typ):
+            return specimen
+        else:
+            throw.eject(ej, "is not a %s" % (self.typ,))
+
+intGuard = PythonTypeGuard(MonteInt, "int")
+floatGuard = PythonTypeGuard(MonteFloat, "float")
+charGuard = PythonTypeGuard(Character, "char")
+stringGuard = PythonTypeGuard(String, "str")
+
+
 class MakeVerbFacet(MonteObject):
+    _m_fqn = "__makeVerbFacet$verbFacet"
     def curryCall(self, obj, verb):
         def facet(*a):
             return getattr(obj, verb)(*a)
@@ -561,6 +631,7 @@ def findOneOf(elts, specimen, start):
     return -1
 
 class Substituter(MonteObject):
+    _m_fqn = "simple__quasiParser$Substituter"
     def __init__(self, template):
         self.template = template
         self.segments = segs = []
@@ -644,6 +715,7 @@ class Substituter(MonteObject):
         return ConstList(bindings)
 
 class SimpleQuasiParser(MonteObject):
+    _m_fqn = "simple__quasiParser"
     def valueMaker(self, template):
         return Substituter(template)
 
@@ -657,6 +729,7 @@ def quasiMatcher(matchMaker, values):
     return matchit
 
 class BooleanFlow(MonteObject):
+    _m_fqn = "__booleanFlow"
     def broken(self):
         #XXX should return broken ref
         return object()
@@ -668,6 +741,7 @@ class BooleanFlow(MonteObject):
 booleanFlow = BooleanFlow()
 
 class Equalizer(MonteObject):
+    _m_fqn = "__equalizer"
     def sameEver(self, left, right):
         return left == right
 
@@ -692,6 +766,12 @@ jacklegScope = {
     'boolean': booleanGuard,
     'ValueGuard': anyGuard,
 
+    #XXX wrap in OrderedSpace
+    'char': charGuard,
+    'float': floatGuard,
+    'int': intGuard,
+
+    'str': stringGuard,
 
     #E
     #Ref
