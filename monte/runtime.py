@@ -11,6 +11,10 @@ def traceln(x):
 
 class MonteObject(object):
     _m_matcherNames = ()
+
+    def __init__(self):
+        self._m_slots = {}
+
     def _conformTo(self, guard):
         return self
 
@@ -30,7 +34,12 @@ class MonteObject(object):
         return self._m_methodGuards[name]
 
     def _m_install(self, name, slot):
-        setattr(self.__class__, name, _SlotDescriptor(slot))
+        # XXX hack, put _m_slots and _SlotDescriptor call in compiler
+        # output
+        if getattr(self, '_m_slots', None) is None:
+            self._m_slots = {}
+        setattr(self.__class__, name, _SlotDescriptor(name))
+        self._m_slots[name] = slot
 
     def __mul__(self, other):
         return self.multiply(other)
@@ -99,17 +108,17 @@ class _MonteMatcher(object):
 
 class _SlotDescriptor(object):
 
-    def __init__(self, slot):
-        self.slot = slot
+    def __init__(self, name):
+        self.name = name
 
     def __get__(self, obj, typ):
-        return self.slot.get()
+        return obj._m_slots[self.name].get()
 
     def __set__(self, obj, val):
-        return self.slot.put(val)
+        return obj._m_slots[self.name].put(val)
 
-    def getGuard(self):
-        return self.slot.guard
+    def getGuard(self, obj):
+        return obj._m_slots[self.name].guard
 
 
 class MonteBool(MonteObject):
@@ -167,21 +176,40 @@ class MonteNull(MonteObject):
 
     null has no methods.
     """
-
+    _m_fqn = "null"
     def __eq__(self, other):
         return self is other
 
     def __repr__(self):
         return "null"
 
-class Character(unicode):
-    def __iter__(self):
-        return None
-
 null = MonteNull()
 
 
+class MonteChar(MonteObject):
+    """
+    A character.
+    """
+    _m_fqn = "char"
+    def __init__(self, value):
+        self._c = value
+
+    def __eq__(self, other):
+        if not isinstance(other, MonteChar):
+            return False
+        return self._c == other._c
+
+    def add(self, other):
+        return MonteChar(unichr(ord(self._c) + other))
+
+    def __repr__(self):
+        return "'%s'" % (self._c.encode('string-escape'))
+
+Character = MonteChar
+
+
 class MonteInt(int):
+    _m_fqn = "__makeInt$int"
     def add(self, other):
         return MonteInt(self + other)
     def subtract(self, other):
@@ -203,6 +231,7 @@ class MonteInt(int):
     #remainder
 
 class MonteFloat(float):
+    _m_fqn = "__makeFloat$float"
     def add(self, other):
         return MonteFloat(self + other)
     def subtract(self, other):
@@ -223,6 +252,7 @@ class MonteFloat(float):
         return self
 
 class String(unicode):
+    _m_fqn = "__makeStr$str"
     add = unicode.__add__
     multiply = unicode.__mul__
     size = unicode.__len__
@@ -256,6 +286,7 @@ def wrap(pyobj):
 
 
 class Binding(MonteObject):
+    _m_fqn = "Binding"
     def __init__(self, slot):
         self.slot = slot
 
@@ -266,7 +297,7 @@ def getGuard(o, name):
     """
     b = o.__class__.__dict__.get(name)
     if b is not None:
-        return b.getGuard()
+        return b.getGuard(o)
     return anyGuard
 
 
@@ -298,6 +329,7 @@ class MonteEjection(BaseException):
 
 
 class Throw(MonteObject):
+    _m_fqn = "throw"
     def __call__(self, val):
         raise RuntimeError(val)
     def eject(self, ej, val):
@@ -314,6 +346,7 @@ def ejector(_name):
         name = _name
         pass
     class ej(MonteObject):
+        _m_fqn = "Ejector"
         _m_type = ejtype
         _m_active = True
 
@@ -337,6 +370,7 @@ class StaticContext(object):
 
 
 class FinalSlot(object):
+    _m_fqn = "FinalSlot"
     def __init__(self, val, guard=None, ej=throw):
         self.guard = guard
         if self.guard is not None:
@@ -349,6 +383,7 @@ class FinalSlot(object):
 
 
 class VarSlot(object):
+    _m_fqn = "VarSlot"
     def __init__(self, guard, val=_absent, ej=None):
         self.guard = guard
         if val is not _absent:
@@ -438,12 +473,13 @@ class ConstList(tuple):
 
 
 class MonteMap(dict):
-
+    _m_fqn = "Dict"
     __setitem__ = None
     get = dict.__getitem__
 
 
 class mapMaker(object):
+    _m_fqn = "__makeMap"
     @staticmethod
     def fromPairs(pairs):
         return MonteMap(pairs)
