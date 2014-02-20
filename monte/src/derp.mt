@@ -139,8 +139,8 @@ def alt(a, b):
 def testAlternation(assert):
     def testAlternationDerive():
         def l := alt(ex('x'), ex('y'))
-        # assert.equal(l.derive('x').trees(), ['x'])
-        # assert.equal(l.derive('y').trees(), ['y'])
+        assert.equal(l.derive('x').trees(), ['x'])
+        assert.equal(l.derive('y').trees(), ['y'])
     return [
         testAlternationDerive,
     ]
@@ -174,7 +174,7 @@ def cat(a, b):
 def testCatenation(assert):
     def testCatenationDerive():
         def l := cat(ex('x'), ex('y'))
-        # assert.equal(l.derive('x').derive('y').trees(), ['x', 'y'])
+        assert.equal(l.derive('x').derive('y').trees(), [['x', 'y']])
     return [
         testCatenationDerive,
     ]
@@ -198,8 +198,8 @@ def rep(l):
 def testRepeat(assert):
     def testRepeatDerive():
         def l := rep(ex('x'))
-        assert.equal(l.derive('x').trees(), ['x'])
-        # assert.equal(l.derive('x').derive('x').trees(), ['x', 'x'])
+        assert.equal(l.derive('x').trees(), [['x', null]])
+        assert.equal(l.derive('x').derive('x').trees(), [['x', ['x', null]]])
     return [
         testRepeatDerive,
     ]
@@ -212,6 +212,9 @@ def parse(language, cs):
         if (l.isEmpty()):
             traceln("Language is empty!")
     return l.trees()
+
+
+traceln(parse(rep(alt(ex('x'), ex('y'))), "xxyyxy"))
 
 
 object unitTestAssertions:
