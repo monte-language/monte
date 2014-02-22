@@ -18,10 +18,6 @@ class MonteObject(object):
     def _conformTo(self, guard):
         return self
 
-    def _getAllegedType(self):
-        # XXX so wrong
-        return type(self)
-
     def _m_audit(self, auditors):
         expr = parseTerm(self._m_objectExpr.decode('base64').decode('zlib'))
         for auditor in auditors:
@@ -467,6 +463,7 @@ class ConstList(tuple):
     def __str__(self):
         return self.__repr__()
 
+    size = tuple.__len__
     #XXX Is this a good name/API? no idea.
     def contains(item):
         return item in self
@@ -600,7 +597,8 @@ intGuard = PythonTypeGuard(MonteInt, "int")
 floatGuard = PythonTypeGuard(MonteFloat, "float")
 charGuard = PythonTypeGuard(Character, "char")
 stringGuard = PythonTypeGuard(String, "str")
-
+listGuard = PythonTypeGuard(ConstList, "list")
+mapGuard = PythonTypeGuard(MonteMap, "map")
 
 class MakeVerbFacet(MonteObject):
     _m_fqn = "__makeVerbFacet$verbFacet"
@@ -795,12 +793,15 @@ class Equalizer(MonteObject):
 
 equalizer = Equalizer()
 
+monteModules = {}
 def monteImport(name):
     path = os.path.join(os.path.dirname(__file__), 'src',
                         name.replace('.', '/') + '.mt')
     if not os.path.exists(path):
         raise RuntimeError("%s does not exist" % path)
-    return eval(open(path).read(), origin=name)
+    if not monteModules.get(name):
+        monteModules[name] = eval(open(path).read(), origin=name)
+    return monteModules[name]
 
 jacklegScope = {
     'true': true,
@@ -820,6 +821,8 @@ jacklegScope = {
     'int': intGuard,
 
     'str': stringGuard,
+    'list': listGuard,
+    'map': mapGuard,
 
     #E
     #Ref
@@ -855,6 +858,9 @@ jacklegScope = {
     'simple__quasiParser': SimpleQuasiParser(),
 
     'import': monteImport,
+
+    #not gonna last, obviously
+    'unsafeType': type,
 }
 
 def eval(source, scope=jacklegScope, origin="__main"):
