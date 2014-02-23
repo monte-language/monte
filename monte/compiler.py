@@ -346,7 +346,7 @@ class PythonWriter(object):
         if ctx.mode == FX_ONLY:
             return
         if litNode.tag.name == 'Character':
-            return "_monte.Character(%r)" % (litNode.args[0].data)
+            return "_monte.makeCharacter(%r)" % (litNode.args[0].data)
         lit = litNode.data
         if isinstance(lit, basestring):
             #either already unicode, or ascii bytes
@@ -355,9 +355,9 @@ class PythonWriter(object):
 
     def generate_NounExpr(self, out, ctx, node):
         name = node.args[0].data
-        constants = {"null": "None",
-                     "true": "True",
-                     "false": "False"}
+        constants = {"null": "_monte.null",
+                     "true": "_monte.true",
+                     "false": "_monte.false"}
         b = ctx.layout.getBinding(name)
         if b.name in constants:
             return constants[b.name]
@@ -650,7 +650,7 @@ class PythonWriter(object):
             newctx = ifctx.with_(layout=ifctx.layout.makeInner())
             val = self._generate(sub, newctx, alt)
         else:
-            val = 'None'
+            val = '_monte.null'
         sub.writeln("%s = %s" % (ifTemp, val))
         return ifTemp
 
