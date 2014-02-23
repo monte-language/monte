@@ -28,7 +28,7 @@ class CompilerTest(unittest.TestCase):
     def test_literal(self):
         self.assertEqual(ecompile("1", {}), "_monte.wrap(1)")
         self.assertEqual(ecompile('"foo"', {}), "_monte.wrap(u'foo')")
-        self.assertEqual(ecompile("'x'", {}), "_monte.Character('x')")
+        self.assertEqual(ecompile("'x'", {}), "_monte.makeCharacter('x')")
         self.assertEqual(ecompile("100_312", {}), "_monte.wrap(100312)")
         self.assertEqual(ecompile('"\\u0061"', {}), "_monte.wrap(u'a')")
 

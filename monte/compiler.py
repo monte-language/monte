@@ -342,7 +342,7 @@ class PythonWriter(object):
         if ctx.mode == FX_ONLY:
             return
         if litNode.tag.name == 'Character':
-            return "_monte.Character(%r)" % (litNode.args[0].data)
+            return "_monte.makeCharacter(%r)" % (litNode.args[0].data)
         lit = litNode.data
         if isinstance(lit, basestring):
             #either already unicode, or ascii bytes
