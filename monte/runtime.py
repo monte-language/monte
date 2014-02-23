@@ -858,7 +858,7 @@ jacklegScope = {
 }
 
 def eval(source, scope=jacklegScope, origin="__main"):
-    name = uuid.uuid4().hex + '.py'
+    name = uuid.uuid4().hex
     mod = module(name)
     mod.__name__ = name
     mod._m_outerScope = scope
