@@ -28,7 +28,7 @@ class CompilerTest(unittest.TestCase):
     def test_literal(self):
         self.assertEqual(ecompile("1", {}), "_monte.wrap(1)")
         self.assertEqual(ecompile('"foo"', {}), "_monte.wrap(u'foo')")
-        self.assertEqual(ecompile("'x'", {}), "_monte.Character('x')")
+        self.assertEqual(ecompile("'x'", {}), "_monte.makeCharacter('x')")
         self.assertEqual(ecompile("100_312", {}), "_monte.wrap(100312)")
         self.assertEqual(ecompile('"\\u0061"', {}), "_monte.wrap(u'a')")
 
@@ -451,7 +451,7 @@ class CompilerTest(unittest.TestCase):
                     _m___return = _monte.ejector("__return")
                     try:
                         _m___return(_monte.wrap(1))
-                        _g_escape2 = None
+                        _g_escape2 = _monte.null
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
                     finally:
@@ -482,7 +482,7 @@ class CompilerTest(unittest.TestCase):
                     _m___return = _monte.ejector("__return")
                     try:
                         _m___return(foo(x))
-                        _g_escape2 = None
+                        _g_escape2 = _monte.null
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
                     finally:
@@ -613,7 +613,7 @@ class CompilerTest(unittest.TestCase):
                     try:
                         x = _monte.wrap(1)
                         _m___return(_monte.Map(()))
-                        _g_escape4 = None
+                        _g_escape4 = _monte.null
                     except _m___return._m_type, _g___return3:
                         _g_escape4 = _g___return3.args[0]
                     finally:
@@ -670,7 +670,7 @@ class CompilerTest(unittest.TestCase):
                         c = _monte.VarSlot(None, _g_c4, _monte.throw)
                         boz = _m_boz_Script(_monte.FinalSlot(a, None), b)
                         _m___return(boz)
-                        _g_escape2 = None
+                        _g_escape2 = _monte.null
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
                     finally:
@@ -743,7 +743,7 @@ class CompilerTest(unittest.TestCase):
             if _monte.booleanGuard.coerce(_monte.wrap(1), None):
                 _g_if1 = _monte.wrap(2)
             else:
-                _g_if1 = None
+                _g_if1 = _monte.null
             _g_if1
             """)
 

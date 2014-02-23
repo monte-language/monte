@@ -103,6 +103,19 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("bob`foo`"), ["QuasiExpr", "bob", [["QuasiText", "foo"]]])
         self.assertEqual(parse("bob`foo`` $x baz`"), ["QuasiExpr", "bob", [["QuasiText", "foo` "], ["QuasiExprHole", ["NounExpr", "x"]], ["QuasiText", " baz"]]])
 
+    def test_quasiliteralsParens(self):
+        """
+        Parentheses should not be eaten by the parser incorrectly.
+        """
+
+        parse = self.getParser("prim")
+
+        self.assertEqual(parse("`($x)`"),
+                         ["QuasiExpr", None, [
+                             ["QuasiText", "("],
+                             ["QuasiExprHole", ["NounExpr", "x"]],
+                             ["QuasiText", ")"]]])
+
     def test_quasiliteralsBraces(self):
         """
         Test that quasiliterals and braces don't smash each other up.

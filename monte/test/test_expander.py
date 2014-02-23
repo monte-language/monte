@@ -901,3 +901,21 @@ class ExpanderTest(unittest.TestCase):
                                      ["FinalPattern", ["NounExpr", "p"], None],
                                      ["NounExpr", "z"]]]]],
                                  []]]]]])
+
+    def test_quasiliteral(self):
+        self.assertEqual(self.parse("`$x`"),
+                         ['MethodCallExpr',
+                             ['MethodCallExpr',
+                                 ['NounExpr', 'simple__quasiParser'],
+                                 'valueMaker', [['LiteralExpr', '${0}']]],
+                             'substitute',
+                             [['MethodCallExpr', ['NounExpr', '__makeList'],
+                                 'run', [['NounExpr', 'x']]]]])
+        self.assertEqual(self.parse("`($x)`"),
+                         ['MethodCallExpr',
+                             ['MethodCallExpr',
+                                 ['NounExpr', 'simple__quasiParser'],
+                                 'valueMaker', [['LiteralExpr', '(${0})']]],
+                             'substitute',
+                             [['MethodCallExpr', ['NounExpr', '__makeList'],
+                                 'run', [['NounExpr', 'x']]]]])

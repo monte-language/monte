@@ -8,10 +8,10 @@ while os.path.dirname(path) != path:
         break
     path = os.path.dirname(path)
 
-import monte.runtime
+import monte.runtime.load
 # from monte.repl import startRepl
 
 # startRepl()
 
 if len(sys.argv) > 1:
-    monte.runtime.eval(open(sys.argv[1]).read())
+    monte.runtime.load.eval(open(sys.argv[1]).read())
