@@ -3,7 +3,7 @@ object bool:
         if (x == true | x == false):
             return x
         else:
-            throw.eject(ejector, "Must be an integer")
+            throw.eject(ejector, "Must be a bool")
     to MakeSlot(x :bool) :any:
         var v := x
         object slot:
@@ -216,25 +216,9 @@ def parse(language, cs):
 
 traceln(parse(rep(alt(ex('x'), ex('y'))), "xxyyxy"))
 
+def unittest := import("unittest")
 
-object unitTestAssertions:
-    to equal(left, right):
-        if (left != right):
-            throw(`assertion failure: $left != $right`)
-    to inequal(left, right):
-        if (left == right):
-            throw(`assertion failure: $left == $right`)
-
-def runTests(suites):
-    for s in suites:
-        traceln(`Testing suite $s`)
-        def tests := s(unitTestAssertions)
-        for t in tests:
-            traceln(`$t`)
-            t()
-            traceln("Passed!")
-
-runTests([
+unittest([
     testEmpty,
     testExactly,
     testReduce,
