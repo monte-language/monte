@@ -83,6 +83,7 @@ def escapedChar(c):
     i = ord(c)
     if i < 32 or i > 126:
         return '\\u%04x' % i
+    return c
 
 
 class Character(MonteObject):
@@ -433,6 +434,10 @@ class String(MonteObject):
         return "<m %r>" % (self.s)
     def __hash__(self):
         return hash(self.s)
+
+    def __iter__(self):
+        for c in self.s:
+            yield Character(c)
 
     def op__cmp(self, other):
         if not isinstance(other, String):
