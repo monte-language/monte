@@ -223,7 +223,9 @@ Assign(TempNounExpr(@name @idx) @rightScope) -> StaticScope(namesSet=[name + str
 
 IgnorePattern(@guardScope) -> guardScope or StaticScope()
 VarPattern(NounExpr(@name) @guardScope) -> StaticScope(varNames=[name]).add(guardScope)
+VarPattern(TempNounExpr(@name @idx) @guardScope) -> StaticScope(varNames=[name + str(idx)]).add(guardScope)
 FinalPattern(NounExpr(@name) @guardScope) -> StaticScope(defNames=[name]).add(guardScope)
+FinalPattern(TempNounExpr(@name @idx) @guardScope) -> StaticScope(defNames=[name + str(idx)]).add(guardScope)
 SlotPattern(NounExpr(@name) @guardScope) -> StaticScope(varNames=[name]).add(guardScope)
 BindingPattern(NounExpr(@name)) -> StaticScope(varNames=[name])
 ListPattern(@patternScopes null) -> union(patternScopes)
@@ -669,12 +671,11 @@ def expandComprehension(self, key, value, coll, filtr, exp, collector):
     kTemp = self.mktemp("key")
     vTemp = self.mktemp("value")
     skip = self.mktemp("skip")
-    value = t.SeqExpr([
-        t.Def(key, None, kTemp),
-        t.Def(value, None, vTemp),
-        exp])
+    kv = [t.Def(key, None, kTemp), t.Def(value, None, vTemp)]
     if filtr:
-        value = t.If(filtr, value, t.MethodCallExpr(skip, "run", []))
+        value = t.SeqExpr(kv + [t.If(filtr, exp, t.MethodCallExpr(skip, "run", []))])
+    else:
+        value = t.SeqExpr(kv + [exp])
     obj = t.Object(
         "For-loop body", t.IgnorePattern(None),
         t.Script(
