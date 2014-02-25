@@ -37,12 +37,12 @@ class Bool(MonteObject):
 
     def _m_and(self, other):
         if not isinstance(other, Bool):
-            raise RuntimeError("Bools can't be compared with non-bools")
+            raise RuntimeError("Can't compare Bool and %r" % (other,))
         return bwrap(self._b and other._b)
 
     def _m_or(self, other):
         if not isinstance(other, Bool):
-            raise RuntimeError("Bools can't be compared with non-bools")
+            raise RuntimeError("Can't compare Bool and %r" % (other,))
         return bwrap(self._b or other._b)
 
     def _m_not(self):
@@ -50,12 +50,12 @@ class Bool(MonteObject):
 
     def xor(self, other):
         if not isinstance(other, Bool):
-            raise RuntimeError("Bools can't be compared with non-bools")
+            raise RuntimeError("Can't compare Bool and %r" % (other,))
         return bwrap(self._b != other._b)
 
     def op__cmp(self, other):
         if not isinstance(other, Bool):
-            raise RuntimeError("%r is not a boolean" % (other,))
+            raise RuntimeError("Can't compare Bool and %r" % (other,))
         return Integer(cmp(self._b, other._b))
 
     def __repr__(self):

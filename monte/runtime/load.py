@@ -34,7 +34,10 @@ def eval(source, scope=None, origin="__main"):
 
 monteModules = {}
 def monteImport(name):
-    path = os.path.join(os.path.dirname(__file__), 'src',
+    # The name is a String, so deref it.
+    name = name.s
+    # XXX hax
+    path = os.path.join(os.path.dirname(__file__), '..', 'src',
                         name.replace('.', '/') + '.mt')
     if not os.path.exists(path):
         raise RuntimeError("%s does not exist" % path)
