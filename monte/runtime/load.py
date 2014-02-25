@@ -17,7 +17,7 @@ class GeneratedCodeLoader(object):
 def eval(source, scope=None, origin="__main"):
     if scope is None:
         from monte.runtime.scope import safeScope as scope
-    name = uuid.uuid4().hex + '.py'
+    name = uuid.uuid4().hex
     mod = module(name)
     mod.__name__ = name
     mod._m_outerScope = scope
