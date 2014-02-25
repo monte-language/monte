@@ -179,12 +179,17 @@ def testCatenation(assert):
         testCatenationDerive,
     ]
 
+def _glueReps([x, xs]):
+    if (xs == null):
+        return [x]
+    return [x] + xs
+
 def rep(l):
     if (l == empty):
         return empty
     object repInner:
         to derive(c):
-            return cat(l.derive(c), rep(l))
+            return red(cat(l.derive(c), rep(l)), _glueReps)
         to isEmpty() :bool:
             return l.isEmpty()
         to nullable() :bool:
@@ -198,8 +203,8 @@ def rep(l):
 def testRepeat(assert):
     def testRepeatDerive():
         def l := rep(ex('x'))
-        assert.equal(l.derive('x').trees(), [['x', null]])
-        assert.equal(l.derive('x').derive('x').trees(), [['x', ['x', null]]])
+        assert.equal(l.derive('x').trees(), [['x']])
+        assert.equal(l.derive('x').derive('x').trees(), [['x', 'x']])
     return [
         testRepeatDerive,
     ]
