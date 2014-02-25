@@ -14,6 +14,9 @@ class ConstList(tuple):
     def contains(self, item):
         return item in self
 
+    def add(self, other):
+        return ConstList(tuple(self) + tuple(other))
+
     def diverge(self):
         return FlexList(list(tuple(self)))
 
