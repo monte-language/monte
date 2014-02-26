@@ -119,30 +119,57 @@ def testReduce(assert):
         testReduceDerive,
     ]
 
-def alt(a, b):
-    if (a == empty):
-        return b
-    if (b == empty):
-        return a
+def _all(l):
+    var rv := true
+    for x in l:
+        rv &= x
+    return rv
+
+def _any(l):
+    var rv := false
+    for x in l:
+        rv |= x
+    return rv
+
+def alt(languages):
+    def ls := [l for l in languages if l != empty]
+    if (ls.size() == 0):
+        return empty
+    if (ls.size() == 1):
+        return ls.get(0)
     return object altInner:
         to derive(c):
-            return alt(a.derive(c), b.derive(c))
+            return alt([l.derive(c) for l in ls])
         to isEmpty() :bool:
-            return a.isEmpty() & b.isEmpty()
+            return _all([l.isEmpty() for l in ls])
         to nullable() :bool:
-            return a.nullable() | b.nullable()
+            return _any([l.nullable() for l in ls])
         to onlyNull() :bool:
-            return a.onlyNull() & b.onlyNull()
+            return _all([l.onlyNull() for l in ls])
         to trees():
-            return a.trees() + b.trees()
+            var ts := []
+            for l in ls:
+                ts += l.trees()
+            return ts
 
 def testAlternation(assert):
-    def testAlternationDerive():
-        def l := alt(ex('x'), ex('y'))
+    def testAlternationOptimization():
+        var l := alt([empty])
+        assert.equal(l, empty)
+    def testAlternationPair():
+        def l := alt([ex('x'), ex('y')])
         assert.equal(l.derive('x').trees(), ['x'])
         assert.equal(l.derive('y').trees(), ['y'])
+    def testAlternationMany():
+        def l := alt([ex('x'), ex('y'), ex('z')])
+        assert.equal(l.derive('x').trees(), ['x'])
+        assert.equal(l.derive('y').trees(), ['y'])
+        assert.equal(l.derive('z').trees(), ['z'])
+        assert.equal(l.derive('w').trees(), [])
     return [
-        testAlternationDerive,
+        testAlternationOptimization,
+        testAlternationPair,
+        testAlternationMany,
     ]
 
 def cat(a, b):
@@ -156,7 +183,7 @@ def cat(a, b):
             def l := cat(da, b)
             if (a.nullable()):
                 def db := b.derive(c)
-                return alt(l, cat(term(a.trees()), db))
+                return alt([l, cat(term(a.trees()), db)])
             return l
         to isEmpty() :bool:
             return a.isEmpty() | b.isEmpty()
@@ -219,7 +246,7 @@ def parse(language, cs):
     return l.trees()
 
 
-traceln(parse(rep(alt(ex('x'), ex('y'))), "xxyyxy"))
+traceln(parse(rep(alt([ex('x'), ex('y')])), "xxyyxy"))
 
 def unittest := import("unittest")
 
