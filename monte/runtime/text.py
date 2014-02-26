@@ -1,6 +1,6 @@
 from monte.runtime.base import MonteObject, throw
 from monte.runtime.data import String
-from monte.runtime.tables import ConstList
+from monte.runtime.tables import ConstList, FlexList
 
 def findOneOf(elts, specimen, start):
     for i, c in enumerate(specimen[start:]):
@@ -51,7 +51,9 @@ class Substituter(MonteObject):
                 last = i + 1
 
     def substitute(self, values):
-        return String(u"".join(self._sub(values)))
+        if not isinstance(values, (ConstList, FlexList)):
+            raise RuntimeError("%r is not a list" % (values,))
+        return String(u"".join(self._sub(values.l)))
 
     def _sub(self, values):
         for typ, val in self.segments:
@@ -67,7 +69,10 @@ class Substituter(MonteObject):
         #XXX maybe put this on a different object?
         if not isinstance(specimen, String):
             raise RuntimeError("%r is not a string" % (specimen,))
+        if not isinstance(values, (ConstList, FlexList)):
+            raise RuntimeError("%r is not a list" % (values,))
         specimen = specimen.s
+        values = values.l
         i = 0
         bindings = []
         for n in range(len(self.segments)):

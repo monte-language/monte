@@ -4,7 +4,7 @@ Objects used by Monte syntax expansions.
 from monte.runtime.base import MonteObject, ejector, throw
 from monte.runtime.data import false, null, String, Integer, bwrap
 from monte.runtime.flow import MonteIterator
-from monte.runtime.tables import ConstList, mapMaker
+from monte.runtime.tables import ConstList, FlexList, mapMaker
 
 
 def validateFor(flag):
@@ -122,11 +122,15 @@ def splitList(cut):
         raise RuntimeError("%r is not an integer" % (cut,))
     cut = cut.n
     def listSplitter(specimen, ej):
-        #XXX coerce to list
-        if len(specimen) < cut:
-            throw.eject(ej, "A %s size list doesn't match a >= %s size list pattern" % (len(specimen), cut))
-        return specimen[:cut] + (specimen[cut:],)
-
+        if not isinstance(specimen, (ConstList, FlexList)):
+            raise RuntimeError("%r is not a list" % (specimen,))
+        if len(specimen.l) < cut:
+            throw.eject(
+                ej, "A %s size list doesn't match a >= %s size list pattern"
+                    % (len(specimen), cut))
+        vals = list(specimen.l[:cut])
+        vals.append(ConstList(specimen.l[cut:]))
+        return ConstList(vals)
     return listSplitter
 
 
