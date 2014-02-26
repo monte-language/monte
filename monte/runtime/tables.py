@@ -1,3 +1,6 @@
+from monte.runtime.data import Integer
+from monte.runtime.flow import MonteIterator
+
 class ConstList(tuple):
     def __repr__(self):
         orig = tuple.__repr__(self)
@@ -5,6 +8,9 @@ class ConstList(tuple):
 
     def __str__(self):
         return self.__repr__()
+
+    def _makeIterator(self):
+        return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self)), self))
 
     size = tuple.__len__
     #XXX Is this a good name/API? no idea.
