@@ -27,7 +27,7 @@ class Equalizer(MonteObject):
         elif t is Character:
             return bwrap(left._c == right._c)
         elif t is ConstList:
-            if len(left) != len(right):
+            if len(left.l) != len(right.l):
                 return false
             for l, r in zip(left, right):
                 if self.sameEver(l, r) is false:
