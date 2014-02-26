@@ -14,7 +14,14 @@ class ConstList(tuple):
     def _makeIterator(self):
         return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self)), self))
 
-    size = tuple.__len__
+    def size(self):
+        return Integer(len(self))
+
+    def get(self, index):
+        if not isinstance(index, Integer):
+            raise RuntimeError("Expected Integer, got %r" % index)
+        return self[index.n]
+
     #XXX Is this a good name/API? no idea.
     def contains(self, item):
         return item in self
