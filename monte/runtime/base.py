@@ -97,6 +97,10 @@ class MonteObject(object):
     def __repr__(self):
         return '<' + self._m_fqn + '>'
 
+    def __iter__(self):
+        for (k, v) in self._makeIterator():
+            yield v
+
 
 class _MatchFailure(Exception):
     pass

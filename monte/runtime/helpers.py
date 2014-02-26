@@ -2,8 +2,8 @@
 Objects used by Monte syntax expansions.
 """
 from monte.runtime.base import MonteObject, ejector, throw
-from monte.runtime.data import false, String, Integer, bwrap
-from monte.runtime.flow import getIterator
+from monte.runtime.data import false, null, String, Integer, bwrap
+from monte.runtime.flow import MonteIterator
 from monte.runtime.tables import ConstList, mapMaker
 
 
@@ -12,21 +12,29 @@ def validateFor(flag):
         raise RuntimeError("For-loop body isn't valid after for-loop exits.")
 
 def accumulateList(coll, obj):
-    it = getIterator(coll)
-    acc = []
+    it = coll._makeIterator()
     skip = ejector("listcomp_skip")
-    for key, item in it:
-        try:
-            acc.append(obj.run(key, item, skip))
-        except skip._m_type:
-            continue
+    ej = ejector("iteration")
+    acc = []
+    try:
+        while True:
+            try:
+                key, item = it.next(ej)
+                acc.append(obj.run(key, item, skip))
+            except skip._m_type:
+                continue
+    except ej._m_type:
+        pass
+    finally:
+        ej.disable()
+
     return ConstList(acc)
 
 def accumulateMap(coll, obj):
     return mapMaker.fromPairs(accumulateList(coll, obj))
 
 def iterWhile(f):
-    return (v for v in iter(f, false))
+    return MonteIterator((null, v) for v in iter(f, false))
 
 class Comparer(MonteObject):
     def greaterThan(self, left, right):

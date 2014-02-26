@@ -1,5 +1,6 @@
 import struct, math
 from monte.runtime.base import MonteObject
+from monte.runtime.flow import MonteIterator
 
 class MonteNull(MonteObject):
     """
@@ -230,7 +231,7 @@ class Integer(MonteObject):
     # Comparison protocol.
 
     def aboveZero(self):
-        return bWrap(0 < self.n)
+        return bwrap(0 < self.n)
 
     def atLeastZero(self):
         return bwrap(0 <= self.n)
@@ -438,9 +439,8 @@ class String(MonteObject):
     def __hash__(self):
         return hash(self.s)
 
-    def __iter__(self):
-        for c in self.s:
-            yield Character(c)
+    def _makeIterator(self):
+        return MonteIterator(enumerate(Character(c) for c in self.s))
 
     def op__cmp(self, other):
         if not isinstance(other, String):
