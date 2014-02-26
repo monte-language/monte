@@ -1,19 +1,30 @@
+from monte.runtime.base import MonteObject, ejector
 
-def getIterator(coll):
-    from monte.runtime.compiler_helpers import wrap
-    if isinstance(coll, dict):
-        return coll.iteritems()
-    elif isinstance(coll, (tuple, list)):
-        return ((wrap(i), v) for (i, v) in enumerate(coll))
-    else:
-        gi = getattr(coll, "getIterator", None)
-        if gi is not None:
-            return gi()
-        else:
-            return ((wrap(i), v) for (i, v) in enumerate(coll))
+class MonteIterator(MonteObject):
+    def __init__(self, it):
+        self.it = it
+
+    def __iter__(self):
+        return self.it
+
+    def _makeIterator(self):
+        return self
+
+    def next(self, ej):
+        try:
+            return self.it.next()
+        except StopIteration:
+            ej()
 
 
 def monteLooper(coll, obj):
-    it = getIterator(coll)
-    for key, item in it:
-        obj.run(key, item)
+    it = coll._makeIterator()
+    ej = ejector("iteration")
+    try:
+        while True:
+            key, item = it.next(ej)
+            obj.run(key, item)
+    except ej._m_type:
+        pass
+    finally:
+        ej.disable()

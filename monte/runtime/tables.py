@@ -1,4 +1,6 @@
 from monte.runtime.base import MonteObject
+from monte.runtime.data import Integer
+from monte.runtime.flow import MonteIterator
 
 
 class ConstList(tuple):
@@ -8,6 +10,9 @@ class ConstList(tuple):
 
     def __str__(self):
         return self.__repr__()
+
+    def _makeIterator(self):
+        return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self)), self))
 
     size = tuple.__len__
     #XXX Is this a good name/API? no idea.
@@ -34,6 +39,9 @@ class FlexList(MonteObject):
 
     def readOnly(self):
         return ConstList(self.l)
+
+    def _makeIterator(self):
+        return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self.l), self.l)))
 
 
 def makeMonteList(*items):
