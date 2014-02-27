@@ -120,6 +120,7 @@ class EvalTest(unittest.TestCase):
         self.assertEqual(monte_eval('true :boolean'), true)
 
     def test_simple_quasiParser_value(self):
+        self.assertEqual(monte_eval('def x := 42; `($x)`'), String(u"(42)"))
         self.assertEqual(monte_eval('def x := 1; def y := [2, 3]; `one $x and $y and two`'),
                          String(u"one 1 and [2, 3] and two"))
 

@@ -20,7 +20,9 @@ class Substituter(MonteObject):
         while i < len(self.template):
             i = findOneOf('$@', self.template, last)
             if i == -1:
-                if last < len(self.template) - 1:
+                # No more QL values or patterns; just go ahead and package up
+                # the last segment if it exists.
+                if last < len(self.template):
                     segs.append(('literal', self.template[last:]))
                 break
             if self.template[i + 1] == self.template[i]:
