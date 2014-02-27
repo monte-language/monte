@@ -289,12 +289,18 @@ def testRepeat(assert):
 
 def parse(language, cs):
     var l := language
+    traceln("Parsing with: " + l._uncall())
     for c in cs:
         traceln(`Character: $c`)
         l := l.derive(c)
+        traceln("Now have: " + l._uncall())
         if (l.isEmpty()):
             traceln("Language is empty!")
-    return l.trees()
+    def results := l.trees()
+    if (results == []):
+        return null
+    else:
+        return results.get(0)
 
 def dump(language):
     traceln(language._uncall())
@@ -314,3 +320,11 @@ unittest([
 dump(rep(alt([ex('x'), ex('y')])))
 
 traceln(parse(rep(alt([ex('x'), ex('y')])), "xxyyxy"))
+
+def item := oneOf("xyz")
+def items := red(cat(item, ex('*')), def _(c) { return rep(ex(c)) })
+def regex := rep(items)
+
+def xyzzy := parse(regex, "x*y*z*y*")
+
+traceln(parse(xyzzy, "xyzzy"))
