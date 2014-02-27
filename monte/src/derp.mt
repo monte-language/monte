@@ -14,6 +14,8 @@ object bool:
         return slot
 
 object empty:
+    to _uncall():
+        return "empty"
     to derive(c):
         return empty
     to isEmpty() :bool:
@@ -33,6 +35,8 @@ def testEmpty(assert):
     ]
 
 object nullSet:
+    to _uncall():
+        return "nullSet"
     to derive(c):
         return empty
     to isEmpty() :bool:
@@ -46,6 +50,8 @@ object nullSet:
 
 def term(ts):
     return object o:
+        to _uncall():
+            return `term($ts)`
         to derive(c):
             return empty
         to isEmpty() :bool:
@@ -58,6 +64,8 @@ def term(ts):
             return ts
 
 object anything:
+    to _uncall():
+        return "anything"
     to derive(c):
         return term([c])
     to isEmpty() :bool:
@@ -71,9 +79,11 @@ object anything:
 
 def ex(t):
     return object exInner:
+        to _uncall():
+            return `ex($t)`
         to derive(c):
-            if (c == t):
-                return term([c])
+            if (t == c):
+                return term([t])
             else:
                 return empty
         to isEmpty() :bool:
@@ -92,8 +102,39 @@ def testExactly(assert):
         testExactlyDerive,
     ]
 
+def oneOf(ts):
+    return object oneOfInner:
+        to _uncall():
+            return `oneOf($ts)`
+        to derive(c):
+            return term([t for t in ts if t == c])
+        to isEmpty() :bool:
+            return false
+        to nullable() :bool:
+            return false
+        to onlyNull() :bool:
+            return false
+        to trees():
+            return []
+
+def testOneOf(assert):
+    def testOneOfDerive():
+        def l := oneOf(['x', 'y'])
+        assert.equal(l.derive('x').trees(), ['x'])
+        assert.equal(l.derive('y').trees(), ['y'])
+    def testOneOfPolymorphic():
+        def l := oneOf("xy")
+        assert.equal(l.derive('x').trees(), ['x'])
+        assert.equal(l.derive('y').trees(), ['y'])
+    return [
+        testOneOfDerive,
+        testOneOfPolymorphic,
+    ]
+
 def red(l, f):
     return object redInner:
+        to _uncall():
+            return "red(" + l._uncall() + `, $f)`
         to derive(c):
             def d := l.derive(c)
             if (d.isEmpty()):
@@ -138,6 +179,12 @@ def alt(languages):
     if (ls.size() == 1):
         return ls.get(0)
     return object altInner:
+        to _uncall():
+            var buf := "alt("
+            for l in ls:
+                buf += l._uncall()
+                buf += ", "
+            return buf + ")"
         to derive(c):
             return alt([l.derive(c) for l in ls])
         to isEmpty() :bool:
@@ -178,6 +225,8 @@ def cat(a, b):
     if (b == empty):
         return empty
     return object catInner:
+        to _uncall():
+            return "cat(" + a._uncall() + ", " + b._uncall() + ")"
         to derive(c):
             def da := a.derive(c)
             def l := cat(da, b)
@@ -215,6 +264,8 @@ def rep(l):
     if (l == empty):
         return empty
     object repInner:
+        to _uncall():
+            return "rep(" + l._uncall() + ")"
         to derive(c):
             return red(cat(l.derive(c), rep(l)), _glueReps)
         to isEmpty() :bool:
@@ -245,16 +296,21 @@ def parse(language, cs):
             traceln("Language is empty!")
     return l.trees()
 
-
-traceln(parse(rep(alt([ex('x'), ex('y')])), "xxyyxy"))
+def dump(language):
+    traceln(language._uncall())
 
 def unittest := import("unittest")
 
 unittest([
     testEmpty,
     testExactly,
+    testOneOf,
     testReduce,
     testAlternation,
     testCatenation,
     testRepeat,
 ])
+
+dump(rep(alt([ex('x'), ex('y')])))
+
+traceln(parse(rep(alt([ex('x'), ex('y')])), "xxyyxy"))
