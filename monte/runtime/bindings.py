@@ -22,7 +22,7 @@ class VarSlot(MonteObject):
 
     def _m_init(self, val, ej):
         if self.guard is not None:
-            self.val = self.guard.coerce(self.val, ej)
+            self.val = self.guard.coerce(val, ej)
         else:
             self.val = val
 
@@ -31,7 +31,7 @@ class VarSlot(MonteObject):
 
     def put(self, val):
         if self.guard is not None:
-            self.val = self.guard.coerce(self.val, throw)
+            self.val = self.guard.coerce(val, throw)
         else:
             self.val = val
 
