@@ -310,7 +310,6 @@ def unittest := import("unittest")
 unittest([
     testEmpty,
     testExactly,
-    testOneOf,
     testReduce,
     testAlternation,
     testCatenation,
