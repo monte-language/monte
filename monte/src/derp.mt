@@ -161,13 +161,13 @@ def testReduce(assert):
     ]
 
 def _all(l):
-    var rv := true
+    var rv :bool := true
     for x in l:
         rv &= x
     return rv
 
 def _any(l):
-    var rv := false
+    var rv :bool := false
     for x in l:
         rv |= x
     return rv
@@ -267,7 +267,7 @@ def rep(l):
         to _uncall():
             return "rep(" + l._uncall() + ")"
         to derive(c):
-            return red(cat(l.derive(c), rep(l)), _glueReps)
+            return cat(l.derive(c), rep(l))
         to isEmpty() :bool:
             return l.isEmpty()
         to nullable() :bool:
@@ -281,8 +281,8 @@ def rep(l):
 def testRepeat(assert):
     def testRepeatDerive():
         def l := rep(ex('x'))
-        assert.equal(l.derive('x').trees(), [['x']])
-        assert.equal(l.derive('x').derive('x').trees(), [['x', 'x']])
+        assert.equal(l.derive('x').trees(), [['x', null]])
+        assert.equal(l.derive('x').derive('x').trees(), [['x', ['x', null]]])
     return [
         testRepeatDerive,
     ]
@@ -321,9 +321,18 @@ dump(rep(alt([ex('x'), ex('y')])))
 
 traceln(parse(rep(alt([ex('x'), ex('y')])), "xxyyxy"))
 
+def catTree(ls):
+    switch (ls):
+        match [x, ==null]:
+            return x
+        match [x, y]:
+            return cat(x, catTree(y))
+        match x:
+            return x
+
 def item := oneOf("xyz")
-def items := red(cat(item, ex('*')), def _(c) { return rep(ex(c)) })
-def regex := rep(items)
+def items := red(cat(item, ex('*')), def _(c) { return rep(ex(c.get(0))) })
+def regex := red(rep(items), catTree)
 
 def xyzzy := parse(regex, "x*y*z*y*")
 
