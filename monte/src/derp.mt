@@ -102,36 +102,9 @@ def testExactly(assert):
         testExactlyDerive,
     ]
 
-def oneOf(ts):
-    return object oneOfInner:
-        to _uncall():
-            return `oneOf($ts)`
-        to derive(c):
-            return term([t for t in ts if t == c])
-        to isEmpty() :bool:
-            return false
-        to nullable() :bool:
-            return false
-        to onlyNull() :bool:
-            return false
-        to trees():
-            return []
-
-def testOneOf(assert):
-    def testOneOfDerive():
-        def l := oneOf(['x', 'y'])
-        assert.equal(l.derive('x').trees(), ['x'])
-        assert.equal(l.derive('y').trees(), ['y'])
-    def testOneOfPolymorphic():
-        def l := oneOf("xy")
-        assert.equal(l.derive('x').trees(), ['x'])
-        assert.equal(l.derive('y').trees(), ['y'])
-    return [
-        testOneOfDerive,
-        testOneOfPolymorphic,
-    ]
-
 def red(l, f):
+    if (l.isEmpty()):
+        return empty
     return object redInner:
         to _uncall():
             return "red(" + l._uncall() + `, $f)`
@@ -180,11 +153,11 @@ def alt(languages):
         return ls.get(0)
     return object altInner:
         to _uncall():
-            var buf := "alt("
+            var buf := "alt(["
             for l in ls:
                 buf += l._uncall()
                 buf += ", "
-            return buf + ")"
+            return buf + "])"
         to derive(c):
             return alt([l.derive(c) for l in ls])
         to isEmpty() :bool:
@@ -198,6 +171,9 @@ def alt(languages):
             for l in ls:
                 ts += l.trees()
             return ts
+
+def oneOf(ts):
+    return alt([ex(t) for t in ts])
 
 def testAlternation(assert):
     def testAlternationOptimization():
@@ -213,10 +189,20 @@ def testAlternation(assert):
         assert.equal(l.derive('y').trees(), ['y'])
         assert.equal(l.derive('z').trees(), ['z'])
         assert.equal(l.derive('w').trees(), [])
+    def testOneOfDerive():
+        def l := oneOf(['x', 'y'])
+        assert.equal(l.derive('x').trees(), ['x'])
+        assert.equal(l.derive('y').trees(), ['y'])
+    def testOneOfPolymorphic():
+        def l := oneOf("xy")
+        assert.equal(l.derive('x').trees(), ['x'])
+        assert.equal(l.derive('y').trees(), ['y'])
     return [
         testAlternationOptimization,
         testAlternationPair,
         testAlternationMany,
+        testOneOfDerive,
+        testOneOfPolymorphic,
     ]
 
 def cat(a, b):
@@ -247,12 +233,26 @@ def cat(a, b):
                     l.push([x, y])
             return l.readOnly()
 
+def justFirst(x, y):
+    return red(cat(x, y), def _([x, y]) { return x })
+
+def justSecond(x, y):
+    return red(cat(x, y), def _([x, y]) { return y })
+
 def testCatenation(assert):
     def testCatenationDerive():
         def l := cat(ex('x'), ex('y'))
         assert.equal(l.derive('x').derive('y').trees(), [['x', 'y']])
+    def testJustFirst():
+        def l := justFirst(ex('x'), ex('y'))
+        assert.equal(l.derive('x').derive('y').trees(), ['x'])
+    def testJustSecond():
+        def l := justSecond(ex('x'), ex('y'))
+        assert.equal(l.derive('x').derive('y').trees(), ['y'])
     return [
         testCatenationDerive,
+        testJustFirst,
+        testJustSecond,
     ]
 
 def _glueReps([x, xs]):
@@ -330,10 +330,28 @@ def catTree(ls):
         match x:
             return x
 
-def item := oneOf("xyz")
-def items := red(cat(item, ex('*')), def _(c) { return rep(ex(c.get(0))) })
-def regex := red(rep(items), catTree)
+def repToList(list):
+    var reps := list
+    def rv := [].diverge()
+    while (reps != null):
+        rv.push(reps.get(0))
+        reps := reps.get(1)
+    return rv.readOnly()
 
+def number := rep(oneOf("0123456789"))
+def character := oneOf("xyz")
+def charSet := justSecond(ex('['),
+                          justFirst(red(rep(character), repToList), ex(']')))
+def item := alt([red(character, ex), red(charSet, oneOf)])
+def itemStar := red(justFirst(item, ex('*')), rep)
+def regex := red(rep(itemStar), catTree)
+
+traceln("~~~~~")
 def xyzzy := parse(regex, "x*y*z*y*")
-
+traceln("~~~~~")
 traceln(parse(xyzzy, "xyzzy"))
+
+traceln("~~~~~")
+def xyzzy2 := parse(regex, "[xyz]*")
+traceln("~~~~~")
+traceln(parse(xyzzy2, "xyzzy"))
