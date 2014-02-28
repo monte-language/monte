@@ -141,6 +141,11 @@ class FlexList(EListMixin, MonteObject):
     def pop(self):
         return self.l.pop()
 
+    def get(self, index):
+        if not isinstance(index, Integer):
+            raise RuntimeError("Expected Integer, got %r" % index)
+        return self.l[index.n]
+
     def setSlice(self, start, bound, other):
         if not isinstance(other, (ConstList, FlexList)):
             raise RuntimeError("%r is not a list" % (other,))
