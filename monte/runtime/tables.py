@@ -1,5 +1,5 @@
 from monte.runtime.base import MonteObject
-from monte.runtime.data import Integer, bwrap, null
+from monte.runtime.data import Integer, bwrap, null, true, false
 from monte.runtime.flow import MonteIterator
 
 
@@ -46,7 +46,7 @@ class EListMixin(object):
         if not isinstance(idx, Integer):
             raise RuntimeError("%r is not a integer" % (idx,))
         if not 0 <= idx.n < len(self.l):
-            raise IndexError(idx)
+            raise IndexError(idx.n)
         return self.l[idx.n]
 
     def slice(self, start, stop=None):
@@ -86,6 +86,7 @@ class EListMixin(object):
 
 
 class ConstList(EListMixin, MonteObject):
+    _m_fqn = "__makeList$ConstList"
     def __init__(self, l):
         self.l = tuple(l)
 
@@ -107,7 +108,7 @@ class ConstList(EListMixin, MonteObject):
 
 
 class FlexList(EListMixin, MonteObject):
-
+    _m_fqn = "__makeList$FlexList"
     def __init__(self, l):
         self.l = l
 
@@ -194,14 +195,192 @@ class FlexList(EListMixin, MonteObject):
 def makeMonteList(*items):
     return ConstList(items)
 
-class Map(dict):
-    _m_fqn = "Dict"
-    __setitem__ = None
-    get = dict.__getitem__
+_absent = object()
+
+class EMapMixin(object):
+
+    def __init__(self, d, keys=None):
+        self.d = d
+        if keys is None:
+            self._keys = self.d.keys()
+        else:
+            assert len(keys) == len(self.d)
+            self._keys = keys
+
+    def diverge(self):
+        return FlexMap(self.d.copy(), self._keys[:])
+
+    def get(self, key):
+        result = self.d.get(key, _absent)
+        if result is _absent:
+            raise RuntimeError("%r not found" % (key,))
+        return result
+
+    def fetch(self, key, instead):
+        result = self.d.get(key, _absent)
+        if result is _absent:
+            return instead()
+        return result
+
+    def contains(self, candidate):
+        return bwrap(candidate in self.d.values())
+
+    def intersects(self, other):
+        for k in self._keys:
+            if other.maps(k):
+                return true
+        return false
+
+    def size(self):
+        return Integer(len(self.d))
+
+    def _makeIterator(self):
+        return MonteIterator((k, self.d[k]) for k in self._keys)
+
+    def _m_or(self, behind):
+        if not isinstance(behind, (ConstMap, FlexMap)):
+            raise RuntimeError("%r is not a map" % (behind,))
+        if len(self.d) == 0:
+            return behind.snapshot()
+        elif len(behind.d) == 0:
+            return self.snapshot()
+        flex = behind.diverge()
+        flex.putAll(self)
+        return flex.snapshot()
+
+    def _m_and(self, mask):
+        if not isinstance(mask, (ConstMap, FlexMap)):
+            raise RuntimeError("%r is not a map" % (mask,))
+        if len(self.d) > len(mask.d):
+            bigger = self
+            smaller = mask
+        else:
+            bigger = mask
+            smaller = self
+
+        if len(smaller.d) == 0:
+            return ConstMap({})
+        flex = FlexMap({})
+        for k in smaller._keys:
+            if k in bigger._keys:
+                flex.put(key, self.d[key])
+        return flex.snapshot()
+
+    def butNot(self, mask):
+        if not isinstance(mask, (ConstMap, FlexMap)):
+            raise RuntimeError("%r is not a map" % (mask,))
+        if len(self.d) == 0:
+            return ConstMap({})
+        elif len(mask.d) == 0:
+            return self.snapshot()
+        flex = self.diverge()
+        flex.removeKeys(mask)
+        return flex.snapshot()
+
+    def maps(self, k):
+        return bwrap(k in self.d)
+
+    def _m_with(self, key, val):
+        flex = self.diverge()
+        flex.put(key, val)
+        return flex.snapshot()
+
+    def without(self, key):
+        flex = self.diverge()
+        flex.removeKey(key)
+        return flex.snapshot()
+
+    def getKeys(self):
+        return ConstList(self._keys)
+
+    def sortKeys(self, keyFunc=None):
+        keys = sorted(self._keys, key=keyFunc)
+        return ConstMap(self.d, keys)
+
+    def getValues(self):
+        return ConstList(self.d[k] for k in self._keys)
+
+    def getPair(self):
+        return ConstList([self.getKeys(), self.getValues()])
+
+    #snapshot
+    #readOnly
+    #domain
+    #removeKey
+    #putAll
+    #put
+
+
+class ConstMap(EMapMixin, MonteObject):
+    _m_fqn = "__makeMap$ConstMap"
+
+    def snapshot(self):
+        return self
+
+    def readOnly(self):
+        return self
+
+    def domain(self):
+        raise NotImplementedError()
+
+    def _uncall(self):
+        return ConstList([mapMaker, "fromColumns",
+                          ConstList([
+                              ConstList(self._keys),
+                              ConstList(self.d[k] for k in self._keys)])])
+
+
+class FlexMap(EMapMixin, MonteObject):
+    _m_fqn = "__makeMap$FlexMap"
+
+    def snapshot(self):
+        return ConstMap(self.d.copy(), self._keys[:])
+
+    def readOnly(self):
+        raise NotImplementedError()
+
+    def domain(self):
+        raise NotImplementedError()
+
+    def removeKey(self, k):
+        try:
+            i = self._keys.index(k)
+        except ValueError:
+            return null
+        del self.d[k]
+        if i + 1 < len(self._keys):
+            lastk = self._keys.pop()
+            self._keys[i] = lastk
+        else:
+            del self._keys[i]
+
+    def put(self, k, v):
+        self.d[k] = v
+        if k not in self._keys:
+            self._keys.append(k)
+
+    def putAll(self, other):
+        if not isinstance(other, (ConstMap, FlexMap)):
+            raise RuntimeError("%r is not a map" % (other,))
+        for (k, v) in other.d.iteritems():
+            self.put(k, v)
+
+    def _uncall(self):
+        return ConstList([self.snapshot(), "diverge", ConstList([])])
 
 
 class mapMaker(object):
     _m_fqn = "__makeMap"
     @staticmethod
     def fromPairs(pairs):
-        return Map(pairs)
+        return ConstMap(dict(p for (i, p) in pairs._makeIterator()), [p.get(Integer(0)) for p in pairs])
+
+    @staticmethod
+    def fromColumns(keys, vals):
+        if not isinstance(keys, (ConstList, FlexList)):
+            raise RuntimeError("%r is not a list" % (keys,))
+        if not isinstance(vals, (ConstList, FlexList)):
+            raise RuntimeError("%r is not a list" % (vals,))
+        return ConstMap(dict(zip(keys.l, vals.l)), keys)
+
+
