@@ -1,7 +1,7 @@
 from textwrap import dedent
 from monte.test import unittest
 from monte.runtime.data import false, true, Integer, String
-from monte.runtime.tables import ConstList, Map
+from monte.runtime.tables import ConstList, ConstMap
 from monte.runtime.load import eval as monte_eval
 from twisted.trial.unittest import SkipTest
 
@@ -102,7 +102,7 @@ class EvalTest(unittest.TestCase):
 
         self.assertEqual(monte_eval(
             'def ["a" => a, "b" => c] | d := ["a" => 1, "b" => 3, "e" => 4]; d'),
-            Map({String(u'e'): 4}))
+                         ConstMap({String(u'e'): Integer(4)}))
 
     def test_list_patt(self):
         self.assertEqual(monte_eval('def [a, b, c] := [2, 3, 4]; c - a'), Integer(2))

@@ -125,7 +125,8 @@ class MonteEjection(BaseException):
 
 
 def wrapEjector(e):
-    def ej(val):
+    from monte.runtime.data import null
+    def ej(val=null):
         e(val)
         raise RuntimeError("Ejector did not exit")
     return ej

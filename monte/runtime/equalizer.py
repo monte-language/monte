@@ -2,7 +2,7 @@ import warnings
 
 from monte.runtime.base import MonteObject
 from monte.runtime.data import null, true, false, bwrap, Integer, Float, String, Character, Bool
-from monte.runtime.tables import ConstList
+from monte.runtime.tables import ConstList, ConstMap
 
 
 class Equalizer(MonteObject):
@@ -33,6 +33,11 @@ class Equalizer(MonteObject):
                 if self.sameEver(l, r) is false:
                     return false
             return true
+
+        #XXX This should be replaced with checking for Selfless
+        #instead of directly enumerating all selfless types here.
+        elif t in [ConstMap, ]:
+            return self.sameEver(left._uncall(), right._uncall())
 
         warnings.warn("Asked to equalize unknown type %r" % t,
                 RuntimeWarning)
