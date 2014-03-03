@@ -4,7 +4,7 @@ Objects used by Monte syntax expansions.
 from monte.runtime.base import MonteObject, ejector, throw
 from monte.runtime.data import false, null, String, Integer, bwrap
 from monte.runtime.flow import MonteIterator
-from monte.runtime.tables import ConstList, FlexList, mapMaker
+from monte.runtime.tables import ConstList, FlexList, ConstMap, FlexMap, mapMaker
 
 
 def validateFor(flag):
@@ -89,30 +89,27 @@ def suchThat(x, y=_absent):
                 ejector("such-that expression was false")
         return suchThatMatcher
     else:
-        return [x, None]
+        return ConstList([x, None])
 
 def extract(x, instead=_absent):
     if instead is _absent:
         # 1-arg invocation.
         def extractor(specimen, ejector):
-            value = specimen[x]
-            without = dict(specimen)
-            del without[x]
-            return [value, without]
+            return [specimen.fetch(x, lambda: ejector), specimen.without(x)]
         return extractor
     else:
         def extractor(specimen, ejector):
-            value = specimen.get(x, _absent)
+            if not isinstance(specimen, (ConstMap, FlexMap)):
+                raise RuntimeError("%r is not a map" % (specimen,))
+            value = specimen.d.get(x, _absent)
             if value is _absent:
-                return [instead(), specimen]
-            without = dict(specimen)
-            del without[x]
-            return [value, without]
+                value = ConstList([instead(), specimen])
+            return [value, specimen.without(x)]
         return extractor
 
 class Empty:
     def coerce(self, specimen, ej):
-        if len(specimen) == 0:
+        if specimen.size() == Integer(0):
             return specimen
         else:
             throw.eject(ej, "Not empty: %s" % specimen)
@@ -144,6 +141,6 @@ class BooleanFlow(MonteObject):
         #XXX needs broken ref
         if not isinstance(size, Integer):
             raise RuntimeError("%r is not an integer" % (size,))
-        return [false] + [object()] * size.n
+        return ConstList([false] + [object()] * size.n)
 
 booleanFlow = BooleanFlow()
