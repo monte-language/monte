@@ -1,5 +1,9 @@
 from monte.runtime.base import MonteObject, ejector, throw
 
+class PrintFQN(object):
+    def _printOn(self, out):
+        out._m_print(self._m_fqn)
+
 class Guard(MonteObject):
     def coerce(self, specimen, ej):
         # XXX SHORTEN
@@ -18,7 +22,7 @@ class Guard(MonteObject):
         throw.eject(ej, problem)
 
 
-class PythonTypeGuard(Guard):
+class PythonTypeGuard(Guard, PrintFQN):
     def __init__(self, typ, name):
         self.typ = typ
         self._m_fqn = name
@@ -29,12 +33,14 @@ class PythonTypeGuard(Guard):
             throw.eject(ej, "is not a %s" % (self.typ,))
 
 
-class AnyGuard(MonteObject):
+class AnyGuard(MonteObject, PrintFQN):
     _m_fqn = "any"
     def coerce(self, specimen, ej):
         return specimen
 
     def get(self, *guards):
+        if not guards:
+            raise RuntimeError("unneeded any[]")
         return UnionGuard(guards)
 
 anyGuard = AnyGuard()
@@ -44,6 +50,16 @@ class UnionGuard(MonteObject):
     _m_fqn = "any$UnionGuard"
     def __init__(self, guards):
         self.guards = guards
+
+    def _printOn(self, out):
+        #XXX pretty printing would be nice here too
+        out.raw_print(u'any[')
+        it = iter(self.guards)
+        out.quote(next(it))
+        for g in it:
+            out.raw_print(u', ')
+            out.quote(g)
+        out.raw_print(u']')
 
     def coerce(self, specimen, ej):
         cej = ejector("next")
