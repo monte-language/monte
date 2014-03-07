@@ -1,4 +1,5 @@
 import struct, math
+from sys import float_info
 from monte.runtime.base import MonteObject
 from monte.runtime.flow import MonteIterator
 
@@ -12,8 +13,8 @@ class MonteNull(MonteObject):
     def __eq__(self, other):
         return self is other
 
-    def __repr__(self):
-        return "null"
+    def _printOn(self, out):
+        out.raw_print(u"null")
 
     def __hash__(self):
         return hash(None)
@@ -54,13 +55,13 @@ class Bool(MonteObject):
             raise RuntimeError("Can't compare Bool and %r" % (other,))
         return bwrap(self._b != other._b)
 
-    def op__cmp(self, other):
+    def  op__cmp(self, other):
         if not isinstance(other, Bool):
             raise RuntimeError("Can't compare Bool and %r" % (other,))
         return Integer(cmp(self._b, other._b))
 
-    def __repr__(self):
-        return ["false", "true"][self._b]
+    def _printOn(self, out):
+        out.raw_print([u"false", u"true"][self._b])
 
 
 false = Bool(False)
@@ -133,17 +134,17 @@ class Character(MonteObject):
             raise RuntimeError("%r is not a character" % (other,))
         return Character(min(self._c, other._c))
 
-    def __repr__(self):
-        return "'%s'" % (escapedChar(self._c),)
+    def quote(self):
+        return String(u"'%s'" % (escapedChar(self._c),))
+
+    def _printOn(self, out):
+        out.raw_print(self._c)
 
 
 class Integer(MonteObject):
     _m_fqn = "__makeInt$int"
     def __init__(self, val):
         self.n = int(val)
-
-    def __repr__(self):
-        return "<m: %r>" % (self.n)
 
     def __hash__(self):
         return hash(self.n)
@@ -157,17 +158,17 @@ class Integer(MonteObject):
         return Character(unichr(self.n))
 
     def asFloat(self):
-        return Float(float(self))
+        return Float(float(self.n))
 
     def toString(self, radix):
         if radix == 16:
-            return String(hex(self.n)[2:])
+            return String(hex(self.n)[2:].decode('ascii'))
         elif radix == 10:
-            return String(str(self.n))
+            return String(unicode(self.n))
         elif radix == 8:
-            return String(oct(self.n)[1:])
+            return String(oct(self.n)[1:].decode('ascii'))
         elif radix == 2:
-            return String(bin(self.n)[2:])
+            return String(bin(self.n)[2:].decode('ascii'))
         else:
             raise NotImplementedError("too lazy to implement radix '%s'" % (radix,))
 
@@ -285,6 +286,9 @@ class Integer(MonteObject):
             raise RuntimeError("%r is not an integer" % (other,))
         return numWrap(min(self.n, other.n))
 
+    def _printOn(self, out):
+        out.raw_print(unicode(self.n))
+
 
 class Float(MonteObject):
     _m_fqn = "__makeFloat$float"
@@ -293,6 +297,9 @@ class Float(MonteObject):
 
     def __hash__(self):
         return hash(self.n)
+
+    def _printOn(self, out):
+        out.raw_print(unicode(self.n))
 
     # XXX add trig functions, sqrt
 
@@ -420,6 +427,7 @@ def numWrap(n):
     else:
         raise RuntimeError("welp: " + repr(n))
 
+
 nan = Float(float('nan'))
 infinity = Float(float('inf'))
 
@@ -431,8 +439,12 @@ class String(MonteObject):
             raise RuntimeError("%r is not a unicode string" % (s,))
         self.s = s
 
-    def __repr__(self):
-        return "<m %r>" % (self.s)
+    def _printOn(self, out):
+        out.raw_print(self.s)
+
+    def quote(self):
+        return String(u''.join([u'"'] + [escapedChar(c) for c in self.s] + [u'"']))
+
     def __hash__(self):
         return hash(self.s)
 

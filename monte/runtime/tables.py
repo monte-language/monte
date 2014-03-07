@@ -5,12 +5,22 @@ from monte.runtime.flow import MonteIterator
 
 class EListMixin(object):
 
-    def __repr__(self):
-        # XXX guaranteed to break in presence of cycles
-        return '<m: [' + ', '.join(repr(x) for x in self.l) + ']>'
+    def _printOn(self, out):
+        # XXX consider some sort of pretty-printer interface that can
+        # distinguish writing subelements from delimiter characters
+        out.raw_print(u'[')
+        if self.l:
+            it = iter(self.l)
+            item = next(it)
+            out.quote(item)
+            for item in it:
+                out.raw_print(u', ')
+                out.quote(item)
+        out.raw_print(u']')
 
     def _makeIterator(self):
-        return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self.l)), self.l))
+        return MonteIterator((Integer(i), o) for (i, o)
+                             in zip(range(len(self.l)), self.l))
 
     def size(self):
         return Integer(len(self.l))
@@ -99,6 +109,10 @@ class FlexList(EListMixin, MonteObject):
     def __init__(self, l):
         self.l = l
 
+    def _printOn(self, out):
+        EListMixin._printOn(self, out)
+        out.raw_print(u'.diverge()')
+
     def readOnly(self):
         return ROList(self.l)
 
@@ -180,7 +194,6 @@ def makeMonteList(*items):
 _absent = object()
 
 class EMapMixin(object):
-
     def __init__(self, d, keys=None):
         self.d = d
         if keys is None:
@@ -188,6 +201,23 @@ class EMapMixin(object):
         else:
             assert len(keys) == len(self.d)
             self._keys = keys
+
+    def _printOn(self, out):
+        if len(self._keys) == 0:
+            out.raw_print(u'[].asMap()')
+            return
+        out.raw_print(u'[')
+        it = iter(self._keys)
+        k = next(it)
+        out.quote(k)
+        out.raw_print(u' => ')
+        out.quote(self.d[k])
+        for k in it:
+            out.raw_print(u', ')
+            out.quote(k)
+            out.raw_print(u' => ')
+            out.quote(self.d[k])
+        out.raw_print(u']')
 
     def diverge(self):
         return FlexMap(self.d.copy(), self._keys[:])
@@ -314,6 +344,10 @@ class ConstMap(EMapMixin, MonteObject):
 
 class FlexMap(EMapMixin, MonteObject):
     _m_fqn = "__makeMap$FlexMap"
+
+    def _printOn(self, out):
+        EMapMixin._printOn(self, out)
+        out.raw_print(u'.diverge()')
 
     def snapshot(self):
         return ConstMap(self.d.copy(), self._keys[:])
