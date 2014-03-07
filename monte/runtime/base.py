@@ -1,7 +1,7 @@
 """
 Bottom level of Monte runtime object support.
 """
-
+import StringIO
 from terml.parser import parseTerm
 
 class _SlotDescriptor(object):
@@ -94,12 +94,25 @@ class MonteObject(object):
     def __call__(self, *args):
         return self.run(*args)
 
+    def _printOn(self, out):
+        out.raw_print(u'<')
+        out.raw_print(self._m_fqn)
+        out.raw_print(u'>')
+
     def __repr__(self):
-        return '<' + self._m_fqn + '>'
+        return "<m: %s>" % (toString(self),)
 
     def __iter__(self):
         for (k, v) in self._makeIterator():
             yield v
+
+
+def toString(obj):
+    from monte.runtime.text import TextWriter
+    out = StringIO.StringIO()
+    t = TextWriter(out)
+    t._m_print(obj)
+    return out.getvalue()
 
 
 class _MatchFailure(Exception):

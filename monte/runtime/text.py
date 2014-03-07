@@ -1,5 +1,5 @@
-from monte.runtime.base import MonteObject, throw
-from monte.runtime.data import String
+from monte.runtime.base import MonteObject, throw, toString
+from monte.runtime.data import String, Character
 from monte.runtime.tables import ConstList, FlexList
 
 def findOneOf(elts, specimen, start):
@@ -61,7 +61,7 @@ class Substituter(MonteObject):
                 yield val
             elif typ == 'value':
                 # XXX printOn
-                yield unicode(str(values[val]))
+                yield toString(values[val])
             else:
                 raise RuntimeError("Can't substitute with a pattern")
 
@@ -94,7 +94,7 @@ class Substituter(MonteObject):
             elif typ == 'pattern':
                 nextVal = None
                 if n == len(self.segments) - 1:
-                    bindings.append(specimen[i:])
+                    bindings.append(String(specimen[i:]))
                     continue
                 nextType, nextVal = self.segments[n + 1]
                 if nextType == 'value':
@@ -103,12 +103,12 @@ class Substituter(MonteObject):
                         raise RuntimeError("%r is not a string" % (nextVal,))
                     nextVal = nextVal.s
                 elif nextType == 'pattern':
-                    bindings.append("")
+                    bindings.append(String(u""))
                     continue
                 j = specimen.find(nextVal)
                 if j == -1:
                     throw.eject(ej, "expected %r..., found %r" % (nextVal.s, specimen[i:]))
-                bindings.append(specimen[i:j])
+                bindings.append(String(specimen[i:j]))
             i = j
         return ConstList(bindings)
 
@@ -128,16 +128,41 @@ def quasiMatcher(matchMaker, values):
     return matchit
 
 
+class TextWriter(MonteObject):
+    def __init__(self, out, newline=u'\n', context=None):
+        self.out = out
+        self.context = context or set()
+        self.newline = newline
 
+    def indent(self, morePrefix):
+        return TextWriter(self.out, self.newline + u' ' * 4, self.context)
 
+    def quote(self, obj):
+        if isinstance(obj, (String, Character)):
+            self._m_print(obj.quote())
+        else:
+            self._m_print(obj)
 
+    def raw_print(self, string):
+        self.out.write(string.encode('utf-8'))
 
+    def _m_print(self, obj):
+        #XXX SHORTEN
+        if id(obj) in self.context:
+            self.raw_print(u'<**CYCLE**>')
+        self.context.add(id(obj))
+        sub = TextWriter(self.out, self.newline, self.context)
+        try:
+            p = getattr(obj, '_printOn', None)
+            if p is None:
+                sub.raw_print(unicode(obj))
+            else:
+                p(sub)
+        except Exception, e:
+            self.raw_print(u'<**%s throws %r when printed**>' % (
+                getattr(obj, '_m_fqn', type(obj)), e))
+        self.context.remove(id(obj))
 
-
-
-
-
-
-
-
-
+    def println(self, obj):
+        self._m_print(obj)
+        self.raw_print(self.newline)
