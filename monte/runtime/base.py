@@ -103,8 +103,11 @@ class MonteObject(object):
         return "<m: %s>" % (toString(self),)
 
     def __iter__(self):
-        for (k, v) in self._makeIterator():
-            yield v
+        try:
+            for (k, v) in self._makeIterator():
+                yield v
+        except AttributeError:
+            raise ValueError("Can't iterate over non-iterable")
 
 
 def toString(obj):
