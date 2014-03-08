@@ -13,126 +13,6 @@ object bool:
                 return v := x
         return slot
 
-object empty:
-    to _uncall():
-        return "empty"
-    to derive(c):
-        return empty
-    to isEmpty() :bool:
-        return true
-    to nullable() :bool:
-        return false
-    to onlyNull() :bool:
-        return false
-    to trees():
-        return []
-
-def testEmpty(assert):
-    def testEmptyDerive():
-        assert.equal(empty.derive('x'), empty)
-    return [
-        testEmptyDerive,
-    ]
-
-object nullSet:
-    to _uncall():
-        return "nullSet"
-    to derive(c):
-        return empty
-    to isEmpty() :bool:
-        return false
-    to nullable() :bool:
-        return true
-    to onlyNull() :bool:
-        return true
-    to trees():
-        return [null]
-
-def term(ts):
-    return object o:
-        to _uncall():
-            return `term($ts)`
-        to derive(c):
-            return empty
-        to isEmpty() :bool:
-            return false
-        to nullable() :bool:
-            return true
-        to onlyNull() :bool:
-            return true
-        to trees():
-            return ts
-
-object anything:
-    to _uncall():
-        return "anything"
-    to derive(c):
-        return term([c])
-    to isEmpty() :bool:
-        return false
-    to nullable() :bool:
-        return false
-    to onlyNull() :bool:
-        return false
-    to trees():
-        return []
-
-def ex(t):
-    return object exInner:
-        to _uncall():
-            return `ex($t)`
-        to derive(c):
-            if (t == c):
-                return term([t])
-            else:
-                return empty
-        to isEmpty() :bool:
-            return false
-        to nullable() :bool:
-            return false
-        to onlyNull() :bool:
-            return false
-        to trees():
-            return []
-
-def testExactly(assert):
-    def testExactlyDerive():
-        assert.equal(ex('x').derive('x').trees(), ['x'])
-    return [
-        testExactlyDerive,
-    ]
-
-def red(l, f):
-    if (l.isEmpty()):
-        return empty
-    return object redInner:
-        to _uncall():
-            return "red(" + l._uncall() + `, $f)`
-        to derive(c):
-            def d := l.derive(c)
-            if (d.isEmpty()):
-                return empty
-            if (d.onlyNull()):
-                return term([f(t) for t in d.trees()])
-            return red(d, f)
-        to isEmpty() :bool:
-            return l.isEmpty()
-        to nullable() :bool:
-            return l.nullable()
-        to onlyNull() :bool:
-            return l.onlyNull()
-        to trees():
-            return [f(t) for t in l.trees()]
-
-def testReduce(assert):
-    def plusOne(x):
-        return x + 1
-    def testReduceDerive():
-        assert.equal(red(ex('x'), plusOne).derive('x').trees(), ['y'])
-    return [
-        testReduceDerive,
-    ]
-
 def _all(l):
     var rv :bool := true
     for x in l:
@@ -145,165 +25,295 @@ def _any(l):
         rv |= x
     return rv
 
-def alt(languages):
-    def ls := [l for l in languages if l != empty]
-    if (ls.size() == 0):
-        return empty
-    if (ls.size() == 1):
-        return ls.get(0)
-    return object altInner:
-        to _uncall():
-            var buf := "alt(["
-            for l in ls:
-                buf += l._uncall()
-                buf += ", "
-            return buf + "])"
-        to derive(c):
-            return alt([l.derive(c) for l in ls])
-        to isEmpty() :bool:
-            return _all([l.isEmpty() for l in ls])
-        to nullable() :bool:
-            return _any([l.nullable() for l in ls])
-        to onlyNull() :bool:
-            return _all([l.onlyNull() for l in ls])
-        to trees():
-            var ts := []
-            for l in ls:
-                ts += l.trees()
-            return ts
-
-def oneOf(ts):
-    return alt([ex(t) for t in ts])
-
-def testAlternation(assert):
-    def testAlternationOptimization():
-        var l := alt([empty])
-        assert.equal(l, empty)
-    def testAlternationPair():
-        def l := alt([ex('x'), ex('y')])
-        assert.equal(l.derive('x').trees(), ['x'])
-        assert.equal(l.derive('y').trees(), ['y'])
-    def testAlternationMany():
-        def l := alt([ex('x'), ex('y'), ex('z')])
-        assert.equal(l.derive('x').trees(), ['x'])
-        assert.equal(l.derive('y').trees(), ['y'])
-        assert.equal(l.derive('z').trees(), ['z'])
-        assert.equal(l.derive('w').trees(), [])
-    def testOneOfDerive():
-        def l := oneOf(['x', 'y'])
-        assert.equal(l.derive('x').trees(), ['x'])
-        assert.equal(l.derive('y').trees(), ['y'])
-    def testOneOfPolymorphic():
-        def l := oneOf("xy")
-        assert.equal(l.derive('x').trees(), ['x'])
-        assert.equal(l.derive('y').trees(), ['y'])
-    return [
-        testAlternationOptimization,
-        testAlternationPair,
-        testAlternationMany,
-        testOneOfDerive,
-        testOneOfPolymorphic,
-    ]
-
-def cat(a, b):
-    if (a.isEmpty()):
-        return empty
-    if (b == empty):
-        return empty
-    return object catInner:
-        to _uncall():
-            return "cat(" + a._uncall() + ", " + b._uncall() + ")"
-        to derive(c):
-            def da := a.derive(c)
-            def l := cat(da, b)
-            if (a.nullable()):
-                def db := b.derive(c)
-                return alt([l, cat(term(a.trees()), db)])
-            return l
-        to isEmpty() :bool:
-            return a.isEmpty() | b.isEmpty()
-        to nullable() :bool:
-            return a.nullable() & b.nullable()
-        to onlyNull() :bool:
-            return a.onlyNull() & b.onlyNull()
-        to trees():
-            def l := [].diverge()
-            for x in a.trees():
-                for y in b.trees():
-                    l.push([x, y])
-            return l.readOnly()
-
-def justFirst(x, y):
-    return red(cat(x, y), def _([x, y]) { return x })
-
-def justSecond(x, y):
-    return red(cat(x, y), def _([x, y]) { return y })
-
-def testCatenation(assert):
-    def testCatenationDerive():
-        def l := cat(ex('x'), ex('y'))
-        assert.equal(l.derive('x').derive('y').trees(), [['x', 'y']])
-    def testJustFirst():
-        def l := justFirst(ex('x'), ex('y'))
-        assert.equal(l.derive('x').derive('y').trees(), ['x'])
-    def testJustSecond():
-        def l := justSecond(ex('x'), ex('y'))
-        assert.equal(l.derive('x').derive('y').trees(), ['y'])
-    return [
-        testCatenationDerive,
-        testJustFirst,
-        testJustSecond,
-    ]
-
 def _glueReps([x, xs]):
     if (xs == null):
         return [x]
     return [x] + xs
 
-def rep(l):
-    if (l == empty):
-        return empty
-    object repInner:
-        to _uncall():
-            return "rep(" + l._uncall() + ")"
-        to derive(c):
-            return cat(l.derive(c), rep(l))
-        to isEmpty() :bool:
-            return l.isEmpty()
-        to nullable() :bool:
+object empty:
+    pass
+
+object nullSet:
+    pass
+
+object term:
+    pass
+
+object exactly:
+    pass
+
+object anything:
+    pass
+
+object reduction:
+    pass
+
+object alternation:
+    pass
+
+object catenation:
+    pass
+
+object repeat:
+    pass
+
+def show(l):
+    switch (l):
+        match ==empty:
+            return "empty"
+        match ==nullSet:
+            return "null"
+        match ==anything:
+            return "any"
+
+        match [==term, ts]:
+            return `term($ts)`
+        match [==exactly, t]:
+            return `ex($t)`
+        match [==reduction, inner, f]:
+            return "red(" + show(inner) + `, $f)`
+        match [==alternation, ls]:
+            var buf := "alt(["
+            for l in ls:
+                buf += l._uncall()
+                buf += ", "
+            return buf + "])"
+        match [==catenation, a, b]:
+            return "cat(" + show(a) + ", " + show(b) + ")"
+        match [==repeat, l]:
+            return "rep(" + show(l) + ")"
+
+        match _:
+            return `$l`
+
+def onlyNull(l) :bool:
+    switch (l):
+        match ==nullSet:
             return true
-        to onlyNull() :bool:
+        match [==term, _]:
+            return true
+
+        match [==reduction, inner]:
+            return onlyNull(inner)
+        match [==alternation, ls]:
+            return _all([onlyNull(l) for l in ls])
+        match [==catenation, a, b]:
+            return onlyNull(a) & onlyNull(b)
+
+        match _:
             return false
-        to trees():
+
+def nullable(l) :bool:
+    if (onlyNull(l)):
+        return true
+
+    switch (l):
+        match [==reduction, inner]:
+            return nullable(inner)
+        match [==alternation, ls]:
+            return _any([nullable(l) for l in ls])
+        match [==catenation, a, b]:
+            return nullable(a) & nullable(b)
+
+        match [==repeat, _]:
+            return true
+
+        match _:
+            return false
+
+def isEmpty(l) :bool:
+    switch (l):
+        match ==empty:
+            return true
+        match [==reduction, inner, _]:
+            return isEmpty(inner)
+        match [==alternation, ls]:
+            return _all([isEmpty(l) for l in ls])
+        match [==catenation, a, b]:
+            return isEmpty(a) | isEmpty(b)
+        match [==repeat, l]:
+            return isEmpty(l)
+
+        match _:
+            return false
+
+def trees(l):
+    switch (l):
+        match ==nullSet:
             return [null]
-    return repInner
+        match [==term, ts]:
+            return ts
+        match [==reduction, inner, f]:
+            return [f(t) for t in trees(inner)]
+        match [==alternation, ls]:
+            var ts := []
+            for l in ls:
+                ts += trees(l)
+            return ts
+        match [==catenation, a, b]:
+            def ts := [].diverge()
+            for x in trees(a):
+                for y in trees(b):
+                    ts.push([x, y])
+            return ts.readOnly()
+        match [==repeat, _]:
+            return [null]
+
+        match _:
+            return []
+
+def derive(l, c):
+    switch (l):
+        match ==empty:
+            return empty
+        match ==nullSet:
+            return empty
+        match [==term, _]:
+            return empty
+
+        match ==anything:
+            return [term, [c]]
+        match [==exactly, ==c]:
+            return [term, [c]]
+        match [==exactly, _]:
+            return empty
+
+        match [==reduction, inner, f]:
+            return [reduction, derive(inner, c), f]
+        match [==alternation, ls]:
+            return [alternation, [derive(l, c) for l in ls]]
+
+        match [==catenation, a ? nullable(a), b]:
+            def da := derive(a, c)
+            def db := derive(b, c)
+            return [alternation,
+                [[catenation, da, b],
+                 [catenation, [term, trees(a)], db]]]
+        match [==catenation, a, b]:
+            return [catenation, derive(a, c), b]
+
+        match [==repeat, l]:
+            return [catenation, derive(l, c), [repeat, l]]
+
+        match _:
+            return empty
+
+def compact(l):
+    switch (l):
+        match [==reduction, ==empty, _]:
+            return empty
+        match [==reduction, inner ? onlyNull(inner), f]:
+            return [term, [f(t) for t in trees(inner)]]
+
+        match [==alternation, []]:
+            return empty
+        match [==alternation, [inner]]:
+            return inner
+        match [==alternation, ls]:
+            return [alternation, [l for l in ls if l != empty]]
+
+        match [==catenation, l ? isEmpty(l), _]:
+            return empty
+        match [==catenation, _, ==empty]:
+            return empty
+
+        match [==repeat, ==empty]:
+            return empty
+
+        match _:
+            return l
+
+
+traceln("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+def testEmpty(assert):
+    def testEmptyDerive():
+        assert.equal(derive(empty, 'x'), empty)
+    return [
+        testEmptyDerive,
+    ]
+
+def testExactly(assert):
+    def testExactlyDerive():
+        assert.equal(trees(derive([exactly, 'x'], 'x')), ['x'])
+    return [
+        testExactlyDerive,
+    ]
+
+def testReduce(assert):
+    def plusOne(x):
+        return x + 1
+    def testReduceDerive():
+        assert.equal(trees(derive([reduction, [exactly, 'x'], plusOne], 'x')), ['y'])
+    return [
+        testReduceDerive,
+    ]
+
+def testAlternation(assert):
+    def testAlternationOptimization():
+        def l := [alternation, [empty]]
+        assert.equal(compact(l), empty)
+    def testAlternationPair():
+        def l := [alternation, [[exactly, 'x'], [exactly, 'y']]]
+        assert.equal(trees(derive(l, 'x')), ['x'])
+        assert.equal(trees(derive(l, 'y')), ['y'])
+    def testAlternationMany():
+        def l := [alternation, [[exactly, 'x'], [exactly, 'y'], [exactly, 'z']]]
+        assert.equal(trees(derive(l, 'x')), ['x'])
+        assert.equal(trees(derive(l, 'y')), ['y'])
+        assert.equal(trees(derive(l, 'z')), ['z'])
+        assert.equal(trees(derive(l, 'w')), [])
+    return [
+        testAlternationOptimization,
+        testAlternationPair,
+        testAlternationMany,
+    ]
+
+def testCatenation(assert):
+    def testCatenationDerive():
+        def l := [catenation, [exactly, 'x'], [exactly, 'y']]
+        assert.equal(trees(derive(derive(l, 'x'), 'y')), [['x', 'y']])
+    return [
+        testCatenationDerive,
+    ]
 
 def testRepeat(assert):
     def testRepeatDerive():
-        def l := rep(ex('x'))
-        assert.equal(l.derive('x').trees(), [['x', null]])
-        assert.equal(l.derive('x').derive('x').trees(), [['x', ['x', null]]])
+        def l := [repeat, [exactly, 'x']]
+        assert.equal(trees(derive(l, 'x')), [['x', null]])
+        assert.equal(trees(derive(derive(l, 'x'), 'x')), [['x', ['x', null]]])
     return [
         testRepeatDerive,
     ]
 
-def parse(language, cs):
+def makeDerp(language):
     var l := language
-    traceln("Parsing with: " + l._uncall())
-    for c in cs:
-        traceln(`Character: $c`)
-        l := l.derive(c)
-        traceln("Now have: " + l._uncall())
-        if (l.isEmpty()):
-            traceln("Language is empty!")
-    def results := l.trees()
-    if (results == []):
-        return null
-    else:
-        return results.get(0)
 
-def dump(language):
-    traceln(language._uncall())
+    traceln("Making parser: " + show(l))
+
+    return object parser:
+        to show():
+            return show(l)
+
+        to feed(c):
+            traceln(`Character: $c`)
+            l := l.derive(c)
+            traceln("Now have: " + show(l))
+            if (l.isEmpty()):
+                traceln("Language is empty!")
+
+        to feedMany(cs):
+            for c in cs:
+                parser.feed(c)
+
+        to trees():
+            return trees(l)
+
+def justFirst(x, y):
+    return [reduction, [catenation, x, y], def _([x, y]) { return x }]
+
+def justSecond(x, y):
+    return [reduction, [catenation, x, y], def _([x, y]) { return y }]
 
 def unittest := import("unittest")
 
@@ -316,41 +326,53 @@ unittest([
     testRepeat,
 ])
 
-dump(rep(alt([ex('x'), ex('y')])))
-
-traceln(parse(rep(alt([ex('x'), ex('y')])), "xxyyxy"))
-
-def catTree(ls):
-    switch (ls):
-        match [x, ==null]:
-            return x
-        match [x, y]:
-            return cat(x, catTree(y))
-        match x:
-            return x
-
-def repToList(list):
-    var reps := list
-    def rv := [].diverge()
-    while (reps != null):
-        rv.push(reps.get(0))
-        reps := reps.get(1)
-    return rv.readOnly()
-
-def number := rep(oneOf("0123456789"))
-def character := oneOf("xyz")
-def charSet := justSecond(ex('['),
-                          justFirst(red(rep(character), repToList), ex(']')))
-def item := alt([red(character, ex), red(charSet, oneOf)])
-def itemStar := red(justFirst(item, ex('*')), rep)
-def regex := red(rep(itemStar), catTree)
-
-traceln("~~~~~")
-def xyzzy := parse(regex, "x*y*z*y*")
-traceln("~~~~~")
-traceln(parse(xyzzy, "xyzzy"))
-
-traceln("~~~~~")
-def xyzzy2 := parse(regex, "[xyz]*")
-traceln("~~~~~")
-traceln(parse(xyzzy2, "xyzzy"))
+# dump(rep(alt([ex('x'), ex('y')])))
+#
+# traceln(parse(rep(alt([ex('x'), ex('y')])), "xxyyxy"))
+#
+# def catTree(ls):
+#     switch (ls):
+#         match [x, ==null]:
+#             return x
+#         match [x, y]:
+#             return cat(x, catTree(y))
+#         match x:
+#             return x
+#
+# def repToList(list):
+#     var reps := list
+#     def rv := [].diverge()
+#     while (reps != null):
+#         rv.push(reps.get(0))
+#         reps := reps.get(1)
+#     return rv.readOnly()
+#
+# def oneOf := null
+#
+# def number := rep(oneOf("0123456789"))
+# def character := oneOf("xyz")
+#
+# def charSet := justSecond(ex('['),
+#                           justFirst(red(rep(character), repToList), ex(']')))
+# def anyChar := red(ex('.'), def _(_) { return anything })
+#
+# def item := alt([red(character, ex),
+#                  red(charSet, oneOf),
+#                  anyChar])
+# def itemStar := red(justFirst(item, ex('*')), rep)
+# def regex := red(rep(itemStar), catTree)
+#
+# traceln("~~~~~")
+# def xyzzy := parse(regex, "x*y*z*y*")
+# traceln("~~~~~")
+# traceln(parse(xyzzy, "xyzzy"))
+#
+# traceln("~~~~~")
+# def xyzzy2 := parse(regex, "[xyz]*")
+# traceln("~~~~~")
+# traceln(parse(xyzzy2, "xyzzy"))
+#
+# traceln("~~~~~")
+# def xyzzy3 := parse(regex, "x.z..")
+# traceln("~~~~~")
+# traceln(parse(xyzzy3, "xyzzy"))
