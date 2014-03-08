@@ -729,7 +729,15 @@ class PythonWriter(object):
         sub = out.indent()
         out.writeln("%s = %s" % (listv, val))
         out.writeln("try:")
-        sub.writeln("%s, = %s" % (', '.join(vs), listv))
+        if patts:
+            sub.writeln("%s, = %s" % (', '.join(vs), listv))
+        else:
+            # Sorry. This is pretty stupid, but Python won't permit a
+            # zero-length unpacking pattern syntactically, so we have to do it
+            # the unfun way.
+            sub.writeln("if len(%s):" % listv)
+            subsub = sub.indent()
+            subsub.writeln("raise ValueError('Failed to match empty list')")
         out.writeln("except ValueError, %s:" % (errv,))
         if ej is None:
             sub.writeln("_monte.throw(%s)" % (errv,))
