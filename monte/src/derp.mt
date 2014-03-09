@@ -57,7 +57,16 @@ object catenation:
 object repeat:
     pass
 
-def show(l):
+def _join(xs, glue):
+    def l := xs.diverge()
+    def end := l.pop()
+    var out := ""
+    for x in l:
+        out += x
+        out += glue
+    return out + end
+
+def showParser(l):
     switch (l):
         match ==empty:
             return "empty"
@@ -71,17 +80,13 @@ def show(l):
         match [==exactly, t]:
             return `ex($t)`
         match [==reduction, inner, f]:
-            return "red(" + show(inner) + `, $f)`
+            return "red(" + showParser(inner) + `, $f)`
         match [==alternation, ls]:
-            var buf := "alt(["
-            for l in ls:
-                buf += l._uncall()
-                buf += ", "
-            return buf + "])"
+            return "alt([" + _join([showParser(l) for l in ls], ", ") + "])"
         match [==catenation, a, b]:
-            return "cat(" + show(a) + ", " + show(b) + ")"
+            return "cat(" + showParser(a) + ", " + showParser(b) + ")"
         match [==repeat, l]:
-            return "rep(" + show(l) + ")"
+            return "rep(" + showParser(l) + ")"
 
         match _:
             return `$l`
@@ -155,7 +160,7 @@ def trees(l):
             for x in trees(a):
                 for y in trees(b):
                     ts.push([x, y])
-            return ts.readOnly()
+            return ts.snapshot()
         match [==repeat, _]:
             return [null]
 
@@ -198,7 +203,12 @@ def derive(l, c):
         match _:
             return empty
 
-def compact(l):
+def doCompact(l, i):
+    if (i <= 0):
+        return l
+
+    def j := i - 1
+
     switch (l):
         match [==reduction, ==empty, _]:
             return empty
@@ -210,12 +220,16 @@ def compact(l):
         match [==alternation, [inner]]:
             return inner
         match [==alternation, ls]:
-            return [alternation, [l for l in ls if l != empty]]
+            return doCompact([alternation,
+                [doCompact(l, j) for l in ls if l != empty]], j)
 
         match [==catenation, l ? isEmpty(l), _]:
             return empty
         match [==catenation, _, ==empty]:
             return empty
+
+        match [==catenation, a, b]:
+            return doCompact([catenation, doCompact(a, j), doCompact(b, j)], j)
 
         match [==repeat, ==empty]:
             return empty
@@ -223,6 +237,8 @@ def compact(l):
         match _:
             return l
 
+def compact(l):
+    return doCompact(l, 7)
 
 traceln("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
@@ -289,24 +305,26 @@ def testRepeat(assert):
 def makeDerp(language):
     var l := language
 
-    traceln("Making parser: " + show(l))
+    traceln("Making parser: " + showParser(l))
 
     return object parser:
         to show():
-            return show(l)
+            return showParser(l)
 
         to feed(c):
             traceln(`Character: $c`)
-            l := l.derive(c)
-            traceln("Now have: " + show(l))
-            if (l.isEmpty()):
+            l := derive(l, c)
+            traceln("Now have: " + showParser(l))
+            l := compact(l)
+            traceln("Compacted: " + showParser(l))
+            if (isEmpty(l)):
                 traceln("Language is empty!")
 
         to feedMany(cs):
             for c in cs:
                 parser.feed(c)
 
-        to trees():
+        to results():
             return trees(l)
 
 def justFirst(x, y):
@@ -326,10 +344,15 @@ unittest([
     testRepeat,
 ])
 
-# dump(rep(alt([ex('x'), ex('y')])))
-#
-# traceln(parse(rep(alt([ex('x'), ex('y')])), "xxyyxy"))
-#
+def xsys := makeDerp([repeat,
+    [alternation, [[exactly, 'x'], [exactly, 'y']]]])
+
+traceln(xsys.show())
+
+xsys.feedMany("xxyyxy")
+
+traceln(`${xsys.results()}`)
+
 # def catTree(ls):
 #     switch (ls):
 #         match [x, ==null]:
@@ -345,7 +368,7 @@ unittest([
 #     while (reps != null):
 #         rv.push(reps.get(0))
 #         reps := reps.get(1)
-#     return rv.readOnly()
+#     return rv.snapshot()
 #
 # def oneOf := null
 #
