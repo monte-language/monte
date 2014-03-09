@@ -25,6 +25,8 @@ class EListMixin(object):
     def size(self):
         return Integer(len(self.l))
 
+    __len__ = size
+
     def contains(self, item):
         return bwrap(item in self.l)
 
@@ -107,7 +109,7 @@ class ConstList(EListMixin, MonteObject):
 class FlexList(EListMixin, MonteObject):
     _m_fqn = "__makeList$FlexList"
     def __init__(self, l):
-        self.l = l
+        self.l = list(l)
 
     def _printOn(self, out):
         EListMixin._printOn(self, out)
@@ -190,7 +192,8 @@ class FlexList(EListMixin, MonteObject):
         return ConstList([ConstList([self.l]), "diverge", ConstList([])])
 
     def _makeIterator(self):
-        return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self.l), self.l)))
+        return MonteIterator((Integer(i), o) for (i, o)
+                             in zip(range(len(self.l)), self.l))
 
 
 def makeMonteList(*items):
