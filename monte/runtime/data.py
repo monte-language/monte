@@ -104,6 +104,9 @@ class Character(MonteObject):
             return False
         return self._c == other._c
 
+    def asInteger(self):
+        return Integer(ord(self._c))
+
     def add(self, other):
         if not isinstance(other, Integer):
             raise RuntimeError("%r is not an integer" % (other,))
