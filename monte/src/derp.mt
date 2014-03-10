@@ -30,6 +30,8 @@ def _glueReps([x, xs]):
         return [x]
     return [x] + xs
 
+# The core.
+
 object empty:
     pass
 
@@ -167,10 +169,46 @@ def trees(l):
         match _:
             return []
 
+def leaders(l):
+    switch (l):
+        match ==nullSet:
+            return [null]
+        match [==term, _]:
+            return [null]
+
+        match ==anything:
+            return [anything]
+        match [==exactly, c]:
+            return [c]
+
+        match [==reduction, inner, _]:
+            return leaders(inner)
+
+        match [==alternation, ls]:
+            var rv := []
+            for inner in ls:
+                rv += leaders(inner)
+            return rv
+
+        match [==catenation, a ? nullable(a), b]:
+            if (onlyNull(a)):
+                return [null] + leaders(b)
+            else:
+                return leaders(a) + leaders(b)
+        match [==catenation, a, b]:
+            return leaders(a)
+
+        match [==repeat, l]:
+            return [null] + leaders(l)
+
+        match _:
+            return []
+
 def derive(l, c):
     switch (l):
-        match ==empty:
+        match x ? isEmpty(x):
             return empty
+
         match ==nullSet:
             return empty
         match [==term, _]:
@@ -210,35 +248,46 @@ def doCompact(l, i):
     def j := i - 1
 
     switch (l):
-        match [==reduction, ==empty, _]:
+        match [==reduction, x ? isEmpty(x), _]:
             return empty
         match [==reduction, inner ? onlyNull(inner), f]:
             return [term, [f(t) for t in trees(inner)]]
 
-        match [==alternation, []]:
-            return empty
-        match [==alternation, [inner]]:
-            return inner
-        match [==alternation, ls]:
-            return doCompact([alternation,
-                [doCompact(l, j) for l in ls if l != empty]], j)
+        match [==reduction, [==reduction, inner, f], g]:
+            def compose(x):
+                return g(f(x))
+            return [reduction, doCompact(inner, j), compose]
 
-        match [==catenation, l ? isEmpty(l), _]:
-            return empty
-        match [==catenation, _, ==empty]:
-            return empty
+        match [==reduction, inner, f]:
+            return [reduction, doCompact(inner, j), f]
+
+        match [==alternation, ls]:
+            def mapped := [doCompact(l, j) for l in ls]
+            def compacted := [l for l in ls if !isEmpty(l)]
+            switch (compacted):
+                match []:
+                    return empty
+                match [inner]:
+                    return inner
+                match x:
+                    return [alternation, x]
 
         match [==catenation, a, b]:
-            return doCompact([catenation, doCompact(a, j), doCompact(b, j)], j)
+            if (isEmpty(a) | isEmpty(b)):
+                return empty
+            return [catenation, doCompact(a, j), doCompact(b, j)]
 
-        match [==repeat, ==empty]:
-            return empty
+        match [==repeat, x ? isEmpty(x)]:
+            return [term, [null]]
+
+        match [==repeat, inner]:
+            return [repeat, doCompact(inner, j)]
 
         match _:
             return l
 
 def compact(l):
-    return doCompact(l, 7)
+    return doCompact(l, 20)
 
 traceln("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
@@ -294,6 +343,10 @@ def testCatenation(assert):
     ]
 
 def testRepeat(assert):
+    def testRepeatNull():
+        def l := [repeat, [exactly, 'x']]
+        assert.equal(true, nullable(l))
+        assert.equal(false, onlyNull(l))
     def testRepeatDerive():
         def l := [repeat, [exactly, 'x']]
         assert.equal(trees(derive(l, 'x')), [['x', null]])
@@ -308,10 +361,17 @@ def makeDerp(language):
     traceln("Making parser: " + showParser(l))
 
     return object parser:
+        to unwrap():
+            return language
+
+        to reset():
+            return makeDerp(language)
+
         to show():
             return showParser(l)
 
         to feed(c):
+            traceln(`Leaders: ${leaders(l)}`)
             traceln(`Character: $c`)
             l := derive(l, c)
             traceln("Now have: " + showParser(l))
@@ -344,14 +404,60 @@ unittest([
     testRepeat,
 ])
 
-def xsys := makeDerp([repeat,
-    [alternation, [[exactly, 'x'], [exactly, 'y']]]])
+# def xsys := makeDerp([repeat,
+#     [alternation, [[exactly, 'x'], [exactly, 'y']]]])
+#
+# traceln(xsys.show())
+#
+# xsys.feedMany("xxyyxy")
+#
+# traceln(`${xsys.results()}`)
 
-traceln(xsys.show())
+def atoi(cs):
+    def ns := [c.asInteger() - 48 for c in cs]
+    var rv := 0
+    for n in ns:
+        rv := rv * 10 + n
+    return rv
 
-xsys.feedMany("xxyyxy")
+traceln(`${atoi("42")}`)
 
-traceln(`${xsys.results()}`)
+def repToList(list):
+    var reps := list
+    def rv := [].diverge()
+    while (reps != null):
+        rv.push(reps.get(0))
+        reps := reps.get(1)
+    return rv.snapshot()
+
+def oneOrMore(l):
+    return [catenation, l, [repeat, l]]
+
+# def number := [reduction,
+#     oneOrMore([alternation, [[exactly, c] for c in "0123456789"]]),
+#     def toNumber(x) { return atoi(repToList(x)) }]
+
+def number := oneOrMore([alternation, [[exactly, c] for c in "0123456789"]])
+
+var p := makeDerp(number)
+p.feedMany("42")
+traceln(`${p.results()}`)
+
+object value:
+    pass
+
+# def parseValue := [reduction,
+#     justSecond([exactly, '$'], justSecond([exactly, '{'],
+#                justFirst(number, [exactly, '}']))),
+#     def _(x) { [value, x] }]
+
+def parseValue := [catenation, [exactly, '$'],
+    [catenation, [exactly, '{'],
+        [catenation, number, [exactly, '}']]]]
+
+p := makeDerp(parseValue)
+p.feedMany("${10}")
+traceln(`${p.results()}`)
 
 # def catTree(ls):
 #     switch (ls):
@@ -361,18 +467,6 @@ traceln(`${xsys.results()}`)
 #             return cat(x, catTree(y))
 #         match x:
 #             return x
-#
-# def repToList(list):
-#     var reps := list
-#     def rv := [].diverge()
-#     while (reps != null):
-#         rv.push(reps.get(0))
-#         reps := reps.get(1)
-#     return rv.snapshot()
-#
-# def oneOf := null
-#
-# def number := rep(oneOf("0123456789"))
 # def character := oneOf("xyz")
 #
 # def charSet := justSecond(ex('['),
