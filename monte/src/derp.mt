@@ -453,40 +453,56 @@ traceln(`${p.results()}`)
 object value:
     pass
 
+def bracket(bra, x, ket):
+    return justSecond(bra, justFirst(x, ket))
+
 def parseValue := [reduction,
-     justSecond([exactly, '$'], justSecond([exactly, '{'],
-                justFirst(number, [exactly, '}']))),
+     justSecond([exactly, '$'],
+        bracket([exactly, '{'], number, [exactly, '}'])),
      def _(x) { return [value, x] }]
 
 p := makeDerp(parseValue)
 p.feedMany("${10}")
 traceln(`${p.results()}`)
 
-# def catTree(ls):
-#     switch (ls):
-#         match [x, ==null]:
-#             return x
-#         match [x, y]:
-#             return cat(x, catTree(y))
-#         match x:
-#             return x
-# def character := oneOf("xyz")
-#
-# def charSet := justSecond(ex('['),
-#                           justFirst(red(rep(character), repToList), ex(']')))
-# def anyChar := red(ex('.'), def _(_) { return anything })
-#
-# def item := alt([red(character, ex),
-#                  red(charSet, oneOf),
-#                  anyChar])
-# def itemStar := red(justFirst(item, ex('*')), rep)
-# def regex := red(rep(itemStar), catTree)
-#
-# traceln("~~~~~")
-# def xyzzy := parse(regex, "x*y*z*y*")
-# traceln("~~~~~")
-# traceln(parse(xyzzy, "xyzzy"))
-#
+def oneOf(xs):
+    return [alternation, [[exactly, x] for x in xs]]
+
+def catTree(ls):
+    switch (ls):
+        match [x, ==null]:
+            return x
+        match [x, y]:
+            return [catenation, x, catTree(y)]
+        match x:
+            return x
+
+def character := oneOf("xyz")
+
+def charSet := bracket([exactly, '['],
+    [reduction, [repeat, character], repToList],
+    [exactly, ']'])
+
+def anyChar := [reduction, [exactly, '.'], def _(_) { return anything }]
+
+def item := [alternation, [
+    [reduction, character, def c(x) { return [exactly, x] }],
+    [reduction, charSet, oneOf],
+    anyChar]]
+
+def itemStar := [reduction, justFirst(item, [exactly, '*']),
+    def star(x) { return [repeat, x] }]
+
+def regex := [reduction, [repeat, itemStar], catTree]
+
+traceln("~~~~~")
+p := makeDerp(regex)
+p.feedMany("x*y*z*y*")
+traceln("~~~~~")
+var xyzzy := makeDerp(p.results().get(0))
+xyzzy.feedMany("xyzzy")
+traceln(`${xyzzy.results()}`)
+
 # traceln("~~~~~")
 # def xyzzy2 := parse(regex, "[xyz]*")
 # traceln("~~~~~")
