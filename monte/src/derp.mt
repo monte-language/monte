@@ -344,10 +344,14 @@ def testAlternation(assert):
     ]
 
 def testCatenation(assert):
+    def testCatenationOptimization():
+        def l := [catenation, empty, [exactly, 'x']]
+        assert.equal(compact(l), empty)
     def testCatenationDerive():
         def l := [catenation, [exactly, 'x'], [exactly, 'y']]
         assert.equal(trees(derive(derive(l, 'x'), 'y')), [['x', 'y']])
     return [
+        testCatenationOptimization,
         testCatenationDerive,
     ]
 
@@ -383,7 +387,6 @@ def makeDerp(language):
             traceln(`Leaders: ${leaders(l)}`)
             traceln(`Character: $c`)
             l := derive(l, c)
-            traceln("Now have: " + showParser(l))
             l := compact(l)
             traceln("Compacted: " + showParser(l))
             if (isEmpty(l)):
@@ -396,31 +399,18 @@ def makeDerp(language):
         to results():
             return trees(l)
 
+def testParse(parser, input):
+    def derp := makeDerp(parser)
+    derp.feedMany(input)
+    def rv := derp.results()
+    traceln(`$rv`)
+    return rv
+
 def justFirst(x, y):
     return [reduction, [catenation, x, y], def _([x, y]) { return x }]
 
 def justSecond(x, y):
     return [reduction, [catenation, x, y], def _([x, y]) { return y }]
-
-def unittest := import("unittest")
-
-unittest([
-    testEmpty,
-    testExactly,
-    testReduce,
-    testAlternation,
-    testCatenation,
-    testRepeat,
-])
-
-# def xsys := makeDerp([repeat,
-#     [alternation, [[exactly, 'x'], [exactly, 'y']]]])
-#
-# traceln(xsys.show())
-#
-# xsys.feedMany("xxyyxy")
-#
-# traceln(`${xsys.results()}`)
 
 def atoi(cs):
     def ns := [c.asInteger() - 48 for c in cs]
@@ -429,7 +419,15 @@ def atoi(cs):
         rv := rv * 10 + n
     return rv
 
-traceln(`${atoi("42")}`)
+def testAToI(assert):
+    def testLUE():
+        assert.equal(atoi("42"), 42)
+    return [
+        testLUE,
+    ]
+
+def oneOrMore(l):
+    return [catenation, l, [repeat, l]]
 
 def repToList(list):
     var reps := list
@@ -439,16 +437,16 @@ def repToList(list):
         reps := reps.get(1)
     return rv.snapshot()
 
-def oneOrMore(l):
-    return [catenation, l, [repeat, l]]
-
 def number := [reduction,
     oneOrMore([alternation, [[exactly, c] for c in "0123456789"]]),
     def toNumber(x) { return atoi(repToList(x)) }]
 
-var p := makeDerp(number)
-p.feedMany("42")
-traceln(`${p.results()}`)
+def testNumber(assert):
+    def testNumberSimple():
+        assert.equal(testParse(number, "42"), [42])
+    return [
+        testNumberSimple,
+    ]
 
 object value:
     pass
@@ -461,9 +459,13 @@ def parseValue := [reduction,
         bracket([exactly, '{'], number, [exactly, '}'])),
      def _(x) { return [value, x] }]
 
-p := makeDerp(parseValue)
-p.feedMany("${10}")
-traceln(`${p.results()}`)
+def testParseValue(assert):
+    def testParseValueSimple():
+        assert.equal(testParse(number, "42"), [42])
+        assert.equal(testParse(parseValue, "${10}"), [[value, 10]])
+    return [
+        testParseValueSimple,
+    ]
 
 def oneOf(xs):
     return [alternation, [[exactly, x] for x in xs]]
@@ -485,30 +487,36 @@ def charSet := bracket([exactly, '['],
 
 def anyChar := [reduction, [exactly, '.'], def _(_) { return anything }]
 
-def item := [alternation, [
+def singleItem := [alternation, [
     [reduction, character, def c(x) { return [exactly, x] }],
     [reduction, charSet, oneOf],
     anyChar]]
 
-def itemStar := [reduction, justFirst(item, [exactly, '*']),
+def itemStar := [reduction, justFirst(singleItem, [exactly, '*']),
     def star(x) { return [repeat, x] }]
 
-def regex := [reduction, [repeat, itemStar], catTree]
+def item := [alternation, [itemStar, singleItem]]
 
-traceln("~~~~~")
-p := makeDerp(regex)
-p.feedMany("x*y*z*y*")
-traceln("~~~~~")
-var xyzzy := makeDerp(p.results().get(0))
-xyzzy.feedMany("xyzzy")
-traceln(`${xyzzy.results()}`)
+def regex := [reduction, [repeat, item], catTree]
 
-# traceln("~~~~~")
-# def xyzzy2 := parse(regex, "[xyz]*")
-# traceln("~~~~~")
-# traceln(parse(xyzzy2, "xyzzy"))
-#
-# traceln("~~~~~")
-# def xyzzy3 := parse(regex, "x.z..")
-# traceln("~~~~~")
-# traceln(parse(xyzzy3, "xyzzy"))
+var xyzzy := null
+
+for expr in ["x*y*z*y*", "[xyz]*", "x.z.."]:
+    traceln("~~~~~")
+    xyzzy := testParse(regex, expr).get(0)
+    traceln("~~~~~")
+    testParse(xyzzy, "xyzzy")
+
+def unittest := import("unittest")
+
+unittest([
+    testEmpty,
+    testExactly,
+    testReduce,
+    testAlternation,
+    testCatenation,
+    testRepeat,
+    testAToI,
+    testNumber,
+    testParseValue,
+])
