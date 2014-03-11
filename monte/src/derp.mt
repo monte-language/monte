@@ -195,7 +195,7 @@ def leaders(l):
 
         match [==catenation, a ? nullable(a), b]:
             if (onlyNull(a)):
-                return [null] + leaders(b)
+                return leaders(b)
             else:
                 return leaders(a) + leaders(b)
         match [==catenation, a, b]:
@@ -297,8 +297,6 @@ def doCompact(l, i):
 
 def compact(l):
     return doCompact(l, 7)
-
-traceln("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
 def testEmpty(assert):
     def testEmptyDerive():
@@ -461,7 +459,6 @@ def parseValue := [reduction,
 
 def testParseValue(assert):
     def testParseValueSimple():
-        assert.equal(testParse(number, "42"), [42])
         assert.equal(testParse(parseValue, "${10}"), [[value, 10]])
     return [
         testParseValueSimple,
@@ -490,18 +487,22 @@ def anyChar := [reduction, [exactly, '.'], def _(_) { return anything }]
 def singleItem := [alternation, [
     [reduction, character, def c(x) { return [exactly, x] }],
     [reduction, charSet, oneOf],
-    anyChar]]
+    anyChar,
+    parseValue]]
+
+def itemMaybe := [reduction, justFirst(singleItem, [exactly, '?']),
+    def interro(x) { return [alternation, [x, nullSet]] }]
 
 def itemStar := [reduction, justFirst(singleItem, [exactly, '*']),
     def star(x) { return [repeat, x] }]
 
-def item := [alternation, [itemStar, singleItem]]
+def item := [alternation, [itemStar, itemMaybe, singleItem]]
 
 def regex := [reduction, [repeat, item], catTree]
 
 var xyzzy := null
 
-for expr in ["x*y*z*y*", "[xyz]*", "x.z.."]:
+for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
     traceln("~~~~~")
     xyzzy := testParse(regex, expr).get(0)
     traceln("~~~~~")
