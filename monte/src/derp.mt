@@ -60,9 +60,12 @@ object repeat:
     pass
 
 def _join(xs, glue):
+    var out := ""
+    if (xs.size() == 0):
+        return out
+
     def l := xs.diverge()
     def end := l.pop()
-    var out := ""
     for x in l:
         out += x
         out += glue
@@ -100,7 +103,7 @@ def onlyNull(l) :bool:
         match [==term, _]:
             return true
 
-        match [==reduction, inner]:
+        match [==reduction, inner, _]:
             return onlyNull(inner)
         match [==alternation, ls]:
             return _all([onlyNull(l) for l in ls])
@@ -115,7 +118,7 @@ def nullable(l) :bool:
         return true
 
     switch (l):
-        match [==reduction, inner]:
+        match [==reduction, inner, _]:
             return nullable(inner)
         match [==alternation, ls]:
             return _any([nullable(l) for l in ls])
@@ -204,6 +207,13 @@ def leaders(l):
         match _:
             return []
 
+def _filterEmpty(xs):
+    def rv := [].diverge()
+    for x in xs:
+        if (x != empty):
+            rv.push(x)
+    return rv.snapshot()
+
 def derive(l, c):
     switch (l):
         match x ? isEmpty(x):
@@ -224,7 +234,7 @@ def derive(l, c):
         match [==reduction, inner, f]:
             return [reduction, derive(inner, c), f]
         match [==alternation, ls]:
-            return [alternation, [derive(l, c) for l in ls]]
+            return [alternation, _filterEmpty([derive(l, c) for l in ls])]
 
         match [==catenation, a ? nullable(a), b]:
             def da := derive(a, c)
@@ -262,8 +272,7 @@ def doCompact(l, i):
             return [reduction, doCompact(inner, j), f]
 
         match [==alternation, ls]:
-            def mapped := [doCompact(l, j) for l in ls]
-            def compacted := [l for l in ls if !isEmpty(l)]
+            def compacted := _filterEmpty([doCompact(l, j) for l in ls])
             switch (compacted):
                 match []:
                     return empty
@@ -287,7 +296,7 @@ def doCompact(l, i):
             return l
 
 def compact(l):
-    return doCompact(l, 20)
+    return doCompact(l, 7)
 
 traceln("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
 
@@ -433,11 +442,9 @@ def repToList(list):
 def oneOrMore(l):
     return [catenation, l, [repeat, l]]
 
-# def number := [reduction,
-#     oneOrMore([alternation, [[exactly, c] for c in "0123456789"]]),
-#     def toNumber(x) { return atoi(repToList(x)) }]
-
-def number := oneOrMore([alternation, [[exactly, c] for c in "0123456789"]])
+def number := [reduction,
+    oneOrMore([alternation, [[exactly, c] for c in "0123456789"]]),
+    def toNumber(x) { return atoi(repToList(x)) }]
 
 var p := makeDerp(number)
 p.feedMany("42")
@@ -446,14 +453,10 @@ traceln(`${p.results()}`)
 object value:
     pass
 
-# def parseValue := [reduction,
-#     justSecond([exactly, '$'], justSecond([exactly, '{'],
-#                justFirst(number, [exactly, '}']))),
-#     def _(x) { [value, x] }]
-
-def parseValue := [catenation, [exactly, '$'],
-    [catenation, [exactly, '{'],
-        [catenation, number, [exactly, '}']]]]
+def parseValue := [reduction,
+     justSecond([exactly, '$'], justSecond([exactly, '{'],
+                justFirst(number, [exactly, '}']))),
+     def _(x) { return [value, x] }]
 
 p := makeDerp(parseValue)
 p.feedMany("${10}")
