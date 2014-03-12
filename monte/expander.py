@@ -327,7 +327,7 @@ MapExprExport(nameAndString:pair) -> [t.LiteralExpr(pair[1]), pair[0]]
 ListExpr(@items) -> mcall("__makeList", "run", *items)
 
 QuasiExpr(null [qexpr:qs]) -> t.MethodCallExpr(mcall("simple__quasiParser", "valueMaker", qs[0]), "substitute", [mcall("__makeList", "run", *qs[1])])
-QuasiExpr(:name [qexpr:qs]) -> t.MethodCallExpr(mcall(name + "__quasiParser", "valueMaker", qs[0]), "substitute", [mcall("__makeList", "run", *qs[1])])
+QuasiExpr(@name [qexpr:qs]) -> t.MethodCallExpr(mcall(name + "__quasiParser", "valueMaker", qs[0]), "substitute", [mcall("__makeList", "run", *qs[1])])
 
 qexpr = (qtext | qehole)*:pairs -> buildQuasi(pairs)
 qpatt = (qtext | qehole | qphole)*:pairs -> buildQuasi(pairs)
