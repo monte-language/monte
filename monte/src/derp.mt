@@ -59,6 +59,11 @@ object catenation:
 object repeat:
     pass
 
+# For QLs.
+
+object value:
+    pass
+
 def _join(xs, glue):
     var out := ""
     if (xs.size() == 0):
@@ -154,7 +159,9 @@ def trees(l):
         match [==term, ts]:
             return ts
         match [==reduction, inner, f]:
-            return [f(t) for t in trees(inner)]
+            def ts := trees(inner)
+            def rv := [f(t) for t in ts]
+            return rv
         match [==alternation, ls]:
             var ts := []
             for l in ls:
@@ -295,8 +302,19 @@ def doCompact(l, i):
         match _:
             return l
 
+#       match [==catenation, a ? onlyNull(a), b]:
+#           def xs := trees(a)
+#           traceln(`xs $xs`)
+#           def curry(y):
+#               def ts := [].diverge()
+#               traceln(`y $y`)
+#               for x in xs:
+#                   ts.push([x, y])
+#               return ts.snapshot()
+#           return [reduction, doCompact(b, j), curry]
+
 def compact(l):
-    return doCompact(l, 7)
+    return doCompact(l, 30)
 
 def testEmpty(assert):
     def testEmptyDerive():
@@ -342,14 +360,18 @@ def testAlternation(assert):
     ]
 
 def testCatenation(assert):
-    def testCatenationOptimization():
+    def testCatenationCompactEmpty():
         def l := [catenation, empty, [exactly, 'x']]
         assert.equal(compact(l), empty)
+    def testCatenationCompactNull():
+        def l := [catenation, [term, ['x']], [term, ['y']]]
+        assert.equal(trees(compact(l)), [['x', 'y']])
     def testCatenationDerive():
         def l := [catenation, [exactly, 'x'], [exactly, 'y']]
         assert.equal(trees(derive(derive(l, 'x'), 'y')), [['x', 'y']])
     return [
-        testCatenationOptimization,
+        testCatenationCompactEmpty,
+        testCatenationCompactNull,
         testCatenationDerive,
     ]
 
@@ -365,6 +387,18 @@ def testRepeat(assert):
     return [
         testRepeatDerive,
     ]
+
+def replaceValues(language, values):
+    traceln(`replace $language $values`)
+    switch (language):
+        match [==value, index]:
+            return [exactly, values.get(index)]
+        match [==exactly, _]:
+            return language
+        match [==catenation, a, b]:
+            return [catenation, replaceValues(a, values), replaceValues(b, values)]
+        match x:
+            return x
 
 def makeDerp(language):
     var l := language
@@ -396,6 +430,10 @@ def makeDerp(language):
 
         to results():
             return trees(l)
+
+        to substitute(values):
+            traceln(`Substituting values: $values`)
+            return makeDerp(replaceValues(l, values))
 
 def testParse(parser, input):
     def derp := makeDerp(parser)
@@ -445,9 +483,6 @@ def testNumber(assert):
     return [
         testNumberSimple,
     ]
-
-object value:
-    pass
 
 def bracket(bra, x, ket):
     return justSecond(bra, justFirst(x, ket))
@@ -502,11 +537,23 @@ def regex := [reduction, [repeat, item], catTree]
 
 var xyzzy := null
 
-for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
-    traceln("~~~~~")
-    xyzzy := testParse(regex, expr).get(0)
-    traceln("~~~~~")
-    testParse(xyzzy, "xyzzy")
+# for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
+#     traceln("~~~~~")
+#     xyzzy := testParse(regex, expr).get(0)
+#     traceln("~~~~~")
+#     testParse(xyzzy, "xyzzy")
+
+object derp__quasiParser:
+    to valueMaker(template):
+        def p := testParse(regex, template).get(0)
+        return makeDerp(p)
+
+def w := 'w'
+def z := 'z'
+
+def p := derp`${w}x${z}y${w}`
+p.feedMany("wxzyw")
+traceln(`${p.results()}`)
 
 def unittest := import("unittest")
 
