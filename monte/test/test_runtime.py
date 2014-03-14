@@ -92,7 +92,6 @@ class EvalTest(unittest.TestCase):
         self.assertRaises(RuntimeError, monte_eval, "def ==1 := 2")
 
     def test_bind(self):
-        raise SkipTest
         self.assertEqual(monte_eval("def x; bind x := 1; x"), Integer(1))
 
     def test_map_patt(self):
