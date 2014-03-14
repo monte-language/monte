@@ -92,6 +92,9 @@ class ConstList(EListMixin, MonteObject):
     def __init__(self, l):
         self.l = tuple(l)
 
+    def __hash__(self):
+        return hash(self.l)
+
     def op__cmp(self, other):
         if not isinstance(other, ConstList):
             raise RuntimeError("%r is not a ConstList" % (other,))
@@ -368,6 +371,9 @@ class FlexMap(EMapMixin, MonteObject):
 
     def domain(self):
         raise NotImplementedError()
+
+    def __hash__(self):
+        return hash(tuple(self.keys))
 
     def removeKey(self, k):
         try:
