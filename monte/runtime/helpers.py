@@ -2,8 +2,10 @@
 Objects used by Monte syntax expansions.
 """
 from monte.runtime.base import MonteObject, ejector, throw
-from monte.runtime.data import false, null, String, Integer, bwrap
+from monte.runtime.data import true, false, null, String, Integer, bwrap
+from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import MonteIterator
+from monte.runtime.ref import UnconnectedRef
 from monte.runtime.tables import ConstList, FlexList, ConstMap, FlexMap, mapMaker
 
 
@@ -73,8 +75,7 @@ makeVerbFacet = MakeVerbFacet()
 
 def matchSame(expected):
     def sameMatcher(specimen, ej):
-        #XXX equalizer
-        if specimen == expected:
+        if equalizer.sameEver(specimen, expected) is true:
             return expected
         else:
             ej("%r is not %r" % (specimen, expected))
@@ -143,17 +144,16 @@ def splitList(cut):
 
 class BooleanFlow(MonteObject):
     _m_fqn = "__booleanFlow"
+    def __init__(self, vat):
+        self.vat = vat
+
     def broken(self):
-        #XXX should return broken ref
-        return object()
+        return UnconnectedRef("boolean flow expression failed", self.vat)
 
     def failureList(self, size):
-        #XXX needs broken ref
         if not isinstance(size, Integer):
             raise RuntimeError("%r is not an integer" % (size,))
-        return ConstList([false] + [object()] * size.n)
-
-booleanFlow = BooleanFlow()
+        return ConstList([false] + [self.broken()] * size.n)
 
 
 def makeViaBinder(resolver, guard):
