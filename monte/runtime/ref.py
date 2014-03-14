@@ -4,7 +4,7 @@ from monte.runtime.base import MonteObject
 from monte.runtime.data import String, bwrap, null, true, false
 from monte.runtime.tables import ConstList
 
-BROKEN, EVENTUAL, NEAR = String("BROKEN"), String("EVENTUAL"), String("NEAR")
+BROKEN, EVENTUAL, NEAR = String(u"BROKEN"), String(u"EVENTUAL"), String(u"NEAR")
 _notARef = object()
 _theViciousRef = object()
 
@@ -12,6 +12,20 @@ def _makePromise(vat):
     buf = _Buffer([], vat)
     sref = SwitchableRef(BufferingRef(buf))
     return ConstList((sref, LocalResolver(sref._m_controller, buf)))
+
+
+def _resolution(ref):
+    if isinstance(ref, Promise):
+        return ref._m_controller.resolution()
+    else:
+        return ref
+
+
+def _toRef(o, vat):
+    if isinstance(o, Promise):
+        return o
+    return NearRef(o, vat)
+
 
 class RefOps(MonteObject):
     """
@@ -63,10 +77,7 @@ class RefOps(MonteObject):
             return NEAR
 
     def resolution(self, ref):
-        if isinstance(ref, Promise):
-            return ref._m_controller.resolution()
-        else:
-            return ref
+        return _resolution(ref)
 
     def fulfillment(self, ref):
         ref = self.resolution(ref)
@@ -160,6 +171,7 @@ def _whenResolvedReactor(callback, ref, resolver, vat):
 
 
 class LocalResolver(MonteObject):
+    _m_fqn = "Ref$Resolver"
     def __init__(self, ref, buf):
         self.ref = ref
         self.buf = buf
@@ -171,7 +183,7 @@ class LocalResolver(MonteObject):
                 raise RuntimeError("Already resolved")
             return false
         else:
-            self.ref.setTarget(_toRef(target, self.vat))
+            self.ref.setTarget(_toRef(target, self.vat)._m_controller)
             self.ref.commit()
             if self.buf is not None:
                 self.buf.deliverAll(target)
@@ -195,7 +207,7 @@ class LocalResolver(MonteObject):
             out.raw_print(u'<Resolver>')
 
 
-class RefControllerBase(MonteObject):
+class RefControllerBase(object):
     def __init__(self, ref):
         self.ref = ref
 
@@ -238,7 +250,7 @@ class SwitchableRefController(RefControllerBase):
             return self.target.optProblem()
 
     def resolutionRef(self):
-        self.target = self.target.resolutionRef()
+        self.target = self.target.resolutionRef()._m_controller
         if self.isSwitchable:
             return self.ref
         else:
@@ -253,10 +265,7 @@ class SwitchableRefController(RefControllerBase):
 
     def callAll(self, verb, args):
         if self.isSwitchable:
-            if verb == "_printOn":
-                return self._printOn(*args)
-            else:
-                raise RuntimeError("not synchronously callable (%s)" % (verb,))
+            raise RuntimeError("not synchronously callable (%s)" % (verb,))
         else:
             self.resolutionRef()
             return self.target.callAll(verb, args)
@@ -282,7 +291,7 @@ class SwitchableRefController(RefControllerBase):
 
     def setTarget(self, newTarget):
         if self.isSwitchable:
-           self.target = newTarget._m_controller.resolutionRef()._m_controller
+           self.target = newTarget.resolutionRef()._m_controller
            if self is self.target:
                raise RuntimeError("Ref loop")
         else:
@@ -293,7 +302,7 @@ class SwitchableRefController(RefControllerBase):
             return
         newTarget = self.target.resolutionRef()._m_controller
         self.target = _theViciousRef
-        self.switchable = False
+        self.isSwitchable = False
         newTarget = newTarget.resolutionRef()._m_controller
         if newTarget is _theViciousRef:
             raise RuntimeError("Ref loop")
@@ -324,10 +333,10 @@ class _Buffer(object):
 
 
 class BufferingRefController(object):
-    def __init__(self, ref, buf, vat):
+    def __init__(self, ref, buf):
         self.ref = ref
         self.buf = weakref.ref(buf)
-        self.vat = vat
+        self.vat = buf.vat
 
     def optProblem(self):
         return null
@@ -339,10 +348,7 @@ class BufferingRefController(object):
         return EVENTUAL
 
     def callAll(self, verb, args):
-        if verb == "_printOn":
-            return self._printOn(*args)
-        else:
-            raise RuntimeError("not synchronously callable (%s)" % (verb,))
+        raise RuntimeError("not synchronously callable (%s)" % (verb,))
 
     def sendAll(self, verb, args):
         optMsgs = self.buf()
@@ -379,6 +385,9 @@ class NearRefController(RefControllerBase):
         return null
 
     def resolution(self):
+        return self.target
+
+    def resolutionRef(self):
         return self.ref
 
     def callAll(self, verb, args):
@@ -399,6 +408,9 @@ class NearRefController(RefControllerBase):
     def commit(self):
         pass
 
+    def _printOn(self, out):
+        out._m_print(self.target)
+
 
 class UnconnectedRefController(RefControllerBase):
     def __init__(self, ref, problem, vat):
@@ -417,11 +429,8 @@ class UnconnectedRefController(RefControllerBase):
             return self.vat.sendAllOnly(args[0], "run", self.ref)
 
     def callAll(self, verb, args):
-        if verb == "_printOn":
-            return self._printOn(*args)
-        else:
-            self.doBreakage(verb, args)
-            raise self.problem
+        self.doBreakage(verb, args)
+        raise self.problem
 
     def sendAll(self, verb, args):
         self._doBreakage(verb, args)
@@ -441,6 +450,9 @@ class UnconnectedRefController(RefControllerBase):
 
 
 class Promise(MonteObject):
+    def _printOn(self, out):
+            return self._m_controller._printOn(out)
+
     def __getattr__(self, verb):
         return lambda *args: self._m_controller.callAll(verb, args)
 
@@ -463,9 +475,3 @@ class NearRef(Promise):
 class UnconnectedRef(Promise):
     def __init__(self, problem, vat):
         self._m_controller = UnconnectedRefController(self, problem, vat)
-
-
-def _toRef(self, o, vat):
-    if isinstance(o, Promise):
-        return o
-    return NearRef(o, vat)

@@ -114,6 +114,13 @@ def toString(obj):
     t._m_print(obj)
     return out.getvalue()
 
+def toQuote(obj):
+    from monte.runtime.text import TextWriter
+    out = StringIO.StringIO()
+    t = TextWriter(out)
+    t.quote(obj)
+    return out.getvalue()
+
 
 class _MatchFailure(Exception):
     pass
