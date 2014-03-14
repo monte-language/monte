@@ -8,8 +8,9 @@ from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
                                        floatGuard, stringGuard, voidGuard)
 from monte.runtime.helpers import (accumulateList, accumulateMap, booleanFlow,
                                    comparer, extract, Empty, iterWhile,
-                                   makeVerbFacet, matchSame, switchFailed,
-                                   suchThat, splitList, validateFor)
+                                   makeVerbFacet, makeViaBinder, matchSame,
+                                   switchFailed, suchThat, splitList,
+                                   validateFor)
 from monte.runtime.load import monteImport
 from monte.runtime.ref import RefOps
 from monte.runtime.tables import makeMonteList, mapMaker
@@ -114,7 +115,7 @@ safeScope = {
     ## expansion utilities
     '__accumulateList': accumulateList,
     '__accumulateMap': accumulateMap,
-    # '__bind': makeViaBinder,
+    '__bind': makeViaBinder,
     '__booleanFlow': booleanFlow,
     '__comparer': comparer,
     '__equalizer': equalizer,
