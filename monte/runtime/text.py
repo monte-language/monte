@@ -147,9 +147,11 @@ class TextWriter(MonteObject):
         self.out.write(string.encode('utf-8'))
 
     def _m_print(self, obj):
-        #XXX SHORTEN
+        from monte.runtime.ref import _resolution
+        obj = _resolution(obj)
         if id(obj) in self.context:
             self.raw_print(u'<**CYCLE**>')
+            return
         self.context.add(id(obj))
         sub = TextWriter(self.out, self.newline, self.context)
         try:
@@ -161,7 +163,10 @@ class TextWriter(MonteObject):
         except Exception, e:
             self.raw_print(u'<**%s throws %r when printed**>' % (
                 getattr(obj, '_m_fqn', type(obj)), e))
-        self.context.remove(id(obj))
+        try:
+            self.context.remove(id(obj))
+        except KeyError:
+            pass
 
     def println(self, obj):
         self._m_print(obj)

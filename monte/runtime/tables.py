@@ -75,10 +75,13 @@ class EListMixin(object):
         return ConstList(self.l * n.n)
 
     def asMap(self):
-        return Map([(Integer(i), v) for i, v in dict(enumerate(self.l))])
+        items = [(Integer(i), v) for i, v in dict(enumerate(self.l))]
+        d = dict(items)
+        keys = [x[0] for x in items]
+        return ConstMap(d, keys)
 
     def asKeys(self):
-        return Map(dict.fromkeys(self.l, null))
+        return ConstMap(dict.fromkeys(self.l, null))
 
     def asSet(self):
         raise NotImplementedError()
