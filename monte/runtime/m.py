@@ -1,4 +1,4 @@
-from monte.runtime.base import MonteObject
+from monte.runtime.base import MonteObject, toString, toQuote
 
 class M(MonteObject):
 
@@ -16,11 +16,10 @@ class M(MonteObject):
 
     def toString(self, obj):
         # XXX use TextWriter.print
-        return str(obj).decode('ascii')
+        return toString(obj)
 
     def toQuote(self, obj):
-        # XXX use TextWriter.quote
-        return "'%s'" % (str(obj).decode('ascii').encode('unicode-escape'),)
+        return toQuote(obj)
 
 
 theM = M()

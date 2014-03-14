@@ -6,7 +6,7 @@ from monte.runtime.flow import monteLooper
 from monte.runtime.guards.base import anyGuard
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
                                        floatGuard, stringGuard, voidGuard)
-from monte.runtime.helpers import (accumulateList, accumulateMap, booleanFlow,
+from monte.runtime.helpers import (accumulateList, accumulateMap, BooleanFlow,
                                    comparer, extract, Empty, iterWhile,
                                    makeVerbFacet, makeViaBinder, matchSame,
                                    switchFailed, suchThat, splitList,
@@ -116,7 +116,8 @@ safeScope = {
     '__accumulateList': accumulateList,
     '__accumulateMap': accumulateMap,
     '__bind': makeViaBinder,
-    '__booleanFlow': booleanFlow,
+    #XXX vat
+    '__booleanFlow': BooleanFlow(None),
     '__comparer': comparer,
     '__equalizer': equalizer,
     '__iterWhile': iterWhile,
