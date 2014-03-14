@@ -393,10 +393,8 @@ def replaceValues(language, values):
     switch (language):
         match [==value, index]:
             return [exactly, values.get(index)]
-        match [==exactly, _]:
-            return language
-        match [==catenation, a, b]:
-            return [catenation, replaceValues(a, values), replaceValues(b, values)]
+        match [tag] + inner:
+            return [tag] + [replaceValues(l, values) for l in inner]
         match x:
             return x
 
