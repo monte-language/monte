@@ -427,7 +427,7 @@ NotSamePattern(@value) -> t.ViaPattern(mcall("__matchSame", "different", value),
 
 VarPattern(@name @guard) = -> t.VarPattern(name, guard)
 
-BindPattern(@name @guard) -> t.ViaPattern(mcall("__bind", "run", [name.args[0].data + "__Resolver", guard]), t.IgnorePattern(None))
+BindPattern(@name @guard) -> t.ViaPattern(mcall("__bind", "run", t.NounExpr(name.args[0].data + "__Resolver"), guard), t.IgnorePattern(None))
 
 #FinalPattern(@name @guard) -> t.FinalPattern(name, guard)
 SlotExpr(@name) -> slot(name)
