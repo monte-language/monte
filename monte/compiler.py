@@ -316,7 +316,7 @@ class PythonWriter(object):
     def _generate(self, out, ctx, node):
         name = node.tag.name
         if name == 'null':
-            return 'None'
+            return '_monte.null'
         return getattr(self, "generate_"+name)(out, ctx, node)
 
     def _generatePattern(self, out, ctx, ej, val, node, objName=False):

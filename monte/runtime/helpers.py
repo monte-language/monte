@@ -11,6 +11,7 @@ def validateFor(flag):
     if not flag:
         raise RuntimeError("For-loop body isn't valid after for-loop exits.")
 
+
 def accumulateList(coll, obj):
     it = coll._makeIterator()
     skip = ejector("listcomp_skip")
@@ -30,11 +31,14 @@ def accumulateList(coll, obj):
 
     return ConstList(acc)
 
+
 def accumulateMap(coll, obj):
     return mapMaker.fromPairs(accumulateList(coll, obj))
 
+
 def iterWhile(f):
     return MonteIterator((null, v) for v in iter(f, false))
+
 
 class Comparer(MonteObject):
     def greaterThan(self, left, right):
@@ -66,6 +70,7 @@ class MakeVerbFacet(MonteObject):
 
 makeVerbFacet = MakeVerbFacet()
 
+
 def matchSame(expected):
     def sameMatcher(specimen, ej):
         #XXX equalizer
@@ -75,10 +80,12 @@ def matchSame(expected):
             ej("%r is not %r" % (specimen, expected))
     return sameMatcher
 
+
 def switchFailed(specimen, *failures):
     raise RuntimeError("%s did not match any option: [%s]" % (
         specimen,
         " ".join(str(f) for f in failures)))
+
 
 _absent = object()
 def suchThat(x, y=_absent):
@@ -90,6 +97,7 @@ def suchThat(x, y=_absent):
         return suchThatMatcher
     else:
         return ConstList([x, None])
+
 
 def extract(x, instead=_absent):
     if instead is _absent:
@@ -107,12 +115,14 @@ def extract(x, instead=_absent):
             return [value, specimen.without(x)]
         return extractor
 
+
 class Empty:
     def coerce(self, specimen, ej):
         if specimen.size() == Integer(0):
             return specimen
         else:
             throw.eject(ej, "Not empty: %s" % specimen)
+
 
 def splitList(cut):
     if not isinstance(cut, Integer):
@@ -144,3 +154,12 @@ class BooleanFlow(MonteObject):
         return ConstList([false] + [object()] * size.n)
 
 booleanFlow = BooleanFlow()
+
+
+def makeViaBinder(resolver, guard):
+    def bindit(specimen, ej):
+        if guard is null:
+            resolver.resolve(specimen)
+        else:
+            resolver.resolve(guard.coerce(specimen, ej))
+    return bindit
