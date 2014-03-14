@@ -6,7 +6,8 @@ class PrintFQN(object):
 
 class Guard(MonteObject):
     def coerce(self, specimen, ej):
-        # XXX SHORTEN
+        from monte.runtime.ref import _resolution
+        specimen = _resolution(specimen)
         tryej = ejector("coercion")
         try:
             return self._subCoerce(specimen, tryej)

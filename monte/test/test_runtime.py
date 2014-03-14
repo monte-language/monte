@@ -1,8 +1,9 @@
 from textwrap import dedent
 from monte.test import unittest
+from monte.runtime.base import toQuote
 from monte.runtime.data import false, true, Integer, String
-from monte.runtime.tables import ConstList, ConstMap
 from monte.runtime.load import eval as monte_eval
+from monte.runtime.tables import ConstList, ConstMap
 from twisted.trial.unittest import SkipTest
 
 
@@ -141,3 +142,62 @@ class EvalTest(unittest.TestCase):
     def test_or(self):
         self.assertEqual(monte_eval("true or false"), true)
         self.assertEqual(monte_eval("[(def x := true) or true, x]"), ConstList((true, true)))
+
+
+class EqualizerTest(unittest.TestCase):
+    def test_prims(self):
+        self.assertEqual(monte_eval("1 == 1"), true)
+        self.assertEqual(monte_eval("1 == 2"), false)
+        self.assertEqual(monte_eval("1 == 1.0"), false)
+        self.assertEqual(monte_eval("'a' == 'a'"), true)
+        self.assertEqual(monte_eval("'a' == 'b'"), false)
+        self.assertEqual(monte_eval("'a' == 1"), false)
+        self.assertEqual(monte_eval("3.14 == 3.14"), true)
+        self.assertEqual(monte_eval("3.14 == 3.15"), false)
+        self.assertEqual(monte_eval('"fred" == "fred"'), true)
+        self.assertEqual(monte_eval('"fred" == "barney"'), false)
+        self.assertEqual(monte_eval('true == false'), false)
+        self.assertEqual(monte_eval('false == false'), true)
+
+    def test_list(self):
+        self.assertEqual(monte_eval("[] == []"), true)
+        self.assertEqual(monte_eval("[1] == [1]"), true)
+        self.assertEqual(monte_eval("[1] == []"), false)
+        self.assertEqual(monte_eval("[1, 2] == [3, 4]"), false)
+        self.assertEqual(monte_eval("[5, [6, 7]] == [5, [6, 7]]"), true)
+        self.assertEqual(monte_eval("[5, [6, 7]] == [5, [8, 7]]"), false)
+
+    def test_opaque(self):
+        self.assertEqual(monte_eval("object x {}; x == x"), true)
+
+    def test_map(self):
+        self.assertEqual(monte_eval("[1 => 2, 3 => 4] == [1 => 2, 3 => 4]"), true)
+        self.assertEqual(monte_eval("[1 => 2, 3 => 4] == [3 => 4, 1 => 2]"), false)
+        self.assertEqual(monte_eval("[].asMap() == [].asMap()"), true)
+
+    def test_cycle(self):
+        self.assertEqual(monte_eval("def x := [1, x]; x == x[1]"), true)
+
+class PrinterTest(unittest.TestCase):
+
+    def pr(self, s):
+        return toQuote(monte_eval(s))
+
+    def test_prims(self):
+        self.assertEqual(self.pr("1"), "1")
+        self.assertEqual(self.pr("1.5"), "1.5")
+        self.assertEqual(self.pr("'a'"), "'a'")
+        self.assertEqual(self.pr('"foo baz \\u03b5"'), '"foo baz \\u03b5"')
+        self.assertEqual(self.pr('"foo baz \\u03b5"[8]'), "'\\u03b5'")
+
+    def test_list(self):
+        self.assertEqual(self.pr("[1, 2]"), "[1, 2]")
+        self.assertEqual(self.pr("[1, [2, 3, []]]"), "[1, [2, 3, []]]")
+        self.assertEqual(self.pr("def x := [1, x]"), "[1, <**CYCLE**>]")
+
+    def test_map(self):
+        self.assertEqual(self.pr("[].asMap()"), "[].asMap()")
+        self.assertEqual(self.pr("[1 => 2]"), "[1 => 2]")
+        self.assertEqual(self.pr("[1 => 2, 3 => 4]"), "[1 => 2, 3 => 4]")
+        self.assertEqual(self.pr("def x := [1 => 2, 3 => x]"), "[1 => 2, 3 => <**CYCLE**>]")
+

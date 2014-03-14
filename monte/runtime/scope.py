@@ -11,6 +11,7 @@ from monte.runtime.helpers import (accumulateList, accumulateMap, booleanFlow,
                                    makeVerbFacet, matchSame, switchFailed,
                                    suchThat, splitList, validateFor)
 from monte.runtime.load import monteImport
+from monte.runtime.ref import RefOps
 from monte.runtime.tables import makeMonteList, mapMaker
 from monte.runtime.m import theM
 from monte.runtime.text import simpleQuasiParser, quasiMatcher
@@ -25,12 +26,14 @@ safeScope = {
     'Infinity': infinity,
 
     ## Primitive: flow control
+    # XXX Create this properly per-vat, when we have vats.
     'M': theM,
     'throw': throw,
     '__loop': monteLooper,
 
     ## Primitive reference/object operations
-    # "Ref": theRef,
+    # XXX Create this properly per-vat, when we have vats.
+    "Ref": RefOps(None),
     # "DeepFrozen": deepFrozenGuard,
 
     ## Primitive: tracing
