@@ -130,7 +130,8 @@ def splitList(cut):
     cut = cut.n
     def listSplitter(specimen, ej):
         if not isinstance(specimen, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (specimen,))
+            throw.eject(
+                ej, "Can't split non-list")
         if len(specimen.l) < cut:
             throw.eject(
                 ej, "A %s size list doesn't match a >= %s size list pattern"
