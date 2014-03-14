@@ -8,15 +8,14 @@ from monte.runtime.tables import ConstList, ConstMap
 def _findSofar(left, right, sofar):
     lid, rid = id(left), id(right)
     if rid < lid:
-        left, right = right, left
-    return bwrap((left, right) in sofar)
+        lid, rid = rid, lid
+    return bwrap((lid, rid) in sofar)
 
 def _pushSofar(left, right, sofar):
     lid, rid = id(left), id(right)
     if rid < lid:
-        left, right = right, left
-    sofar.append((right, left))
-    return len(sofar)
+        lid, rid = rid, lid
+    sofar.append((lid, rid))
 
 
 def _same(left, right, sofar):
