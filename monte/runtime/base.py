@@ -115,14 +115,14 @@ def toString(obj):
     out = StringIO.StringIO()
     t = TextWriter(out)
     t._m_print(obj)
-    return out.getvalue()
+    return out.getvalue().decode('utf-8')
 
 def toQuote(obj):
     from monte.runtime.text import TextWriter
     out = StringIO.StringIO()
     t = TextWriter(out)
     t.quote(obj)
-    return out.getvalue()
+    return out.getvalue().decode('utf-8')
 
 
 class _MatchFailure(Exception):

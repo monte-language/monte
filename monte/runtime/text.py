@@ -60,7 +60,6 @@ class Substituter(MonteObject):
             if typ == 'literal':
                 yield val
             elif typ == 'value':
-                # XXX printOn
                 yield toString(values[val])
             else:
                 raise RuntimeError("Can't substitute with a pattern")
