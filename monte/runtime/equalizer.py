@@ -48,6 +48,7 @@ def _same(left, right, sofar):
     #XXX This should be replaced with checking for Selfless
     #instead of directly enumerating all selfless types here.
     if t in [ConstMap, ] and type(right) is t:
+        _pushSofar(left, right, sofar)
         return _same(left._uncall(), right._uncall(), sofar)
 
     # Equality of primitives.

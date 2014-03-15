@@ -340,6 +340,9 @@ class EMapMixin(object):
 class ConstMap(EMapMixin, MonteObject):
     _m_fqn = "__makeMap$ConstMap"
 
+    def __hash__(self):
+        return hash(tuple(self._keys))
+
     def snapshot(self):
         return self
 
@@ -371,9 +374,6 @@ class FlexMap(EMapMixin, MonteObject):
 
     def domain(self):
         raise NotImplementedError()
-
-    def __hash__(self):
-        return hash(tuple(self.keys))
 
     def removeKey(self, k):
         try:
