@@ -316,6 +316,11 @@ class SwitchableRefController(RefControllerBase):
             self.resolutionRef()
             self.target._printOn(out)
 
+    def hash(self):
+        if self.isSwitchable:
+            raise RuntimeError("must be settled")
+        else:
+            return self.target.hash()
 
 class _Buffer(object):
     def __init__(self, buf, vat):
@@ -411,6 +416,10 @@ class NearRefController(RefControllerBase):
     def _printOn(self, out):
         out._m_print(self.target)
 
+    def hash(self):
+        import pdb; pdb.set_trace()
+        return hash(self.target)
+
 
 class UnconnectedRefController(RefControllerBase):
     def __init__(self, ref, problem, vat):
@@ -461,6 +470,8 @@ class SwitchableRef(Promise):
     def __init__(self, target):
         self._m_controller = SwitchableRefController(self, target)
 
+    def __hash__(self):
+        return self._m_controller.hash()
 
 class BufferingRef(Promise):
     def __init__(self, buf):
@@ -471,6 +482,8 @@ class NearRef(Promise):
     def __init__(self, target, vat):
         self._m_controller = NearRefController(self, target, vat)
 
+    def __hash__(self):
+        return self._m_controller.hash()
 
 class UnconnectedRef(Promise):
     def __init__(self, problem, vat):
