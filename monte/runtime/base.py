@@ -21,6 +21,7 @@ class _SlotDescriptor(object):
 
 class MonteObject(object):
     _m_matcherNames = ()
+    _m_auditorStamps = ()
 
     def __init__(self):
         self._m_slots = {}
@@ -29,9 +30,13 @@ class MonteObject(object):
         return self
 
     def _m_audit(self, auditors):
+        from monte.runtime.audit import Audition, collectBindings
         expr = parseTerm(self._m_objectExpr.decode('base64').decode('zlib'))
+        audition = Audition(expr, collectBindings(self))
+        stamps = []
         for auditor in auditors:
-            pass
+            audition.ask(auditor)
+        self._m_auditorStamps = audition.approvers
 
     def _m_guardMethods(self, guards):
         self._m_methodGuards = guards
@@ -184,5 +189,3 @@ class Throw(MonteObject):
             wrapEjector(ej)(val)
 
 throw = Throw()
-
-

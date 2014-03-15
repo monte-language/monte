@@ -1,3 +1,4 @@
+from monte.runtime.audit import theAuditor
 from monte.runtime.base import throw
 from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
 from monte.runtime.data import (Integer, true, false, nan, infinity, null)
@@ -35,7 +36,7 @@ safeScope = {
     ## Primitive reference/object operations
     # XXX Create this properly per-vat, when we have vats.
     "Ref": RefOps(None),
-    # "DeepFrozen": deepFrozenGuard,
+    "DeepFrozen": null,
 
     ## Primitive: tracing
     'trace': trace,
@@ -51,7 +52,7 @@ safeScope = {
     # '__makeGuardedSlot': makeGuardedSlot,
     # '__makeTwine': makeTwine,
     # 'term__quasiParser': makeQBuilder,
-    # '__makeOrderedSpace': makeOrderedSpace,
+    '__makeOrderedSpace': null,
 
     ## Primitive: guards
     'any': anyGuard,
@@ -94,15 +95,15 @@ safeScope = {
     # 'Selfless': selflessGuard,
     # 'Transparent': transparentGuard,
     ## Reference conditions
-    # 'Data': dataGuard,
+    'Data': null,
     # 'near': nearGuard,
     # 'PassByCopy': passByCopyGuard,
     # 'pbc': passByConstructionGuard,
     # 'rcvr': rcvrGuard,
 
     ## Primitive: reference operations
-    # '__auditedBy': theAuditor,
-    # '__equalizer': theEqualizer,
+    '__auditedBy': theAuditor,
+    '__equalizer': equalizer,
 
     ## Code loading
     'import': monteImport,
@@ -119,7 +120,6 @@ safeScope = {
     #XXX vat
     '__booleanFlow': BooleanFlow(None),
     '__comparer': comparer,
-    '__equalizer': equalizer,
     '__iterWhile': iterWhile,
     '__makeVerbFacet': makeVerbFacet,
     '__mapEmpty': Empty(),
