@@ -3,6 +3,7 @@ from monte.test import unittest
 from monte.runtime.base import toQuote
 from monte.runtime.data import false, true, Integer, String
 from monte.runtime.load import eval as monte_eval
+from monte.runtime.scope import safeScope
 from monte.runtime.tables import ConstList, ConstMap
 from twisted.trial.unittest import SkipTest
 
@@ -200,3 +201,96 @@ class PrinterTest(unittest.TestCase):
         self.assertEqual(self.pr("[1 => 2, 3 => 4]"), "[1 => 2, 3 => 4]")
         self.assertEqual(self.pr("def x := [1 => 2, 3 => x]"), "[1 => 2, 3 => <**CYCLE**>]")
 
+
+class AuditingTest(unittest.TestCase):
+
+    def setUp(self):
+        self.output = []
+        self.scope = safeScope.copy()
+        self.scope['emit'] = self.output.append
+
+    def eq_(self, src, result):
+        self.assertEqual(monte_eval(dedent(src), self.scope), result)
+
+    def test_auditCalled(self):
+        self.eq_("""
+            var timesCalled := 0
+            object approver:
+                to audit(audition):
+                    timesCalled += 1
+                    return true
+            object auditSample implements approver {}
+            object auditSample_as as approver {}
+            timesCalled
+        """,
+                 Integer(2))
+
+    def test_stamped(self):
+        self.eq_("""
+            object approver:
+                to audit(audition):
+                    return true
+            object auditSample implements approver {}
+            object auditSample_as as approver {}
+            __auditedBy(approver, auditSample) and __auditedBy(approver, auditSample_as)
+        """,
+                 true)
+
+    def test_unstamped(self):
+        self.eq_("""
+            object approver:
+                to audit(audition):
+                    return true
+            __auditedBy(approver, 1)
+        """,
+                 false)
+
+    def test_rejected(self):
+        self.eq_("""
+            object noop:
+                to audit(audition):
+                    return false
+            __auditedBy(noop, object x implements noop {}) or __auditedBy(noop, object y as noop {})
+        """,
+                 false)
+
+    def test_badReturn(self):
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent("""
+                object approver:
+                    to audit(audition) :any:
+                        return 43
+                object auditSample implements approver {}
+                __auditedBy(approver, auditSample)
+            """),
+            self.scope)
+
+    def test_nonGozerian(self):
+        self.eq_("""
+            object approver:
+                to audit(audition):
+                    return true
+            object x:
+                match msg:
+                    emit(msg)
+            __auditedBy(approver, x)
+        """,
+                 false)
+        self.assertEqual(self.output, [])
+
+    def test_delegator(self):
+        self.eq_("""
+            object approver:
+                to audit(audition):
+                    return true
+            object delegatingAuditor:
+                to audit(audition):
+                    audition.ask(approver)
+                    return false
+            object x implements delegatingAuditor:
+                pass
+            [__auditedBy(delegatingAuditor, x), __auditedBy(approver, x)] == [false, true]
+        """,
+                 true)

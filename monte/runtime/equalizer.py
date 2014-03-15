@@ -32,6 +32,8 @@ def _same(left, right, sofar):
 
     t = type(left)
     if t is ConstList:
+        if type(right) is not ConstList:
+            return false
         if len(left.l) != len(right.l):
             return false
         _pushSofar(left, right, sofar)
