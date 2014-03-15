@@ -191,13 +191,13 @@ class EqualizerTest(unittest.TestCase):
             """)),
                          true)
 
-    def test_cyclicMapAsKey(self):
+    def test_cyclicListAsKey(self):
         self.assertEqual(monte_eval(dedent(
             """
-            def k := [1 => 2, 3 => k]
+            def k := [1, k]
             def x := [].asMap().diverge()
             x[k] := 1
-            def j := [1 => 2, 3 => j]
+            def j := [1, j]
             x[j] == 1
             """)),
                          true)
