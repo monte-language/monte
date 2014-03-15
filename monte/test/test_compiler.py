@@ -3,14 +3,13 @@
 import textwrap
 
 from twisted.trial import  unittest
-from monte.compiler import ecompile, CompileError, mangleIdent, safeScopeNames
-
-fakeScope = dict.fromkeys(safeScopeNames)
+from monte.compiler import ecompile, CompileError, mangleIdent
+from monte.runtime.scope import safeScope
 
 class CompilerTest(unittest.TestCase):
     maxDiff = None
     def eq_(self, esrc, pysrc):
-        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip(), fakeScope),
+        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip(), safeScope),
                                   textwrap.dedent(pysrc).strip())
 
     def test_mangle(self):
@@ -90,9 +89,9 @@ class CompilerTest(unittest.TestCase):
         self.assertRaises(CompileError, ecompile, "x := 2", {})
 
     def test_guardpattern(self):
-        self.eq_("def x :float64 := 1",
+        self.eq_("def x :float := 1",
                  """
-                 _g_guard1 = _m_outerScope["float64"]
+                 _g_guard1 = _m_outerScope["float"]
                  x = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
                  x
                  """)
@@ -110,7 +109,7 @@ class CompilerTest(unittest.TestCase):
                  _g_total_list1
                  """)
 
-        self.eq_('def [x :float64, y :String, z] := "foo"',
+        self.eq_('def [x :float, y :str, z] := "foo"',
                  """
                  _g_total_list1 = _monte.wrap(u'foo')
                  try:
@@ -118,15 +117,15 @@ class CompilerTest(unittest.TestCase):
                  except ValueError, _g_e5:
                      _monte.throw(_g_e5)
                      raise RuntimeError("Ejector did not exit")
-                 _g_guard6 = _m_outerScope["float64"]
+                 _g_guard6 = _m_outerScope["float"]
                  x = _g_guard6.coerce(_g_list2, _monte.throw)
-                 _g_guard7 = _m_outerScope["String"]
+                 _g_guard7 = _m_outerScope["str"]
                  y = _g_guard7.coerce(_g_list3, _monte.throw)
                  z = _g_list4
                  _g_total_list1
                  """)
 
-        self.eq_('def ej := 1; def [x :float64, y :String, z] exit ej := "foo"',
+        self.eq_('def ej := 1; def [x :float, y :str, z] exit ej := "foo"',
                  """
                  ej = _monte.wrap(1)
                  _g_total_list1 = _monte.wrap(u'foo')
@@ -135,9 +134,9 @@ class CompilerTest(unittest.TestCase):
                  except ValueError, _g_e5:
                      ej(_g_e5)
                      raise RuntimeError("Ejector did not exit")
-                 _g_guard6 = _m_outerScope["float64"]
+                 _g_guard6 = _m_outerScope["float"]
                  x = _g_guard6.coerce(_g_list2, ej)
-                 _g_guard7 = _m_outerScope["String"]
+                 _g_guard7 = _m_outerScope["str"]
                  y = _g_guard7.coerce(_g_list3, ej)
                  z = _g_list4
                  _g_total_list1
@@ -247,7 +246,7 @@ class CompilerTest(unittest.TestCase):
             object foo {
                 method baz(x :int, y) {
                     def a := 2
-                    def b :(float64 >= 0) := 3.0
+                    def b :(float >= 0) := 3.0
                     object boz {
                         method blee() { b.foo(a + x) }
                     }
@@ -270,7 +269,7 @@ class CompilerTest(unittest.TestCase):
                      _g_guard2 = _m_outerScope["int"]
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      a = _monte.wrap(2)
-                     _g_guard3 = _m_outerScope["__comparer"].geq(_m_outerScope["float64"], _monte.wrap(0))
+                     _g_guard3 = _m_outerScope["__comparer"].geq(_m_outerScope["float"], _monte.wrap(0))
                      b = _g_guard3.coerce(_monte.wrap(3.0), _monte.throw)
                      boz = _m_boz_Script(_monte.FinalSlot(a, None), _monte.FinalSlot(b, _g_guard3), _monte.FinalSlot(x, _g_guard2))
                      return boz
@@ -353,6 +352,23 @@ class CompilerTest(unittest.TestCase):
             foo
             """)
 
+    # def test_auditBindingGuards(self):
+    #     self.eq_(
+    #         '''
+    #         object foo implements DeepFrozen, Data {}
+    #         ''',
+    #         """
+    #         class _m_foo_Script(_monte.MonteObject):
+    #             _m_fqn = '__main$foo'
+    #             def __init__(foo, _m_auditors):
+    #                 foo._m_audit(_m_auditors)
+
+    #             _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0QMhqh1iU1tcCtKL8qNQ+kBUk8sSRRSTMWqBaMNTUB+zEoKA=="
+
+    #         foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]])
+    #         foo
+    #         """)
+
     def test_simpleAs(self):
         self.eq_(
             '''
@@ -366,8 +382,7 @@ class CompilerTest(unittest.TestCase):
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0IRS6JJYkgVdFIQqmpBW5F+VWpeUqasUAZMNbUBAD7syYh"
 
-            _g_guard1 = _m_outerScope["Data"]
-            foo = _g_guard1.coerce(_m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]]), _monte.throw)
+            foo = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]])
             foo
             """)
 
@@ -379,17 +394,16 @@ class CompilerTest(unittest.TestCase):
             """
             class _m_foo_Script(_monte.MonteObject):
                 _m_fqn = '__main$foo'
-                def __init__(_g_foo2, _m_auditors, foo_slot):
-                    _g_foo2._m_audit(_m_auditors)
-                    _monte.MonteObject._m_install(_g_foo2, 'foo', foo_slot)
+                def __init__(_g_foo1, _m_auditors, foo_slot):
+                    _g_foo1._m_audit(_m_auditors)
+                    _monte.MonteObject._m_install(_g_foo1, 'foo', foo_slot)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
 
-            _g_guard1 = _m_outerScope["Data"]
-            foo = _monte.VarSlot(_g_guard1)
-            _g_foo2 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], foo)
-            foo._m_init(_g_foo2, _monte.throw)
-            _g_foo2
+            foo = _monte.VarSlot(None)
+            _g_foo1 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], foo)
+            foo._m_init(_g_foo1, _monte.throw)
+            _g_foo1
             """)
 
     def test_methGuard(self):

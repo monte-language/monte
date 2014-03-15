@@ -70,69 +70,6 @@ def mangleIdent(n):
     else:
         return prefix + ''.join(decimalize(n))
 
-safeScopeNames = set([
-    #essentials
-    "null", "false", "true", "NaN", "Infinity",
-    "__makeInt",
-    #default ejector
-    "throw",
-
-    #collections and iteration
-    "__loop", "__makeList", "__makeMap",
-    "__accumulateList", "__iterWhile",
-
-    #interface poop
-    "__makeProtocolDesc", "__makeMessageDesc", "__makeParamDesc",
-
-    #guards
-    "any", "void", "boolean", "__makeOrderedSpace", "Guard",
-    "near", "pbc", "PassByCopy", "DeepPassByCopy", "Data", "Persistent",
-    "DeepFrozen", "int", "float64", "char", "String", "Twine", "TextWriter",
-    "List", "Map", "Set", "nullOk", "Tuple", "__Portrayal", "notNull", "vow",
-    "rcvr", "ref",
-
-    # testing/debugging tools
-    "require", "traceln"
-
-    # more syntax expansion
-    "__makeVerbFacet", "__splitList", "__suchThat", "__bind",
-    "__extract", "__Empty", "__switchFailed", "__validateFor", "__slotToBinding",
-    "__booleanFlow", "__matchSame",
-
-    #lambda-args experiments
-    "escape", "for", "if", "try", "while", "when",
-
-    "__makeFinalSlot", "__makeTwine", "__makeSourceSpan",
-
-    # Auditing
-    "__auditedBy",
-
-    "nocall", "SturdyRef",
-
-    "simple__quasiParser", "twine__quasiParser", "rx__quasiParser",
-    "olde__quasiParser", "e__quasiParser", "epatt__quasiParser",
-    "sml__quasiParser", "term__quasiParser",
-
-
-    #ref stuff
-    "__equalizer", "__comparer", "Ref", "E", "promiseAllFulfilled",
-
-    #EIO
-    "EIO",
-
-    # user info
-    "help", "safeScope",
-
-    # eval
-    "__eval",
-
-    # uri getters
-    "resource__uriGetter", "type__uriGetter", "elib__uriGetter",
-    "elang__uriGetter", "opaque__uriGetter",  "import__uriGetter",
-
-    # persistence
-    "__abortIncarnation", "persistenceSealer"])
-
 _absent = object()
 
 class OuterScopeLayout(object):
@@ -447,11 +384,9 @@ class PythonWriter(object):
         guard = script.args[1]
         if nameNode.tag.name == 'IgnorePattern':
             name = "_"
-            nameNode = Term(nameNode.tag, None, (guard,), nameNode.span)
             selfName = ctx.layout.gensym("ignore")
         else:
             name = nameNode.args[0].args[0].data
-            nameNode = Term(nameNode.tag, None, (nameNode.args[0], guard), nameNode.span)
             selfName = ctx.layout.addNoun(name, nameNode)
 
         implements = script.args[2].args
