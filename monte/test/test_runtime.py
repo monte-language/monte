@@ -177,6 +177,29 @@ class EqualizerTest(unittest.TestCase):
 
     def test_cycle(self):
         self.assertEqual(monte_eval("def x := [1, x]; x == x[1]"), true)
+        self.assertEqual(monte_eval("def x := [1, x]; def y := [1, y]; x == y"), true)
+        self.assertEqual(monte_eval("def x := [1 => x]; def y := [1 => y]; x == y"), true)
+
+    def test_mapAsKey(self):
+        self.assertEqual(monte_eval(dedent(
+            """
+            def k := [1 => 2, 3 => 4]
+            def x := [].asMap().diverge()
+            x[k] := 1
+            x[[1 => 2, 3 => 4]] == 1
+            """)),
+                         true)
+
+    def test_cyclicMapAsKey(self):
+        self.assertEqual(monte_eval(dedent(
+            """
+            def k := [1 => 2, 3 => k]
+            def x := [].asMap().diverge()
+            x[k] := 1
+            def j := [1 => 2, 3 => j]
+            x[j] == 1
+            """)),
+                         true)
 
 class PrinterTest(unittest.TestCase):
 
