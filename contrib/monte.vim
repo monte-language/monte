@@ -2,7 +2,7 @@
 " Language: Monte
 " Maintainer: Corbin Simpson <cds@corbinsimpson.com>
 " <http://github.com/MostAwesomeDude>
-" Latest Revision: Feb 2014
+" Latest Revision: March 2014
 
 if exists("b:current_syntax")
     finish
@@ -39,6 +39,17 @@ syn match monteHole '@{[^}]\+}' contained
 " Universal scope
 syn keyword monteUniversal any bool char float int void
 
+" Operators
+syn match monteOperator '\w\+='
+syn match monteOperator ' [~!%^&*-=+:<>]='
+syn match monteOperator ' [!=]\~'
+syn match monteOperator ' %%='
+syn match monteOperator ' \*\*='
+syn match monteOperator ' [~!%^&*-+<>]'
+
+" Errors
+syn match monteEqualError ' =[^~=>]'
+
 let b:current_syntax = "monte"
 
 hi def link monteComment Comment
@@ -51,3 +62,5 @@ hi def link monteInt Number
 hi def link monteStr String
 hi def link monteHole Identifier
 hi def link monteUniversal Type
+hi def link monteOperator Operator
+hi def link monteEqualError Error
