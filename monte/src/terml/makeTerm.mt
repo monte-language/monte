@@ -106,7 +106,7 @@ def makeTerm(tag, data, args, span):
                 if (h <= 1):
                     # Leaf, so no parens.
                     return
-                reps = label.size() + 1
+                reps := label.size() + 1
                 delims := ["(", ",", ")"]
             def [open, sep, close] := delims
             if (h == 2):
