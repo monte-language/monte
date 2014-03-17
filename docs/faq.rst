@@ -75,6 +75,11 @@ A)
         and ends with only one. 
         These should only be used for docstrings. */
 
+Q) What does "dynamic" mean, when used to describe Monte?
+
+A) Dynamic typing, dynamic binding, dynamic compiling. 
+
+
 Unanswered Questions
 ====================
 
@@ -89,5 +94,4 @@ farref: references to far objects, which messages can only be sent to
 asynchronously
 
 promise: ES6 promises were derived from E's.
-
 
