@@ -1,0 +1,28 @@
+* TODO Monte is Serious Business [50%]
+ - [X] Bikeshed on names
+ - [ ] Write content
+  - [ ] Introduction
+  - [ ] Why Monte?
+  - [ ] Data Structures
+   - [ ] Lists
+   - [ ] Maps
+* TODO Monte is self-hosting [0%]
+ - [ ] Bootstrapping compiler improvements
+  - [ ] Lexer/parser
+   - [ ] Indented comments
+   - [ ] Same-line colon-delimited blocks
+         def example(): pass
+ - [ ] Monte core library
+       These are objects which are integral to the compiler and will be
+       available whenever M and m are available.
+  - [ ] Parsers
+   - [ ] derp
+    - [ ] Lexing
+    - [ ] Regexes
+   - [ ] parsley
+* TODO Monte has compelling uses [0%]
+ - [ ] Examples
+  - [ ] Diplomacy adjudicator
+  - [ ] IRC bot
+  - [ ] Web server
+  - [ ] Zookeeper/Chubby clone
