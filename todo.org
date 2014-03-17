@@ -2,7 +2,11 @@
  - [X] Bikeshed on names
  - [ ] Write content
   - [ ] Introduction
+   - [ ] Target audience
   - [ ] Why Monte?
+   - [ ] Origins
+   - [ ] Comparison to existing languages
+   - [ ] Key features
   - [ ] Data Structures
    - [ ] Lists
    - [ ] Maps
