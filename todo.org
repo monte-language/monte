@@ -24,9 +24,25 @@
     - [ ] Lexing
     - [ ] Regexes
    - [ ] parsley
+  - [ ] Data structures
+        Pretty much all of these are up for discussion.
+   - [ ] Catamorphisms
+    - [ ] CRC32
+    - [ ] MD5
+    - [ ] SHA256
+   - [ ] Containers
+    - [ ] Bloom filters
+    - [ ] Various flavors of maps
+     - [ ] HAMTs
+     - [ ] RB trees
 * TODO Monte has compelling uses [0%]
  - [ ] Examples
   - [ ] Diplomacy adjudicator
   - [ ] IRC bot
   - [ ] Web server
   - [ ] Zookeeper/Chubby clone
+* TODO Monte has a community [0%]
+ - [ ] Github groks Monte
+  - [ ] Linguist has a Monte configuration
+  - [ ] Pygments has a Monte lexer
+ - [ ] Migration from Python is clearly described in documentation
