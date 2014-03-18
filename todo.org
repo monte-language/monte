@@ -1,6 +1,6 @@
 * TODO Monte is Serious Business [50%]
  - [X] Bikeshed on names
- - [ ] Write content
+ - [ ] Write content [0%]
   - [ ] Introduction
    - [ ] Target audience
   - [ ] Why Monte?
@@ -10,15 +10,65 @@
   - [ ] Data Structures
    - [ ] Lists
    - [ ] Maps
+* TODO Monte is the future [16%]
+ - [ ] CCN
+  - [ ] CNN-based modules
+  - [ ] CNN-based process pool
+ - [ ] Serialized ASTs
+ - [ ] Structured editing
+ - [ ] Pragmas and updoc
+ - [X] Protobuf for ASTs
+       Done using Capn Proto; see MostAwesomeDude/secret.git for code
+ - [ ] Formalize Monte in K
+       This is difficult; K does not deal well with complex parsing situations
+       and Monte's semantics are already pretty sane.
+  - [ ] Formalize Kernel-E in K
 * TODO Monte is self-hosting [0%]
- - [ ] Bootstrapping compiler improvements
+ - [-] Bootstrapping compiler improvements
+  - [ ] Bikeshed on optional arguments
+        Current direction is probably to idiomatically use a map as the final
+        argument for methods that want to have kwargs.
+  - [ ] Bikeshed on arity overloading
+        Most of us lean towards "no," but this will require careful thought
+        with regards to E compatibility.
+  - [X] Quasipattern expansion
+  - [ ] function-implements
+  - [ ] Anonymous (lambda/fn) expressions
+  - [X] Trivial `import` function
   - [ ] Lexer/parser
    - [ ] Indented comments
    - [ ] Same-line colon-delimited blocks
          def example(): pass
- - [ ] Monte core library
+   - [ ] Preservation of spans through lexing and parsing
+         Might be put off until post-bootstrap
+  - [-] Formalized Python<->E object bridge
+   - [X] Name mangling
+    - [ ] Keep E from calling arbitrary Python attributes
+    - [ ] Document name mangling
+  - [ ] Base objects
+   - [ ] _m_auditedBy
+   - [ ] Selfless
+   - [X] Equalizer
+   - [X] Ref
+   - [ ] Vat
+   - [ ] Runner
+   - [ ] Auditor protocol
+         auditor.audit(audition :EAudition) :boolean
+         EAudition checks for EAuditionStamp
+         Audition, __printOn, getFQName, getObjectExpr
+         getGuard(slotName): returns a guard which the named slot in the
+         audited object's environment has passed.
+         ask(auditor): Audits the object with the given auditor.
+ - [-] Monte core library
        These are objects which are integral to the compiler and will be
        available whenever M and m are available.
+  - [-] Testing
+   - [ ] Specialized scope for tests: "Shim scope"
+   - [X] Monte-in-Python compiler tests
+   - [ ] Monte-in-Monte safe scope tests
+   - [-] Full-stack syntax and evaluation tests
+    - [X] Monte-in-Python
+    - [ ] Monte-in-Monte
   - [ ] Parsers
    - [ ] derp
     - [ ] Lexing
@@ -35,6 +85,17 @@
     - [ ] Various flavors of maps
      - [ ] HAMTs
      - [ ] RB trees
+   - [ ] Term trees
+  - [ ] Auditors
+  - [ ] Refs
+  - [ ] Tables
+  - [ ] Universal scope
+  - [ ] Compiler
+   - [ ] Optimizations
+    - [ ] Ejector elimination
+          It should be possible to eliminate creation of ejectors and escape
+          clauses if the ejector is provably never used or if its use is
+          constant and at the top level of the inner expression.
 * TODO Monte has compelling uses [0%]
  - [ ] Examples
   - [ ] Diplomacy adjudicator
