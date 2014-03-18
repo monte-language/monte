@@ -37,7 +37,7 @@ syn match monteHole '@\w\+' contained
 syn match monteHole '@{[^}]\+}' contained
 
 " Universal scope
-syn keyword monteUniversal any bool char float int void
+syn keyword monteUniversal any boolean char float int void
 
 " Operators
 syn match monteOperator '\w\+='
