@@ -1,25 +1,25 @@
 Answered Questions
 ==================
 
-Q) Will the iterable control when the computations are performed? 
+Will the iterable control when the computations are performed? 
 -----------------------------------------------------------------
 
-A) That's way outside the scope of an iteration protocol
+That's way outside the scope of an iteration protocol
 
 
-Q) Parallelism? 
+Parallelism? 
 ---------------
 
-A) Monte doesn't really say anything about parallelism per se. We *should*
+Monte doesn't really say anything about parallelism per se. We *should*
 though. If we're going to be agoric, we should say something about CPUs, even
 if it's just that people should spin up more vats and make more code use
 farrefs.
 
 
-Q) Let's talk about the _lazy_ iteration protocol
+Let's talk about the _lazy_ iteration protocol
 -------------------------------------------------
 
-A)  We can just do like everybody else and have explicit laziness, can't we?
+ We can just do like everybody else and have explicit laziness, can't we?
 Or do we want language-level extra-lazy stuff?
 
 .. code-block:: monte
@@ -38,19 +38,19 @@ time  and as they were made available, the promises in workItems would get
 resolved
 
 
-Q) How do you send a message to an object?
+How do you send a message to an object?
 ------------------------------------------
 
-A) In E (and Monte), there are two ways to send a message to an object.
+In E (and Monte), there are two ways to send a message to an object.
 
 1) Use the method call, foo.baz()
 2) Use eventual send, foo <- baz()
 
 
-Q) Are all messages eligible for both methods of sending?
+Are all messages eligible for both methods of sending?
 ---------------------------------------------------------
 
-A) A call (#1) is immediate and returns the value of whatever in foo handles that
+A call (#1) is immediate and returns the value of whatever in foo handles that
 message, probably a method. 
 
 An eventual send (#2) returns a promise for the result  (in particular, foo does
@@ -63,10 +63,10 @@ All messages are eligible for both kinds of sending, but not all objects can
 receive messages in both ways.
 
 
-Q) What's Monte's comment syntax?
+What's Monte's comment syntax?
 ---------------------------------
 
-A) 
+
 
 .. code-block:: monte
 
@@ -77,10 +77,10 @@ A)
         These should only be used for docstrings. */
 
 
-Q) What does "dynamic" mean, when used to describe Monte?
+What does "dynamic" mean, when used to describe Monte?
 ---------------------------------------------------------
 
-A) Dynamic typing, dynamic binding, dynamic compiling. 
+Dynamic typing, dynamic binding, dynamic compiling. 
 
 
 Vocabulary
