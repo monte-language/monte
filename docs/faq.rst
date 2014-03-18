@@ -1,19 +1,26 @@
 Answered Questions
 ==================
 
-Will the iterable control when the computations are performed? 
+Will the iterable control when the computations are performed?
 -----------------------------------------------------------------
 
 That's way outside the scope of an iteration protocol
 
 
-Parallelism? 
+Parallelism?
 ---------------
 
 Monte doesn't really say anything about parallelism per se. We *should*
 though. If we're going to be agoric, we should say something about CPUs, even
 if it's just that people should spin up more vats and make more code use
 farrefs.
+
+Concurrency?
+------------
+
+The one concurrency pattern in Monte is that, if you absolutely have to
+perform near-ref operations on a far-ref, you must make a when-expression.
+This allows the compiler to transform it into far-ref operations.
 
 
 Let's talk about the _lazy_ iteration protocol
@@ -28,13 +35,13 @@ Or do we want language-level extra-lazy stuff?
  # or to be less handwavey
  def workItems := [someIter.lazyNext() for _ in 0..!cores]
 
-lazyNext() is like .next() but it either returns 
+lazyNext() is like .next() but it either returns
     1) a near value if it's immediately available
     2) a promise if it's not
     3) a broken promise if you've iterated off the end
 Even this isn't right,  but the idea is that you could use something like
 twisted's coiterate to serially compute some items in a iterable, a few at a
-time  and as they were made available, the promises in workItems would get 
+time  and as they were made available, the promises in workItems would get
 resolved
 
 
@@ -51,14 +58,14 @@ Are all messages eligible for both methods of sending?
 ---------------------------------------------------------
 
 A call (#1) is immediate and returns the value of whatever in foo handles that
-message, probably a method. 
+message, probably a method.
 
 An eventual send (#2) returns a promise for the result  (in particular, foo does
 not receive the messages until the end of the current turn (event loop
 iteration), and eventual messages are delivered in order.) Calls are only
-allowed for near, resolved objects. Sends can be made to far or unresolved 
+allowed for near, resolved objects. Sends can be made to far or unresolved
 objects (promises)
- 
+
 All messages are eligible for both kinds of sending, but not all objects can
 receive messages in both ways.
 
@@ -71,73 +78,49 @@ What's Monte's comment syntax?
 .. code-block:: monte
 
     # This comment goes to the end of the line
-    /** This comment is multi-line. 
+    /** This comment is multi-line.
         Yes, it starts with a two stars
-        and ends with only one. 
+        and ends with only one.
         These should only be used for docstrings. */
 
 
 What does "dynamic" mean, when used to describe Monte?
 ---------------------------------------------------------
 
-Dynamic typing, dynamic binding, dynamic compiling. 
+Dynamic typing, dynamic binding, dynamic compiling.
 
 What are ejectors?
 ------------------
 
-so... named breaks?                                       
-14:22 <     simpson>| Sure. You can break out of any expression with them,
-though. For example, early returns are implemented with them.
-14:23 <        dash>| sort of, but it's of indefinite scope, you can pass it
-to methods etc and invoking it unwinds the stack
-14:23 <        dash>| yes, return/break/continue are all implemented as
-ejectors
-If you're familiar with call/cc shenanigans, it's like that, but delimited so
-that it can't be called outside the scope that created it.
+Ejectors can be thought of as named breaks. You can break out of any
+expression with them. For example, early returns are implemented with them.
+An ejector has indefinite scope, so you can pass it to methods etc and
+invoking it unwinds the stack.
+
+Return, Break, and Continue are all implemented as ejectors. If you're
+familiar with call/current continuation shenanigans, it's like that, but
+delimited so that it can't be called outside the scope that created it.
 
 Blocking operators?
 -------------------
 
-Not available in Monte. so, because of the no-stale-stack-frames policy, monte
-has neither generators nor threads nor C#-style async/await
+Not available in Monte. Because of the no-stale-stack-frames policy, Monte
+has neither generators nor threads nor C#-style async/await.
 
-Stale stack frames?
--------------------
-
-stack frames that aren't running? 
-at any point in time your code's behavior, since it is exposed to mutable
-state, is affected by the stack frames above it
-if you violate strict stack ordering (as generators do), then you violate the
-obvious assumptions people make when reading and writing such code
-14:59 <     mythmon>| ok. you don't want your scopes changing around you.       
-14:59 <        dash>| mythmon: changing in a hard-to-comprehend way, yes :)     
-14:59 <     mythmon>| which, of course, makes something like the 'await'
-keyword I asked about totally impossible.
-at a function's call site, you know what code you have to read to figure out
-what it does to your execution state
-15:00 <        dash>| at an 'await' or 'yield' point, you don't know what code
-you have to read
-15:01 <     mythmon>| sure I do.                                                
-15:01 <     mythmon>| all of it.                                                
-15:01 <     mythmon>| :)                                                        
-15:01 <        dash>| right! and monte is a language intended to be useful in
-an environment with an unbounded amount of code ;)
+At an 'await' or 'yield' point, you don't know what subset of the code has
+already been read. Since Monte is intended to be useful in an environment with
+an umbounded amount of code, and 'await' and 'yield' force you to assume that
+all of the code has been read, they cannot be available in Monte.
 
 
-psuedomonadic joining on promises
----------------------------------
+What's a stale stack frame?
+---------------------------
 
-15:10 <     simpson>| The other thing, IIRC, is that we have what I'm going to
-call pseudomonadic joining on promises.
-15:11 <     mythmon>| simpson: is that the thing where promises become the
-values for the promise?
-15:11 <     simpson>| def p := foo<-bar(); def p2 := p<-baz()                   
-15:11 <     simpson>| Yeah.                                                     
-15:12 <     simpson>| Also IIRC when-exprs evaluate to a promise as well, so
-you can have something like...
-15:12 <     simpson>| def p := foo<-bar(); def p2 := when (p) -> { p.doStuff()
-}; p2<-baz()
+A stale stack frame is one that isn't currently running.
 
+Since state is mutable, your code's behavior is always affected by the stack
+frames above it. If you violate strict stack ordering (as generators do), you
+violate the assumptions that people make when reading and writing such code.
 
 Why the name?
 -------------
@@ -148,18 +131,12 @@ Vats?
 -----
  http://erights.org/elib/concurrency/vat.html might help
 
-farrefs?
+
+Farrefs?
 --------
 
- references to far objects, namely objects in different vats. Messages
+Farrefs are references to far objects, namely objects in different vats. Messages
 to far objects can only be sent asynchronously.
-
-everything's an object here, so you aren't calling functions, but methods.
-15:20 <     simpson>| It's surprisingly opinionated, I'm finding; there's
-really only one concurrency pattern.
-15:21 <     simpson>| If you *insist* on doing near-ref operations on a
-far-ref, then you *must* make a when-expr. (And the compiler will transform
-that into far-ref operations!)
 
 
 promises?
@@ -169,27 +146,99 @@ ES6 promises were derived from E's.
     the crucial part is, when promises are resolved they become forwarders to
 their values
 
+Functions?
+----------
 
+Since everything in Monte is an object, you're always calling methods rather
+than functions.
+
+A function is actually an object with a single run() method. In other words,
+``def f() { ... }`` always desugars to ``object f { to run() { ... } }``.
+ 
 Everything's a method?
 ----------------------
 
- Well, everything's a message pass, rather.                
-15:24 <        dash>| there are three words about references                    
-15:24 <     simpson>| Function objects are desugared to objects with a single
-run() method.
-15:24 <     mythmon>| ok.                                                       
-15:24 <        dash>| near/far, settled/unsettled, resolved/unresolved      
+Well, everything's a message pass, rather.
+
+
+References?
+-----------
+
+There are three words about references:
+
+near/far, settled/unsettled, resolved/unresolved
+
 http://www.erights.org/elib/concurrency/refmech.html
-15:27 <        dash>| a near reference is to an object in the same vat          
-15:27 <        dash>| a far reference is to an object elsewhere                 
-15:28 <        dash>| references are settled if they won't change to a
-different reference state. they can be compared with == and used as hashtable
-keys.
-15:29 <        dash>| hmmm okay that's actually about the same as 'resolved'    
-15:30 <        dash>| there's some edge cases around that, or were once         
-15:30 <        dash>| anyway yes, a reference is either a promise or resolved   
-15:30 <        dash>| a resolved reference is either near, far, or broken       
-15:30 <        dash>| near references can have synchronous calls made on them   
-15:31 <        dash>| promises, far references, or broken references will
-raise an exception if synchronous calls are made
+
+A near reference is to an object in the same vat, whereas a far reference is
+to an object elsewhere. 
+
+References are settled if they won't change to a different reference state.
+They can be compared with == and used as hashtable keys.
+
+Settled/unsettled is more or less the same as resolved/unresolved, although
+edge cases in previous implementations have required the distinction. 
+
+A reference is either a promise or resolved. A resolved reference is either
+near, far, or broken. Near references can have synchronous calls made on them.
+Promises, far references, and broken references will raise an exception if
+synchronous calls are made. 
+
+
+Does this mean we should never make synchronous calls?
+------------------------------------------------------
+
+No. There are many kind of objects on which synchronous calls work, because
+they are near references. For example, all literals are near: ``def lue :=
+(6).mul(7)``. 
+
+When in doubt, remember that there is a ``near`` guard which can be used to
+confirm that an object is in the same vat as you and thus available for
+synchronous calls. 
+
+Selfless objects?
+-----------------
+
+Some objects can always be near, even if they were initially far, if they can
+be serialized in a way that allows them to be reconstituted in another vat.
+This quality is known as being selfless, and objects with it include ints,
+floats, strings, and objects that you define correctly. 
+
+Selfless objects are "passed by construction", meaning that instructions for
+creating a near version are passed over the wire. 
+
+What can you know about an object?
+----------------------------------
+
+Any object that you can access meets one of three criteria: 
+
+* You created it,
+* You were born with it, or
+* You received it as a result of passing messages to something that met either
+  of the first two criteria.
+
+Additionally, you can sue guards and auditors to ensure properties of an
+object. 
+
+Note that using ``when`` on a promise for a far reference still results in a
+far reference. 
+
+
+Psuedomonadic joining on promises
+---------------------------------
+
+Monte has a mechanic which can be called pseudomonadic joining on promises.
+
+This means that a promise becomes the value for the promise: 
+
+.. code-block:: 
+
+    def p := foo<-bar(); def p2 := p<-baz()
+
+Because when-exprs evaluate to a promise as well, you can have something like
+
+.. code-block:: 
+
+    def p := foo<-bar(); def p2 := when (p) -> { p.doStuff() }; p2<-baz()
+
 
