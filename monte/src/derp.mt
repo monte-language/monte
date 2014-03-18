@@ -13,17 +13,7 @@ object bool:
                 return v := x
         return slot
 
-def _all(l):
-    var rv :bool := true
-    for x in l:
-        rv &= x
-    return rv
-
-def _any(l):
-    var rv :bool := false
-    for x in l:
-        rv |= x
-    return rv
+def [_any, _all] := import("anyAll")
 
 def _glueReps([x, xs]):
     if (xs == null):
