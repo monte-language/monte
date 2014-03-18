@@ -1,18 +1,3 @@
-object bool:
-    to coerce(x, ejector) :any:
-        if (x == true | x == false):
-            return x
-        else:
-            throw.eject(ejector, "Must be a bool")
-    to MakeSlot(x :bool) :any:
-        var v := x
-        object slot:
-            to getValue():
-                return v
-            to setValue(x :bool):
-                return v := x
-        return slot
-
 def [_any, _all] := import("anyAll")
 
 def _glueReps([x, xs]):
@@ -91,7 +76,7 @@ def showParser(l):
         match _:
             return `$l`
 
-def onlyNull(l) :bool:
+def onlyNull(l) :boolean:
     switch (l):
         match ==nullSet:
             return true
@@ -108,7 +93,7 @@ def onlyNull(l) :bool:
         match _:
             return false
 
-def nullable(l) :bool:
+def nullable(l) :boolean:
     if (onlyNull(l)):
         return true
 
@@ -126,7 +111,7 @@ def nullable(l) :bool:
         match _:
             return false
 
-def isEmpty(l) :bool:
+def isEmpty(l) :boolean:
     switch (l):
         match ==empty:
             return true
