@@ -103,9 +103,6 @@ class ConstList(EListMixin, MonteObject):
     def __init__(self, l):
         self.l = tuple(l)
 
-    def __hash__(self):
-        return hash(self.l)
-
     def op__cmp(self, other):
         if not isinstance(other, ConstList):
             raise RuntimeError("%r is not a ConstList" % (other,))
@@ -349,9 +346,6 @@ class EMapMixin(object):
 
 class ConstMap(EMapMixin, MonteObject):
     _m_fqn = "__makeMap$ConstMap"
-
-    def __hash__(self):
-        return hash(tuple(self._keys))
 
     def snapshot(self):
         return self
