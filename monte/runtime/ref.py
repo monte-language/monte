@@ -2,7 +2,7 @@ import weakref
 
 from monte.runtime.base import MonteObject
 from monte.runtime.data import String, bwrap, null, true, false
-from monte.runtime.tables import ConstList
+from monte.runtime.tables import ConstMap, ConstList
 
 BROKEN, EVENTUAL, NEAR = String(u"BROKEN"), String(u"EVENTUAL"), String(u"NEAR")
 _notARef = object()
@@ -25,6 +25,25 @@ def _toRef(o, vat):
     if isinstance(o, Promise):
         return o
     return NearRef(o, vat)
+
+
+def _isResolved(o):
+    if isinstance(o, Promise):
+        return o._m_controller.isResolved()
+    else:
+        return true
+
+
+def _isSelfless(o):
+    # XXX check approvers
+    from monte.runtime.data import (Character, Integer, Bool, MonteNull,
+                                    Float, String)
+    return type(o) in [ConstList, ConstMap, Character, Integer, Bool,
+                       MonteNull, Float, String]
+
+
+def _isDeepFrozen(o):
+    return false
 
 
 class RefOps(MonteObject):
@@ -90,11 +109,8 @@ class RefOps(MonteObject):
         else:
             raise RuntimeError("Not resolved: %r" % (ref,))
 
-    def isResolved(ref):
-        if isinstance(ref, Promise):
-            return ref._m_controller.isResolved()
-        else:
-            return true
+    def isResolved(self, ref):
+        return _isResolved(ref)
 
     def isFar(self, ref):
         return self.isEventual(ref)._m_and(self.isResolved(ref))
@@ -130,9 +146,19 @@ class RefOps(MonteObject):
             ConstList([_whenBrokenReactor(callback, o, r)]))
 
 
-    #isSettled
-    #isSelfless
-    #isSelfish
+    def isDeepFrozen(self, o):
+        return _isDeepFrozen(o)
+
+    def isSelfless(self, o):
+        return _isSelfless(o)
+
+    def isSelfish(self, o):
+        return self.isNear(o) and not _isSelfless(o)
+
+    def isSettled(self, o):
+        from monte.runtime.equalizer import _isSettled
+        return _isSettled(o)
+
 
 def _whenBrokenReactor(callback, ref, resolver, vat):
     def whenBroken(_):
@@ -417,7 +443,6 @@ class NearRefController(RefControllerBase):
         out._m_print(self.target)
 
     def hash(self):
-        import pdb; pdb.set_trace()
         return hash(self.target)
 
 

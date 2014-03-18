@@ -84,11 +84,8 @@ class MonteObject(object):
         return equalizer.sameEver(self, other)
 
     def __hash__(self):
-        raise NotImplementedError()
-        if Selfless.stamped(self):
-            return hash(self._uncall())
-        else:
-            return id(self)
+        from monte.runtime.equalizer import samenessHash
+        return samenessHash(self)
 
     def __getattr__(self, verb):
         if self._m_matcherNames:
