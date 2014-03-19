@@ -107,3 +107,20 @@
   - [ ] Linguist has a Monte configuration
   - [ ] Pygments has a Monte lexer
  - [ ] Migration from Python is clearly described in documentation
+* TODO #monte is not #python [0%]
+ - [ ] Provide compelling answers to #python FAQs
+  - [ ] "What makes Monte better than ... for real-world work?"
+   - [ ] C/C++
+   - [ ] Erlang
+   - [ ] Haskell
+   - [ ] Java
+   - [ ] Python
+  - [ ] "How do I do sockets or networking?"
+        This question appears easy, but we will have to derail anybody looking
+        for coroutines or threading.
+  - [ ] "How do I parse...? Should I use regexes?"
+        We'll obviously generally answer "no" to regex usage, but it's
+        important to have stories that answer the questions satisfactorily.
+   - [ ] CSV
+   - [ ] HTML/XML
+   - [ ] JSON
