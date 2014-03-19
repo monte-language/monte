@@ -1,9 +1,10 @@
-from monte.runtime.guards.base import PythonTypeGuard
-from monte.runtime.tables import ConstList, MonteMap
+from monte.runtime.base import throw
+from monte.runtime.data import true
+from monte.runtime.guards.base import Guard, anyGuard
+from monte.runtime.tables import ConstList, ConstMap
 
 class _ConstListGuard(Guard):
     _m_fqn = "ConstList"
-    _m_auditorStamps = (deepFrozenGuard,)
 
     def _subCoerce(self, specimen, ej):
         if isinstance(specimen, ConstList):
@@ -42,7 +43,7 @@ listGuard = ConstListGuard()
 
 class _ConstMapGuard(Guard):
     _m_fqn = "ConstMap"
-    _m_auditorStamps = (deepFrozenGuard,)
+
     def _subCoerce(self, specimen, ej):
         if isinstance(specimen, ConstMap):
             if self.keyGuard is anyGuard and self.valueGuard is anyGuard:
