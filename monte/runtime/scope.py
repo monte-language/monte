@@ -4,9 +4,10 @@ from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
 from monte.runtime.data import (Integer, true, false, nan, infinity, null)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
-from monte.runtime.guards.base import anyGuard
+from monte.runtime.guards.base import anyGuard, selflessGuard
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
                                        floatGuard, stringGuard, voidGuard)
+from monte.runtime.guards.tables import listGuard, mapGuard
 from monte.runtime.helpers import (accumulateList, accumulateMap, BooleanFlow,
                                    comparer, extract, Empty, iterWhile,
                                    makeVerbFacet, makeViaBinder, matchSame,
@@ -73,8 +74,8 @@ safeScope = {
     # 'not': makeNegatedGuard,
     # 'Tuple': makeTupleGuard,
     # '__Portrayal': lazyEval("Tuple[any, String, List[any]]")
-    # 'list': listGuard,
-    # 'map': mapGuard,
+    'list': listGuard,
+    'map': mapGuard,
     # 'set': setGuard,
 
     ## Protocol/guard constructors
@@ -92,7 +93,7 @@ safeScope = {
     # 'nullOk': nullOkGuard,
 
     ## Primitive: reference conditions
-    # 'Selfless': selflessGuard,
+    'Selfless': selflessGuard,
     # 'Transparent': transparentGuard,
     ## Reference conditions
     'Data': null,

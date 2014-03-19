@@ -83,3 +83,12 @@ class UnionGuard(MonteObject):
             if other == g or g.supersetOf(other):
                 return true
         return false
+
+
+class SelflessGuard(Guard):
+    def _subCoerce(self, specimen, ej):
+        if not selflessGuard in specimen._m_auditorStamps:
+            throw.eject(ej, "is not Selfless")
+
+selflessGuard = SelflessGuard()
+

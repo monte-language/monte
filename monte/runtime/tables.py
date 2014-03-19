@@ -1,6 +1,7 @@
 from monte.runtime.base import MonteObject
-from monte.runtime.data import Integer, bwrap, null, true, false
+from monte.runtime.data import String, Integer, bwrap, null, true, false
 from monte.runtime.flow import MonteIterator
+from monte.runtime.guards.base import selflessGuard
 
 
 class EListMixin(object):
@@ -100,6 +101,8 @@ class EListMixin(object):
 
 class ConstList(EListMixin, MonteObject):
     _m_fqn = "__makeList$ConstList"
+    _m_auditorStamps = (selflessGuard,)
+
     def __init__(self, l):
         self.l = tuple(l)
 
@@ -346,6 +349,7 @@ class EMapMixin(object):
 
 class ConstMap(EMapMixin, MonteObject):
     _m_fqn = "__makeMap$ConstMap"
+    _m_auditorStamps = (selflessGuard,)
 
     def snapshot(self):
         return self
@@ -357,7 +361,7 @@ class ConstMap(EMapMixin, MonteObject):
         raise NotImplementedError()
 
     def _uncall(self):
-        return ConstList([mapMaker, "fromColumns",
+        return ConstList([mapMaker, String(u"fromColumns"),
                           ConstList([
                               ConstList(self._keys),
                               ConstList(self.d[k] for k in self._keys)])])
@@ -408,6 +412,7 @@ class FlexMap(EMapMixin, MonteObject):
 
 class mapMaker(object):
     _m_fqn = "__makeMap"
+    _m_auditorStamps = ()
     @staticmethod
     def fromPairs(pairs):
         return ConstMap(dict(p for (i, p) in pairs._makeIterator()), [p.get(Integer(0)) for p in pairs])
