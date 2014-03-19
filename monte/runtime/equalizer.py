@@ -2,8 +2,8 @@ import warnings
 
 from monte.runtime.base import MonteObject, toQuote
 from monte.runtime.data import null, true, false, bwrap, Integer, Float, String, Character, Bool
+from monte.runtime.guards.base import selflessGuard
 from monte.runtime.tables import ConstList, ConstMap
-
 
 def _findSofar(left, right, sofar):
     lid, rid = id(left), id(right)
@@ -27,6 +27,9 @@ def _same(left, right, sofar):
     if left is right:
         return true
 
+    if left is None:
+        return bwrap(right is None)
+
     if sofar and _findSofar(left, right, sofar):
         return true
 
@@ -47,7 +50,8 @@ def _same(left, right, sofar):
 
     #XXX This should be replaced with checking for Selfless
     #instead of directly enumerating all selfless types here.
-    if t in [ConstMap, ] and type(right) is t:
+    if (selflessGuard in left._m_auditorStamps and
+        selflessGuard in right._m_auditorStamps):
         _pushSofar(left, right, sofar)
         return _same(left._uncall(), right._uncall(), sofar)
 

@@ -3,6 +3,7 @@ import weakref
 from monte.runtime.base import MonteObject
 from monte.runtime.data import String, bwrap, null, true, false
 from monte.runtime.tables import ConstMap, ConstList
+from monte.runtime.guards.base import selflessGuard
 
 BROKEN, EVENTUAL, NEAR = String(u"BROKEN"), String(u"EVENTUAL"), String(u"NEAR")
 _notARef = object()
@@ -35,11 +36,12 @@ def _isResolved(o):
 
 
 def _isSelfless(o):
-    # XXX check approvers
+    # XXX can we stamp these types without import-cycle problems?
     from monte.runtime.data import (Character, Integer, Bool, MonteNull,
                                     Float, String)
-    return type(o) in [ConstList, ConstMap, Character, Integer, Bool,
-                       MonteNull, Float, String]
+    return (selflessGuard in o._m_auditorStamps or
+            type(o) in [Character, Integer, Bool,
+                        MonteNull, Float, String])
 
 
 def _isDeepFrozen(o):
