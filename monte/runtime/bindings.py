@@ -1,4 +1,5 @@
 from monte.runtime.base import MonteObject, throw
+from monte.runtime.data import null
 
 class FinalSlot(MonteObject):
     _m_fqn = "FinalSlot"
@@ -7,9 +8,9 @@ class FinalSlot(MonteObject):
     def asType(cls):
         return FinalSlotGuard()
 
-    def __init__(self, val, guard=None, ej=throw):
+    def __init__(self, val, guard=null, ej=throw):
         self.guard = guard
-        if self.guard is not None:
+        if self.guard is not null:
             self.val = self.guard.coerce(val, ej)
         else:
             self.val = val
@@ -31,8 +32,8 @@ class VarSlot(MonteObject):
             self._m_init(val, ej)
 
     def _m_init(self, val, ej):
-        if self.guard is not None:
-            self.val = self.guard.coerce(self.val, ej)
+        if self.guard is not null:
+            self.val = self.guard.coerce(val, ej)
         else:
             self.val = val
 
@@ -40,8 +41,8 @@ class VarSlot(MonteObject):
         return self.val
 
     def put(self, val):
-        if self.guard is not None:
-            self.val = self.guard.coerce(self.val, throw)
+        if self.guard is not null:
+            self.val = self.guard.coerce(val, throw)
         else:
             self.val = val
 

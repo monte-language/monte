@@ -151,7 +151,7 @@ class ScopeLayout(object):
         self.guards = {}
         self.metaContextExpr = False
 
-    def addNoun(self, name, node, guardname=None):
+    def addNoun(self, name, node, guardname="_monte.null"):
         if name in self.pynames:
             raise CompileError("%r already in scope" % (name,))
         if name in self.outer.outers:
@@ -190,7 +190,7 @@ class ScopeLayout(object):
         if node.tag.name == 'BindingPattern':
             guardExpr = self.pynames[n] + '.getGuard()'
         else:
-            guardExpr = self.guards.get(n, None)
+            guardExpr = self.guards.get(n, "_monte.null")
         return Binding(self.nodes[n],  self.pynames[n], LOCAL, guardExpr)
 
     def makeInner(self):
@@ -610,7 +610,7 @@ class PythonWriter(object):
 
     def pattern_FinalPattern(self, out, ctx, ej, val, node, objname=False):
         name, guard = node.args
-        guardname = None
+        guardname = "_monte.null"
         if guard.tag.name != 'null':
             guardv = self._generate(out, ctx.with_(mode=VALUE), guard)
             guardname = ctx.layout.gensym("guard")
@@ -650,7 +650,7 @@ class PythonWriter(object):
             guardname = ctx.layout.gensym("guard")
             out.writeln("%s = %s" % (guardname, guardv))
         else:
-            guardname = "None"
+            guardname = "_monte.null"
         if objname:
             pyname = ctx.layout.getBinding(name).pyname
             ctx.layout.addObjectGuard(name, guardname)

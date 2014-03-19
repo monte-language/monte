@@ -55,14 +55,14 @@ class CompilerTest(unittest.TestCase):
         self.eq_("var x := 1",
         """
         _g_x1 = _monte.wrap(1)
-        x = _monte.VarSlot(None, _g_x1, _monte.throw)
+        x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
         _g_x1
         """)
     def test_varNoun(self):
         self.eq_("var x := 1; x",
         """
         _g_x1 = _monte.wrap(1)
-        x = _monte.VarSlot(None, _g_x1, _monte.throw)
+        x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
         x.get()
         """)
 
@@ -80,7 +80,7 @@ class CompilerTest(unittest.TestCase):
             "var x := 1; x := 2",
             """
             _g_x1 = _monte.wrap(1)
-            x = _monte.VarSlot(None, _g_x1, _monte.throw)
+            x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
             _g_x2 = _monte.wrap(2)
             x.put(_g_x2)
             _g_x2
@@ -170,7 +170,7 @@ class CompilerTest(unittest.TestCase):
                  def baz(_g_foo1, x, y):
                      return x
 
-             foo = _monte.VarSlot(None)
+             foo = _monte.VarSlot(_monte.null)
              _g_foo1 = _m_foo_Script(foo)
              foo._m_init(_g_foo1, _monte.throw)
              _g_foo1
@@ -242,7 +242,7 @@ class CompilerTest(unittest.TestCase):
             class _m_outer_Script(_monte.MonteObject):
                 _m_fqn = '__main$outer'
                 def run(outer, f):
-                    o = _m_o_Script(_monte.FinalSlot(f, None))
+                    o = _m_o_Script(_monte.FinalSlot(f, _monte.null))
                     return o
 
             outer = _m_outer_Script()
@@ -285,7 +285,7 @@ class CompilerTest(unittest.TestCase):
                      a = _monte.wrap(2)
                      _g_guard3 = _m_outerScope["__comparer"].geq(_m_outerScope["float"], _monte.wrap(0))
                      b = _g_guard3.coerce(_monte.wrap(3.0), _monte.throw)
-                     boz = _m_boz_Script(_monte.FinalSlot(a, None), _monte.FinalSlot(b, _g_guard3), _monte.FinalSlot(x, _g_guard2))
+                     boz = _m_boz_Script(_monte.FinalSlot(a, _monte.null), _monte.FinalSlot(b, _g_guard3), _monte.FinalSlot(x, _g_guard2))
                      return boz
 
              foo = _m_foo_Script()
@@ -345,7 +345,7 @@ class CompilerTest(unittest.TestCase):
                      _g_guard2 = _m_outerScope["int"]
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      _g_a3 = _monte.wrap(1)
-                     a = _monte.VarSlot(None, _g_a3, _monte.throw)
+                     a = _monte.VarSlot(_monte.null, _g_a3, _monte.throw)
                      _g_guard4 = _m_outerScope["int"]
                      _g_b5 = _monte.wrap(0)
                      b = _monte.VarSlot(_g_guard4, _g_b5, _monte.throw)
@@ -415,7 +415,7 @@ class CompilerTest(unittest.TestCase):
             _g_z3 = _monte.wrap(0)
             z = _monte.VarSlot(_g_guard2, _g_z3, _monte.throw)
             w = _monte.slotFromBinding(_m_outerScope["__slotToBinding"](_m_outerScope["__makeFinalSlot"](_monte.wrap(9)), _monte.wrapEjector(_monte.throw)))
-            foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]], w, _monte.FinalSlot(x, _g_guard1), _monte.FinalSlot(y, None), z)
+            foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]], w, _monte.FinalSlot(x, _g_guard1), _monte.FinalSlot(y, _monte.null), z)
             foo
             """)
 
@@ -453,7 +453,7 @@ class CompilerTest(unittest.TestCase):
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
 
-            foo = _monte.VarSlot(None)
+            foo = _monte.VarSlot(_monte.null)
             _g_foo1 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], foo)
             foo._m_init(_g_foo1, _monte.throw)
             _g_foo1
@@ -578,7 +578,7 @@ class CompilerTest(unittest.TestCase):
                      _g_foo1.put(_g_foo2)
                      return x
 
-             foo = _monte.VarSlot(None)
+             foo = _monte.VarSlot(_monte.null)
              _g_foo1 = _m_foo_Script(foo)
              foo._m_init(_g_foo1, _monte.throw)
              _g_foo1
@@ -596,7 +596,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             _g_x1 = _monte.wrap(1)
-            x = _monte.VarSlot(None, _g_x1, _monte.throw)
+            x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
             e = _monte.ejector("e")
             try:
                 _g_escape3 = e(_monte.wrap(2))
@@ -622,7 +622,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             _g_x1 = _monte.wrap(1)
-            x = _monte.VarSlot(None, _g_x1, _monte.throw)
+            x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
             _g_x2 = _monte.wrap(2)
             x.put(_g_x2)
             _g_x2
@@ -663,8 +663,8 @@ class CompilerTest(unittest.TestCase):
                  def baz(foo, x, y):
                      a = _monte.wrap(2)
                      _g_b1 = _monte.wrap(3)
-                     b = _monte.VarSlot(None, _g_b1, _monte.throw)
-                     boz = _m_boz_Script(_monte.FinalSlot(a, None), b)
+                     b = _monte.VarSlot(_monte.null, _g_b1, _monte.throw)
+                     boz = _m_boz_Script(_monte.FinalSlot(a, _monte.null), b)
                      return boz
 
              foo = _m_foo_Script()
@@ -743,10 +743,10 @@ class CompilerTest(unittest.TestCase):
                     try:
                         a = _monte.wrap(1)
                         _g_b3 = _monte.wrap(2)
-                        b = _monte.VarSlot(None, _g_b3, _monte.throw)
+                        b = _monte.VarSlot(_monte.null, _g_b3, _monte.throw)
                         _g_c4 = _monte.wrap(3)
-                        c = _monte.VarSlot(None, _g_c4, _monte.throw)
-                        boz = _m_boz_Script(_monte.FinalSlot(a, None), b)
+                        c = _monte.VarSlot(_monte.null, _g_c4, _monte.throw)
+                        boz = _m_boz_Script(_monte.FinalSlot(a, _monte.null), b)
                         _m___return(boz)
                         _g_escape2 = _monte.null
                     except _m___return._m_type, _g___return1:
@@ -847,7 +847,7 @@ class CompilerTest(unittest.TestCase):
             ''',
             """
             _g_x1 = _monte.wrap(1)
-            x = _monte.VarSlot(None, _g_x1, _monte.throw)
+            x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
             _monte.reifyBinding(x)
             """)
 
@@ -874,7 +874,7 @@ class CompilerTest(unittest.TestCase):
                     return _monte.getBinding(foo, 'x')
 
             _g_x1 = _monte.wrap(1)
-            x = _monte.VarSlot(None, _g_x1, _monte.throw)
+            x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
             foo = _m_foo_Script(x)
             foo
 
