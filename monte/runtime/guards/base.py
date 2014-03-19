@@ -1,4 +1,5 @@
 from monte.runtime.base import MonteObject, ejector, throw
+from monte.runtime.data import true, false
 
 class PrintFQN(object):
     def _printOn(self, out):
@@ -22,8 +23,11 @@ class Guard(MonteObject):
                 return self._subCoerce(newspec, ej)
         throw.eject(ej, problem)
 
+    def supersetOf(self, other):
+        return false
 
-class PythonTypeGuard(Guard, PrintFQN):
+
+class PythonTypeGuard(PrintFQN, Guard):
     def __init__(self, typ, name):
         self.typ = typ
         self._m_fqn = name
@@ -34,7 +38,7 @@ class PythonTypeGuard(Guard, PrintFQN):
             throw.eject(ej, "is not a %s" % (self.typ,))
 
 
-class AnyGuard(MonteObject, PrintFQN):
+class AnyGuard(PrintFQN, MonteObject):
     _m_fqn = "any"
     def coerce(self, specimen, ej):
         return specimen
@@ -43,6 +47,9 @@ class AnyGuard(MonteObject, PrintFQN):
         if not guards:
             raise RuntimeError("unneeded any[]")
         return UnionGuard(guards)
+
+    def supersetOf(self, other):
+        return true
 
 anyGuard = AnyGuard()
 
@@ -71,3 +78,8 @@ class UnionGuard(MonteObject):
                 continue
         throw.eject(ej, "doesn't match any of %s" % (self.guards,))
 
+    def supersetOf(self, other):
+        for g in self.guards:
+            if other == g or g.supersetOf(other):
+                return true
+        return false
