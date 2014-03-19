@@ -81,7 +81,7 @@ class OuterScopeLayout(object):
     def getBinding(self, n, default=_absent):
         if n in self.outers:
             return Binding(t.FinalPattern(t.NounExpr(n), None),
-                           '_m_outerScope["%s"]' % n, None, OUTER)
+                           '_m_outerScope["%s"]' % n, OUTER, "_monte.null")
         else:
             if default is _absent:
                 raise CompileError("No global named " + repr(n))
@@ -94,9 +94,8 @@ class FrameScopeLayout(object):
         self.selfName = selfName
         self.verbs = verbs
         if selfNameNode and selfNameNode.tag.name != 'IgnorePattern':
-            self.selfBinding = Binding(selfNameNode, selfName,
-                                       '_monte.getObjectGuard(%s)' % selfName,
-                                       FRAME)
+            self.selfBinding = Binding(selfNameNode, selfName, FRAME,
+                                       '_monte.getObjectGuard(%s)' % selfName)
         else:
             self.selfBinding = None
         self.gensym = SymGenerator().gensym
@@ -109,12 +108,11 @@ class FrameScopeLayout(object):
         else:
             pyname = self.gensym(mangleIdent(f.name))
         if f.kind == FRAME:
-            return Binding(f.node, self.selfName + '.' + pyname.rpartition('.')[2],
-                           '_monte.getGuard(%s, "%s")' % (self.selfName, f.name),
-                           FRAME)
-        return Binding(f.node, self.selfName + '.' + pyname,
-                       '_monte.getGuard(%s, "%s")' % (self.selfName, f.name),
-                       FRAME)
+            pyname = self.selfName + '.' + pyname.rpartition('.')[2]
+        else:
+            pyname = self.selfName + '.' + pyname
+        guardname = '_monte.getGuard(%s, "%s")' % (self.selfName, f.name)
+        return Binding(f.node, pyname, FRAME, guardname)
 
     def getBinding(self, name, default=_absent):
         if self.selfBinding and name == self.selfBinding.name:
@@ -184,19 +182,22 @@ class ScopeLayout(object):
             return b
 
     def _createBinding(self, n):
-        #XXX deal with def/var binding guards
-        return Binding(self.nodes[n],  self.pynames[n], self.guards.get(n, None), LOCAL, "custom")
+        node = self.nodes[n]
+        if node.tag.name == 'BindingPattern':
+            guardExpr = self.pynames[n] + '.getGuard()'
+        else:
+            guardExpr = self.guards.get(n, None)
+        return Binding(self.nodes[n],  self.pynames[n], LOCAL, guardExpr)
 
     def makeInner(self):
         return ScopeLayout(self, self.frame, self.outer)
 
 class Binding(object):
-    def __init__(self, node, pyname, guardname, kind, guardExpr=None):
+    def __init__(self, node, pyname, kind, guardExpr):
         self.node = node
         self.pyname = pyname
         self.isFinal = node.tag.name == 'FinalPattern'
-        self.guardExpr = guardExpr or node.args[1]
-        self.guardname = guardname
+        self.guardExpr = guardExpr
         self.name = node.args[0].args[0].data
         self.kind = kind
 
@@ -445,15 +446,21 @@ class PythonWriter(object):
                 initParams = ["_m_methodGuards"] + initParams
             if implements:
                 initParams = ["_m_auditors"] + initParams
+            for name, pyname in zip(fnames, pyfnames):
+                classBodyOut.writeln("%s = _monte._SlotDescriptor(%r)" % (mangleIdent(name), name))
             classBodyOut.writeln("def __init__(%s, %s):" % (selfName,
                                                             ', '.join(initParams)))
-            if implements:
-                initOut.writeln(selfName + "._m_audit(_m_auditors)")
             if methGuards:
                 initOut.writeln(selfName + "._m_guardMethods(_m_methodGuards)")
-            for name, pyname  in zip(fnames, pyfnames):
-                initOut.writeln("_monte.MonteObject._m_install(%s, '%s', %s)" % (
-                    selfName, mangleIdent(name), pyname))
+            if fnames:
+                initOut.writeln(selfName + "._m_slots = {")
+                dictOut = initOut.indent()
+                for name, pyname in zip(fnames, pyfnames):
+                    dictOut.writeln("%r: %s," % (name, pyname))
+                initOut.writeln("}")
+            if implements:
+                initOut.writeln(selfName + "._m_audit(_m_auditors)")
+
             initOut.writeln("")
         metacontext = False
         for meth in methods:
@@ -510,7 +517,7 @@ class PythonWriter(object):
         for f in sorted(fields, key=lambda f: f.name):
             if f.isFinal:
                 makeSlots.append("_monte.FinalSlot(%s, %s)" % (f.pyname,
-                                                               f.guardname))
+                                                               f.guardExpr))
             else:
                 makeSlots.append(mangleIdent(f.name))
         return makeSlots

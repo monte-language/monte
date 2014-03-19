@@ -44,14 +44,6 @@ class MonteObject(object):
     def _m_guardForMethod(self, name):
         return self._m_methodGuards[name]
 
-    def _m_install(self, name, slot):
-        # XXX hack, put _m_slots and _SlotDescriptor call in compiler
-        # output
-        if getattr(self, '_m_slots', None) is None:
-            self._m_slots = {}
-        setattr(self.__class__, name, _SlotDescriptor(name))
-        self._m_slots[name] = slot
-
     def __mul__(self, other):
         return self.multiply(other)
 

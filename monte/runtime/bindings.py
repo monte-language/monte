@@ -2,6 +2,11 @@ from monte.runtime.base import MonteObject, throw
 
 class FinalSlot(MonteObject):
     _m_fqn = "FinalSlot"
+
+    @classmethod
+    def asType(cls):
+        return FinalSlotGuard()
+
     def __init__(self, val, guard=None, ej=throw):
         self.guard = guard
         if self.guard is not None:
@@ -15,6 +20,11 @@ class FinalSlot(MonteObject):
 _absent = object()
 class VarSlot(MonteObject):
     _m_fqn = "VarSlot"
+
+    @classmethod
+    def asType(self):
+        return VarSlotGuard()
+
     def __init__(self, guard, val=_absent, ej=None):
         self.guard = guard
         if val is not _absent:
