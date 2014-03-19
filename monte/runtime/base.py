@@ -169,6 +169,9 @@ def ejector(_name):
 class Throw(MonteObject):
     _m_fqn = "throw"
     def __call__(self, val):
+        from monte.runtime.data import String
+        if isinstance(val, String):
+            val = val.s
         raise RuntimeError(val)
     def eject(self, ej, val):
         #XXX this should coerce ej to Ejector
