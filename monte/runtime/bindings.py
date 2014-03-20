@@ -1,22 +1,38 @@
 from monte.runtime.base import MonteObject, throw
 from monte.runtime.data import null
+from monte.runtime.guards.base import Guard, anyGuard, selflessGuard
+from monte.runtime.tables import ConstList
 
 class FinalSlot(MonteObject):
     _m_fqn = "FinalSlot"
 
     @classmethod
     def asType(cls):
-        return FinalSlotGuard()
+        return FinalSlotGuard(null, maker=True)
 
-    def __init__(self, val, guard=null, ej=throw):
-        self.guard = guard
-        if self.guard is not null:
-            self.val = self.guard.coerce(val, ej)
+    def __init__(self, val, guard=null, ej=throw, unsafe=False):
+        if guard is not null:
+            self.guard = guard
+            #XXX separate coercing invocations available from Monte
+            #and non-coercing invocations made from compiler internals
+            if unsafe:
+                self.val = val
+            else:
+                self.val = self.guard.coerce(val, ej)
         else:
+            self.guard = anyGuard
             self.val = val
+
+    def getGuard(self):
+        return FinalSlotGuard(self.guard)
 
     def get(self):
         return self.val
+
+    def _printOn(self, out):
+        out.raw_print(u'<& ')
+        out._m_print(self.val)
+        out.raw_print(u'>')
 
 _absent = object()
 class VarSlot(MonteObject):
@@ -24,12 +40,15 @@ class VarSlot(MonteObject):
 
     @classmethod
     def asType(self):
-        return VarSlotGuard()
+        return VarSlotGuard(null, maker=True)
 
     def __init__(self, guard, val=_absent, ej=None):
+        if guard is null:
+            guard = anyGuard
         self.guard = guard
         if val is not _absent:
             self._m_init(val, ej)
+
 
     def _m_init(self, val, ej):
         if self.guard is not null:
@@ -46,34 +65,127 @@ class VarSlot(MonteObject):
         else:
             self.val = val
 
+    def _printOn(self, out):
+        out.raw_print(u'<var ')
+        out._m_print(self.val)
+        out.raw_print(u'>')
+
+class FinalSlotGuard(Guard):
+    _m_fqn = "FinalSlot"
+    _m_auditorStamps = (selflessGuard,)
+    def __init__(self, valueGuard, maker=False):
+        #XXX separate guard maker from FinalSlot[any]
+        self.maker = maker
+        if valueGuard is null:
+            valueGuard = anyGuard
+        self.valueGuard = valueGuard
+
+    def getValueGuard(self):
+        return self.valueGuard
+
+    def get(self, valueGuard):
+        if self.maker:
+            return FinalSlotGuard(valueGuard)
+        else:
+            raise RuntimeError("no method 'get'")
+
+    def _subCoerce(self, specimen, ej):
+
+        if isinstance(specimen, FinalSlot) and self.valueGuard == specimen.valueGuard:
+            if (self.valueGuard is null or
+                self.valueGuard.supersetOf(specimen.valueGuard) or
+                self.valueGuard == specimen.valueGuard):
+                return specimen
+        throw.eject(ej, "is not a %s" % (self,))
+
+    def _uncall(self):
+        return ConstList([ConstList([FinalSlot, "asType", ConstList([])]), "get", self.valueGuard])
+
+    def _printOn(self, out):
+        out.raw_print(u'FinalSlot[')
+        out._m_print(self.valueGuard)
+        out.raw_print(u']')
+
+
+class VarSlotGuard(Guard):
+    _m_fqn = "VarSlot"
+    _m_auditorStamps = (selflessGuard,)
+    def __init__(self, valueGuard, maker=False):
+        #XXX separate guard maker from FinalSlot[any]
+        self.maker = maker
+        if valueGuard is null:
+            valueGuard = anyGuard
+        self.valueGuard = valueGuard
+
+    def getValueGuard(self):
+        return self.valueGuard
+
+    def get(self, valueGuard):
+        if self.maker:
+            return VarSlotGuard(valueGuard)
+        else:
+            raise RuntimeError("no method 'get'")
+
+    def _subCoerce(self, specimen, ej):
+
+        if isinstance(specimen, VarSlot) and self.valueGuard == specimen.valueGuard:
+            if (self.valueGuard.supersetOf(specimen.valueGuard) or
+                self.valueGuard == specimen.valueGuard):
+                return specimen
+        throw.eject(ej, "is not a %s" % (self,))
+
+    def _uncall(self):
+        return ConstList([ConstList([VarSlot, "asType", ConstList([])]), "get", self.valueGuard])
+
+    def _printOn(self, out):
+        out.raw_print(u'VarSlot[')
+        out._m_print(self.valueGuard)
+        out.raw_print(u']')
+
 
 class Binding(MonteObject):
     _m_fqn = "Binding"
-    def __init__(self, slot):
+    def __init__(self, guard, slot):
+        self.guard = guard
         self.slot = slot
+
+    def get(self):
+        return self.slot
+
+    def getGuard(self):
+        return self.guard
+
+    def put(self, o):
+        raise RuntimeError("Not an assignable slot: %r" % (self,))
+
+    def _printOn(self, out):
+        out.raw_print(u'<&& ')
+        out._m_print(self.slot)
+        out.raw_print(u': ')
+        out.m_print(self.guard)
+        out.raw_print(u'>')
+
 
 def getBinding(o, name):
     """
     Returns the binding object for a name in a Monte object's frame.
     """
-    raise NotImplementedError()
+    return Binding(*o._m_slots[name])
 
 def getSlot(o, name):
     raise NotImplementedError()
 
-def reifyBinding(slot):
+def reifyBinding(arg, ej=_absent):
     """
     Create a binding object from a slot object.
     """
-    return Binding(slot)
+    if ej is _absent:
+        def guardedSlotToBinding(specimen, ejector):
+            return Binding(arg, arg.coerce(specimen, ejector))
+        return guardedSlotToBinding
+    else:
+        return Binding(anyGuard, arg)
 
 
 def slotFromBinding(b):
     return b.slot
-
-
-
-
-
-
-

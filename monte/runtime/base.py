@@ -10,13 +10,10 @@ class _SlotDescriptor(object):
         self.name = name
 
     def __get__(self, obj, typ):
-        return obj._m_slots[self.name].get()
+        return obj._m_slots[self.name][0].get()
 
     def __set__(self, obj, val):
-        return obj._m_slots[self.name].put(val)
-
-    def getGuard(self, obj):
-        return obj._m_slots[self.name].guard
+        return obj._m_slots[self.name][0].put(val)
 
 
 class MonteObject(object):
@@ -30,9 +27,12 @@ class MonteObject(object):
         return self
 
     def _m_audit(self, auditors):
-        from monte.runtime.audit import Audition, collectBindings
+        from monte.runtime.audit import Audition
         expr = parseTerm(self._m_objectExpr.decode('base64').decode('zlib'))
-        audition = Audition(expr, collectBindings(self))
+        audition = Audition(
+            expr,
+            dict([(k, v[1]) for k, v in self._m_slots.iteritems()]),
+            self)
         stamps = []
         for auditor in auditors:
             audition.ask(auditor)
@@ -95,6 +95,9 @@ class MonteObject(object):
 
     def __repr__(self):
         return "<m: %s>" % (toString(self),)
+
+    def __str__(self):
+        return toString(self)
 
     def __iter__(self):
         for (k, v) in self._makeIterator():
@@ -181,3 +184,4 @@ class Throw(MonteObject):
             wrapEjector(ej)(val)
 
 throw = Throw()
+
