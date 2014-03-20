@@ -341,8 +341,8 @@ SeqExpr(@exprs) -> t.SeqExpr(flattenSeqs(exprs))
 VerbCurryExpr(@receiver :verb) -> mcall("__makeVerbFacet", "curryCall", receiver, t.LiteralExpr(verb))
 GetExpr(@receiver @index) -> t.MethodCallExpr(receiver, "get", index)
 FunctionCallExpr(@receiver @args) -> t.MethodCallExpr(receiver, "run", args)
-FunctionSendExpr(@receiver @args) -> mcall("E", "send", receiver, t.LiteralExpr("run"), args)
-MethodSendExpr(@receiver :verb @args) -> mcall("E", "send", receiver, t.LiteralExpr(verb), mcall("__makeList", "run", *args))
+FunctionSendExpr(@receiver @args) -> mcall("M", "send", receiver, t.LiteralExpr("run"), args)
+MethodSendExpr(@receiver :verb @args) -> mcall("M", "send", receiver, t.LiteralExpr(verb), mcall("__makeList", "run", *args))
 SendCurryExpr(@receiver :verb) -> mcall("__makeVerbFacet", "currySend", receiver, t.LiteralExpr(verb))
 
 Minus(@receiver) -> t.MethodCallExpr(receiver, "negate", [])
@@ -502,7 +502,7 @@ objectSuper :doco :name :extends :guard :implements :methods :matchers :maybeSlo
        t.Object(doco, name,
            t.Script(None, guard, implements, methods,
                matchers + [t.Matcher(t.FinalPattern(p, None),
-                           mcall("E", "callWithPair", t.NounExpr("super"), p))]))
+                           mcall("M", "callWithPair", t.NounExpr("super"), p))]))
        ] + maybeSlot))
 To(:doco @verb @params @guard @block) -> t.Method(doco, verb, params, guard, t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
                                                   t.SeqExpr([block, t.NounExpr("null")]), None))

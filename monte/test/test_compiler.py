@@ -162,16 +162,16 @@ class CompilerTest(unittest.TestCase):
              class _m_foo_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo'
                  foo = _monte._SlotDescriptor('foo')
-                 def __init__(_g_foo1, foo_slot):
-                     _g_foo1._m_slots = {
-                         'foo': foo_slot,
+                 def __init__(foo, foo_slotPair):
+                     foo._m_slots = {
+                         'foo': foo_slotPair,
                      }
 
-                 def baz(_g_foo1, x, y):
+                 def baz(foo, x, y):
                      return x
 
              foo = _monte.VarSlot(_monte.null)
-             _g_foo1 = _m_foo_Script(foo)
+             _g_foo1 = _m_foo_Script((foo, _monte.VarSlot.asType().get(_monte.null)))
              foo._m_init(_g_foo1, _monte.throw)
              _g_foo1
              """)
@@ -219,9 +219,9 @@ class CompilerTest(unittest.TestCase):
             class _m_q_Script(_monte.MonteObject):
                 _m_fqn = '__main$outer$o$q'
                 f = _monte._SlotDescriptor('f')
-                def __init__(q, f_slot):
+                def __init__(q, f_slotPair):
                     q._m_slots = {
-                        'f': f_slot,
+                        'f': f_slotPair,
                     }
 
                 def do(q):
@@ -230,19 +230,19 @@ class CompilerTest(unittest.TestCase):
             class _m_o_Script(_monte.MonteObject):
                 _m_fqn = '__main$outer$o'
                 f = _monte._SlotDescriptor('f')
-                def __init__(o, f_slot):
+                def __init__(o, f_slotPair):
                     o._m_slots = {
-                        'f': f_slot,
+                        'f': f_slotPair,
                     }
 
                 def inner(o, x):
-                    q = _m_q_Script(_monte.FinalSlot(o.f, _monte.getGuard(o, "f")))
+                    q = _m_q_Script((_monte.FinalSlot(o.f, None, unsafe=True), o._m_slots[f][0]))
                     return q.do()
 
             class _m_outer_Script(_monte.MonteObject):
                 _m_fqn = '__main$outer'
                 def run(outer, f):
-                    o = _m_o_Script(_monte.FinalSlot(f, _monte.null))
+                    o = _m_o_Script((_monte.FinalSlot(f, _monte.null, unsafe=True), _monte.FinalSlot.asType().get(_monte.null)))
                     return o
 
             outer = _m_outer_Script()
@@ -267,11 +267,11 @@ class CompilerTest(unittest.TestCase):
                  a = _monte._SlotDescriptor('a')
                  b = _monte._SlotDescriptor('b')
                  x = _monte._SlotDescriptor('x')
-                 def __init__(boz, a_slot, b_slot, x_slot):
+                 def __init__(boz, a_slotPair, b_slotPair, x_slotPair):
                      boz._m_slots = {
-                         'a': a_slot,
-                         'b': b_slot,
-                         'x': x_slot,
+                         'a': a_slotPair,
+                         'b': b_slotPair,
+                         'x': x_slotPair,
                      }
 
                  def blee(boz):
@@ -285,7 +285,7 @@ class CompilerTest(unittest.TestCase):
                      a = _monte.wrap(2)
                      _g_guard3 = _m_outerScope["__comparer"].geq(_m_outerScope["float"], _monte.wrap(0))
                      b = _g_guard3.coerce(_monte.wrap(3.0), _monte.throw)
-                     boz = _m_boz_Script(_monte.FinalSlot(a, _monte.null), _monte.FinalSlot(b, _g_guard3), _monte.FinalSlot(x, _g_guard2))
+                     boz = _m_boz_Script((_monte.FinalSlot(a, _monte.null, unsafe=True), _monte.FinalSlot.asType().get(_monte.null)), (_monte.FinalSlot(b, _g_guard3, unsafe=True), _monte.FinalSlot.asType().get(_g_guard3)), (_monte.FinalSlot(x, _g_guard2, unsafe=True), _monte.FinalSlot.asType().get(_g_guard2)))
                      return boz
 
              foo = _m_foo_Script()
@@ -313,10 +313,10 @@ class CompilerTest(unittest.TestCase):
                  _m_fqn = '__main$foo$left'
                  a = _monte._SlotDescriptor('a')
                  b = _monte._SlotDescriptor('b')
-                 def __init__(left, a_slot, b_slot):
+                 def __init__(left, a_slotPair, b_slotPair):
                      left._m_slots = {
-                         'a': a_slot,
-                         'b': b_slot,
+                         'a': a_slotPair,
+                         'b': b_slotPair,
                      }
 
                  def inc(left):
@@ -328,10 +328,10 @@ class CompilerTest(unittest.TestCase):
                  _m_fqn = '__main$foo$right'
                  a = _monte._SlotDescriptor('a')
                  b = _monte._SlotDescriptor('b')
-                 def __init__(right, a_slot, b_slot):
+                 def __init__(right, a_slotPair, b_slotPair):
                      right._m_slots = {
-                         'a': a_slot,
-                         'b': b_slot,
+                         'a': a_slotPair,
+                         'b': b_slotPair,
                      }
 
                  def dec(right):
@@ -349,8 +349,8 @@ class CompilerTest(unittest.TestCase):
                      _g_guard4 = _m_outerScope["int"]
                      _g_b5 = _monte.wrap(0)
                      b = _monte.VarSlot(_g_guard4, _g_b5, _monte.throw)
-                     left = _m_left_Script(a, b)
-                     right = _m_right_Script(a, b)
+                     left = _m_left_Script((a, _monte.VarSlot.asType().get(_monte.null)), (b, _monte.VarSlot.asType().get(_g_guard4)))
+                     right = _m_right_Script((a, _monte.VarSlot.asType().get(_monte.null)), (b, _monte.VarSlot.asType().get(_g_guard4)))
                      return _m_outerScope["__makeList"](left, right)
 
              foo = _m_foo_Script()
@@ -366,6 +366,7 @@ class CompilerTest(unittest.TestCase):
             class _m_foo_Script(_monte.MonteObject):
                 _m_fqn = '__main$foo'
                 def __init__(foo, _m_auditors):
+                    foo._m_slots = {}
                     foo._m_audit(_m_auditors)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0QMhqh1iU1tcCtKL8qNQ+kBUk8sSRRSTMWqBaMNTUB+zEoKA=="
@@ -394,17 +395,17 @@ class CompilerTest(unittest.TestCase):
                 x = _monte._SlotDescriptor('x')
                 y = _monte._SlotDescriptor('y')
                 z = _monte._SlotDescriptor('z')
-                def __init__(foo, _m_auditors, w_slot, x_slot, y_slot, z_slot):
+                def __init__(foo, _m_auditors, w_slotPair, x_slotPair, y_slotPair, z_slotPair):
                     foo._m_slots = {
-                        'w': w_slot,
-                        'x': x_slot,
-                        'y': y_slot,
-                        'z': z_slot,
+                        'w': w_slotPair,
+                        'x': x_slotPair,
+                        'y': y_slotPair,
+                        'z': z_slotPair,
                     }
                     foo._m_audit(_m_auditors)
 
                 def run(foo):
-                    return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w)
+                    return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w.slot)
 
                 _m_objectExpr = "eJxVjt0OwiAMhV9l4QqSvYW6K/8SL5dlqbNGFAtBiHNPL2wS5KYnbc932sP5joPj5JWqq0YSqCM4h5b4XnvajMZydtWaibqKniCnwUqTiKW22btGNI3VE1JE/ubggIkueHfobvry45n1xMKwS1HLdgVKzVwO6PsnPHArXy4GJy7vx/Lep2ynsn2HV8T8TZAvUhxUaQ=="
 
@@ -414,8 +415,8 @@ class CompilerTest(unittest.TestCase):
             _g_guard2 = _m_outerScope["float"]
             _g_z3 = _monte.wrap(0)
             z = _monte.VarSlot(_g_guard2, _g_z3, _monte.throw)
-            w = _monte.slotFromBinding(_m_outerScope["__slotToBinding"](_m_outerScope["__makeFinalSlot"](_monte.wrap(9)), _monte.wrapEjector(_monte.throw)))
-            foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]], w, _monte.FinalSlot(x, _g_guard1), _monte.FinalSlot(y, _monte.null), z)
+            w = _m_outerScope["__slotToBinding"](_m_outerScope["__makeFinalSlot"](_monte.wrap(9)), _monte.wrapEjector(_monte.throw))
+            foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]], (w.slot, w.guard), (_monte.FinalSlot(x, _g_guard1, unsafe=True), _monte.FinalSlot.asType().get(_g_guard1)), (_monte.FinalSlot(y, _monte.null, unsafe=True), _monte.FinalSlot.asType().get(_monte.null)), (z, _monte.VarSlot.asType().get(_g_guard2)))
             foo
             """)
 
@@ -428,6 +429,7 @@ class CompilerTest(unittest.TestCase):
             class _m_foo_Script(_monte.MonteObject):
                 _m_fqn = '__main$foo'
                 def __init__(foo, _m_auditors):
+                    foo._m_slots = {}
                     foo._m_audit(_m_auditors)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0IRS6JJYkgVdFIQqmpBW5F+VWpeUqasUAZMNbUBAD7syYh"
@@ -445,16 +447,16 @@ class CompilerTest(unittest.TestCase):
             class _m_foo_Script(_monte.MonteObject):
                 _m_fqn = '__main$foo'
                 foo = _monte._SlotDescriptor('foo')
-                def __init__(_g_foo1, _m_auditors, foo_slot):
-                    _g_foo1._m_slots = {
-                        'foo': foo_slot,
+                def __init__(foo, _m_auditors, foo_slotPair):
+                    foo._m_slots = {
+                        'foo': foo_slotPair,
                     }
-                    _g_foo1._m_audit(_m_auditors)
+                    foo._m_audit(_m_auditors)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
 
             foo = _monte.VarSlot(_monte.null)
-            _g_foo1 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], foo)
+            _g_foo1 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], (foo, _monte.VarSlot.asType().get(_m_outerScope["Data"])))
             foo._m_init(_g_foo1, _monte.throw)
             _g_foo1
             """)
@@ -467,6 +469,7 @@ class CompilerTest(unittest.TestCase):
                  _m_fqn = '__main$foo'
                  def __init__(foo, _m_methodGuards):
                      foo._m_guardMethods(_m_methodGuards)
+                     foo._m_slots = {}
 
                  def baz(foo, x, y):
                      return foo._m_guardForMethod('baz').coerce(x, _monte.throw)
@@ -568,18 +571,18 @@ class CompilerTest(unittest.TestCase):
              class _m_foo_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo'
                  foo = _monte._SlotDescriptor('foo')
-                 def __init__(_g_foo1, foo_slot):
-                     _g_foo1._m_slots = {
-                         'foo': foo_slot,
+                 def __init__(foo, foo_slotPair):
+                     foo._m_slots = {
+                         'foo': foo_slotPair,
                      }
 
-                 def baz(_g_foo1, x, y):
+                 def baz(foo, x, y):
                      _g_foo2 = _monte.wrap(1)
-                     _g_foo1.put(_g_foo2)
+                     foo.foo.put(_g_foo2)
                      return x
 
              foo = _monte.VarSlot(_monte.null)
-             _g_foo1 = _m_foo_Script(foo)
+             _g_foo1 = _m_foo_Script((foo, _monte.VarSlot.asType().get(_monte.null)))
              foo._m_init(_g_foo1, _monte.throw)
              _g_foo1
              """)
@@ -645,10 +648,10 @@ class CompilerTest(unittest.TestCase):
                  _m_fqn = '__main$foo$boz'
                  a = _monte._SlotDescriptor('a')
                  b = _monte._SlotDescriptor('b')
-                 def __init__(boz, a_slot, b_slot):
+                 def __init__(boz, a_slotPair, b_slotPair):
                      boz._m_slots = {
-                         'a': a_slot,
-                         'b': b_slot,
+                         'a': a_slotPair,
+                         'b': b_slotPair,
                      }
 
                  def blee(boz):
@@ -664,7 +667,7 @@ class CompilerTest(unittest.TestCase):
                      a = _monte.wrap(2)
                      _g_b1 = _monte.wrap(3)
                      b = _monte.VarSlot(_monte.null, _g_b1, _monte.throw)
-                     boz = _m_boz_Script(_monte.FinalSlot(a, _monte.null), b)
+                     boz = _m_boz_Script((_monte.FinalSlot(a, _monte.null, unsafe=True), _monte.FinalSlot.asType().get(_monte.null)), (b, _monte.VarSlot.asType().get(_monte.null)))
                      return boz
 
              foo = _m_foo_Script()
@@ -679,10 +682,11 @@ class CompilerTest(unittest.TestCase):
             """
             class _m__g_ignore1_Script(_monte.MonteObject):
                 _m_fqn = '__main$_'
-                def __init__(_g_ignore2, _m_methodGuards):
-                    _g_ignore2._m_guardMethods(_m_methodGuards)
+                def __init__(_g_ignore1, _m_methodGuards):
+                    _g_ignore1._m_guardMethods(_m_methodGuards)
+                    _g_ignore1._m_slots = {}
 
-                def run(_g_ignore2):
+                def run(_g_ignore1):
                     _m___return = _monte.ejector("__return")
                     try:
                         x = _monte.wrap(1)
@@ -692,7 +696,7 @@ class CompilerTest(unittest.TestCase):
                         _g_escape4 = _g___return3.args[0]
                     finally:
                         _m___return.disable()
-                    return _g_ignore2._m_guardForMethod('run').coerce(_g_escape4, _monte.throw)
+                    return _g_ignore1._m_guardForMethod('run').coerce(_g_escape4, _monte.throw)
 
             _g_ignore2 = _m__g_ignore1_Script({'run': _m_outerScope["any"]})
             _g_ignore2()
@@ -721,10 +725,10 @@ class CompilerTest(unittest.TestCase):
                 _m_fqn = '__main$foo$boz'
                 a = _monte._SlotDescriptor('a')
                 b = _monte._SlotDescriptor('b')
-                def __init__(boz, a_slot, b_slot):
+                def __init__(boz, a_slotPair, b_slotPair):
                     boz._m_slots = {
-                        'a': a_slot,
-                        'b': b_slot,
+                        'a': a_slotPair,
+                        'b': b_slotPair,
                     }
 
                 def biz(boz):
@@ -746,7 +750,7 @@ class CompilerTest(unittest.TestCase):
                         b = _monte.VarSlot(_monte.null, _g_b3, _monte.throw)
                         _g_c4 = _monte.wrap(3)
                         c = _monte.VarSlot(_monte.null, _g_c4, _monte.throw)
-                        boz = _m_boz_Script(_monte.FinalSlot(a, _monte.null), b)
+                        boz = _m_boz_Script((_monte.FinalSlot(a, _monte.null, unsafe=True), _monte.FinalSlot.asType().get(_monte.null)), (b, _monte.VarSlot.asType().get(_monte.null)))
                         _m___return(boz)
                         _g_escape2 = _monte.null
                     except _m___return._m_type, _g___return1:
@@ -848,7 +852,7 @@ class CompilerTest(unittest.TestCase):
             """
             _g_x1 = _monte.wrap(1)
             x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
-            _monte.reifyBinding(x)
+            _monte.Binding(_monte.VarSlot.asType().get(_monte.null), x)
             """)
 
     def test_bindingexpr_frame(self):
@@ -865,9 +869,9 @@ class CompilerTest(unittest.TestCase):
             class _m_foo_Script(_monte.MonteObject):
                 _m_fqn = '__main$foo'
                 x = _monte._SlotDescriptor('x')
-                def __init__(foo, x_slot):
+                def __init__(foo, x_slotPair):
                     foo._m_slots = {
-                        'x': x_slot,
+                        'x': x_slotPair,
                     }
 
                 def baz(foo):
@@ -875,7 +879,7 @@ class CompilerTest(unittest.TestCase):
 
             _g_x1 = _monte.wrap(1)
             x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
-            foo = _m_foo_Script(x)
+            foo = _m_foo_Script((x, _monte.VarSlot.asType().get(_monte.null)))
             foo
 
             """)
@@ -883,11 +887,13 @@ class CompilerTest(unittest.TestCase):
     def test_bindingpatt(self):
         self.eq_(
             '''
-            def a := 1
+            def a :int := 1
             def &&x := &&a
+            x
             ''',
             """
-            a = _monte.wrap(1)
-            x = _monte.slotFromBinding(_monte.reifyBinding(_monte.FinalSlot(a)))
-            x
+            _g_guard1 = _m_outerScope["int"]
+            a = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
+            x = _monte.Binding(_monte.FinalSlot.asType().get(_g_guard1), _monte.FinalSlot(a))
+            x.slot.get()
             """)
