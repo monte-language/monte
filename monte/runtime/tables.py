@@ -424,5 +424,3 @@ class mapMaker(object):
         if not isinstance(vals, (ConstList, FlexList)):
             raise RuntimeError("%r is not a list" % (vals,))
         return ConstMap(dict(zip(keys.l, vals.l)), keys)
-
-

@@ -51,7 +51,7 @@ class ExpanderTest(unittest.TestCase):
         self.assertEqual(self.parse("x ^= y"), ["Assign", ["NounExpr", "x"], ["MethodCallExpr", ["NounExpr", "x"], "xor", [["NounExpr", "y"]]]])
 
     def test_send(self):
-        self.assertEqual(self.parse("foo <- bar(x, y)"), ["MethodCallExpr", ["NounExpr", "E"], "send", [["NounExpr", "foo"], ["LiteralExpr", "bar"], ["MethodCallExpr", ["NounExpr", "__makeList"], "run", [["NounExpr", "x"], ["NounExpr", "y"]]]]])
+        self.assertEqual(self.parse("foo <- bar(x, y)"), ["MethodCallExpr", ["NounExpr", "M"], "send", [["NounExpr", "foo"], ["LiteralExpr", "bar"], ["MethodCallExpr", ["NounExpr", "__makeList"], "run", [["NounExpr", "x"], ["NounExpr", "y"]]]]])
 
     def test_binop(self):
 
@@ -600,7 +600,7 @@ class ExpanderTest(unittest.TestCase):
                                [],
                                [["Matcher",
                                  ["FinalPattern", ["NounExpr", "pair__1"], None],
-                                 ["MethodCallExpr", ["NounExpr", "E"],
+                                 ["MethodCallExpr", ["NounExpr", "M"],
                                   "callWithPair",
                                   [["NounExpr", "super"],
                                    ["NounExpr", "pair__1"]]]]]]]]]]])

@@ -317,3 +317,121 @@ class AuditingTest(unittest.TestCase):
             [__auditedBy(delegatingAuditor, x), __auditedBy(approver, x)] == [false, true]
         """,
                  true)
+
+class BindingGuardTest(unittest.TestCase):
+    def setUp(self):
+        CheckGuard = monte_eval(dedent(
+            """
+            object CheckGuard:
+                to get(noun, guard):
+                    return object guardCheckingAuditor:
+                        to audit(audition):
+                            if (audition.getGuard(noun) == guard):
+                                return true
+                            else:
+                                throw(`$noun: expected $guard, got ${audition.getGuard(noun)}`)
+            """))
+        self.scope = safeScope.copy()
+        self.scope["CheckGuard"] = CheckGuard
+
+    def test_doesNotGuard(self):
+        err = self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent(
+                """
+                def FinalSlot := __makeFinalSlot.asType()
+                def x := 1
+                object doesNotGuardX implements CheckGuard["x", FinalSlot[int]]:
+                    to f():
+                        return x
+                """), self.scope)
+        self.assertEqual(str(err), "x: expected FinalSlot[int], got FinalSlot[any]")
+
+    def test_doesNotMention(self):
+        err = self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent(
+                """
+                def FinalSlot := __makeFinalSlot.asType()
+                def x := 1
+                object doesNotMentionX implements CheckGuard["x", FinalSlot[int]]:
+                    to f():
+                        return 0
+                """), self.scope)
+        self.assertEqual(str(err), '"x" is not a free variable in <__main$doesNotMentionX>')
+
+    def test_final(self):
+        monte_eval(dedent(
+            """
+            def FinalSlot := __makeFinalSlot.asType()
+            def x :int := 1
+            object guardsX implements CheckGuard["x", FinalSlot[int]]:
+                to f():
+                    return x
+            """), self.scope)
+
+    def test_var(self):
+        monte_eval(dedent(
+            """
+            def VarSlot := __makeVarSlot.asType()
+            var x := 1
+            object guardsX implements CheckGuard["x", VarSlot[any]]:
+                to f():
+                    return x
+            """), self.scope)
+
+    def test_guardedVar(self):
+        monte_eval(dedent(
+            """
+            def VarSlot := __makeVarSlot.asType()
+            var x :int := 1
+            object guardsX implements CheckGuard["x", VarSlot[int]]:
+                to f():
+                    return x
+            """), self.scope)
+
+    def test_objectFinal(self):
+        monte_eval(dedent(
+            """
+            def FinalSlot := __makeFinalSlot.asType()
+            object x {}
+            object guardsX implements CheckGuard["x", FinalSlot[any]]:
+                to f():
+                    return x
+            """), self.scope)
+
+    def test_as(self):
+        monte_eval(dedent(
+            """
+            def FinalSlot := __makeFinalSlot.asType()
+            object approver:
+                to audit(audition):
+                    return true
+            object x as approver {}
+            object guardsX implements CheckGuard["x", FinalSlot[approver]]:
+                to f():
+                    return x
+            """), self.scope)
+
+    def test_slot(self):
+        monte_eval(dedent(
+            """
+            def s := __makeFinalSlot(1)
+            def &x := s
+            object guardsX implements CheckGuard["x", any]:
+                to f():
+                    return x
+            """), self.scope)
+
+    def test_guardedSlot(self):
+        monte_eval(dedent(
+            """
+            def s := __makeFinalSlot(1)
+            object g extends any {}
+            def &x :g := s
+            object guardsX implements CheckGuard["x", g]:
+                to f():
+                    return x
+            """), self.scope)
