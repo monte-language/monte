@@ -61,8 +61,8 @@ OPERATORS = {
     '^': (7, 'BinaryXor'),
     '&': (8, 'BinaryAnd'),
     '|': (8, 'BinaryOr'),
-    'and': (9, 'LogicalAnd'),
-    'or': (10, 'LogicalOr')
+    '&&': (9, 'LogicalAnd'),
+    '||': (10, 'LogicalOr')
 }
 
 class EParserBase(OMetaBase):

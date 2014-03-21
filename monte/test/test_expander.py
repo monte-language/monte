@@ -117,7 +117,7 @@ class ExpanderTest(unittest.TestCase):
 
     def test_and(self):
         #value
-        self.assertEqual(self.parse("x and y"),
+        self.assertEqual(self.parse("x && y"),
                          ["SeqExpr",
                           [["Def", ["ListPattern",
                                     [["FinalPattern", ["NounExpr", "ok__1"], None]], None],
@@ -133,7 +133,7 @@ class ExpanderTest(unittest.TestCase):
                            ["NounExpr", "ok__1"]]])
         #value w/export
         self.assertEqual(
-            self.parse("(def x := 1) and (def y := 2)"),
+            self.parse("(def x := 1) && (def y := 2)"),
             ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "ok__1"],
                                                    None],
                                                   ["BindingPattern", ["NounExpr", "y"]],
@@ -161,7 +161,7 @@ class ExpanderTest(unittest.TestCase):
     def test_or(self):
         #value
         self.assertEqual(
-            self.parse("x or y"),
+            self.parse("x || y"),
             ["SeqExpr",
              [["Def",
                ["ListPattern",
@@ -182,7 +182,7 @@ class ExpanderTest(unittest.TestCase):
               ["NounExpr", "ok__1"]]])
         #value w/ export
         self.assertEqual(
-            self.parse("(def x := 1) or (def y := 2)"),
+            self.parse("(def x := 1) || (def y := 2)"),
 ["SeqExpr", [["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "ok__1"], None],
                                         ["BindingPattern", ["NounExpr", "y"]],
                                         ["BindingPattern", ["NounExpr", "x"]]],
