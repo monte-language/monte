@@ -247,17 +247,17 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("x & y & z"), ["BinaryAnd", ["BinaryAnd", ["NounExpr", "x"], ["NounExpr", "y"]], ["NounExpr", "z"]])
         self.assertEqual(parse("x | y"), ["BinaryOr", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x | y | z"), ["BinaryOr", ["BinaryOr", ["NounExpr", "x"], ["NounExpr", "y"]], ["NounExpr", "z"]])
-        self.assertEqual(parse("x and y"), ["LogicalAnd", ["NounExpr", "x"], ["NounExpr", "y"]])
-        self.assertEqual(parse("x and y and  z"), ["LogicalAnd", ["NounExpr", "x"], ["LogicalAnd", ["NounExpr", "y"], ["NounExpr", "z"]]])
-        self.assertEqual(parse("x or y"), ["LogicalOr", ["NounExpr", "x"], ["NounExpr", "y"]])
-        self.assertEqual(parse("x or y or z"), ["LogicalOr", ["NounExpr", "x"], ["LogicalOr", ["NounExpr", "y"], ["NounExpr", "z"]]])
+        self.assertEqual(parse("x && y"), ["LogicalAnd", ["NounExpr", "x"], ["NounExpr", "y"]])
+        self.assertEqual(parse("x && y && z"), ["LogicalAnd", ["NounExpr", "x"], ["LogicalAnd", ["NounExpr", "y"], ["NounExpr", "z"]]])
+        self.assertEqual(parse("x || y"), ["LogicalOr", ["NounExpr", "x"], ["NounExpr", "y"]])
+        self.assertEqual(parse("x || y || z"), ["LogicalOr", ["NounExpr", "x"], ["LogicalOr", ["NounExpr", "y"], ["NounExpr", "z"]]])
 
     def test_precedence(self):
         parse = self.getParser("expr")
-        self.assertEqual(parse("x and y or z"),  parse("(x and y) or z"))
-        self.assertEqual(parse("x or y and z"),  parse("x or (y and z)"))
-        self.assertEqual(parse("x =~ a or y == b and z != c"),
-                         parse("(x =~ a) or ((y == b) and (z != c))"))
+        self.assertEqual(parse("x && y || z"),  parse("(x && y) || z"))
+        self.assertEqual(parse("x || y && z"),  parse("x || (y && z)"))
+        self.assertEqual(parse("x =~ a || y == b && z != c"),
+                         parse("(x =~ a) || ((y == b) && (z != c))"))
         self.assertEqual(parse("x | y > z"),  parse("x | (y > z)"))
         self.assertEqual(parse("x < y | y > z"),  parse("(x < y) | (y > z)"))
         self.assertEqual(parse("x & y > z"),  parse("x & (y > z)"))

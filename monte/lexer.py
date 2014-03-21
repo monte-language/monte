@@ -140,9 +140,9 @@ def twineSlice(twine, start, stop):
 uriChars = string.letters + string.digits + '_;/?:@&=+$,-.!~*\()%\\#\'|'
 EOF = object()
 keywords = set([
-    "as", "and", "bind", "break", "catch", "continue", "def", "else", "escape",
+    "as", "bind", "break", "catch", "continue", "def", "else", "escape",
     "exit", "extends", "finally", "fn", "for", "guards", "if", "implements",
-    "in", "interface", "match", "meta", "method", "object", "or", "pass",
+    "in", "interface", "match", "meta", "method", "object", "pass",
     "pragma", "return", "switch", "to", "try", "var", "via", "when", "while"])
 
 
@@ -822,7 +822,10 @@ class MonteLexer(object):
 
         if cur == '|':
             nex = self.nextChar()
-            if nex == '=':
+            if nex == '|':
+                self.nextChar()
+                return leafTag('||', self.endSpan())
+            elif nex == '=':
                 self.nextChar()
                 return leafTag('|=', self.endSpan())
             return leafTag('|', self.endSpan())
