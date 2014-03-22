@@ -236,7 +236,7 @@ class CompilerTest(unittest.TestCase):
                     }
 
                 def inner(o, x):
-                    q = _m_q_Script((_monte.FinalSlot(o.f, None, unsafe=True), o._m_slots[f][0]))
+                    q = _m_q_Script((_monte.FinalSlot(o.f, None, unsafe=True), o._m_slots["f"][0]))
                     return q.do()
 
             class _m_outer_Script(_monte.MonteObject):
