@@ -112,7 +112,7 @@ class FrameScopeLayout(object):
             pyname = self.selfName + '.' + pyname.rpartition('.')[2]
         else:
             pyname = self.selfName + '.' + pyname
-        guardname = '%s._m_slots[%s][0]' % (self.selfName, f.name)
+        guardname = '%s._m_slots["%s"][0]' % (self.selfName, f.name)
         return Binding(f.node, pyname, FRAME, guardname, None)
 
     def getBinding(self, name, default=_absent):
