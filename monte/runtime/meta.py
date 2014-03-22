@@ -1,4 +1,5 @@
 from monte.runtime.base import MonteObject
+from monte.runtime.data import String
 
 class StaticContext(MonteObject):
 
@@ -6,3 +7,6 @@ class StaticContext(MonteObject):
         self.fqn = fqn
         self.fields = fields
         self.objectExpr = objectExpr
+
+    def getFQNPrefix(self):
+        return String(self.fqn.decode('ascii'))
