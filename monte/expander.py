@@ -604,16 +604,22 @@ def expandOr(left, right, success, failure, leftmap, rightmap):
     return t.If(left, partialFail(rightOnly), t.If(right, partialFail(leftOnly), failure))
 
 def expandInterface(doco, name, nameStr, guard, extends, implements, script):
-    return t.Def(name,
-                 None,
-                 t.HideExpr(
-                     mcall("__makeProtocolDesc", "run", doco and t.LiteralExpr(doco),
-                           t.MethodCallExpr(
-                               t.MethodCallExpr(t.Meta("context"), "getFQNPrefix", []),
-                               "add", [t.LiteralExpr(nameStr + "__T")]),
-                           mcall("__makeList", "run", *extends),
-                           mcall("__makeList", "run", *implements),
-                           mcall("__makeList", "run", *script))))
+    def makeIFace(verb):
+        return t.HideExpr(
+            mcall("__makeProtocolDesc", verb, doco and t.LiteralExpr(doco),
+                  t.MethodCallExpr(
+                      t.MethodCallExpr(t.Meta("Context"), "getFQNPrefix", []),
+                      "add", [t.LiteralExpr(nameStr + "__T")]),
+                  mcall("__makeList", "run", *extends),
+                  mcall("__makeList", "run", *implements),
+                  mcall("__makeList", "run", *script)))
+    if guard:
+        return t.MethodCallExpr(
+            t.Def(t.ListPattern([name, guard], None), None, makeIFace("makePair")),
+                  "get", [t.LiteralExpr(0)])
+    else:
+        return t.Def(name, None, makeIFace("run"))
+
 
 def validateFor(self, left, right):
     if left.outNames() & right.namesUsed():

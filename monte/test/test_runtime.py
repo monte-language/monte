@@ -136,13 +136,31 @@ class EvalTest(unittest.TestCase):
             monte_eval('def a := "baz"; def `foo @x$a` := "foo baz"; x'),
             String(u""))
 
-        self.assertEqual(monte_eval("true and false"), false)
-        self.assertEqual(monte_eval("[(def x := true) and true, x]"), ConstList((true, true)))
+    def test_and(self):
+        self.assertEqual(monte_eval("true && false"), false)
+        self.assertEqual(monte_eval("[(def x := true) && true, x]"), ConstList((true, true)))
 
     def test_or(self):
-        self.assertEqual(monte_eval("true or false"), true)
-        self.assertEqual(monte_eval("[(def x := true) or true, x]"), ConstList((true, true)))
+        self.assertEqual(monte_eval("true || false"), true)
+        self.assertEqual(monte_eval("[(def x := true) || true, x]"), ConstList((true, true)))
 
+    def test_binding(self):
+        self.assertEqual(monte_eval("def x := 1; (&&x).get().get()"), Integer(1))
+
+    def test_interface(self):
+        self.assertEqual(monte_eval(
+            "interface Foo { to doStuff(x)} ; object blee implements Foo {}; blee =~ _ :Foo"),
+                         true)
+
+    def test_interfaceGuards(self):
+        self.assertEqual(monte_eval(dedent("""
+            interface Foo guards FooStamp:
+                to doStuff(x)
+            object blee implements FooStamp:
+                pass
+            blee =~ _ :Foo
+        """)),
+                         true)
 
 class EqualizerTest(unittest.TestCase):
     def test_prims(self):
@@ -255,7 +273,7 @@ class AuditingTest(unittest.TestCase):
                     return true
             object auditSample implements approver {}
             object auditSample_as as approver {}
-            __auditedBy(approver, auditSample) and __auditedBy(approver, auditSample_as)
+            __auditedBy(approver, auditSample) && __auditedBy(approver, auditSample_as)
         """,
                  true)
 
@@ -273,7 +291,7 @@ class AuditingTest(unittest.TestCase):
             object noop:
                 to audit(audition):
                     return false
-            __auditedBy(noop, object x implements noop {}) or __auditedBy(noop, object y as noop {})
+            __auditedBy(noop, object x implements noop {}) || __auditedBy(noop, object y as noop {})
         """,
                  false)
 
@@ -317,6 +335,7 @@ class AuditingTest(unittest.TestCase):
             [__auditedBy(delegatingAuditor, x), __auditedBy(approver, x)] == [false, true]
         """,
                  true)
+
 
 class BindingGuardTest(unittest.TestCase):
     def setUp(self):

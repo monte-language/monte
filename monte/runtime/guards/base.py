@@ -1,5 +1,6 @@
 from monte.runtime.base import MonteObject, ejector, throw
 from monte.runtime.data import true, false
+from monte.runtime.data import true, false
 
 class PrintFQN(object):
     def _printOn(self, out):
@@ -92,3 +93,72 @@ class SelflessGuard(Guard):
 
 selflessGuard = SelflessGuard()
 
+
+class ParamDesc(MonteObject):
+    def __init__(self, name, guard):
+        self.name = name
+        self.guard = guard
+
+
+class MessageDesc(MonteObject):
+    def __init__(self, doc, verb, params, resultGuard):
+        self.doc = doc
+        self.verb = verb
+        self.params = params
+        self.resultGuard = resultGuard
+
+class ProtocolDesc(MonteObject):
+    def __init__(self, doc, fqn, supers, auditors, msgs):
+        self.doc = doc
+        self.fqn = self._m_fqn = fqn
+        self.supers = supers
+        self.auditors = auditors
+        self.messages = msgs
+
+    def audit(self, audition):
+        return true
+
+    def coerce(self, specimen, ej):
+        from monte.runtime.audit import auditedBy
+        if auditedBy.run(self, specimen) is true:
+            return specimen
+        else:
+            conformed = specimen._conformTo(self)
+            if auditedBy.run(self, conformed):
+                return conformed
+            else:
+                throw.eject(ej, "Not stamped by %s" % (self,))
+
+    @classmethod
+    def makePair(cls, doc, fqn, supers, auditors, msgs):
+        from monte.runtime.tables import ConstList
+        stamp = InterfaceStamp()
+        ig = InterfaceGuard(doc, fqn, supers, auditors, msgs, stamp)
+        return ConstList([ig, stamp])
+
+
+class InterfaceStamp(MonteObject):
+
+    def audit(self, audition):
+        return true
+
+
+class InterfaceGuard(MonteObject):
+    def __init__(self, doc, fqn, supers, auditors, msgs, stamp):
+        self.doc = doc
+        self.fqn = fqn
+        self.supers = supers
+        self.auditors = auditors
+        self.messages = msgs
+        self.stamp = stamp
+
+    def coerce(self, specimen, ej):
+        from monte.runtime.audit import auditedBy
+        if auditedBy.run(self.stamp, specimen) is true:
+            return specimen
+        else:
+            conformed = specimen._conformTo(self)
+            if auditedBy.run(self, conformed):
+                return conformed
+            else:
+                throw.eject(ej, "Not stamped by %s" % (self,))
