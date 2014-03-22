@@ -628,8 +628,12 @@ class PythonWriter(object):
         if kind == 'Context':
             ctx.layout.metaContextExpr = True
             f = ctx.layout.frame
-            return "_monte.StaticContext(%r, %r, _m_%s_Script._m_objectExpr)" % (
-                f.fqnPrefix, [b.name for b in f.fields], f.selfName)
+            if f.selfName:
+                objExpr = "_m_%s_Script._m_objectExpr" % f.selfName
+            else:
+                objExpr = "None"
+            return "_monte.StaticContext(%r, %r, %s)" % (
+                f.fqnPrefix, [b.name for b in f.fields], objExpr)
         elif kind == 'State':
             f = ctx.layout.frame
             return '_monte.Map((%s))' % ', '.join('(%r, _monte.getSlot(%s, %r))' % ('&' + b.name, f.selfName, b.pyname.split('.')[1])

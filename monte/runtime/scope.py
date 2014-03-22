@@ -4,7 +4,7 @@ from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
 from monte.runtime.data import (Integer, true, false, nan, infinity, null)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
-from monte.runtime.guards.base import anyGuard, selflessGuard
+from monte.runtime.guards.base import anyGuard, selflessGuard, ParamDesc, MessageDesc, ProtocolDesc
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
                                        floatGuard, stringGuard, voidGuard)
 from monte.runtime.guards.tables import listGuard, mapGuard
@@ -79,9 +79,9 @@ safeScope = {
     # 'set': setGuard,
 
     ## Protocol/guard constructors
-    # '__makeMessageDesc': makeMessageDesc,
-    # '__makeParamDesc': makeParamDesc,
-    # '__makeProtocolDesc': makeProtocolDesc,
+    '__makeMessageDesc': MessageDesc,
+    '__makeParamDesc': ParamDesc,
+    '__makeProtocolDesc': ProtocolDesc,
 
     ## guard meta
     'ValueGuard': anyGuard,
