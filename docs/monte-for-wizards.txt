@@ -1,0 +1,533 @@
+# -*- mode: org -*-
+* Monte For Wizards
+** Why Monte?
+Every new language should have a justification for its existence.
+*** Inspired by E and Python
+Monte right now is E with slightly different syntax and changed iteration semantcs.
+For a history of E's ideas, see http://www.erights.org/history/index.html
+*** Intended for networked and distributed systems
+*** Goal of supporting 10x the complexity of Python
+** Key Principles
+*** Time and state
+**** Event loop
+**** Deterministic turns
+**** Immutable objects
+*** Concurrency and IO
+**** Promises
+**** Vats
+**** Tubes
+**** Lack of blocking APIs
+*** Readable code
+**** Lack of mutable globals
+**** Objects, no classes
+**** Guards and interfaces
+**** Auditors
+*** Object-capability security
+**** Encapsulation
+**** Ejectors
+**** POLA in library design
+** Sketch of semantics
+*** system-level view
+Monte programs are a collection of vats, running in one or more
+processes on one or more hosts.  Vats contain three elements: a stack,
+a queue, and a heap. All three contain Monte objects. The queue
+contains messages to objects in the heap; messages consist of a verb
+and may contain objects passed as arguments. Execution of code in a
+vat progresses by turns; each turn is started by delivering the next
+message in the queue to its recipient, which can result in activation
+records being placed on the stack and further messages going into the
+queue. The turn progresses until the stack is empty. A new turn begins
+with the next message on the queue.
+*** object-level view
+Monte is a pure object-oriented language in the Smalltalk
+tradition. All values are objects and all computation is done by
+sending messages to objects. Unlike Smalltalk, Python, Java, etc.,
+objects are not instances of classes. Unlike Self or Javascript,
+objects are not derived from prototypes. Monte objects are defined via
+object literal syntax as closures over variable bindings. Specifically
+unlike Python, objects don't have attributes, merely responses to
+messages.
+*** method-level view
+Monte provides both immediate, synchronous calls to methods and
+eventual, asynchronous sends to methods. The former provides the usual
+subroutine-invocation semantics, whereas the latter enqueues a message
+to be delivered in a subsequent vat turn. Monte Names for objects are
+encapsulated in bindings.
+*** binding semantics
+A Monte name binding consists of a slot and a slot guard. Assignment
+to names and accessing names invokes methods on that name's slot. This
+can be used to share state between objects, and perform actions on
+reads from/writes to names. Slot guards for bindings closed over an
+object are revealed to auditors, during auditing.
+*** Guards and interfaces
+Name bindings may have guards, which are given objects and may either
+accept, coerce, or reject them. Coercion results in the value produced
+by the guard being different from the specimen given. The specimen may
+be asked to conform itself to the guard as part of coercion.
+
+Interface expressions are a tool for creating trivial guards; an
+object expression may declare that it implements an interface, and the
+interface object may be used as a guard to accept only objects that
+declare that interface.
+*** Reference semantics
+This is a big topic and you should read
+http://www.erights.org/elib/concurrency/refmech.html for now.
+** Syntax
+Monte's syntax is largely C-derived with an offside rule like Python's
+and Haskell's. However, it's an expression language like Scheme. The
+compromise is achieved by using braces and semicolons to delineate
+blocks and separate expressions in general, but use indentation and
+newlines for this in "statement position", which is chiefly the
+toplevel of the file and inside an indented block.
+**** Pattern matching
+Patterns attempt to match objects and either succeed or fail.
+***** Usage
+There are five places where patterns are used:
+****** Method parameters
+Parameters to methods are patterns which are matched against
+arguments. Match failure raises an exception.
+****** Matchers
+match patt {}
+When 'match' is used in an object expression, 'patt' is
+matched against a message (a [verb, arglist] pair) sent to the object.
+****** def expressions
+def patt := val
+
+The pattern 'patt' is matched against the object 'val' and an
+exception is raised if the match fails.
+
+def patt exit e := val
+
+The pattern 'patt' is matched against the object 'val' and the ejector
+'e' is invoked if the match fails.
+
+****** Match-bind expressions
+val =~ patt
+
+The pattern 'patt' is matched against the object 'val'. If the match
+fails, 'false' is returned. On success, 'true' is returned.
+
+val !~ patt
+
+The pattern 'patt' is matched against the object 'val'. If the match
+fails, 'true' is returned. On success, 'false' is returned.
+****** Switch expressions
+switch (val) {
+    match patt1 {}
+    match patt2 {}
+}
+
+The pattern 'patt1' is matched against the object 'val'. If the match
+fails, the next matcher is invoked, matching 'patt2' against
+'val'. The first pattern to match results in its associated block
+being evaluated. If no patterns match, an exception is raised.
+***** Patterns
+****** FinalPattern
+x
+::"hello, world"
+x :G
+
+Final patterns match an object and bind a name to them, optionally
+testing them for guard conformance. Guard conformance
+failure causes pattern match failure.
+****** VarPattern
+var x
+var ::"hello, world"
+var x :G
+
+Var patterns match an object and bind a mutable name to them,
+optionally testing them for guard conformance. Guard
+conformance failure causes pattern match failure. Later assignments to
+'x' will be tested for guard conformance as well.
+****** BindPattern
+bind x
+bind x ::"hello, world"
+bind x :G
+
+Bind patterns match an object and bind it to a forward-declared name,
+optionally testing for guard conformance.
+
+****** SlotPattern
+&x
+&::"hello, world"
+&x :G
+
+Slot patterns match an object and bind them to the slot of the
+pattern's name, optionally testing the object for guard conformance.
+****** BindingPattern
+&&x
+&&::"hello, world"
+
+Binding patterns match an object and use it as the binding for the
+given name.
+****** IgnorePattern
+_
+_ :G
+
+IgnorePattern matches an object, optionally requiring conformance to a
+guard.
+****** ListPattern
+[p, q]
+[p, q] + rest
+
+List patterns match lists, matching each subpattern against the items
+in the list.  if '+' is used, a list pattern of size N is matched
+against the first N items in the list, and the 'rest' pattern is
+matched against the remaining items. If '+' is not used the list
+pattern only matches lists of the same size.
+****** MapPattern
+["k1" => p, (k2) => q]
+["k1" => p := v1, (k2) => q := v2]
+["k1" => p, "k2" => q] | rest
+[=> p, => q]
+
+Map patterns match maps. Keys are either literal strings or
+expressions in parentheses. The subpatterns are matched against the
+values for the keys. ':=' may be used to specify a default value to
+match a subpattern against if the key is absent.
+
+The 'importer' syntax without keys is a shortcut for binding names
+identical to string keys in a map; '[=> x, => y]' is equivalent to
+'["x" => x, "y" => y]'.
+****** SamePattern
+==val
+
+Same patterns match objects that compare same to their value.
+****** NotSamePattern
+!=val
+
+Not-same patterns match objects that do not compare same to their value.
+****** QuasiliteralPattern
+foo`some text @p more text @{q :G} ...`
+
+Quasiliteral patterns invoke a quasiparser with text containing
+pattern holes. The resulting matcher object is invoked with the object
+to be matched, and the patterns in the holes are matched against the
+specimens it extracts.
+****** ViaPattern
+via (a) p
+****** SuchThatPattern
+p ? a
+****** CallPattern
+a(p, q)
+
+**** Expressions
+***** Literals
+1
+0x1
+1.0
+'a'
+'\u23b6'
+"some unicode text"
+[1, 2, 'x']
+[1 => 'a', 2 => "b"]
+***** Simple expressions
+****** Nouns
+foo
+__equalizer
+::"hello, world"
+****** Pattern binding
+def p := a
+def p exit a := b
+****** Forward declaration
+def x
+****** Method calls
+a.b(c, d)
+a(b, c)
+
+****** Eventual sends
+a <- b(c, d)
+a <- (b, c)
+****** Method currying
+a.b
+****** Indexing
+a[b, c]
+****** Binary operators
+a ** b
+a * b
+a / b
+a // b
+a % b
+a %% b
+a + b
+a - b
+a >> b
+a << b
+a .. b
+a ..! b
+a > b
+a < b
+a >= b
+a <= b
+a <=> b
+a =~ p
+a !~ p
+a == b
+a != b
+a &! b
+a ^ b
+a & b
+a | b
+a && b
+a || b
+****** Assignment operators
+a := b
+a += b
+a -= b
+a *= b
+a /= b
+a //= b
+a %= b
+a %%= b
+a **= b
+a >>= b
+a <<= b
+a &= b
+a |= b
+a ^= b
+a foo= b
+****** Unary operators
+-a
+!a
+~a
+****** Guard conformance
+a :B
+****** Slot expressions
+&foo
+&::"hello, world"
+****** Binding expressions
+&&foo
+&&::"hello, world"
+****** Quasiliterals
+someParser`text with $x holes: ${1 + 1}`
+****** Special ejectors
+break
+break a
+break(a)
+continue
+continue a
+continue(a)
+return
+return a
+return(a)
+****** List comprehensions
+[a for p in b if c]
+[a for p => q in b if c]
+****** Map comprehensions
+[a => b for p in c if d]
+[a => b for p => q in c if d]
+***** Block expressions
+Each form with braces can also be written as an indented block.
+****** FunctionExpr
+def fun(p, q) :optionalGuard { body }
+****** ObjectExpr
+object foo {
+    to someMethod(p, q) {
+        methBody
+    }
+
+    method rawMethod(p, q) {
+        methBody
+    }
+     match [verb, arglist] {
+         matcherBody
+     }
+}
+object foo as someAuditor { ... }
+object foo implements firstAuditor, secondAuditor { ... }
+object foo extends baz { ... }
+
+/** doc string */
+object foo as someAuditor implements firstAuditor, secondAuditor extends baz { ... }
+****** InterfaceExpr
+interface Foo { to interfaceMethod(p, q) { ... } }
+interface Foo guards FooStamp { ... }
+****** IfExpr
+if (test) { consq } else if (test2) { consq2 } else { alt }
+****** ForExpr
+for valuePatt in iterableExpression { body }
+for keyPatt => valuePatt in iterableExpression { body }
+for valuePatt in iterableExpression { body } catch p { catchblock }
+****** WhileExpr
+while (test) { body }
+while (test) { body } catch p { catchblock }
+****** SwitchExpr
+switch (candidate) { match p { body } ... }
+****** EscapeExpr
+
+escape e { body } catch p { catchbody }
+****** TryExpr
+try { block } catch p { catchblock1 } catch q { catchblock2 } finally { finblock }
+****** WhenExpr
+when (x, y) -> { whenblock } catch p { catchblock }
+****** LambdaExpr
+/** docstring */ fn p, q { body }
+****** MetaExpr
+meta.getState()
+meta.context()
+
+**** Expansion
+Monte's syntax is sugar over a kernel language, Kernel-E. Every Monte
+syntax construct expands to a Kernel-E expression.
+
+***** Kernel patterns
+****** FinalPattern
+****** VarPattern
+****** IgnorePattern
+****** ListPattern
+Kernel list patterns do not allow '+ rest'.
+****** ViaPattern
+****** BindingPattern
+***** Kernel expressions
+****** Literals
+****** Nouns
+****** Binding expressions
+****** Method calls
+****** Def expressions
+Kernel def expressions may not use the names bound on the left in the
+expression on the right.
+****** Escape expressions
+****** Object expressions
+Kernel object expressions do not use 'to' for methods, only 'method',
+and do not support the 'extends' keyword.
+****** Assignment expressions
+****** Try/finally expressions
+****** Try/catch expressions
+Kernel try/catch expressions may only have one catch block.
+****** If expressions
+****** Meta expressions
+** Runtime objects
+*** Primitive values
+true, false, null, NaN, Infinity
+*** Flow control
+**** M
+Provides 'call' and 'send' methods to invoke methods by name.
+**** throw
+Callable as throw(reason) to throw an exception or
+throw.eject(optEjector, value) to either invoke an ejector or throw an
+exception if optEjector is null.
+**** __loop
+Iteration primitive. Used in syntax expansion of 'for'; exhausts an
+iterator, invoking a callable for each item in it.
+*** Reference/object operations
+**** Ref
+Provides methods for creating and examining references, and adding
+callbacks to them.
+**** DeepFrozen
+Guard for DeepFrozen (i.e., transitively immutable) objects.
+**** Selfless
+Guard for selfless (i.e. comparable by value not identity) objects.
+**** Transparent
+Guard for transparent (i.e. no hidden state) objects.
+**** Data
+Guard for data (i.e. completely serializable) objects.
+**** PassByCopy
+Guard for objects that can be copied when passed to another vat,
+rather than having to be represented as a far ref.
+**** pbc
+Guard for objects passed by construction to other vats.
+*** Tracing
+**** trace
+Emits a string to the trace log.
+**** traceln
+Emits a string followed by a newline to the trace log.
+*** Data constructors
+__makeList
+__makeMap
+__makeInt
+__makeFinalSlot
+__makeVarSlot
+__makeOrderedSpace
+*** Basic guards
+any
+void
+boolean
+str
+char
+float
+int
+list
+map
+set
+Tuple
+__Portrayal
+near
+rcvr
+Audition
+*** Guard utilities
+all
+not
+notNull
+nullOk
+*** Guard meta
+ValueGuard
+Guard
+__makeGuard
+*** Interface constructors
+__makeMessageDesc
+__makeParamDesc
+__makeProtocolDesc
+*** Quasiparsers
+simple__quasiParser
+monte__quasiParser
+*** Utilities for syntax expansions
+__accumulateList
+__accumulateMap
+__bind
+__booleanFlow
+__comparer
+__equalizer
+__iterWhile
+__makeVerbFact
+__mapEmpty
+__mapExtract
+__matchSame
+__quasiMatcher
+__slotToBinding
+__splitList
+__suchThat
+__switchFailed
+__promiseAllFulfilled
+__validateFor
+
+** Tour of implementation
+
+*** lexer.py
+Responsible for breaking up Monte source code into tokens.
+MonteLexer.getNextToken is the primary routine in this module. This
+code was copied from an earlier design and has been heavily modified
+since. Rewriting it to be simpler would be great -- possibly with an
+explicit state machine for recognizing partial and complete inputs, to
+allow easy implementation of a REPL.
+
+SourceSpan and friends are used to track the location of tokens in the
+file they were parsed from.
+*** parser.py
+Monte uses a Parsley grammar with a couple unusual modifications;
+EParserBase overrides some core Parsley rules to make the grammar
+parse a sequence of tokens rather than a string of characters. The
+other unusual piece is convertInfix; instead of expressing infix
+syntax as Parsley rules, the shunting yard algorithm is used to
+properly nest binary operators by precedence.
+*** monte.parsley
+The Monte grammar produces a term-tree AST from a sequence of tokens.
+*** expander.py
+The entry point for this code is expand(), which takes a Monte AST and
+produces a Kernel-E AST from it. It uses Parsley in a somewhat odd
+way, doing recursive matching on tree nodes. One tree traversal is
+done to collect scope information -- names used and names bound in a
+subtree. The other is done to convert each syntax node to its
+expansion.
+*** compiler.py
+This compiler takes a Kernel-E AST and generates a Python module from
+it. Object expressions are translated into Python classes, and Monte
+methods are translated into Python methods. Ejectors are translated to
+unique exception classes.
+*** runtime/
+Implementation of various core objects. runtime/base.py contains
+MonteObject, the common superclass for all objects used in Monte.
+** Unresolved design questions
+*** Syntax
+*** Module system
+*** Library packaging
+*** Python<->E interoperability
