@@ -1,4 +1,5 @@
 def [_any, _all] := import("anyAll")
+def atoi := import("atoi")
 
 def _glueReps([x, xs]):
     if (xs == null):
@@ -421,20 +422,6 @@ def justFirst(x, y):
 def justSecond(x, y):
     return [reduction, [catenation, x, y], def _([x, y]) { return y }]
 
-def atoi(cs):
-    def ns := [c.asInteger() - 48 for c in cs]
-    var rv := 0
-    for n in ns:
-        rv := rv * 10 + n
-    return rv
-
-def testAToI(assert):
-    def testLUE():
-        assert.equal(atoi("42"), 42)
-    return [
-        testLUE,
-    ]
-
 def oneOrMore(l):
     return [catenation, l, [repeat, l]]
 
@@ -537,7 +524,6 @@ unittest([
     testAlternation,
     testCatenation,
     testRepeat,
-    testAToI,
     testNumber,
     testParseValue,
 ])
