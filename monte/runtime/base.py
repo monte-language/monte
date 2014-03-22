@@ -36,6 +36,7 @@ class MonteObject(object):
         stamps = []
         for auditor in auditors:
             audition.ask(auditor)
+        audition._active = False
         self._m_auditorStamps = audition.approvers
 
     def _m_guardMethods(self, guards):

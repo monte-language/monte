@@ -1,4 +1,4 @@
-from monte.runtime.audit import theAuditor
+from monte.runtime.audit import auditedBy
 from monte.runtime.base import throw
 from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
 from monte.runtime.data import (Integer, true, false, nan, infinity, null)
@@ -103,7 +103,7 @@ safeScope = {
     # 'rcvr': rcvrGuard,
 
     ## Primitive: reference operations
-    '__auditedBy': theAuditor,
+    '__auditedBy': auditedBy,
     '__equalizer': equalizer,
 
     ## Code loading
