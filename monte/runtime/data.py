@@ -506,6 +506,9 @@ class String(MonteObject):
         if not isinstance(other, String):
             raise RuntimeError("%r is not a string" % (other,))
 
+        from monte.runtime.compiler_helpers import wrap
+        return wrap(tuple([String(s) for s in self.s.split(other.s)]))
+
     # E calls this 'rjoin'.
     def join(self, items):
         return String(self.s.join(items))
