@@ -14,7 +14,7 @@ def readHole(s :str) :any:
         match =='@':
             tag := pattern
         match _:
-            throw(`$s is not a valid hole`)
+            return null
     def inner := s.slice(2, s.size() - 1)
     def index := atoi(inner)
     return [tag, index]
@@ -35,4 +35,4 @@ unittest([
     testReadHole,
 ])
 
-readHole
+[readHole, pattern, value]
