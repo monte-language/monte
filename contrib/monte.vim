@@ -22,6 +22,7 @@ syn keyword monteBool true false
 
 " Literal ints
 syn match monteInt '\d\+'
+syn match monteInt '0x[0-9a-fA-F]\+'
 
 " Literal strings
 syn region monteStr start='"' end='"'
@@ -37,7 +38,7 @@ syn match monteHole '@\w\+' contained
 syn match monteHole '@{[^}]\+}' contained
 
 " Universal scope
-syn keyword monteUniversal any boolean char float int void
+syn keyword monteGuard any boolean char float int void
 
 " Operators
 syn match monteOperator '\w\+='
@@ -45,10 +46,17 @@ syn match monteOperator ' [~!%^&*-=+:<>]='
 syn match monteOperator ' [!=]\~'
 syn match monteOperator ' %%='
 syn match monteOperator ' \*\*='
+syn match monteOperator ' <<='
+syn match monteOperator ' >>='
 syn match monteOperator ' [~!%^&*-+<>]'
+syn match monteOperator ' <<'
+syn match monteOperator ' >>'
 
 " Errors
 syn match monteEqualError ' =[^~=>]'
+
+" Identifiers
+syn match monteIdentifier '[a-zA-Z_][a-zA-Z0-9_]*'
 
 let b:current_syntax = "monte"
 
@@ -61,6 +69,7 @@ hi def link monteBool Boolean
 hi def link monteInt Number
 hi def link monteStr String
 hi def link monteHole Identifier
-hi def link monteUniversal Type
+hi def link monteGuard Type
 hi def link monteOperator Operator
 hi def link monteEqualError Error
+" hi def link monteIdentifier Identifier
