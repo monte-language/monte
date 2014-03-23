@@ -60,7 +60,7 @@ class RefOps(MonteObject):
         return _makePromise(self.vat)
 
     def broken(self, problem):
-        return UnconnectedRef(problem)
+        return UnconnectedRef(problem, self.vat)
 
     def optBroken(self, optProblem):
         if optProblem is null:
