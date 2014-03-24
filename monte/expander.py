@@ -449,7 +449,7 @@ SuchThatPattern(@pattern @expr) -> t.ViaPattern(t.NounExpr("__suchThat"),
                                       t.ListPattern([pattern, t.ViaPattern(mcall("__suchThat", "run", expr), t.IgnorePattern(None))], None))
 
 QuasiPattern(null [qpatt:qs]) -> t.ViaPattern(mcall("__quasiMatcher", "run", mcall("simple__quasiParser", "matchMaker", qs[0]), mcall("__makeList", "run", *qs[1])), t.ListPattern(qs[2], None))
-QuasiPattern(null [qpatt:qs]) -> t.ViaPattern(mcall("__quasiMatcher", mcall(name + "__quasiParser", "matchMaker", qs[0]), "run", mcall("__makeList", "run", *qs[1])), t.ListPattern(qs[2], None))
+QuasiPattern(@name [qpatt:qs]) -> t.ViaPattern(mcall("__quasiMatcher", "run", mcall(name + "__quasiParser", "matchMaker", qs[0]), mcall("__makeList", "run", *qs[1])), t.ListPattern(qs[2], None))
 
 Interface(@doco nameAndString:nameAnd @guard @extends @implements
           InterfaceFunction(:params :resultGuard))

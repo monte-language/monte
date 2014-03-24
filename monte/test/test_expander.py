@@ -249,7 +249,6 @@ class ExpanderTest(unittest.TestCase):
                                            ["BindingExpr", ["NounExpr", "b__5"]]]]]]]]],
                          ["NounExpr", "ok__2"]]])
 
-
     def test_for(self):
         self.assertRaises(ParseError, self.parse, "for via (a) x in [def a := 2, 1] {2}")
         self.assertEqual(self.parse("for x in y { z }"),
@@ -750,7 +749,7 @@ class ExpanderTest(unittest.TestCase):
                             "run",
                             [None,
                               ["MethodCallExpr",
-                               ["MethodCallExpr", ["Meta", "context"],
+                               ["MethodCallExpr", ["Meta", "Context"],
                                 "getFQNPrefix", []],
                                "add",
                                [["LiteralExpr", "foo__T"]]],
@@ -769,7 +768,7 @@ class ExpanderTest(unittest.TestCase):
                             "run",
                             [["LiteralExpr", "yay"],
                               ["MethodCallExpr",
-                               ["MethodCallExpr", ["Meta", "context"],
+                               ["MethodCallExpr", ["Meta", "Context"],
                                 "getFQNPrefix", []],
                                "add",
                                [["LiteralExpr", "foo__T"]]],
@@ -902,7 +901,7 @@ class ExpanderTest(unittest.TestCase):
                                      ["NounExpr", "z"]]]]],
                                  []]]]]])
 
-    def test_quasiliteral(self):
+    def test_quasiexpr(self):
         self.assertEqual(self.parse("`$x`"),
                          ['MethodCallExpr',
                              ['MethodCallExpr',
@@ -919,3 +918,37 @@ class ExpanderTest(unittest.TestCase):
                              'substitute',
                              [['MethodCallExpr', ['NounExpr', '__makeList'],
                                  'run', [['NounExpr', 'x']]]]])
+
+    def test_quasipattern(self):
+        self.assertEqual(self.parse("def foo`(@x)` := 1"),
+                         ['Def',
+                          ['ViaPattern',
+                           ['MethodCallExpr',
+                            ['NounExpr', '__quasiMatcher'],
+                            "run",
+                            [['MethodCallExpr',
+                             ['NounExpr', 'foo__quasiParser'],
+                             'matchMaker', [['LiteralExpr', '(@{0})']]],
+                            ['MethodCallExpr', ['NounExpr', '__makeList'],
+                                 'run', []]]],
+                           ['ListPattern', [['FinalPattern', ['NounExpr', 'x'], None]],
+                            None]],
+                          None,
+                          ['LiteralExpr', 1]])
+
+    def test_quasicombo(self):
+        self.assertEqual(self.parse("def foo`(@x:$y)` := 1"),
+                         ['Def',
+                          ['ViaPattern',
+                           ['MethodCallExpr',
+                            ['NounExpr', '__quasiMatcher'],
+                            "run",
+                            [['MethodCallExpr',
+                             ['NounExpr', 'foo__quasiParser'],
+                              'matchMaker', [['LiteralExpr', '(@{0}:${0})']]],
+                            ['MethodCallExpr', ['NounExpr', '__makeList'],
+                              'run', [['NounExpr', 'y']]]]],
+                           ['ListPattern', [['FinalPattern', ['NounExpr', 'x'], None]],
+                              None]],
+                          None,
+                          ['LiteralExpr', 1]])
