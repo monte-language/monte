@@ -29,6 +29,18 @@ def makeStruct(layout) :Struct:
                     m[k] := values[index]
             traceln(`Substituted $values to get $m`)
             return makeStruct(m.snapshot())
+        to matchBind(values, bytes, ej):
+            var m := [].asMap()
+            var offset := 0
+            var target := null
+            for k => var reader in layout:
+                if (readHole(reader) =~ [==value, index]):
+                    reader := values[index]
+                if (readHole(k) =~ [==pattern, target]):
+                    def slice := bytes.slice(offset, offset + reader.size())
+                    m |= [target => reader.unpack(slice)]
+                offset += reader.size()
+            return m.sortKeys()
         to pack(data):
             var l := []
             for key => packer in layout:
@@ -57,6 +69,8 @@ object struct__quasiParser:
             def [k, v] := member.split(":")
             layout[k] := v            
         return makeStruct(layout)
+    to matchMaker(template) :Struct:
+        return struct__quasiParser.valueMaker(template)
 
 var s := makeStruct(["x" => uint8, "y" => ubint16])
 var data := ["x" => 42, "y" => 1000]
@@ -73,3 +87,6 @@ data := ["x" => data, "y" => 42]
 bytes += [255, 255]
 traceln(`${p.pack(data)}`)
 traceln(`${p.unpack(bytes)}`)
+
+if ([42, 255, 0] =~ struct`@r:$uint8 @q:$ubint16`):
+    traceln(`r $r q $q`)
