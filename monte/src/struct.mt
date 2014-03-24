@@ -1,23 +1,26 @@
 def [readHole, pattern, value] := import("terml.readHole")
 
-object uint8:
-    to pack(data):
+interface Struct:
+    pass
+
+object uint8 implements Struct:
+    to pack(data :int):
         return [data & 0xff]
-    to unpack(bytes):
+    to unpack(bytes) :int:
         return bytes[0]
-    to size():
+    to size() :int:
         return 1
 
-object ubint16:
-    to pack(data):
+object ubint16 implements Struct:
+    to pack(data :int):
         return [data >> 8 & 0xff, data & 0xff]
-    to unpack(bytes):
+    to unpack(bytes) :int:
         return bytes[0] << 8 | bytes[1]
-    to size():
+    to size() :int:
         return 2
 
-def makeStruct(layout):
-    return object struct:
+def makeStruct(layout) :Struct:
+    return object struct implements Struct:
         to substitute(values):
             traceln(`Values $values, layout $layout`)
             def m := layout.diverge()
@@ -40,14 +43,14 @@ def makeStruct(layout):
                 m |= [key => reader.unpack(slice)]
                 offset += reader.size()
             return m
-        to size():
+        to size() :int:
             var i := 0
             for v in layout:
                 i += v.size()
             return i
 
 object struct__quasiParser:
-    to valueMaker(template):
+    to valueMaker(template) :Struct:
         def members := template.split(" ")
         def layout := [].asMap().diverge()
         for member in members:
