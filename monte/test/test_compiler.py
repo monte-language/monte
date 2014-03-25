@@ -236,7 +236,7 @@ class CompilerTest(unittest.TestCase):
                     }
 
                 def inner(o, x):
-                    q = _m_q_Script((_monte.FinalSlot(o.f, None, unsafe=True), o._m_slots[f][0]))
+                    q = _m_q_Script((_monte.FinalSlot(o.f, None, unsafe=True), o._m_slots["f"][1]))
                     return q.do()
 
             class _m_outer_Script(_monte.MonteObject):
@@ -356,6 +356,67 @@ class CompilerTest(unittest.TestCase):
              foo = _m_foo_Script()
              foo
              """)
+
+    def test_doubleNestVar(self):
+        self.eq_(
+            '''
+            object a:
+                to go():
+                    var x := 0
+                    return object b:
+                        method do():
+                          return object c:
+                              method it():
+                                  x
+            ''',
+            '''
+            class _m_c_Script(_monte.MonteObject):
+                _m_fqn = '__main$a$b$c'
+                x = _monte._SlotDescriptor('x')
+                def __init__(c, x_slotPair):
+                    c._m_slots = {
+                        'x': x_slotPair,
+                    }
+
+                def it(c):
+                    return c.x
+
+            class _m_b_Script(_monte.MonteObject):
+                _m_fqn = '__main$a$b'
+                _m___return = _monte._SlotDescriptor('__return')
+                x = _monte._SlotDescriptor('x')
+                def __init__(b, _m___return_slotPair, x_slotPair):
+                    b._m_slots = {
+                        '__return': _m___return_slotPair,
+                        'x': x_slotPair,
+                    }
+
+                def do(b):
+                    c = _m_c_Script((b._m_slots["x"][0], b._m_slots["x"][1]))
+                    return b._m___return(c)
+
+            class _m_a_Script(_monte.MonteObject):
+                _m_fqn = '__main$a'
+                def go(a):
+                    _m___return = _monte.ejector("__return")
+                    try:
+                        _g_x3 = _monte.wrap(0)
+                        x = _monte.VarSlot(_monte.null, _g_x3, _monte.throw)
+                        b = _m_b_Script((_monte.FinalSlot(_m___return, _monte.null, unsafe=True), _monte.FinalSlot.asType().get(_monte.null)), (x, _monte.VarSlot.asType().get(_monte.null)))
+                        _m___return(b)
+                        _g_escape2 = _monte.null
+                    except _m___return._m_type, _g___return1:
+                        _g_escape2 = _g___return1.args[0]
+                    finally:
+                        _m___return.disable()
+                    return _g_escape2
+
+            a = _m_a_Script()
+            a
+            '''
+            )
+
+
 
     def test_implements(self):
         self.eq_(
