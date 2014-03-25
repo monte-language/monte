@@ -72,6 +72,4 @@ def makeTube(pump):
 
 
 def f := makeListFount([1, 2, 3, 4, 5])
-def d := makeListDrain()
-f.flowTo(d)
-traceln(`${d.getContents()}`)
+f.sendNext()
