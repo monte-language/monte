@@ -13,7 +13,7 @@ def makeListFount(data):
     var pauses := 0
     return object listFount:
         to sendNext():
-            while (drain != null & pauses == 0 & index >= data.size()):
+            while (drain != null & pauses == 0 & index < data.size()):
                 drain.receive(data[index])
                 index += 1
         to flowTo(newDrain):
@@ -72,4 +72,6 @@ def makeTube(pump):
 
 
 def f := makeListFount([1, 2, 3, 4, 5])
-f.sendNext()
+def d := makeListDrain()
+f.flowTo(d)
+traceln(`${d.getContents()}`)
