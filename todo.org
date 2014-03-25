@@ -86,6 +86,7 @@
      - [ ] HAMTs
      - [ ] RB trees
    - [ ] Term trees
+   - [ ] Tubes
   - [ ] Auditors
   - [ ] Refs
   - [ ] Tables
