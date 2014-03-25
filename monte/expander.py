@@ -228,6 +228,7 @@ FinalPattern(NounExpr(@name) @guardScope) -> StaticScope(defNames=[name]).add(gu
 FinalPattern(TempNounExpr(@name @idx) @guardScope) -> StaticScope(defNames=[name + str(idx)]).add(guardScope)
 SlotPattern(NounExpr(@name) @guardScope) -> StaticScope(varNames=[name]).add(guardScope)
 BindingPattern(NounExpr(@name)) -> StaticScope(varNames=[name])
+BindingPattern(TempNounExpr(@name @idx)) -> StaticScope(varNames=[name + str(idx)])
 ListPattern(@patternScopes null) -> union(patternScopes)
 ViaPattern(@exprScope @patternScope) -> exprScope.add(patternScope)
 
@@ -244,7 +245,7 @@ Finally(@tryScope @finallyScope) -> tryScope.hide().add(finallyScope).hide()
 Escape(@ejScope @bodyScope Catch(@argScope @catcherScope)) -> ejScope.add(bodyScope).hide().add(argScope.add(catcherScope)).hide()
 Escape(@ejScope @bodyScope null) -> ejScope.add(bodyScope).hide()
 
-MatchBind(maybeDelayedNode:specimen expand:pattern) -> specimen.add(pattern)
+MatchBind(@specimen @pattern) -> specimen.add(pattern)
 
 LogicalAnd(delayed:left  delayed:right) -> self.expandAndScope(left).add(self.expandAndScope(right))
 LogicalAnd(delayed:left  @rightScope) -> self.expandAndScope(left).add(right)

@@ -219,7 +219,6 @@ class ExpanderTest(unittest.TestCase):
              ["NounExpr", "ok__1"]]])
 
     def test_matchbind(self):
-        #value
         self.assertEqual(
             self.parse("x =~ y"),
             ["SeqExpr", [["Def", ["FinalPattern", ["NounExpr", "sp__1"], None],
@@ -248,6 +247,85 @@ class ExpanderTest(unittest.TestCase):
                                           [["NounExpr", "false"],
                                            ["BindingExpr", ["NounExpr", "b__5"]]]]]]]]],
                          ["NounExpr", "ok__2"]]])
+
+    def test_suchThat(self):
+        self.assertEqual(
+            self.parse("def x ? (e) := z"),
+            ['Def',
+             ['ViaPattern',
+              ['NounExpr', '__suchThat'],
+              ['ListPattern',
+               [['FinalPattern', ['NounExpr', 'x'], None],
+                ['ViaPattern',
+                 ['MethodCallExpr',
+                  ['NounExpr', '__suchThat'],
+                  'run',
+                  [['NounExpr', 'e']]],
+                 ['IgnorePattern', None]]],
+               None]],
+             None,
+             ['NounExpr', 'z']])
+
+    def test_matchbindScope(self):
+        self.assertEqual(
+            self.parse("def x ? (f(x) =~ y) := z"),
+            ['Def',
+             ['ViaPattern',
+              ['NounExpr', '__suchThat'],
+              ['ListPattern',
+               [['FinalPattern', ['NounExpr', 'x'], None],
+                ['ViaPattern',
+                 ['MethodCallExpr',
+                  ['NounExpr', '__suchThat'],
+                  'run',
+                  [['SeqExpr',
+                    [['Def',
+                      ['FinalPattern', ['NounExpr', 'sp__1'], None],
+                      None,
+                      ['MethodCallExpr',
+                       ['NounExpr', 'f'],
+                       'run',
+                       [['NounExpr', 'x']]]],
+                     ['Def',
+                      ['ListPattern',
+                       [['FinalPattern', ['NounExpr', 'ok__2'], None],
+                        ['BindingPattern', ['NounExpr', 'y']]],
+                       None],
+                      None,
+                      ['Escape',
+                       ['FinalPattern', ['NounExpr', 'fail__3'], None],
+                       ['SeqExpr',
+                        [['Def',
+                          ['FinalPattern', ['NounExpr', 'y'], None],
+                          ['NounExpr', 'fail__3'],
+                          ['NounExpr', 'sp__1']],
+                         ['MethodCallExpr',
+                          ['NounExpr', '__makeList'],
+                          'run',
+                          [['NounExpr', 'true'],
+                           ['BindingExpr', ['NounExpr', 'y']]]]]],
+                       ['Catch',
+                        ['FinalPattern', ['NounExpr', 'problem__4'], None],
+                        ['SeqExpr',
+                         [['Def',
+                           ['ViaPattern',
+                            ['NounExpr', '__slotToBinding'],
+                            ['BindingPattern', ['NounExpr', 'b__5']]],
+                           None,
+                           ['MethodCallExpr',
+                            ['NounExpr', 'Ref'],
+                            'broken',
+                            [['NounExpr', 'problem__4']]]],
+                          ['MethodCallExpr',
+                           ['NounExpr', '__makeList'],
+                           'run',
+                           [['NounExpr', 'false'],
+                            ['BindingExpr', ['NounExpr', 'b__5']]]]]]]]],
+                     ['NounExpr', 'ok__2']]]]],
+                 ['IgnorePattern', None]]],
+               None]],
+             None,
+             ['NounExpr', 'z']])
 
     def test_for(self):
         self.assertRaises(ParseError, self.parse, "for via (a) x in [def a := 2, 1] {2}")
