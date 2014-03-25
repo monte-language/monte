@@ -116,8 +116,9 @@ class FrameScopeLayout(object):
             pyname = self.selfName + '.' + pyname.rpartition('.')[2]
         else:
             pyname = self.selfName + '.' + pyname
-        guardname = '%s._m_slots[%s][0]' % (self.selfName, f.name)
-        return Binding(f.node, pyname, FRAME, guardname, None)
+        slotname = '%s._m_slots["%s"][0]' % (self.selfName, f.name)
+        guardname = '%s._m_slots["%s"][1]' % (self.selfName, f.name)
+        return Binding(f.node, pyname, FRAME, guardname, None, slotname)
 
     def getBinding(self, name, default=_absent):
         if self.selfBinding and name == self.selfBinding.name:
@@ -203,7 +204,7 @@ class ScopeLayout(object):
         return ScopeLayout(self, self.frame, self.outer)
 
 class Binding(object):
-    def __init__(self, node, pyname, kind, bindingGuardExpr, guardExpr):
+    def __init__(self, node, pyname, kind, bindingGuardExpr, guardExpr, slotname=None):
         self.node = node
         self.pyname = pyname
         self.isFinal = node.tag.name == 'FinalPattern'
@@ -211,6 +212,10 @@ class Binding(object):
         self.guardExpr = guardExpr
         self.name = node.args[0].args[0].data
         self.kind = kind
+        if slotname is None:
+            self.slotname = self.pyname
+        else:
+            self.slotname = slotname
 
 class CompilationContext(object):
     def __init__(self, parent, mode=None, layout=None, rootWriter=None):
@@ -545,7 +550,7 @@ class PythonWriter(object):
                                                                    f.guardExpr),
                         f.bindingGuardExpr)
             else:
-                pair = (f.pyname, f.bindingGuardExpr)
+                pair = (f.slotname, f.bindingGuardExpr)
             makeSlots.append("(%s, %s)" % pair)
         return makeSlots
 
