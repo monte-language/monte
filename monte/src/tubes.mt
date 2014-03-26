@@ -66,12 +66,52 @@ def makePump():
 
 
 def makeTube(pump):
+    var upstream := var downstream := null
+    var pause := null
+    var stash := null
     return object tube:
-        to deliver(item):
-            pump.received(item)
+        to flowingFrom(fount):
+            upstream := fount
+            return tube
+        to receive(item):
+            def pumped := pump.received(item)
+            if (downstream == null):
+                pause := upstream.pauseFlow()
+                stash := pumped
+                return null
+            else:
+                return downstream.receive(pumped)
+        to progress(amount):
+            if (downstream != null):
+                downstream.progress(amount)
+        to flowStopped():
+            if (downstream != null):
+                downstream.flowStopped()
+        to flowTo(drain):
+            if (drain == null):
+                return null
+            downstream := drain
+            def nextFount := drain.flowingFrom(tube)
+            if (stash != null):
+                downstream.receive(stash)
+                stash := null
+            if (pause != null):
+                pause.unpause()
+                pause := null
+            return nextFount
+        to pauseFlow():
+            return upstream.pauseFlow()
+        to stopFlow():
+            downstream.flowStopped()
+            downstream := null
+            return upstream.stopFlow()
 
 
-def f := makeListFount([1, 2, 3, 4, 5])
-def d := makeListDrain()
-f.flowTo(d)
+def makeMapPump := import("tubes.mapPump")
+
+var f := makeListFount([1, 2, 3, 4, 5])
+var p := makeMapPump(def _(x) { return x + 1 })
+var t := makeTube(p)
+var d := makeListDrain()
+f.flowTo(t).flowTo(d)
 traceln(`${d.getContents()}`)
