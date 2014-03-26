@@ -58,60 +58,32 @@ def makePump():
         to started():
             pass
         to received(item):
-            return item
+            return [item]
         to progressed(amount):
             pass
         to stopped():
             pass
 
 
-def makeTube(pump):
-    var upstream := var downstream := null
-    var pause := null
-    var stash := null
-    return object tube:
-        to flowingFrom(fount):
-            upstream := fount
-            return tube
-        to receive(item):
-            def pumped := pump.received(item)
-            if (downstream == null):
-                pause := upstream.pauseFlow()
-                stash := pumped
-                return null
-            else:
-                return downstream.receive(pumped)
-        to progress(amount):
-            if (downstream != null):
-                downstream.progress(amount)
-        to flowStopped():
-            if (downstream != null):
-                downstream.flowStopped()
-        to flowTo(drain):
-            if (drain == null):
-                return null
-            downstream := drain
-            def nextFount := drain.flowingFrom(tube)
-            if (stash != null):
-                downstream.receive(stash)
-                stash := null
-            if (pause != null):
-                pause.unpause()
-                pause := null
-            return nextFount
-        to pauseFlow():
-            return upstream.pauseFlow()
-        to stopFlow():
-            downstream.flowStopped()
-            downstream := null
-            return upstream.stopFlow()
+def makeDoublePump():
+    return object doublePump:
+        to started():
+            pass
+        to received(item):
+            return [item, item]
+        to progressed(amount):
+            pass
+        to stopped():
+            pass
 
 
 def makeMapPump := import("tubes.mapPump")
+def makeTube := import("tubes.tube")
 
 var f := makeListFount([1, 2, 3, 4, 5])
-var p := makeMapPump(def _(x) { return x + 1 })
+var p := makeMapPump(def _(x) { return x * 2 })
 var t := makeTube(p)
+var double := makeTube(makeDoublePump())
 var d := makeListDrain()
-f.flowTo(t).flowTo(d)
+f.flowTo(t).flowTo(double).flowTo(d)
 traceln(`${d.getContents()}`)

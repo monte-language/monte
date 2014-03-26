@@ -3,7 +3,7 @@ def makeMapPump(f):
         to started():
             pass
         to received(item):
-            return f(item)
+            return [f(item)]
         to progressed(amount):
             pass
         to stopped():

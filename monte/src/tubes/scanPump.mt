@@ -5,7 +5,7 @@ def makeScanPump(f, a):
             pass
         to received(item):
             accum := f(accum, item)
-            return accum
+            return [accum]
         to progressed(amount):
             pass
         to stopped():
