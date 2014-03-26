@@ -425,7 +425,7 @@ class Float(MonteObject):
 def numWrap(n):
     if isinstance(n, float):
         return Float(n)
-    elif isinstance(n, int):
+    elif isinstance(n, (int, long)):
         return Integer(n)
     else:
         raise RuntimeError("welp: " + repr(n))

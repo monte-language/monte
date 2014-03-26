@@ -44,7 +44,7 @@ def wrap(pyobj):
     # Perform bool check before int because bool subclasses int.
     if isinstance(pyobj, bool):
         return Bool(pyobj)
-    if isinstance(pyobj, int):
+    if isinstance(pyobj, (int, long)):
         return Integer(pyobj)
     if isinstance(pyobj, float):
         return Float(pyobj)
