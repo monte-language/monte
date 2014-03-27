@@ -58,7 +58,7 @@ prim = ( literal
 
 parenExpr = "(" expr:s ')' -> s
 block = "{" (seq |-> t.SeqExpr([])):s '}' -> s
-indentBlock = ':' EOL tok('INDENT') pass (indentSeq |-> t.SeqExpr([])):s br
+indentBlock = ':' EOLs tok('INDENT') br pass (indentSeq |-> t.SeqExpr([])):s br
                tok('DEDENT') -> s
 pass = tok('pass')?
 
@@ -194,7 +194,7 @@ parenParamList = "(" (pattern:p ("," pattern)*:ps ')' -> [p] +  ps
                        | ')' -> [])
 optResultGuard = (':' guard)?
 scriptPair = "{" method*:methods matcher*:matchers br '}' -> [methods, matchers]
-indentScriptPair = ':' EOL tok('INDENT') pass indentMethod*:methods indentMatcher*:matchers br tok('DEDENT') -> [methods, matchers]
+indentScriptPair = ':' EOLs tok('INDENT') br pass indentMethod*:methods indentMatcher*:matchers br tok('DEDENT') -> [methods, matchers]
 
 method = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g block:b  -> to(doc, v, ps, g, b))
 indentMethod = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g indentBlock:b  -> to(doc, v, ps, g, b))
@@ -209,7 +209,7 @@ iguards = 'guards' pattern
 multiExtends = (('extends' br order:x ("," order)*:xs -> [x] + xs)
                  | -> [])
 iscript = "{" (messageDesc:m br -> m)*:ms '}' -> ms
-indentIScript = ':' EOL tok('INDENT') pass (messageDesc:m br -> m)*:ms br tok('DEDENT') -> ms
+indentIScript = ':' EOLs tok('INDENT') br pass (messageDesc:m br -> m)*:ms br tok('DEDENT') -> ms
 messageDesc = br (doco?:doc ("to" | "method"):to verb?:v parenParamDescList:ps optGuard:g
                 -> t.MessageDesc(doc, to, v, ps, g))
 paramDesc = (justNoun | ('_') -> None):n optGuard:g -> t.ParamDesc(n, g)
@@ -234,7 +234,7 @@ metaExpr = 'meta' "." identifier:i (?(i == 'getState') -> "State"
                                    |?(i == 'scope') -> "Scope"
                                    |?(i == 'context') -> "Context"):s "(" ')' -> t.Meta(s)
 switchExpr = 'switch' parenExpr:e "{" (matcher:m br -> m)*:ms '}' -> t.Switch(e, ms)
-indentSwitchExpr = 'switch' parenExpr:e ':' EOL tok('INDENT') (indentMatcher:m br -> m)*:ms tok('DEDENT') -> t.Switch(e, ms)
+indentSwitchExpr = 'switch' parenExpr:e ':' EOLs tok('INDENT') br (indentMatcher:m br -> m)*:ms tok('DEDENT') -> t.Switch(e, ms)
 
 tryExpr = 'try' block:tb catcher*:cs ('finally' block)?:fb -> t.Try(tb, cs, fb)
 indentTryExpr = 'try' indentBlock:tb indentCatcher*:cs (br 'finally' indentBlock)?:fb -> t.Try(tb, cs, fb)
@@ -245,7 +245,7 @@ whileExpr = 'while' parenExpr:e block:b catcher?:c -> t.While(e, b, c)
 indentWhileExpr = 'while' parenExpr:e indentBlock:b indentCatcher?:c -> t.While(e, b, c)
 
 whenExpr = 'when' parenArgs:a br "->" block:b catcher*:cs ('finally' block)?:fb -> t.When(a, b, cs, fb)
-indentWhenBlock = '->' br tok('INDENT') pass (indentSeq |-> t.SeqExpr([])):s br
+indentWhenBlock = '->' EOLs tok('INDENT') br pass (indentSeq |-> t.SeqExpr([])):s br
                tok('DEDENT') -> s
 indentWhenExpr = 'when' parenArgs:a indentWhenBlock:b indentCatcher*:cs (br 'finally' indentBlock)?:fb -> t.When(a, b, cs, fb)
 
