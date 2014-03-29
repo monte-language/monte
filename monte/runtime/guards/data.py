@@ -1,13 +1,15 @@
 from monte.runtime.base import throw
-from monte.runtime.data import bwrap, true, false, Character, Float, Integer, String
+from monte.runtime.data import (bwrap, null, true, false, Character, Float,
+                                Integer, String)
 from monte.runtime.guards.base import PythonTypeGuard, Guard, PrintFQN
 
 class VoidGuard(PrintFQN, Guard):
     _m_fqn = "void"
 
     def _subCoerce(self, specimen, ej):
-        if specimen is not None:
-            throw.eject(ej, "%r is not null" % (specimen,))
+        if specimen in [None, null]:
+            return specimen
+        throw.eject(ej, "%r is not null" % (specimen,))
 
 voidGuard = VoidGuard()
 
