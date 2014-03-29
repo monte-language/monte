@@ -226,7 +226,7 @@ forPattern = pattern:p (br "=>" pattern:px -> [p, px]
 
 ifExpr = 'if' parenExpr:p br block:b ('else' (ifExpr | block) | -> None):e -> t.If(p, b, e)
 
-indentIfExpr = 'if' parenExpr:p br indentBlock:b (br 'else' (ifExpr | indentBlock) | -> None):e -> t.If(p, b, e)
+indentIfExpr = 'if' parenExpr:p br indentBlock:b (br 'else' (indentIfExpr | indentBlock) | -> None):e -> t.If(p, b, e)
 
 lambdaExpr = br doco?:doc 'fn' patterns:ps block:b -> t.Lambda(doc, ps, b)
 
