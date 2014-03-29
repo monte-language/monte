@@ -1,10 +1,12 @@
-def TermData := any[str, int, float, char]
+def TermData := any[void, str, int, float, char]
+
 def makeTerm(tag, data, args, span):
-    if (data != null and args != null):
+    if (data != null && args != null):
         throw(`Term $tag can't have both data and children`)
     if (data !~ _ :TermData):
-        throw(`Term data can't be of type ${data._getAllegedType()}`)
-    object term:
+        throw(`Term data $data isn't of a valid type`)
+
+    return object term:
         to _uncall():
             return [makeTerm, "run", [tag, data, args, span]]
 
@@ -38,7 +40,7 @@ def makeTerm(tag, data, args, span):
                    return 1
                def dataCmp := data.op__cmp(other.getData())
                if (dataCmp != 0):
-                   return result
+                   return dataCmp
            return args.op__cmp(other.getArgs())
 
         # Used for pretty printing. Oughta be cached, but we need a
@@ -52,14 +54,14 @@ def makeTerm(tag, data, args, span):
             return myHeight
 
         to _conformTo(guard):
-            if (args.size() == 0 and [str, float, int, char].contains(guard)):
+            if (args.size() == 0 && [str, float, int, char].contains(guard)):
                 if (data == null):
                     return tag.getTagName()
                 return data
             else:
                 return term
 
-        to prettyPrintOn(out, isQuasi :bool):
+        to prettyPrintOn(out, isQuasi :boolean):
             var label := null # should be def w/ later bind
             var reps := null
             var delims := null
@@ -79,37 +81,37 @@ def makeTerm(tag, data, args, span):
                 match _ :str:
                     label := data.quote().replace("\n", "\\n")
                 match _:
-                    label := E.toQuote(data)
+                    label := M.toQuote(data)
             if (isQuasi):
-                label := (label.replace("$", "$$").replace("@", "@@")
-                               .replace("`", "``"))
-            if label == ".tuple.":
-                if (h <= 1):
+                label := label.replace("$", "$$").replace("@", "@@")
+                label := label.replace("`", "``")
+            if (label == ".tuple."):
+                if (term.getHeight() <= 1):
                     out.print("[]")
                     return
                 reps := 1
                 delims := ["[", ",", "]"]
             else if (label == ".bag."):
-                if (h <= 1):
+                if (term.getHeight() <= 1):
                     out.print("{}")
                     return
                 reps := 1
                 delims := ["{", ",", "}"]
-            else if (args.size() == 1 and args[0].getTag().getTagName()):
+            else if (args.size() == 1 && args[0].getTag().getTagName()):
                 reps := label.size()
                 delims := ["", null, ""]
-            else if (args.size() == 2 and label == ".attr."):
+            else if (args.size() == 2 && label == ".attr."):
                 reps := 4
                 delims := ["", ":", ""]
             else:
                 out.print(label)
-                if (h <= 1):
+                if (term.getHeight() <= 1):
                     # Leaf, so no parens.
                     return
                 reps := label.size() + 1
                 delims := ["(", ",", ")"]
             def [open, sep, close] := delims
-            if (h == 2):
+            if (term.getHeight() == 2):
                 # Just leaves, so one line.
                 out.print(open)
                 args[0].prettyPrintOn(out, isQuasi)

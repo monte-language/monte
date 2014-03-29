@@ -1,9 +1,9 @@
 def makeTag(code, name, dataType):
     return object tag:
-        def _uncall():
+        to _uncall():
             return [makeTag, "run", [code, name, dataType]]
 
-        def printOn(out):
+        to printOn(out):
             out.print("<")
             out.print(name)
             if (code != null):
@@ -14,20 +14,20 @@ def makeTag(code, name, dataType):
                 out.print(dataType)
             out.print(">")
 
-        def getTagCode():
+        to getTagCode():
             return code
 
-        def getTagName():
+        to getTagName():
             return name
 
-        def getDataType():
+        to getDataType():
             return dataType
 
-        def isTagForData(data):
+        to isTagForData(data):
             if (data == null):
                 return true
             if (dataType == null):
                 return false
 
-            if (data._getAllegedType() == dataType):
+            if (data =~ _ :dataType):
                 return true
