@@ -84,7 +84,8 @@ class OuterScopeLayout(object):
                            '_m_outerScope["%s"]' % n, OUTER, "_monte.anyGuard", None)
         else:
             if default is _absent:
-                raise CompileError("No global named " + repr(n))
+                raise CompileError("No global named %r; possibilities are %s"
+                        % (n, self.outers))
             else:
                 return default
 
