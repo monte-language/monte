@@ -98,7 +98,8 @@ class OuterScopeLayout(object):
             return self.bindings[n]
         else:
             if default is _absent:
-                raise CompileError("No global named " + repr(n))
+                raise CompileError("No global named %r; possibilities are %s"
+                        % (n, self.outers))
             else:
                 return default
 
