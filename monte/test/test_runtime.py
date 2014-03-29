@@ -4,7 +4,7 @@ from monte.runtime.base import toQuote
 from monte.runtime.data import false, true, Integer, String
 from monte.runtime.load import eval as monte_eval
 from monte.runtime.scope import safeScope
-from monte.runtime.tables import ConstList, ConstMap
+from monte.runtime.tables import ConstList, ConstMap, FlexList
 from twisted.trial.unittest import SkipTest
 
 
@@ -454,3 +454,184 @@ class BindingGuardTest(unittest.TestCase):
                 to f():
                     return x
             """), self.scope)
+
+
+class ConstListTest(unittest.TestCase):
+
+    def test_get(self):
+        self.assertEqual(monte_eval("def x := [1, 2, 3]; x[1]"), Integer(2))
+
+    def test_print(self):
+        self.assertEqual(monte_eval("def x := [1, 2, 3]; M.toString(x)"),
+                         String(u'[1, 2, 3]'))
+
+    def test_size(self):
+        self.assertEqual(monte_eval("def x := [1, 2, 3]; x.size()"),
+                         Integer(3))
+
+    def test_add(self):
+        self.assertEqual(monte_eval("[1, 2] + [3, 4] == [1, 2, 3, 4]"),
+                         true)
+
+    def test_contains(self):
+        self.assertEqual(monte_eval("[1, 2, 3].contains(2)"),
+                         true)
+        self.assertEqual(monte_eval("[1, 2, 3].contains(4)"),
+                         false)
+
+    def test_sort(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 2, 3].sort() == [1, 2, 3, 4, 9]"),
+                         true)
+
+    def test_fetch(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1].fetch(0, fn {99}) == 4"),
+                         true)
+        self.assertEqual(monte_eval(
+            "[4, 9, 1].fetch(3, fn {99}) == 99"),
+                         true)
+
+    def test_last(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].last()"),
+                         Integer(13))
+
+    def test_with(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].with(11) == [4, 9, 1, 13, 11]"),
+                         true)
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].with(1, 11) == [4, 11, 9, 1, 13]"),
+            true)
+
+    def test_multiply(self):
+        self.assertEqual(monte_eval(
+            "[4] * 3 == [4, 4, 4]"),
+                        true)
+
+    def test_asMap(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].asMap() == [0 => 4, 1 => 9, 2 => 1, 3 => 13]"),
+                         true)
+
+    def test_asKeys(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].asKeys() == [4 => null, 9 => null, 1 => null, 13 => null]"),
+                         true)
+
+    def test_slice(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].slice(1) == [9, 1, 13]"),
+                         true)
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].slice(0, 2) == [4, 9]"),
+                         true)
+
+    def test_diverge(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].diverge()").__class__,
+                         FlexList)
+
+
+class FlexListTest(unittest.TestCase):
+
+    def test_get(self):
+        self.assertEqual(monte_eval("def x := [1, 2, 3].diverge(); x[1]"), Integer(2))
+
+    def test_print(self):
+        self.assertEqual(monte_eval("def x := [1, 2, 3].diverge(); M.toString(x)"),
+                         String(u'[1, 2, 3].diverge()'))
+
+    def test_size(self):
+        self.assertEqual(monte_eval("def x := [1, 2, 3].diverge(); x.size()"),
+                         Integer(3))
+
+    def test_add(self):
+        self.assertEqual(monte_eval("([1, 2].diverge() + [3, 4].diverge()).snapshot() == [1, 2, 3, 4]"),
+                         true)
+
+    def test_contains(self):
+        self.assertEqual(monte_eval("[1, 2, 3].diverge().contains(2)"),
+                         true)
+        self.assertEqual(monte_eval("[1, 2, 3].diverge().contains(4)"),
+                         false)
+
+    def test_sort(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 2, 3].diverge().sort() == [1, 2, 3, 4, 9]"),
+                         true)
+
+    def test_sortInPlace(self):
+        self.assertEqual(monte_eval(
+            "def x := [4, 9, 1, 2, 3].diverge(); x.sortInPlace(); x.snapshot() == [1, 2, 3, 4, 9]"),
+                         true)
+
+    def test_fetch(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1].diverge().fetch(0, fn {99}) == 4"),
+                         true)
+        self.assertEqual(monte_eval(
+            "[4, 9, 1].diverge().fetch(3, fn {99}) == 99"),
+                         true)
+
+    def test_last(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].diverge().last()"),
+                         Integer(13))
+
+    def test_with(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].diverge().with(11) == [4, 9, 1, 13, 11]"),
+                         true)
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].diverge().with(1, 11) == [4, 11, 9, 1, 13]"),
+            true)
+
+    def test_multiply(self):
+        self.assertEqual(monte_eval(
+            "[4].diverge() * 3 == [4, 4, 4]"),
+                        true)
+
+    def test_asMap(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].diverge().asMap() == [0 => 4, 1 => 9, 2 => 1, 3 => 13]"),
+                         true)
+
+    def test_asKeys(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].diverge().asKeys() == [4 => null, 9 => null, 1 => null, 13 => null]"),
+                         true)
+
+    def test_slice(self):
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].diverge().slice(1) == [9, 1, 13]"),
+                         true)
+        self.assertEqual(monte_eval(
+            "[4, 9, 1, 13].diverge().slice(0, 2) == [4, 9]"),
+                         true)
+
+    def test_push(self):
+        self.assertEqual(monte_eval(
+            "def x := [1].diverge(); x.push(3); x.snapshot() == [1, 3]"),
+                        true)
+
+    def test_pop(self):
+        self.assertEqual(monte_eval(
+            "def x := [1, 3].diverge(); def y := x.pop(); [x.snapshot(), y] == [[1], 3]"),
+                        true)
+
+    def test_setSlice(self):
+        self.assertEqual(monte_eval(
+            "def x := [1, 4, 3].diverge(); x.setSlice(1, 3, [7, 8]); x.snapshot() == [1, 7, 8]"),
+                        true)
+
+    def test_removeSlice(self):
+        self.assertEqual(monte_eval(
+            "def x := [1, 4, 2, 3].diverge(); x.removeSlice(1, 3); x.snapshot() == [1, 3]"),
+                        true)
+
+    def test_insert(self):
+        self.assertEqual(monte_eval(
+            "def x := [1, 4, 3].diverge(); x.insert(2, 9); x.snapshot() == [1, 4, 9, 3]"),
+                        true)

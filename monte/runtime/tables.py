@@ -45,12 +45,12 @@ class EListMixin(object):
         return ConstList(sorted(self.l, key=keyFunc))
 
     def fetch(self, idx, insteadThunk):
-        if 0 <= idx < len(self.l):
-            return self.get(index)
+        if 0 <= idx.n < len(self.l):
+            return self.get(idx)
         else:
             return insteadThunk()
 
-    def last(self, idx):
+    def last(self):
         return self.l[-1]
 
     def get(self, idx):
@@ -62,11 +62,12 @@ class EListMixin(object):
 
     def _m_with(self, *a):
         if len(a) == 1:
-            return ConstList(self.l + [val])
+            return ConstList(self.l) + type(self.l)([a[0]])
         elif len(a) == 2:
-            new = self.l[:]
-            new.insert(a[0], a[1])
-            return ConstList(new)
+            if not isinstance(a[0], Integer):
+                raise RuntimeError("%r is not a integer" % (a[0],))
+            i = a[0].n
+            return ConstList(self.l[:i] + type(self.l)([a[1]]) + self.l[i:])
         else:
             raise RuntimeError("with() takes 1 or 2 arguments")
 
@@ -76,13 +77,13 @@ class EListMixin(object):
         return ConstList(self.l * n.n)
 
     def asMap(self):
-        items = [(Integer(i), v) for i, v in dict(enumerate(self.l))]
+        items = [(Integer(i), v) for i, v in enumerate(self.l)]
         d = dict(items)
         keys = [x[0] for x in items]
         return ConstMap(d, keys)
 
     def asKeys(self):
-        return ConstMap(dict.fromkeys(self.l, null))
+        return ConstMap(dict.fromkeys(self.l, null), keys=self.l)
 
     def asSet(self):
         raise NotImplementedError()
@@ -91,7 +92,9 @@ class EListMixin(object):
         if not isinstance(start, Integer):
             raise RuntimeError("%r is not an integer" % (start,))
         start = start.n
-        if end is not None and not isinstance(end, Integer):
+        if end is None:
+            end = len(self.l)
+        elif not isinstance(end, Integer):
             raise RuntimeError("%r is not an integer" % (end,))
         else:
             end = end.n
@@ -175,17 +178,17 @@ class FlexList(EListMixin, MonteObject):
             raise RuntimeError("%r is not a integer" % (start,))
         if not isinstance(bound, Integer):
             raise RuntimeError("%r is not a integer" % (bound,))
-        if not 0 <= start < len(self.l):
+        if not 0 <= start.n < len(self.l):
             raise IndexError(start)
-        if not 0 <= bound <= len(self.l):
+        if not 0 <= bound.n <= len(self.l):
             raise IndexError(bound)
-        self.l[start:bound] = other
+        self.l[start.n:bound.n] = other
         return null
 
     def insert(self, idx, value):
         if not isinstance(idx, Integer):
             raise RuntimeError("%r is not a integer" % (idx,))
-        if not 0 <= idx < len(self.l):
+        if not 0 <= idx.n < len(self.l):
             raise IndexError(idx)
         self.l.insert(idx, value)
         return null
@@ -195,11 +198,11 @@ class FlexList(EListMixin, MonteObject):
             raise RuntimeError("%r is not a integer" % (start,))
         if not isinstance(bound, Integer):
             raise RuntimeError("%r is not a integer" % (bound,))
-        if not 0 <= start < len(self.l):
+        if not 0 <= start.n < len(self.l):
             raise IndexError(start)
-        if not 0 <= bound <= len(self.l):
+        if not 0 <= bound.n <= len(self.l):
             raise IndexError(bound)
-        del self.l[start:bound]
+        del self.l[start.n:bound.n]
         return null
 
     def diverge(self):
