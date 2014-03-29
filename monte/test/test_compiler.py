@@ -877,6 +877,7 @@ class CompilerTest(unittest.TestCase):
             _g_if1
             """)
 
+
     def test_indent(self):
         self.eq_(
             '''
@@ -894,6 +895,29 @@ class CompilerTest(unittest.TestCase):
                 _g_if1 = _monte.wrap(3)
             _g_if1
             """)
+
+    def test_elseif(self):
+        self.eq_(
+            '''
+            if (1):
+                2
+            else if (3):
+                4
+            else:
+                5
+            ''',
+            """
+            if _monte.booleanGuard.coerce(_monte.wrap(1), None):
+                _g_if1 = _monte.wrap(2)
+            else:
+                if _monte.booleanGuard.coerce(_monte.wrap(3), None):
+                    _g_if2 = _monte.wrap(4)
+                else:
+                    _g_if2 = _monte.wrap(5)
+                _g_if1 = _g_if2
+            _g_if1
+            """)
+
 
     def test_oneArmedIf(self):
         self.eq_(
