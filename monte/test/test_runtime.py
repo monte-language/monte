@@ -635,3 +635,8 @@ class FlexListTest(unittest.TestCase):
         self.assertEqual(monte_eval(
             "def x := [1, 4, 3].diverge(); x.insert(2, 9); x.snapshot() == [1, 4, 9, 3]"),
                         true)
+
+    def test_put(self):
+        self.assertEqual(monte_eval(
+            "def x := [1, 4, 3].diverge(); x[1] := 5; x.snapshot() == [1, 5, 3]"),
+                        true)

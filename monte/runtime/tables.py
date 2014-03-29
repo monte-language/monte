@@ -138,9 +138,9 @@ class FlexList(EListMixin, MonteObject):
     def put(self, idx, value):
         if not isinstance(idx, Integer):
             raise RuntimeError("%r is not a integer" % (idx,))
-        if not 0 <= idx < len(self.l):
+        if not 0 <= idx.n < len(self.l):
             raise IndexError(idx)
-        self.l[idx] = value
+        self.l[idx.n] = value
         return null
 
     def sortInPlace(self, keyFunc=None):
