@@ -35,11 +35,7 @@ class EListMixin(object):
         return ConstList(self.l + other.l)
 
     def diverge(self, guard=None):
-        if guard is None:
-            return FlexList(self.l[:])
-        l = FlexList.fromType(guard)
-        l.extend(list(self.l))
-        return l
+        return FlexList(self.l[:], guard)
 
     def sort(self, keyFunc=None):
         return ConstList(sorted(self.l, key=keyFunc))
@@ -125,8 +121,12 @@ class ConstList(EListMixin, MonteObject):
 
 class FlexList(EListMixin, MonteObject):
     _m_fqn = "__makeList$FlexList"
-    def __init__(self, l):
-        self.l = l
+    def __init__(self, l, valueGuard=None):
+        self.valueGuard = valueGuard
+        if valueGuard is None:
+            self.l = list(l)
+        else:
+            self.l = [valueGuard.coerce(x, None) for x in l]
 
     def _printOn(self, out):
         EListMixin._printOn(self, out)
@@ -140,6 +140,8 @@ class FlexList(EListMixin, MonteObject):
             raise RuntimeError("%r is not a integer" % (idx,))
         if not 0 <= idx.n < len(self.l):
             raise IndexError(idx)
+        if self.valueGuard is not None:
+            value = self.valueGuard.coerce(value, None)
         self.l[idx.n] = value
         return null
 
@@ -148,13 +150,18 @@ class FlexList(EListMixin, MonteObject):
         return null
 
     def push(self, value):
+        if self.valueGuard is not None:
+            value = self.valueGuard.coerce(value, None)
         self.l.append(value)
         return null
 
     def extend(self, other):
         if not isinstance(other, (ConstList, FlexList)):
             raise RuntimeError("%r is not a list" % (other,))
-        self.l.extend(other.l)
+        contents = other.l
+        if self.valueGuard is not None:
+            contents = [self.valueGuard.coerce(x, None) for x in contents]
+        self.l.extend(contents)
         return null
 
     def pop(self):
@@ -176,7 +183,10 @@ class FlexList(EListMixin, MonteObject):
             raise IndexError(start)
         if not 0 <= bound.n <= len(self.l):
             raise IndexError(bound)
-        self.l[start.n:bound.n] = other
+        contents = other.l
+        if self.valueGuard is not None:
+            contents = [self.valueGuard.coerce(x, None) for x in contents]
+        self.l[start.n:bound.n] = contents
         return null
 
     def insert(self, idx, value):
@@ -184,6 +194,8 @@ class FlexList(EListMixin, MonteObject):
             raise RuntimeError("%r is not a integer" % (idx,))
         if not 0 <= idx.n < len(self.l):
             raise IndexError(idx)
+        if self.valueGuard is not None:
+            value = self.valueGuard.coerce(value, None)
         self.l.insert(idx, value)
         return null
 
@@ -198,9 +210,6 @@ class FlexList(EListMixin, MonteObject):
             raise IndexError(bound)
         del self.l[start.n:bound.n]
         return null
-
-    def diverge(self):
-        return FlexList(self.l[:])
 
     def snapshot(self):
         return ConstList(self.l[:])
@@ -223,7 +232,8 @@ class EMapMixin(object):
         if keys is None:
             self._keys = self.d.keys()
         else:
-            assert len(keys) == len(self.d)
+            if len(keys) != len(self.d):
+                raise RuntimeError("Keys don't match internal dict for FlexMap")
             self._keys = keys
 
     def _printOn(self, out):
@@ -243,8 +253,8 @@ class EMapMixin(object):
             out.quote(self.d[k])
         out.raw_print(u']')
 
-    def diverge(self):
-        return FlexMap(self.d.copy(), self._keys[:])
+    def diverge(self, keyGuard=None, valueGuard=None):
+        return FlexMap(self.d.copy(), self._keys[:], keyGuard, valueGuard)
 
     def get(self, key):
         result = self.d.get(key, _absent)
@@ -370,6 +380,19 @@ class ConstMap(EMapMixin, MonteObject):
 class FlexMap(EMapMixin, MonteObject):
     _m_fqn = "__makeMap$FlexMap"
 
+    def __init__(self, d, keys=None, keyGuard=None, valueGuard=None):
+        self.keyGuard = keyGuard
+        self.valueGuard = valueGuard
+        origKeys = keys
+        if keys is None:
+            keys = d.keys()
+        if keyGuard is not None:
+            keys = [keyGuard.coerce(k, None) for k in keys]
+        if valueGuard is not None:
+            d = dict((k, valueGuard.coerce(d[origK], None)) for k, origK in zip(keys, origKeys))
+        EMapMixin.__init__(self, d, keys)
+
+
     def _printOn(self, out):
         EMapMixin._printOn(self, out)
         out.raw_print(u'.diverge()')
@@ -402,6 +425,10 @@ class FlexMap(EMapMixin, MonteObject):
             del self._keys[i]
 
     def put(self, k, v):
+        if self.keyGuard is not None:
+            k = self.keyGuard.coerce(k, None)
+        if self.valueGuard is not None:
+            v = self.valueGuard.coerce(v, None)
         self.d[k] = v
         if k not in self._keys:
             self._keys.append(k)

@@ -31,8 +31,6 @@ class IntegerGuard(PrintFQN, Guard):
     def _subCoerce(self, specimen, ej):
         if isinstance(specimen, Integer):
             return specimen
-        elif isinstance(specimen, Float):
-            return Integer(specimen.n)
         else:
             throw.eject(ej, "%r is not a number")
 
