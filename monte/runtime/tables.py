@@ -299,7 +299,7 @@ class EMapMixin(object):
         flex = FlexMap({})
         for k in smaller._keys:
             if k in bigger._keys:
-                flex.put(key, self.d[key])
+                flex.put(k, self.d[k])
         return flex.snapshot()
 
     def butNot(self, mask):
@@ -383,6 +383,12 @@ class FlexMap(EMapMixin, MonteObject):
     def domain(self):
         raise NotImplementedError()
 
+    def removeKeys(self, mask):
+        if not isinstance(mask, (ConstMap, FlexMap)):
+            raise RuntimeError("%r is not a map" % (mask,))
+        for k in mask._keys:
+            self.removeKey(k)
+
     def removeKey(self, k):
         try:
             i = self._keys.index(k)
@@ -403,8 +409,8 @@ class FlexMap(EMapMixin, MonteObject):
     def putAll(self, other):
         if not isinstance(other, (ConstMap, FlexMap)):
             raise RuntimeError("%r is not a map" % (other,))
-        for (k, v) in other.d.iteritems():
-            self.put(k, v)
+        for k in other._keys:
+            self.put(k, other.d[k])
 
     def _uncall(self):
         return ConstList([self.snapshot(), "diverge", ConstList([])])
