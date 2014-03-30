@@ -641,6 +641,30 @@ class FlexListTest(unittest.TestCase):
             "def x := [1, 4, 3].diverge(); x[1] := 5; x.snapshot() == [1, 5, 3]"),
                         true)
 
+    def test_valueGuard(self):
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            "def x := [1, 4, 3, 'b'].diverge(int)")
+
+        self.assertEqual(monte_eval(
+            "def x := [1, 4, 3].diverge(int); x[1] := 5; x.snapshot() == [1, 5, 3]"),
+                         true)
+
+        self.assertEqual(monte_eval(
+            "def x := [1, 4, 3].diverge(int); x.push(5); x.snapshot() == [1, 4, 3, 5]"),
+                         true)
+
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            "def x := [1, 4, 3].diverge(int); x[1] := 'b'")
+
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            "def x := [1, 4, 3].diverge(int); x.push('b')")
+
 
 class ConstMapTests(unittest.TestCase):
     def test_get(self):
@@ -713,7 +737,7 @@ class ConstMapTests(unittest.TestCase):
                          true)
 
 
-class ConstMapTests(unittest.TestCase):
+class FlexMapTests(unittest.TestCase):
     def test_get(self):
         self.assertEqual(monte_eval(
             "def x := [1 => 3, 4 => 7].diverge(); x[4]"), Integer(7))
@@ -806,3 +830,28 @@ class ConstMapTests(unittest.TestCase):
         self.assertEqual(monte_eval(
             "def x := [1 => 3, 4 => 7].diverge() ; x.putAll([4 => 6, 2 => 'b']); x.snapshot() == [ 1 => 3, 4 => 6, 2 => 'b']"),
                          true)
+
+    def test_valueGuard(self):
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            "def x := [1 => 4, 3 => 'b'].diverge(int, char)")
+
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            "def x := [3.5 => 'a', 3 => 'b'].diverge(int, char)")
+
+        self.assertEqual(monte_eval(
+            "def x := [4 => 'a', 3 => 'b'].diverge(int, char); x[5] := 'c'; x.snapshot() == [4 => 'a', 3 => 'b', 5 => 'c']"),
+                         true)
+
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            "def x := [4 => 'a', 3 => 'b'].diverge(int, char); x[4.5] := 'c'")
+
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            "def x := [4 => 'a', 3 => 'b'].diverge(int, char); x[5] := 9")
