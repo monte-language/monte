@@ -1,5 +1,9 @@
 def TermData := any[void, str, int, float, char]
 
+# Craft a term. The tag represents the functor, and either data or args are
+# provided. The args are for complex functors, while the data is for primitive
+# functors. The span should relate to the original source string that the term
+# is representing.
 def makeTerm(tag, data, args, span):
     if (data != null && args != null):
         throw(`Term $tag can't have both data and children`)
@@ -61,6 +65,18 @@ def makeTerm(tag, data, args, span):
             else:
                 return term
 
+        to _printOn(out):
+            out.print(tag)
+            out.print("[")
+            data._printOn(out)
+            out.print("]")
+            out.print("(")
+            if (args != null):
+                for arg in args:
+                    arg._printOn(out)
+                    out.print(",")
+            out.print(")")
+
         to prettyPrintOn(out, isQuasi :boolean):
             var label := null # should be def w/ later bind
             var reps := null
@@ -68,23 +84,26 @@ def makeTerm(tag, data, args, span):
             switch (data):
                 match ==null:
                     label := tag.getTagName()
-                match _ :float:
-                    if (data.isNaN()):
-                        label := "%NaN"
-                    else if (data.isInfinite()):
-                        if (data > 0):
-                            label := "%Infinity"
-                        else:
-                            label := "-%Infinity"
-                    else:
-                        label := `$data`
+                # match _ :float:
+                #     if (data.isNaN()):
+                #         label := "%NaN"
+                #     else if (data.isInfinite()):
+                #         if (data > 0):
+                #             label := "%Infinity"
+                #         else:
+                #             label := "-%Infinity"
+                #     else:
+                #         label := `$data`
                 match _ :str:
                     label := data.quote().replace("\n", "\\n")
                 match _:
                     label := M.toQuote(data)
+
             if (isQuasi):
+                # Escape QL characters.
                 label := label.replace("$", "$$").replace("@", "@@")
                 label := label.replace("`", "``")
+
             if (label == ".tuple."):
                 if (term.getHeight() <= 1):
                     out.print("[]")
@@ -97,6 +116,9 @@ def makeTerm(tag, data, args, span):
                     return
                 reps := 1
                 delims := ["{", ",", "}"]
+            else if (args == null):
+                out.print("null")
+                return
             else if (args.size() == 1 && args[0].getTag().getTagName()):
                 reps := label.size()
                 delims := ["", null, ""]

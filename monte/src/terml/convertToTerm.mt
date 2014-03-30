@@ -21,15 +21,16 @@ def convertToTerm(val, ej):
             return mkt("false", null, null)
         match v :int:
             return mkt(".int.", v, null)
-        match v :float:
-            return mkt(".float.", v, null)
+        # Currently unreachable due to int coercion :c
+        # match v :float:
+        #     return mkt(".float.", v, null)
         match v :char:
             return mkt(".char.", v, null)
         match v :str:
             return mkt(".String.", v, null)
         match v :list:
-            return mkt(".tuple.", null,
-                [convertToTerm(item, ej) for item in v])
+            def l := [convertToTerm(item, ej) for item in v]
+            return mkt(".tuple.", null, l)
         # match v :set:
         #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
         match m :map:

@@ -3,7 +3,7 @@ def makeTag(code, name, dataType):
         to _uncall():
             return [makeTag, "run", [code, name, dataType]]
 
-        to printOn(out):
+        to _printOn(out):
             out.print("<")
             out.print(name)
             if (code != null):
@@ -23,11 +23,10 @@ def makeTag(code, name, dataType):
         to getDataType():
             return dataType
 
-        to isTagForData(data):
+        to isTagForData(data) :boolean:
             if (data == null):
                 return true
             if (dataType == null):
                 return false
 
-            if (data =~ _ :dataType):
-                return true
+            return data =~ _ :dataType
