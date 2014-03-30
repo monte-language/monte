@@ -640,3 +640,169 @@ class FlexListTest(unittest.TestCase):
         self.assertEqual(monte_eval(
             "def x := [1, 4, 3].diverge(); x[1] := 5; x.snapshot() == [1, 5, 3]"),
                         true)
+
+
+class ConstMapTests(unittest.TestCase):
+    def test_get(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7]; x[4]"), Integer(7))
+
+    def test_print(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7]; M.toString(x)"),
+                         String(u'[1 => 3, 4 => 7]'))
+
+    def test_fetch(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7]; x.fetch(4, fn {99})"), Integer(7))
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7]; x.fetch(3, fn {99})"), Integer(99))
+
+    def test_size(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7]; x.size()"), Integer(2))
+
+    def test_or(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7] | [4 => 6, 2 => 'b']; x == [4 => 7, 2 => 'b', 1 => 3]"),
+                         true)
+
+    def test_and(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7] & [4 => 6, 2 => 'b']; x == [4 => 7]"),
+                         true)
+
+    def test_butNot(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7] &! [4 => 6, 2 => 'b']; x == [1 => 3]"),
+                         true)
+
+    def test_maps(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7]; x.maps(4) && !x.maps(5)"),
+                         true)
+
+    def test_with(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7]; x.with(5, 2) == [1 => 3, 4 => 7, 5 => 2]"),
+                         true)
+
+    def test_without(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6]; x.without(4) == [1 => 3, 9 => 6, 5 => 2]"),
+                         true)
+
+    def test_getKeys(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6]; x.getKeys() == [1, 4, 5, 9]"),
+                         true)
+
+    def test_sortKeys(self):
+        self.assertEqual(monte_eval(
+                    "def x := [4 => 7, 1 => 3,  9 => 6, 5 => 2]; x.sortKeys() == [1 => 3, 4 => 7, 5 => 2, 9 => 6]"),
+                         true)
+
+    def test_getValues(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6]; x.getValues() == [3, 7, 2, 6]"),
+                         true)
+
+    def test_getPair(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6]; x.getPair() == [[1, 4, 5, 9], [3, 7, 2, 6]]"),
+                         true)
+
+
+class ConstMapTests(unittest.TestCase):
+    def test_get(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); x[4]"), Integer(7))
+
+    def test_print(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); M.toString(x)"),
+                         String(u'[1 => 3, 4 => 7].diverge()'))
+
+    def test_fetch(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); x.fetch(4, fn {99})"), Integer(7))
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); x.fetch(3, fn {99})"), Integer(99))
+
+    def test_size(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); x.size()"), Integer(2))
+
+    def test_or(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge() | [4 => 6, 2 => 'b']; x == [4 => 7, 2 => 'b', 1 => 3]"),
+                         true)
+
+    def test_and(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge() & [4 => 6, 2 => 'b']; x == [4 => 7]"),
+                         true)
+
+    def test_butNot(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge() &! [4 => 6, 2 => 'b']; x == [1 => 3]"),
+                         true)
+
+    def test_maps(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); x.maps(4) && !x.maps(5)"),
+                         true)
+
+    def test_with(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7].diverge(); x.with(5, 2) == [1 => 3, 4 => 7, 5 => 2]"),
+                         true)
+
+    def test_without(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6].diverge(); x.without(4) == [1 => 3, 9 => 6, 5 => 2]"),
+                         true)
+
+    def test_getKeys(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6].diverge(); x.getKeys() == [1, 4, 5, 9]"),
+                         true)
+
+    def test_sortKeys(self):
+        self.assertEqual(monte_eval(
+                    "def x := [4 => 7, 1 => 3,  9 => 6, 5 => 2].diverge(); x.sortKeys() == [1 => 3, 4 => 7, 5 => 2, 9 => 6]"),
+                         true)
+
+    def test_getValues(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6].diverge(); x.getValues() == [3, 7, 2, 6]"),
+                         true)
+
+    def test_getPair(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6].diverge(); x.getPair() == [[1, 4, 5, 9], [3, 7, 2, 6]]"),
+                         true)
+
+
+    def test_removeKey(self):
+        self.assertEqual(monte_eval(
+                    "def x := [1 => 3, 4 => 7, 5 => 2, 9 => 6].diverge(); x.removeKey(4); x.snapshot() == [1 => 3, 9 => 6, 5 => 2]"),
+                         true)
+
+    def test_removeKeys(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); x.removeKeys([4 => 6, 2 => 'b']); x.snapshot() == [1 => 3]"),
+                         true)
+
+    def test_put(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); x[2] := 5; x.snapshot() == [1 => 3, 4 => 7, 2 => 5]"),
+                         true)
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge(); x[1] := 5; x.snapshot() == [1 => 5, 4 => 7]"),
+                         true)
+
+    def test_putAll(self):
+        self.assertEqual(monte_eval(
+            "def x := [1 => 3, 4 => 7].diverge() ; x.putAll([4 => 6, 2 => 'b']); x.snapshot() == [ 1 => 3, 4 => 6, 2 => 'b']"),
+                         true)
