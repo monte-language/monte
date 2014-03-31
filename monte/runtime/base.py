@@ -178,8 +178,8 @@ class Throw(MonteObject):
             val = val.s
         raise RuntimeError(val)
     def eject(self, ej, val):
-        #XXX this should coerce ej to Ejector
-        if ej is None:
+        from monte.runtime.data import null
+        if ej is null:
             throw(val)
         else:
             wrapEjector(ej)(val)
