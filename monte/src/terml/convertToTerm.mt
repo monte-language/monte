@@ -21,9 +21,8 @@ def convertToTerm(val, ej):
             return mkt("false", null, null)
         match v :int:
             return mkt(".int.", v, null)
-        # Currently unreachable due to int coercion :c
-        # match v :float:
-        #     return mkt(".float.", v, null)
+        match v :float:
+            return mkt(".float.", v, null)
         match v :char:
             return mkt(".char.", v, null)
         match v :str:

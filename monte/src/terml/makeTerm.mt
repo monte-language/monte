@@ -51,10 +51,11 @@ def makeTerm(tag, data, args, span):
         # primitive memoizer for that to be DeepFrozen.
         to getHeight():
             var myHeight := 1
-            for a in args:
-                def h := a.getHeight()
-                if (h + 1 > myHeight):
-                    myHeight := h + 1
+            if (args != null):
+                for a in args:
+                    def h := a.getHeight()
+                    if (h + 1 > myHeight):
+                        myHeight := h + 1
             return myHeight
 
         to _conformTo(guard):
@@ -66,16 +67,7 @@ def makeTerm(tag, data, args, span):
                 return term
 
         to _printOn(out):
-            out.print(tag)
-            out.print("[")
-            data._printOn(out)
-            out.print("]")
-            out.print("(")
-            if (args != null):
-                for arg in args:
-                    arg._printOn(out)
-                    out.print(",")
-            out.print(")")
+            return term.prettyPrintOn(out, false)
 
         to prettyPrintOn(out, isQuasi :boolean):
             var label := null # should be def w/ later bind
@@ -84,18 +76,18 @@ def makeTerm(tag, data, args, span):
             switch (data):
                 match ==null:
                     label := tag.getTagName()
-                # match _ :float:
-                #     if (data.isNaN()):
-                #         label := "%NaN"
-                #     else if (data.isInfinite()):
-                #         if (data > 0):
-                #             label := "%Infinity"
-                #         else:
-                #             label := "-%Infinity"
-                #     else:
-                #         label := `$data`
-                match _ :str:
-                    label := data.quote().replace("\n", "\\n")
+                match f :float:
+                    if (f.isNaN()):
+                        label := "%NaN"
+                    else if (f.isInfinite()):
+                        if (f > 0):
+                            label := "%Infinity"
+                        else:
+                            label := "-%Infinity"
+                    else:
+                        label := `$data`
+                match s :str:
+                    label := s.quote().replace("\n", "\\n")
                 match _:
                     label := M.toQuote(data)
 
@@ -117,7 +109,10 @@ def makeTerm(tag, data, args, span):
                 reps := 1
                 delims := ["{", ",", "}"]
             else if (args == null):
-                out.print("null")
+                if (data == null):
+                    out.print("null")
+                else:
+                    out.print(label)
                 return
             else if (args.size() == 1 && args[0].getTag().getTagName()):
                 reps := label.size()
@@ -133,19 +128,20 @@ def makeTerm(tag, data, args, span):
                 reps := label.size() + 1
                 delims := ["(", ",", ")"]
             def [open, sep, close] := delims
+            out.print(open)
+
             if (term.getHeight() == 2):
-                # Just leaves, so one line.
-                out.print(open)
+                # We only have leaves, so we can probably get away with
+                # printing on a single line.
                 args[0].prettyPrintOn(out, isQuasi)
                 for a in args.slice(1):
                     out.print(sep + " ")
                     a.prettyPrintOn(out, isQuasi)
                 out.print(close)
             else:
-                out.print(open)
                 def sub := out.indent(" " * reps)
                 args[0].prettyPrintOn(sub, isQuasi)
                 for a in args.slice(1):
                     sub.println(sep)
-                    a.prettyPrintOn(out, isQuasi)
+                    a.prettyPrintOn(sub, isQuasi)
                 sub.print(close)
