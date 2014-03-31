@@ -73,7 +73,8 @@ class ConstMapGuard(_ConstMapGuard):
         return SpecializedConstMapGuard(kg, vg)
 
 class SpecializedConstMapGuard(_ConstMapGuard):
-    _m_fqn = "ConstMap$SpecializedConstMao"
+    _m_fqn = "ConstMap$SpecializedConstMap"
+
     def __init__(self, keyGuard, valueGuard):
         self.keyGuard = keyGuard
         self.valueGuard = valueGuard
