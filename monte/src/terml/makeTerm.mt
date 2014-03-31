@@ -59,12 +59,22 @@ def makeTerm(tag, data, args, span):
             return myHeight
 
         to _conformTo(guard):
-            if (args.size() == 0 && [str, float, int, char].contains(guard)):
+            def argsAreEmpty :boolean := args != null && args.size() == 0
+            if (argsAreEmpty && [str, float, int, char].contains(guard)):
                 if (data == null):
                     return tag.getTagName()
                 return data
             else:
                 return term
+
+        # Create a new term tree by recursively visiting and rewriting all of
+        # our constituent terms.
+        to rewrite(f):
+            if (args == null):
+                return f(term)
+            else:
+                def newArgs := [arg.rewrite(f) for arg in args]
+                return f(makeTerm(tag, data, newArgs, span))
 
         to _printOn(out):
             return term.prettyPrintOn(out, false)
