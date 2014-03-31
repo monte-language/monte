@@ -491,7 +491,7 @@ class String(MonteObject):
     def multiply(self, n):
         if not isinstance(n, Integer):
             raise RuntimeError("%r is not an integer" % (n,))
-        return String(self.s * n)
+        return String(self.s * n.n)
 
     def startsWith(self, other):
         if not isinstance(other, String):
