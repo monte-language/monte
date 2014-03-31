@@ -110,7 +110,7 @@ class MessageDesc(MonteObject):
 class ProtocolDesc(MonteObject):
     def __init__(self, doc, fqn, supers, auditors, msgs):
         self.doc = doc
-        self.fqn = fqn
+        self.fqn = self._m_fqn = fqn
         self.supers = supers
         self.auditors = auditors
         self.messages = msgs
