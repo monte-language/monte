@@ -74,8 +74,8 @@ safeScope = {
     # 'not': makeNegatedGuard,
     # 'Tuple': makeTupleGuard,
     # '__Portrayal': lazyEval("Tuple[any, String, List[any]]")
-    'list': listGuard,
-    'map': mapGuard,
+    'List': listGuard,
+    'Map': mapGuard,
     # 'set': setGuard,
 
     ## Protocol/guard constructors
