@@ -855,3 +855,65 @@ class FlexMapTests(unittest.TestCase):
             RuntimeError,
             monte_eval,
             "def x := [4 => 'a', 3 => 'b'].diverge(int, char); x[5] := 9")
+
+
+class ListGuardTests(unittest.TestCase):
+    def test_plainConst(self):
+        self.assertEqual(monte_eval(
+            "escape e {def x :List exit e := [1 => 2]; 1} catch v {2}"),
+                         Integer(2))
+        self.assertEqual(monte_eval(
+            "escape e {def x :List exit e := [3, 4]; 1} catch v {2}"),
+                         Integer(1))
+
+    def test_guardConst(self):
+        self.assertEqual(monte_eval(
+            "escape e {def x :List[int] exit e := [1 => 2]; 1} catch v {2}"),
+                         Integer(2))
+        self.assertEqual(monte_eval(
+            "escape e {def x :List[int] exit e := [3, 'b']; 1} catch v {2}"),
+                         Integer(2))
+        self.assertEqual(monte_eval(
+            "escape e {def x :List[int] exit e := [3, 4]; 1} catch v {2}"),
+                         Integer(1))
+
+    def test_var(self):
+        self.assertEqual(monte_eval(
+            "escape e {def x :List exit e := [3, 'b'].diverge(); 1} catch v {2}"),
+                         Integer(2))
+        self.assertEqual(monte_eval(
+            "escape e {def x :List[int] exit e := [3, 4].diverge(); 1} catch v {2}"),
+                         Integer(2))
+
+
+class MapGuardTests(unittest.TestCase):
+    def test_plainConst(self):
+        self.assertEqual(monte_eval(
+            "escape e {def x :Map exit e := [1 => 2]; 1} catch v {2}"),
+                         Integer(1))
+        self.assertEqual(monte_eval(
+            "escape e {def x :Map exit e := [3, 4]; 1} catch v {2}"),
+                         Integer(2))
+
+    def test_guardConst(self):
+        self.assertEqual(monte_eval(
+            "escape e {def x :Map[int, char] exit e := [1 => 'b', 2 => 'x']; 1} catch v {2}"),
+                         Integer(1))
+        self.assertEqual(monte_eval(
+            "escape e {def x :Map[int, char] exit e := [1 => 2, 3 => 'x']; 1} catch v {2}"),
+                         Integer(2))
+        self.assertEqual(monte_eval(
+            "escape e {def x :Map[int, char] exit e := ['a' => 'b']; 1} catch v {2}"),
+                         Integer(2))
+        self.assertEqual(monte_eval(
+            "escape e {def x :Map[int, char] exit e := 3; 1} catch v {2}"),
+                         Integer(2))
+
+    def test_var(self):
+        self.assertEqual(monte_eval(
+            "escape e {def x :Map exit e := [3 => 'b'].diverge(); 1} catch v {2}"),
+                         Integer(2))
+        self.assertEqual(monte_eval(
+            "escape e {def x :Map[int, char] exit e := [3 => 'b'].diverge(); 1} catch v {2}"),
+                         Integer(2))
+
