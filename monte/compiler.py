@@ -295,9 +295,10 @@ class PythonWriter(object):
         if litNode.tag.name == 'Character':
             return "_monte.makeCharacter(%r)" % (litNode.args[0].data)
         lit = litNode.data
-        if isinstance(lit, basestring):
-            #either already unicode, or ascii bytes
-            lit = unicode(lit)
+        # If it's not unicode already, then it must have been UTF-8 and not
+        # yet decoded from when it was parsed.
+        if isinstance(lit, str):
+            lit = lit.decode("utf-8")
         return '_monte.wrap(%r)' % (lit,)
 
     def generate_NounExpr(self, out, ctx, node):
