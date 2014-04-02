@@ -52,30 +52,51 @@ def _join(xs, glue):
         out += glue
     return out + end
 
-def showParser(l):
+def showParser(l, out):
     switch (l):
         match ==empty:
-            return "empty"
+            out.print("∅")
         match ==nullSet:
-            return "null"
+            out.print("ε")
         match ==anything:
-            return "any"
+            out.print("any")
 
         match [==term, ts]:
-            return `term($ts)`
+            out.print("term(")
+            out.quote(ts)
+            out.print(")")
         match [==exactly, t]:
-            return `ex($t)`
+            out.print("ex(")
+            out.quote(t)
+            out.print(")")
         match [==reduction, inner, f]:
-            return "red(" + showParser(inner) + `, $f)`
+            out.println("red(")
+            def indent := out.indent(null)
+            showParser(inner, indent)
+            indent.println(",")
+            indent.println(f)
+            out.print(")")
         match [==alternation, ls]:
-            return "alt([" + _join([showParser(l) for l in ls], ", ") + "])"
+            out.println("alt([")
+            def indent := out.indent(null)
+            for option in ls:
+                showParser(option, indent)
+                indent.println(",")
+            out.print("])")
         match [==catenation, a, b]:
-            return "cat(" + showParser(a) + ", " + showParser(b) + ")"
-        match [==repeat, l]:
-            return "rep(" + showParser(l) + ")"
+            out.println("cat(")
+            def indent := out.indent(null)
+            showParser(a, indent)
+            indent.println(",")
+            showParser(b, indent)
+            out.print(")")
+        match [==repeat, inner]:
+            out.print("rep(")
+            showParser(inner, out)
+            out.print(")")
 
         match _:
-            return `$l`
+            traceln(`I don't know how to print $l`)
 
 def onlyNull(l) :boolean:
     switch (l):
@@ -365,7 +386,7 @@ def testRepeat(assert):
     ]
 
 def replaceValues(language, values):
-    traceln(`replace $language $values`)
+    # traceln(`replace $language $values`)
     switch (language):
         match [==value, index]:
             return [exactly, values.get(index)]
@@ -377,8 +398,6 @@ def replaceValues(language, values):
 def makeDerp(language):
     var l := language
 
-    traceln("Making parser: " + showParser(l))
-
     return object parser:
         to unwrap():
             return language
@@ -386,15 +405,15 @@ def makeDerp(language):
         to reset():
             return makeDerp(language)
 
-        to show():
-            return showParser(l)
+        to _printOn(out):
+            return showParser(l, out)
 
         to feed(c):
             traceln(`Leaders: ${leaders(l)}`)
             traceln(`Character: $c`)
             l := derive(l, c)
             l := compact(l)
-            traceln("Compacted: " + showParser(l))
+            traceln("Compacted: " + M.toString(parser))
             if (isEmpty(l)):
                 traceln("Language is empty!")
 
@@ -425,8 +444,8 @@ def justSecond(x, y):
 def oneOrMore(l):
     return [catenation, l, [repeat, l]]
 
-def repToList(list):
-    var reps := list
+def repToList(l):
+    var reps := l
     def rv := [].diverge()
     while (reps != null):
         rv.push(reps.get(0))
@@ -497,11 +516,11 @@ def regex := [reduction, [repeat, item], catTree]
 
 var xyzzy := null
 
-# for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
-#     traceln("~~~~~")
-#     xyzzy := testParse(regex, expr).get(0)
-#     traceln("~~~~~")
-#     testParse(xyzzy, "xyzzy")
+for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
+    traceln("~~~~~")
+    xyzzy := testParse(regex, expr).get(0)
+    traceln("~~~~~")
+    testParse(xyzzy, "xyzzy")
 
 object derp__quasiParser:
     to valueMaker(template):
