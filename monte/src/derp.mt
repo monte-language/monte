@@ -6,6 +6,15 @@ def _glueReps([x, xs]):
         return [x]
     return [x] + xs
 
+def concatMap(f):
+    def concatMapper(xss):
+        def rv := [].diverge()
+        for xs in xss:
+            for x in xs:
+                rv.push(f(x))
+        return rv.snapshot()
+    return concatMapper
+
 # The core.
 
 object empty:
@@ -156,8 +165,10 @@ def trees(l):
         match [==term, ts]:
             return ts
         match [==reduction, inner, f]:
+            var rv := []
             def ts := trees(inner)
-            def rv := [f(t) for t in ts]
+            for tree in ts:
+                rv += f(tree)
             return rv
         match [==alternation, ls]:
             var ts := []
@@ -265,11 +276,14 @@ def doCompact(l, i):
         match [==reduction, x ? isEmpty(x), _]:
             return empty
         match [==reduction, inner ? onlyNull(inner), f]:
-            return [term, [f(t) for t in trees(inner)]]
+            var reduced := []
+            for tree in trees(inner):
+                reduced += f(tree)
+            return [term, reduced]
 
         match [==reduction, [==reduction, inner, f], g]:
             def compose(x):
-                return g(f(x))
+                return concatMap(g)(f(x))
             return [reduction, doCompact(inner, j), compose]
 
         match [==reduction, inner, f]:
@@ -285,6 +299,17 @@ def doCompact(l, i):
                 match x:
                     return [alternation, x]
 
+        match [==catenation, a ? onlyNull(a), b]:
+            def xs := trees(a)
+            traceln(`xs $xs`)
+            def curry(y):
+                def ts := [].diverge()
+                traceln(`y $y`)
+                for x in xs:
+                    ts.push([x, y])
+                return ts.snapshot()
+            return [reduction, doCompact(b, j), curry]
+
         match [==catenation, a, b]:
             if (isEmpty(a) | isEmpty(b)):
                 return empty
@@ -298,17 +323,6 @@ def doCompact(l, i):
 
         match _:
             return l
-
-#       match [==catenation, a ? onlyNull(a), b]:
-#           def xs := trees(a)
-#           traceln(`xs $xs`)
-#           def curry(y):
-#               def ts := [].diverge()
-#               traceln(`y $y`)
-#               for x in xs:
-#                   ts.push([x, y])
-#               return ts.snapshot()
-#           return [reduction, doCompact(b, j), curry]
 
 def compact(l):
     return doCompact(l, 30)
@@ -329,7 +343,7 @@ def testExactly(assert):
 
 def testReduce(assert):
     def plusOne(x):
-        return x + 1
+        return [x + 1]
     def testReduceDerive():
         assert.equal(trees(derive([reduction, [exactly, 'x'], plusOne], 'x')), ['y'])
     return [
@@ -389,7 +403,7 @@ def replaceValues(language, values):
     # traceln(`replace $language $values`)
     switch (language):
         match [==value, index]:
-            return [exactly, values.get(index)]
+            return [exactly, values[index]]
         match [tag] + inner:
             return [tag] + [replaceValues(l, values) for l in inner]
         match x:
@@ -409,6 +423,7 @@ def makeDerp(language):
             return showParser(l, out)
 
         to feed(c):
+            # traceln(`Leaders: ${leaders(l).asSet()}`)
             traceln(`Leaders: ${leaders(l)}`)
             traceln(`Character: $c`)
             l := derive(l, c)
@@ -436,10 +451,10 @@ def testParse(parser, input):
     return rv
 
 def justFirst(x, y):
-    return [reduction, [catenation, x, y], def _([x, y]) { return x }]
+    return [reduction, [catenation, x, y], def _([x, y]) { return [x] }]
 
 def justSecond(x, y):
-    return [reduction, [catenation, x, y], def _([x, y]) { return y }]
+    return [reduction, [catenation, x, y], def _([x, y]) { return [y] }]
 
 def oneOrMore(l):
     return [catenation, l, [repeat, l]]
@@ -448,13 +463,13 @@ def repToList(l):
     var reps := l
     def rv := [].diverge()
     while (reps != null):
-        rv.push(reps.get(0))
-        reps := reps.get(1)
-    return rv.snapshot()
+        rv.push(reps[0])
+        reps := reps[1]
+    return [rv.snapshot()]
 
 def number := [reduction,
     oneOrMore([alternation, [[exactly, c] for c in "0123456789"]]),
-    def toNumber(x) { return atoi(repToList(x)) }]
+    def toNumber(x) { return [atoi(i) for i in repToList(x)] }]
 
 def testNumber(assert):
     def testNumberSimple():
@@ -469,7 +484,7 @@ def bracket(bra, x, ket):
 def parseValue := [reduction,
      justSecond([exactly, '$'],
         bracket([exactly, '{'], number, [exactly, '}'])),
-     def _(x) { return [value, x] }]
+     def _(x) { return [[value, x]] }]
 
 def testParseValue(assert):
     def testParseValueSimple():
@@ -484,11 +499,11 @@ def oneOf(xs):
 def catTree(ls):
     switch (ls):
         match [x, ==null]:
-            return x
+            return [x]
         match [x, y]:
-            return [catenation, x, catTree(y)]
+            return [[catenation, x, catTree(y)]]
         match x:
-            return x
+            return [x]
 
 def character := oneOf("xyz")
 
@@ -496,43 +511,28 @@ def charSet := bracket([exactly, '['],
     [reduction, [repeat, character], repToList],
     [exactly, ']'])
 
-def anyChar := [reduction, [exactly, '.'], def _(_) { return anything }]
+def anyChar := [reduction, [exactly, '.'], def _(_) { return [anything] }]
 
 def singleItem := [alternation, [
-    [reduction, character, def c(x) { return [exactly, x] }],
-    [reduction, charSet, oneOf],
+    [reduction, character, def c(x) { return [[exactly, x]] }],
+    [reduction, charSet, def _(x) { return [oneOf(x)] }],
     anyChar,
     parseValue]]
 
 def itemMaybe := [reduction, justFirst(singleItem, [exactly, '?']),
-    def interro(x) { return [alternation, [x, nullSet]] }]
+    def interro(x) { return [[alternation, [x, nullSet]]] }]
 
 def itemStar := [reduction, justFirst(singleItem, [exactly, '*']),
-    def star(x) { return [repeat, x] }]
+    def star(x) { return [[repeat, x]] }]
 
 def item := [alternation, [itemStar, itemMaybe, singleItem]]
 
 def regex := [reduction, [repeat, item], catTree]
 
-var xyzzy := null
-
-for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
-    traceln("~~~~~")
-    xyzzy := testParse(regex, expr).get(0)
-    traceln("~~~~~")
-    testParse(xyzzy, "xyzzy")
-
 object derp__quasiParser:
     to valueMaker(template):
-        def p := testParse(regex, template).get(0)
+        def p := testParse(regex, template)[0]
         return makeDerp(p)
-
-def w := 'w'
-def z := 'z'
-
-def p := derp`${w}x${z}y${w}`
-p.feedMany("wxzyw")
-traceln(`${p.results()}`)
 
 def unittest := import("unittest")
 
@@ -546,3 +546,18 @@ unittest([
     testNumber,
     testParseValue,
 ])
+
+def w := 'w'
+def z := 'z'
+
+def p := derp`${w}x${z}y${w}`
+p.feedMany("wxzyw")
+traceln(`${p.results()}`)
+
+var xyzzy := null
+
+for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
+    traceln("~~~~~")
+    xyzzy := testParse(regex, expr)[0]
+    traceln("~~~~~")
+    testParse(xyzzy, "xyzzy")
