@@ -162,6 +162,14 @@ class EvalTest(unittest.TestCase):
         """)),
                          true)
 
+    def test_varParameters(self):
+        self.assertEqual(monte_eval(dedent("""
+            def foo(var x):
+                x += 1
+                return x
+            foo(2)
+        """)), Integer(3))
+
 class EqualizerTest(unittest.TestCase):
     def test_prims(self):
         self.assertEqual(monte_eval("1 == 1"), true)
