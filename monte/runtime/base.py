@@ -33,7 +33,6 @@ class MonteObject(object):
             expr,
             dict([(k, v[1]) for k, v in self._m_slots.iteritems()]),
             self)
-        stamps = []
         for auditor in auditors:
             audition.ask(auditor)
         audition._active = False
@@ -172,6 +171,8 @@ def ejector(_name):
 
 class Throw(MonteObject):
     _m_fqn = "throw"
+    ## This is patched later to avoid import circularity
+    #_m_auditorStamps = (deepFrozenGuard,)
     def __call__(self, val):
         from monte.runtime.data import String
         if isinstance(val, String):

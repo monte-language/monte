@@ -48,6 +48,17 @@ def _isDeepFrozen(o):
     return false
 
 
+def _optProblem(o):
+    if isinstance(o, Promise):
+        return o._m_controller.problem
+    return null
+
+def _isBroken(o):
+    if isinstance(o, Promise):
+        return bwrap(o._m_controller.state() == BROKEN)
+    else:
+        return false
+
 class RefOps(MonteObject):
     """
     Public functions for ref manipulation. Exposed in safescope as 'Ref'.
@@ -70,26 +81,21 @@ class RefOps(MonteObject):
 
     def isNear(self, ref):
         if isinstance(ref, Promise):
-            return bwrap(ref._m_controller.state() is NEAR)
+            return bwrap(ref._m_controller.state() == NEAR)
         else:
             return true
 
     def isEventual(self, ref):
         if isinstance(ref, Promise):
-            return bwrap(ref._m_controller.state() is EVENTUAL)
+            return bwrap(ref._m_controller.state() == EVENTUAL)
         else:
             return false
 
     def isBroken(self, ref):
-        if isinstance(ref, Promise):
-            return bwrap(ref._m_controller.state() is BROKEN)
-        else:
-            return false
+        return _isBroken(ref)
 
     def optProblem(self, ref):
-        if isinstance(ref, Promise):
-            return ref._m_controller.problem
-        return null
+        return _optProblem(ref)
 
     def state(self, ref):
         if isinstance(ref, Promise):

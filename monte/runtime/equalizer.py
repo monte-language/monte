@@ -2,7 +2,7 @@ import warnings
 
 from monte.runtime.base import MonteObject, toQuote
 from monte.runtime.data import null, true, false, bwrap, Integer, Float, String, Character, Bool
-from monte.runtime.guards.base import selflessGuard
+from monte.runtime.guards.base import deepFrozenGuard, selflessGuard
 from monte.runtime.tables import ConstList, ConstMap
 
 def _findSofar(left, right, sofar):
@@ -48,10 +48,11 @@ def _same(left, right, sofar):
                 return false
         return true
 
-    #XXX This should be replaced with checking for Selfless
-    #instead of directly enumerating all selfless types here.
-    if (selflessGuard in left._m_auditorStamps and
-        selflessGuard in right._m_auditorStamps):
+    if t in DOES_OWN_HASHING:
+        return left == right
+
+    if (selflessGuard in getattr(left, '_m_auditorStamps', ()) and
+        selflessGuard in getattr(right, '_m_auditorStamps', ())):
         _pushSofar(left, right, sofar)
         return _same(left._uncall(), right._uncall(), sofar)
 
@@ -76,6 +77,8 @@ def _same(left, right, sofar):
 
 class Equalizer(MonteObject):
     _m_fqn = "__equalizer"
+    _m_auditorStamps = (deepFrozenGuard,)
+
     def sameEver(self, left, right):
         result = _same(left, right, [])
         if result is null:
@@ -86,16 +89,13 @@ class Equalizer(MonteObject):
     def sameYet(self, left, right):
         result = _same(left, right, [])
         if result is None:
-            return False
+            return false
         else:
             return result
 
 equalizer = Equalizer()
 
-
 HASH_DEPTH = 10
-DOES_OWN_HASHING = (Integer, Float, String, Character, Bool) #TraversalKey, FarRef, DisconnectedRef, ...
-
 
 def samenessHash(obj, hashDepth=HASH_DEPTH, path=None, fringe=None):
     from monte.runtime.ref import _isSelfless, _isResolved, _resolution
@@ -226,6 +226,7 @@ class FringeNode(object):
 
 
 class TraversalKey(object):
+    _m_auditorStamps = (deepFrozenGuard, selflessGuard)
     def __init__(self, wrapped):
         from monte.runtime.ref import _resolution
         self.wrapped = _resolution(wrapped)
@@ -247,3 +248,12 @@ class TraversalKey(object):
             return False
 
         return all(s == o for s, o in zip(self.fringe, other.fringe))
+
+    def _printOn(self, out):
+        out.raw_print(u'<a traversal key>')
+
+    def __hash__(self):
+        return self.snapHash
+
+
+DOES_OWN_HASHING = (Integer, Float, String, Character, Bool, TraversalKey) #FarRef, DisconnectedRef, ...
