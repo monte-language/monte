@@ -316,45 +316,45 @@ class ParserTest(unittest.TestCase):
         Object expressions.
         """
         parse = self.getParser("blockExpr")
-        self.assertEqual(parse("object foo {}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("object foo:\n pass"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("object _:\n pass"), ["Object", None, ["IgnorePattern", None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("object _ {}"), ["Object", None, ["IgnorePattern", None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("object bind foo {}"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("object bind foo:\n pass"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("object var foo {}"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("object var foo:\n pass"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("bind foo {}"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("bind foo:\n pass"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("var foo {}"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("var foo:\n pass"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("/** yes */ object foo {}"),  ["Object", "yes", ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], []]])
-        self.assertEqual(parse("object foo implements A {}"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [["NounExpr", "A"]], [], []]])
-        self.assertEqual(parse("object foo implements A:\n pass"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [["NounExpr", "A"]], [], []]])
-        self.assertEqual(parse("object foo extends B {}"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", ["NounExpr", "B"], None, [], [], []]])
-        self.assertEqual(parse("object foo extends B:\n pass"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", ["NounExpr", "B"], None, [], [], []]])
-        self.assertEqual(parse("object foo extends B implements A {}"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", ["NounExpr", "B"], None, [["NounExpr", "A"]], [], []]])
-        self.assertEqual(parse("object foo extends B implements A:\n pass"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", ["NounExpr", "B"], None, [["NounExpr", "A"]], [], []]])
-        self.assertEqual(parse("object foo as X implements A, B {}"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, ["NounExpr", "X"], [["NounExpr", "A"], ["NounExpr", "B"]], [], []]])
-        self.assertEqual(parse("object foo as X implements A, B:\n pass"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, ["NounExpr", "X"], [["NounExpr", "A"], ["NounExpr", "B"]], [], []]])
-        self.assertEqual(parse("object foo {to baz(x) {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo:\n to baz(x):\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo {/** woot */ to baz(x) {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["To", "woot", "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo:\n /** woot */\n to baz(x):\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["To", "woot", "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo {\nto baz(x) {\n1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo {\nto baz() {\n1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["To", None, "baz", [], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo {method baz(x) {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo:\n method baz(x):\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo {match [verb, args] {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], [["Matcher", ["ListPattern", [["FinalPattern", ["NounExpr", "verb"], None], ["FinalPattern", ["NounExpr", "args"], None]], None], ["LiteralExpr", 1]]]]])
-        self.assertEqual(parse("object foo:\n match [verb, args]:\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [], [["Matcher", ["ListPattern", [["FinalPattern", ["NounExpr", "verb"], None], ["FinalPattern", ["NounExpr", "args"], None]], None], ["LiteralExpr", 1]]]]])
-        self.assertEqual(parse("def foo(x) {}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Function", [["FinalPattern", ["NounExpr", "x"], None]], None, [], ["SeqExpr", []]]])
-        self.assertEqual(parse("def foo(x):\n pass"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Function", [["FinalPattern", ["NounExpr", "x"], None]], None, [], ["SeqExpr", []]]])
-        self.assertEqual(parse("bind foo {method baz(x) {1}}"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("bind foo:\n method baz(x):\n  1\n"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("var foo {method baz(x) {1}}"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("var foo:\n method baz(x):\n  1"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo {to baz(x) :any {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], ["Guard", ["NounExpr", "any"], []], ["LiteralExpr", 1]]], []]])
-        self.assertEqual(parse("object foo:\n to baz(x) :any:\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], ["Script", None, None, [], [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], ["Guard", ["NounExpr", "any"], []], ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo {}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("object foo:\n pass"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("object _:\n pass"), ["Object", None, ["IgnorePattern", None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("object _ {}"), ["Object", None, ["IgnorePattern", None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("object bind foo {}"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("object bind foo:\n pass"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("object var foo {}"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("object var foo:\n pass"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("bind foo {}"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("bind foo:\n pass"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("var foo {}"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("var foo:\n pass"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("/** yes */ object foo {}"),  ["Object", "yes", ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], []]])
+        self.assertEqual(parse("object foo implements A {}"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None],  [None, ["NounExpr", "A"]], ["Script", None, [], []]])
+        self.assertEqual(parse("object foo implements A:\n pass"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None, ["NounExpr", "A"]], ["Script", None, [], []]])
+        self.assertEqual(parse("object foo extends B {}"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", ["NounExpr", "B"], [], []]])
+        self.assertEqual(parse("object foo extends B:\n pass"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", ["NounExpr", "B"], [], []]])
+        self.assertEqual(parse("object foo extends B implements A {}"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None],  [None, ["NounExpr", "A"]], ["Script", ["NounExpr", "B"], [], []]])
+        self.assertEqual(parse("object foo extends B implements A:\n pass"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None],  [None, ["NounExpr", "A"]], ["Script", ["NounExpr", "B"], [], []]])
+        self.assertEqual(parse("object foo as X implements A, B {}"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [["NounExpr", "X"], ["NounExpr", "A"], ["NounExpr", "B"]], ["Script", None, [], []]])
+        self.assertEqual(parse("object foo as X implements A, B:\n pass"),  ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [["NounExpr", "X"], ["NounExpr", "A"], ["NounExpr", "B"]], ["Script", None, [], []]])
+        self.assertEqual(parse("object foo {to baz(x) {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo:\n to baz(x):\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo {/** woot */ to baz(x) {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["To", "woot", "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo:\n /** woot */\n to baz(x):\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["To", "woot", "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo {\nto baz(x) {\n1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo {\nto baz() {\n1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["To", None, "baz", [], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo {method baz(x) {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo:\n method baz(x):\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo {match [verb, args] {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], [["Matcher", ["ListPattern", [["FinalPattern", ["NounExpr", "verb"], None], ["FinalPattern", ["NounExpr", "args"], None]], None], ["LiteralExpr", 1]]]]])
+        self.assertEqual(parse("object foo:\n match [verb, args]:\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [], [["Matcher", ["ListPattern", [["FinalPattern", ["NounExpr", "verb"], None], ["FinalPattern", ["NounExpr", "args"], None]], None], ["LiteralExpr", 1]]]]])
+        self.assertEqual(parse("def foo(x) {}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Function", [["FinalPattern", ["NounExpr", "x"], None]], None, ["SeqExpr", []]]])
+        self.assertEqual(parse("def foo(x):\n pass"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Function", [["FinalPattern", ["NounExpr", "x"], None]], None, ["SeqExpr", []]]])
+        self.assertEqual(parse("bind foo {method baz(x) {1}}"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("bind foo:\n method baz(x):\n  1\n"), ["Object", None, ["BindPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("var foo {method baz(x) {1}}"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("var foo:\n method baz(x):\n  1"), ["Object", None, ["VarPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["Method", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], None, ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo {to baz(x) :any {1}}"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], ["Guard", ["NounExpr", "any"], []], ["LiteralExpr", 1]]], []]])
+        self.assertEqual(parse("object foo:\n to baz(x) :any:\n  1"), ["Object", None, ["FinalPattern", ["NounExpr", "foo"], None], [None], ["Script", None, [["To", None, "baz", [["FinalPattern", ["NounExpr", "x"], None]], ["Guard", ["NounExpr", "any"], []], ["LiteralExpr", 1]]], []]])
 
     def test_interface(self):
         """
@@ -514,11 +514,13 @@ class ParserTest(unittest.TestCase):
                           [['Object',
                             None,
                             ['FinalPattern', ['NounExpr', 'foo'], None],
-                            ['Function', [], None, [], ['Return', ['LiteralExpr', 3]]]],
+                            [None],
+                            ['Function', [], None, ['Return', ['LiteralExpr', 3]]]],
                            ['Object',
                             None,
                             ['FinalPattern', ['NounExpr', 'baz'], None],
-                            ['Function', [], None, [], ['Return', ['LiteralExpr', 4]]]],
+                            [None],
+                            ['Function', [], None, ['Return', ['LiteralExpr', 4]]]],
                            ['Add',
                             ['FunctionCallExpr', ['NounExpr', 'foo'], []],
                             ['FunctionCallExpr', ['NounExpr', 'baz'], []]]]])

@@ -430,7 +430,7 @@ class CompilerTest(unittest.TestCase):
                     foo._m_slots = {}
                     foo._m_audit(_m_auditors)
 
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0QMhqh1iU1tcCtKL8qNQ+kBUk8sSRRSTMWqBaMNTUB+zEoKA=="
+                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUtEQtQhpl9TUArei/KrUPJAqJPHEkkQlzVgdheDkoswCmB3RsSCsqQkA6LMoKA=="
 
             foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]])
             foo
@@ -468,7 +468,7 @@ class CompilerTest(unittest.TestCase):
                 def run(foo):
                     return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w.slot)
 
-                _m_objectExpr = "eJxVjt0OwiAMhV9l4QqSvYW6K/8SL5dlqbNGFAtBiHNPL2wS5KYnbc932sP5joPj5JWqq0YSqCM4h5b4XnvajMZydtWaibqKniCnwUqTiKW22btGNI3VE1JE/ubggIkueHfobvry45n1xMKwS1HLdgVKzVwO6PsnPHArXy4GJy7vx/Lep2ynsn2HV8T8TZAvUhxUaQ=="
+                _m_objectExpr = "eJxVTssOwiAQ/BXCqST8hdqTr8QjaRqsa0RxIRRi7dcLYoOcNvPYmTmc7zD4BoPWnLQKpT5K78FhszcBN5N1Db0aQxknyROPyN4irwFs68wMmFx/vPSSso6T0+CUXTrEDvzNXH6IuoA0kl2O5ySrK6n1N6Sk9f1TPmCrRp9alr+iT3X5u4ZzDV9xF0vTRDwfP55UaQ=="
 
             _g_guard1 = _m_outerScope["int"]
             x = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
@@ -493,7 +493,7 @@ class CompilerTest(unittest.TestCase):
                     foo._m_slots = {}
                     foo._m_audit(_m_auditors)
 
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUsHJRZkFMB0IRS6JJYkgVdFIQqmpBW5F+VWpeUqasUAZMNbUBAD7syYh"
+                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUtEICZfEkkSQDJJIamqBW1F+VWqekmasjkJwclFmAcz06FgQ1tQEAOtjJiE="
 
             foo = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]])
             foo
@@ -514,7 +514,7 @@ class CompilerTest(unittest.TestCase):
                     }
                     foo._m_audit(_m_auditors)
 
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLByUWZBTD1CEUuiSWJIFXRSEKpqQVuRflVqXlKmrFAGTDW1AQApkAlYA=="
+                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLRCAmXxJJEkAySSGpqgVtRflVqnpJmrI5CcHJRZgHM7OhYENbUBACV8CVg"
 
             foo = _monte.VarSlot(_monte.null)
             _g_foo1 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], (foo, _monte.VarSlot.asType().get(_m_outerScope["Data"])))
@@ -720,7 +720,7 @@ class CompilerTest(unittest.TestCase):
                      boz.b = _g_b2
                      return _monte.StaticContext('__main$foo$boz', ['b', 'a'], _m_boz_Script._m_objectExpr)
 
-                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKyq9S0tRRAKkBUsHJRZkFMB0QMjoWiH1TSzLyU6DiSkk5qalKEBmISHBqIdi0aMfi4sx0FONBhiO4iUqaQD7QtEQNJef8vJLUihIlzVhNTZAdQAoAuNc5Rg=="
+                 _m_objectExpr = "eJxVjEsKAjEQRK8SepWGXEJEd37AZcgiGRuNhM6Y6YHB09vxg7gqXlH1DulGg1ieS3FmmzmWYxShxnZfZ94sY7OQ6gPQmb7R8D2DM6eh5fH79DuSaz1/CFIhAm3D+6Vjur9cfjVN+fIn7+ofRkBltUUL68pCiwAGxNBtiE9nsTj6"
 
              class _m_foo_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo'
