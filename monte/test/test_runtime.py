@@ -925,3 +925,21 @@ class MapGuardTests(unittest.TestCase):
             "escape e {def x :Map[int, char] exit e := [3 => 'b'].diverge(); 1} catch v {2}"),
                          Integer(2))
 
+
+class DeepFrozenGuardTests(unittest.TestCase):
+    def test_prims(self):
+        self.assertEqual(monte_eval("true =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("null =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("1 =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("3.5 =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("'a' =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval('"bob" =~ _ :DeepFrozen'), true)
+
+    def test_tables(self):
+        self.assertEqual(monte_eval("[1] =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("[1].diverge() =~ _ :DeepFrozen"), false)
+        self.assertEqual(monte_eval("[1 => 'a'] =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("[1 => 'a'].diverge() =~ _ :DeepFrozen"), false)
+
+    def test_audited(self):
+        self.assertEqual(monte_eval('object _ {} =~ _ :DeepFrozen'), false)

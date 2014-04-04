@@ -10,6 +10,8 @@ class MonteNull(MonteObject):
     null has no methods.
     """
     _m_fqn = "null"
+    #_m_auditorStamps = (deepFrozenGuard,)
+
     def __eq__(self, other):
         return self is other
 
@@ -22,7 +24,7 @@ class MonteNull(MonteObject):
 null = MonteNull()
 
 class Bool(MonteObject):
-
+    #_m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, value):
         self._b = value
 
@@ -93,6 +95,8 @@ class Character(MonteObject):
     A character.
     """
     _m_fqn = "__makeCharacter$char"
+    #_m_auditorStamps = (deepFrozenGuard,)
+
     def __init__(self, value):
         self._c = value
 
@@ -101,8 +105,8 @@ class Character(MonteObject):
 
     def __eq__(self, other):
         if not isinstance(other, Character):
-            return False
-        return self._c == other._c
+            return false
+        return bwrap(self._c == other._c)
 
     def add(self, other):
         if not isinstance(other, Integer):
@@ -143,11 +147,18 @@ class Character(MonteObject):
 
 class Integer(MonteObject):
     _m_fqn = "__makeInt$int"
+    #_m_auditorStamps = (deepFrozenGuard,)
+
     def __init__(self, val):
         self.n = int(val)
 
     def __hash__(self):
         return hash(self.n)
+
+    def __eq__(self, other):
+        if not isinstance(other, Integer):
+            return false
+        return bwrap(self.n == other.n)
 
     def __int__(self):
         return self.n
@@ -295,11 +306,18 @@ class Integer(MonteObject):
 
 class Float(MonteObject):
     _m_fqn = "__makeFloat$float"
+    #_m_auditorStamps = (deepFrozenGuard,)
+
     def __init__(self, val):
         self.n = float(val)
 
     def __hash__(self):
         return hash(self.n)
+
+    def __eq__(self, other):
+        if not isinstance(other, (Integer, Float)):
+            return false
+        return bwrap(self.n == other.n)
 
     def _printOn(self, out):
         out.raw_print(unicode(self.n))
@@ -309,22 +327,22 @@ class Float(MonteObject):
     # Operators.
 
     def add(self, other):
-        return numWrap(self.n + other.f)
+        return numWrap(self.n + other.n)
 
     def subtract(self, other):
-        return numWrap(self.n - other.f)
+        return numWrap(self.n - other.n)
 
     def multiply(self, other):
-        return numWrap(self.n * other.f)
+        return numWrap(self.n * other.n)
 
     def approxDivide(self, other):
-        return numWrap(self.n.__truediv__(other.f))
+        return numWrap(self.n.__truediv__(other.n))
 
     def floorDivide(self, other):
-        return numWrap(self.n.__floordiv__(other.f))
+        return numWrap(self.n.__floordiv__(other.n))
 
     def pow(self, other):
-        return numWrap(self.n ** other.f)
+        return numWrap(self.n ** other.n)
 
     # Comparator.
 
@@ -437,6 +455,8 @@ infinity = Float(float('inf'))
 
 class String(MonteObject):
     _m_fqn = "__makeStr$str"
+    #_m_auditorStamps = (deepFrozenGuard,)
+
     def __init__(self, s):
         if not isinstance(s, unicode):
             raise RuntimeError("%r is not a unicode string" % (s,))
@@ -450,6 +470,11 @@ class String(MonteObject):
 
     def __hash__(self):
         return hash(self.s)
+
+    def __eq__(self, other):
+        if not isinstance(other, (String)):
+            return false
+        return bwrap(self.s == other.s)
 
     def _makeIterator(self):
         return MonteIterator(enumerate(Character(c) for c in self.s))

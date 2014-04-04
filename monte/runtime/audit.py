@@ -1,5 +1,6 @@
 from monte.runtime.base import MonteObject, throw
-from monte.runtime.data import String, bwrap, null, true
+from monte.runtime.data import String, bwrap, true
+from monte.runtime.guards.base import deepFrozenGuard
 from monte.runtime.guards.data import booleanGuard
 
 class Audition(MonteObject):
@@ -33,8 +34,9 @@ class Audition(MonteObject):
 
 class AuditChecker(MonteObject):
     _m_fqn = "__auditedBy"
-
+    _m_auditorStamps = (deepFrozenGuard,)
     def run(self, auditor, specimen):
         return bwrap(auditor in specimen._m_auditorStamps)
+
 
 auditedBy = AuditChecker()

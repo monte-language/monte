@@ -1,11 +1,11 @@
 from monte.runtime.base import MonteObject, throw
 from monte.runtime.data import null
-from monte.runtime.guards.base import Guard, anyGuard, selflessGuard
+from monte.runtime.guards.base import Guard, anyGuard, deepFrozenGuard, selflessGuard
 from monte.runtime.tables import ConstList
 
 class FinalSlot(MonteObject):
     _m_fqn = "FinalSlot"
-
+    _m_auditorStamps = (deepFrozenGuard,)
     @classmethod
     def asType(cls):
         return FinalSlotGuard(null, maker=True)
@@ -72,7 +72,7 @@ class VarSlot(MonteObject):
 
 class FinalSlotGuard(Guard):
     _m_fqn = "FinalSlot"
-    _m_auditorStamps = (selflessGuard,)
+    _m_auditorStamps = (selflessGuard, deepFrozenGuard)
     def __init__(self, valueGuard, maker=False):
         #XXX separate guard maker from FinalSlot[any]
         self.maker = maker
@@ -109,7 +109,7 @@ class FinalSlotGuard(Guard):
 
 class VarSlotGuard(Guard):
     _m_fqn = "VarSlot"
-    _m_auditorStamps = (selflessGuard,)
+    _m_auditorStamps = (selflessGuard, deepFrozenGuard)
     def __init__(self, valueGuard, maker=False):
         #XXX separate guard maker from FinalSlot[any]
         self.maker = maker

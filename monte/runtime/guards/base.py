@@ -1,6 +1,6 @@
-from monte.runtime.base import MonteObject, ejector, throw
-from monte.runtime.data import true, false
-from monte.runtime.data import true, false
+from monte.runtime.base import MonteObject, ejector, Throw, throw, toQuote, toString
+from monte.runtime.data import MonteNull, Bool, Character, Integer, Float, String, true, false
+from monte.runtime.flow import monteLooper
 
 class PrintFQN(object):
     def _printOn(self, out):
@@ -28,7 +28,66 @@ class Guard(MonteObject):
         return false
 
 
+def deepFrozenFunc(f):
+    f._m_auditorStamps = (deepFrozenGuard,)
+    return f
+
+def requireDeepFrozen(specimen, sofar, ej, root):
+    from monte.runtime.audit import auditedBy
+    from monte.runtime.equalizer import equalizer
+    from monte.runtime.ref import _isBroken, _optProblem
+    from monte.runtime.tables import ConstList
+    from monte.runtime.guards.tables import listGuard
+    if id(specimen) in sofar:
+        return
+    sofar.add(id(specimen))
+    if auditedBy(deepFrozenGuard, specimen):
+        return
+    if _isBroken(specimen):
+        requireDeepFrozen(_optProblem(specimen), sofar, ej, root)
+    if selflessGuard.passes(specimen):
+        if transparentGuard.passes(specimen):
+            portrayal = specimen._uncall()
+            if not isinstance(portrayal, ConstList):
+                raise RuntimeError("%s did not uncall to a list" % (toString(specimen),))
+            requireDeepFrozen(portrayal.l[0], sofar, ej, root)
+            requireDeepFrozen(portrayal.l[1], sofar, ej, root)
+            for x in listGuard.coerce(portrayal.l[2], throw):
+                requireDeepFrozen(x, sofar, ej, root)
+        else:
+            throw("Don't know how to deal with Selfless object " + toString(specimen))
+    else:
+        if equalizer.sameYet(specimen, root) is true:
+            throw.eject(ej, toQuote(root) + " is not DeepFrozen")
+        else:
+            throw.eject(ej, "%s is not DeepFrozen because %s is not" % (toQuote(root), toQuote(specimen)))
+
+
+class DeepFrozenGuard(MonteObject):
+    def coerce(self, specimen, ej):
+        requireDeepFrozen(specimen, set(), ej, specimen)
+        return specimen
+
+    def supersetOf(self, guard):
+        from monte.runtime.bindings import FinalSlotGuard
+        if guard == deepFrozenGuard:
+            return true
+        if _isDataGuard(guard):
+            return true
+        if isinstance(guard, FinalSlotGuard):
+            return self.supersetOf(guard.valueGuard)
+
+deepFrozenGuard = DeepFrozenGuard()
+DeepFrozenGuard._m_auditorStamps = (deepFrozenGuard,)
+
+#To avoid circular imports
+for o in (MonteNull, Bool, Character, Integer, Float, String, Throw,
+          monteLooper):
+    o._m_auditorStamps = (deepFrozenGuard,)
+
+
 class PythonTypeGuard(PrintFQN, Guard):
+    _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, typ, name):
         self.typ = typ
         self._m_fqn = name
@@ -41,6 +100,7 @@ class PythonTypeGuard(PrintFQN, Guard):
 
 class AnyGuard(PrintFQN, MonteObject):
     _m_fqn = "any"
+    _m_auditorStamps = (deepFrozenGuard,)
     def coerce(self, specimen, ej):
         return specimen
 
@@ -57,6 +117,7 @@ anyGuard = AnyGuard()
 
 class UnionGuard(MonteObject):
     _m_fqn = "any$UnionGuard"
+    _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, guards):
         self.guards = guards
 
@@ -87,20 +148,46 @@ class UnionGuard(MonteObject):
 
 
 class SelflessGuard(Guard):
+    _m_auditorStamps = (deepFrozenGuard,)
+    def passes(self, specimen):
+        return selflessGuard in getattr(specimen, '_m_auditorStamps', ())
+
     def _subCoerce(self, specimen, ej):
         if not selflessGuard in specimen._m_auditorStamps:
             throw.eject(ej, "is not Selfless")
 
+    def __eq__(self, other):
+        # to avoid MonteObject.__eq__'s invocation of equalizer
+        return self is other
+
 selflessGuard = SelflessGuard()
 
+class TransparentGuard(Guard):
+    def passes(self, specimen):
+        return transparentGuard in getattr(specimen, '_m_auditorStamps', ())
+
+    def _subCoerce(self, specimen, ej):
+        if not transparentGuard in specimen._m_auditorStamps:
+            throw.eject(ej, "is not Transparent")
+
+transparentGuard = TransparentGuard()
+
+def _isDataGuard(g):
+    from monte.runtime.guards.data import (booleanGuard, voidGuard, intGuard,
+                                           floatGuard, charGuard, stringGuard)
+    return g in (booleanGuard, voidGuard, intGuard, floatGuard, charGuard,
+                 stringGuard)
 
 class ParamDesc(MonteObject):
+    _m_auditorStamps = (deepFrozenGuard,)
+
     def __init__(self, name, guard):
         self.name = name
         self.guard = guard
 
 
 class MessageDesc(MonteObject):
+    _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, doc, verb, params, resultGuard):
         self.doc = doc
         self.verb = verb
@@ -108,6 +195,7 @@ class MessageDesc(MonteObject):
         self.resultGuard = resultGuard
 
 class ProtocolDesc(MonteObject):
+    _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, doc, fqn, supers, auditors, msgs):
         self.doc = doc
         self.fqn = self._m_fqn = fqn
@@ -144,6 +232,7 @@ class InterfaceStamp(MonteObject):
 
 
 class InterfaceGuard(MonteObject):
+    _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, doc, fqn, supers, auditors, msgs, stamp):
         self.doc = doc
         self.fqn = fqn
