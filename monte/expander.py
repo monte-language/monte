@@ -10,7 +10,7 @@ FALSE = t.NounExpr('false') #Term(Tag('false'), None, None, None)
 
 class ScopeSet(object):
     def __init__(self, bits=()):
-        self.contents = list(bits)[:]
+        self.contents = list(bits)
 
     def __sub__(self, other):
         bits = self.contents[:]
@@ -43,11 +43,18 @@ class ScopeSet(object):
     def getKeys(self):
         return self.contents[:]
 
+    def __contains__(self, o):
+        return o in self.contents
+
     def __iter__(self):
         return iter(self.contents)
 
     def __len__(self):
         return len(self.contents)
+
+    def butNot(self, other):
+        bits = list(other)
+        return ScopeSet(x for x in self.contents if x not in bits)
 
 class StaticScope(object):
     def __init__(self, namesRead=None, namesSet=None, metaStateExprFlag=False,
@@ -232,10 +239,8 @@ BindingPattern(TempNounExpr(@name @idx)) -> StaticScope(varNames=[name + str(idx
 ListPattern(@patternScopes null) -> union(patternScopes)
 ViaPattern(@exprScope @patternScope) -> exprScope.add(patternScope)
 
-
-Object(@doco @nameScope
-       Script(@extends @guard @implementsScopes
-              @methodScopes @matcherScopes)) -> nameScope.add(union(implementsScopes + methodScopes + matcherScopes))
+Script(@extends @methodScopes @matcherScopes) -> union(methodScopes + matcherScopes)
+Object(@doco @nameScope @auditorScope @scriptScope) -> nameScope.add(union(auditorScope).add(scriptScope))
 Method(@doco @verb @paramsScope @guardScope @blockScope) -> union(paramsScope + [guardScope, blockScope.hide()]).hide()
 Matcher(@patternScope @blockScope) -> patternScope.add(blockScope).hide()
 
@@ -471,37 +476,37 @@ MessageDesc(@doco @type @verb @paramDescs @guard)
 ParamDesc(name:name @guard) -> mcall("__makeParamDesc", "run", t.LiteralExpr(name), guard or t.NounExpr("any"))
 
 
-Lambda(@doco @patterns @block) -> t.Object(doco, t.IgnorePattern(None),
-                                      t.Script(None, None, [],
+Lambda(@doco @patterns @block) -> t.Object(doco, t.IgnorePattern(None), [None],
+                                      t.Script(None,
                                                [t.Method(None, "run", patterns,
                                                          None, block)],
                                                []))
 
-Object(:doco BindPattern(:name :guard):bp :script):o transform(bp):exName
-     transform(t.Object(doco, t.FinalPattern(t.NounExpr(name), None), script)):exObj
+Object(:doco BindPattern(:name :guard):bp :auditors :script):o transform(bp):exName
+     transform(t.Object(doco, t.FinalPattern(t.NounExpr(name), None), auditors, script)):exObj
  -> t.Def(exName, None, t.HideExpr(exObj))
 
-Object(@doco @name Function(@params @guard @implements @block))
-    -> t.Object(doco, name, t.Script(None, None, implements,
+Object(@doco @name @auditors Function(@params @guard @block))
+    -> t.Object(doco, name, auditors, t.Script(None,
                                   [t.Method(doco, "run", params, guard,
                                        t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
                                            t.SeqExpr([block, t.NounExpr("null")]), None))],
                                   []))
 
-Object(@doco @name Script(null @guard @implements @methods @matchers)) -> t.Object(doco, name, t.Script(None, guard, implements, methods, matchers))
+Object(@doco @name @auditors Script(null @methods @matchers)) -> t.Object(doco, name, auditors, t.Script(None, methods, matchers))
 
-Object(@doco VarPattern(@name @guard):vp Script(@extends @guard @implements @methods @matchers)) transform(vp):exVP
-    objectSuper(doco exVP extends guard implements methods matchers [slot(t.NounExpr(name))]):o
+Object(@doco VarPattern(@name @guard):vp @auditors Script(@extends @methods @matchers)) transform(vp):exVP
+    objectSuper(doco exVP auditors extends methods matchers [slot(t.NounExpr(name))]):o
     -> t.SeqExpr([t.Def(slotpatt(name), None, o), name])
 
-Object(@doco @name Script(@extends @guard @implements @methods @matchers)) =
-    objectSuper(doco name extends guard implements methods matchers []):o -> t.Def(name, None, o)
+Object(@doco @name @auditors Script(@extends @methods @matchers)) =
+    objectSuper(doco name auditors extends methods matchers []):o -> t.Def(name, None, o)
 
-objectSuper :doco :name :extends :guard :implements :methods :matchers :maybeSlot !(self.mktemp("pair")):p -> t.HideExpr(t.SeqExpr([
+objectSuper :doco :name :auditors :extends :methods :matchers :maybeSlot !(self.mktemp("pair")):p -> t.HideExpr(t.SeqExpr([
        t.Def(t.FinalPattern(t.NounExpr("super"), None),
            None, extends),
-       t.Object(doco, name,
-           t.Script(None, guard, implements, methods,
+       t.Object(doco, name, auditors,
+           t.Script(None, methods,
                matchers + [t.Matcher(t.FinalPattern(p, None),
                            mcall("M", "callWithPair", t.NounExpr("super"), p))]))
        ] + maybeSlot))
@@ -529,12 +534,12 @@ kerneltry :tryexpr :finallyexpr -> t.Finally(tryexpr, finallyexpr)
 
 While(@test @block @catcher) = expandWhile(test block catcher)
 
-expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", mcall("__iterWhile", "run", t.Object(None, t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [], None, test)], []))), t.Object("While loop body", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [t.IgnorePattern(None), t.IgnorePattern(None)], t.NounExpr("boolean"),  t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None), t.NounExpr("true")]))], []))), catcher)
+expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", mcall("__iterWhile", "run", t.Object(None, t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [], None, test)], []))), t.Object("While loop body", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.IgnorePattern(None), t.IgnorePattern(None)], t.NounExpr("boolean"),  t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None), t.NounExpr("true")]))], []))), catcher)
 
 When([@arg] @block :catchers @finallyblock) expandWhen(arg block catchers finallyblock)
 When(@args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", t.MethodCallExpr(t.NounExpr("__makeList"), "run", args)) block catchers finallyblock)
 
-expandWhen :arg :block [(Catch(@p @b) -> (p, b))*:catchers] :finallyblock !(self.mktemp("resolution")):resolution kerneltry(expandTryCatch(t.If(mcall("Ref", "isBroken", resolution), mcall("Ref", "broken", mcall("Ref", "optProblem", resolution)), block), catchers), finallyblock):body -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), t.Script(None, None, [], [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, body)], []))))
+expandWhen :arg :block [(Catch(@p @b) -> (p, b))*:catchers] :finallyblock !(self.mktemp("resolution")):resolution kerneltry(expandTryCatch(t.If(mcall("Ref", "isBroken", resolution), mcall("Ref", "broken", mcall("Ref", "optProblem", resolution)), block), catchers), finallyblock):body -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, body)], []))))
 
 """
 
@@ -637,8 +642,9 @@ def expandFor(self, key, value, coll, block, catcher):
     vTemp = self.mktemp("value")
     obj = t.Object(
         "For-loop body", t.IgnorePattern(None),
+        [None],
         t.Script(
-            None, None, [],
+            None,
             [t.Method(None, "run",
                       [t.FinalPattern(kTemp, None),
                        t.FinalPattern(vTemp, None)],
@@ -685,8 +691,9 @@ def expandComprehension(self, key, value, coll, filtr, exp, collector):
         value = t.SeqExpr(kv + [exp])
     obj = t.Object(
         "For-loop body", t.IgnorePattern(None),
+        [None],
         t.Script(
-            None, None, [],
+            None,
             [t.Method(None, "run",
                       [t.FinalPattern(kTemp, None),
                        t.FinalPattern(vTemp, None),

@@ -170,25 +170,26 @@ indentDocoDef = br doco?:doc (indentFunctionExpr:o -> t.Object(doc, *o)
                              |indentInterfaceExpr:i -> t.Interface(doc, *i))
 
 doco = tok('DOC_COMMENT'):doc br -> doc.strip()
-objectExpr = (('object' objectName:n) | keywordPattern:n) objectTail:tail -> [n, tail]
+objectExpr = (('object' objectName:n) | keywordPattern:n)
+             ('extends' br order)?:e oAuditors:auditors scriptPair:s
+             -> [n, auditors, t.Script(e, *s)]
 indentObjectExpr = (('object' objectName:n) | keywordPattern:n)
-                   indentObjectTail:tail -> [n, tail]
+                   ('extends' br order)?:e oAuditors:auditors indentScriptPair:s
+                   -> [n, auditors, t.Script(e, *s)]
 
-functionExpr = (('def' objectName:n) | keywordPattern:n) functionTail:tail -> [n, tail]
-indentFunctionExpr = (('def' objectName:n) | keywordPattern:n) indentFunctionTail:tail -> [n, tail]
+functionExpr = (('def' objectName:n) | keywordPattern:n) functionTail:tail -> [n] + tail
+indentFunctionExpr = (('def' objectName:n) | keywordPattern:n) indentFunctionTail:tail -> [n] + tail
 
 objectName = ('_' optGuard:e -> t.IgnorePattern(e)
                |namePattern)
-objectTail = (('extends' br order)?:e oAs?:g oImplements:oi scriptPair:s
-                  -> t.Script(e, g, oi, *s))
-indentObjectTail = (('extends' br order)?:e oAs?:g oImplements:oi indentScriptPair:s
-                     -> t.Script(e, g, oi, *s))
 
-oAs = 'as' br order
+oAs = ('as' br order:a -> [a]) | -> [None]
 oImplements = ('implements' br order:x ("," order)*:xs -> [x] + xs
                | -> [])
-functionTail = parenParamList:ps optResultGuard:g oImplements:fi block:b -> t.Function(ps, g, fi, b)
-indentFunctionTail = parenParamList:ps optResultGuard:g oImplements:fi indentBlock:b -> t.Function(ps, g, fi, b)
+oAuditors = oAs:a oImplements:i -> a + i
+
+functionTail = parenParamList:ps optResultGuard:g oAuditors:fi block:b -> [fi, t.Function(ps, g, b)]
+indentFunctionTail = parenParamList:ps optResultGuard:g oAuditors:fi indentBlock:b -> [fi, t.Function(ps, g, b)]
 
 parenParamList = "(" (pattern:p ("," pattern)*:ps ')' -> [p] +  ps
                        | ')' -> [])

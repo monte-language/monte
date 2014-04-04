@@ -394,18 +394,16 @@ class PythonWriter(object):
             return self._generate(out, ctx, body)
 
     def generate_Object(self, out, ctx, node):
-        #XXX replace this gubbish with proper destructuring
-        doc, nameNode, script = node.args
+        doc, nameNode, auditorExprs, script = node.args
         doc = doc.data
-        guard = script.args[1]
-        implements = script.args[2].args
+        guard = auditorExprs.args[0]
+        auditors = [self._generate(out, ctx, iface) for iface in auditorExprs.args]
         if guard.tag.name == "null":
             guard = None
-            auditors = []
             guardPyname = None
+            auditors = auditors[1:]
         else:
-            guardPyname = self._generate(out, ctx, guard)
-            auditors = [guardPyname]
+            guardPyname = auditors[0]
 
         if nameNode.tag.name == 'IgnorePattern':
             name = "_"
@@ -428,16 +426,14 @@ class PythonWriter(object):
             ] + self._collectSlots(fields)
             fields = [selfBinding]
             fields += [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
-        methods = script.args[3].args
-        matchers = script.args[4].args
+        methods = script.args[1].args
+        matchers = script.args[2].args
         verbs = [meth.args[1].data for meth in methods]
         methGuards = ["%r: %s" % (meth.args[1].data, self._generate(out, ctx, meth.args[3]))
                       for meth in methods
                       if meth.args[3].tag.name != 'null']
         if methGuards:
             paramNames.insert(0, '{%s}' % ', '.join(methGuards))
-        if implements:
-            auditors += [self._generate(out, ctx, iface) for iface in implements]
         if auditors:
             paramNames.insert(0, '[%s]' % ', '.join(auditors))
         val = "%s(%s)" % (scriptname, ", ".join(paramNames))
@@ -454,7 +450,7 @@ class PythonWriter(object):
         classBodyOut.writeln("_m_fqn = '%s$%s'" % (
             ctx.layout.frame.fqnPrefix,
             name.encode('string-escape')))
-        if not any([methods, matchers, fields, doc, implements]):
+        if not any([methods, matchers, fields, doc, auditors]):
             classBodyOut.writeln("pass")
         if matcherNames:
             classBodyOut.writeln('_m_matcherNames = %r' % (matcherNames,))
@@ -464,14 +460,14 @@ class PythonWriter(object):
                 classBodyOut.writeln(ln)
             classBodyOut.writeln('"""')
         fnames = ()
-        if any([fields, implements, guard, methGuards]):
+        if any([fields, auditors, methGuards]):
             initOut = classBodyOut.indent()
             fields.sort(key=lambda f: f.name)
             pyfnames = [mangleIdent(f.name) + "_slotPair" for f in fields]
             initParams = pyfnames
             if methGuards:
                 initParams = ["_m_methodGuards"] + initParams
-            if implements or guard:
+            if auditors:
                 initParams = ["_m_auditors"] + initParams
             for b in fields:
                 classBodyOut.writeln("%s = _monte._SlotDescriptor(%r)" % (mangleIdent(b.name),
@@ -488,7 +484,7 @@ class PythonWriter(object):
                 initOut.writeln("}")
             else:
                 initOut.writeln(selfName + "._m_slots = {}")
-            if implements or guard:
+            if auditors:
                 initOut.writeln(selfName + "._m_audit(_m_auditors)")
 
             initOut.writeln("")
@@ -533,7 +529,7 @@ class PythonWriter(object):
             mtchOut.writeln("return " + rvar + "\n")
             metacontext = metacontext or mtchctx.layout.metaContextExpr
 
-        if implements or guard or metacontext:
+        if auditors or metacontext:
             classBodyOut.writeln('_m_objectExpr = "%s"\n' %
                                  node._unparse().encode('zlib')
                                                 .encode('base64')
