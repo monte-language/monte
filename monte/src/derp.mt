@@ -409,13 +409,50 @@ def replaceValues(language, values):
         match x:
             return x
 
+def _pureToList(f):
+    def listWrapper(x):
+        return [f(x)]
+    return listWrapper
+
 def makeDerp(language):
     return object parser:
         to unwrap():
             return language
 
+        # Monte core methods.
+
         to _printOn(out):
+            out.print("Parser: ")
             return showParser(language, out)
+
+        # EDSL wrapper methods.
+
+        to add(other):
+            # Addition is concatenation.
+            return makeDerp([catenation, language, other.unwrap()])
+
+        to or(other):
+            # Alternation.
+            return makeDerp([alternation, [language, other.unwrap()]])
+
+        to remainder(other):
+            # Inspired by lens, which uses `%` for its modification/map API.
+            # Their mnemonic is *mod*ification, for *mod*ulus. However, Monte
+            # uses `%%` for modulus and `%` for remainder. We choose the
+            # latter in order to avoid any accidental expMod() conversions and
+            # also to improve readability.
+            return makeDerp([reduction, language, _pureToList(other)])
+
+        to modulus(other):
+            # Okay, I lied. This is a way to craft a reduction that does raw
+            # things and directly returns however many items it desires.
+            return makeDerp([reduction, language, other])
+
+        to repeated():
+            # Repeat!
+            return makeDerp([repeat, language])
+
+        # Parser API.
 
         to leaders():
             # return _leaders(language).asSet()
@@ -428,7 +465,7 @@ def makeDerp(language):
             def p := makeDerp(l)
             if (isEmpty(l)):
                 traceln("Language is empty!")
-            traceln("Compacted: " + M.toString(p))
+            # traceln("Compacted: " + M.toString(p))
             return p
 
         to feedMany(cs):
@@ -440,24 +477,29 @@ def makeDerp(language):
         to results():
             return trees(language)
 
+        # QL value support.
+
         to substitute(values):
             traceln(`Substituting values: $values`)
             return makeDerp(replaceValues(language, values))
 
+def ex(x):
+    return makeDerp([exactly, x])
+
 def testParse(parser, input):
-    def derp := makeDerp(parser).feedMany(input)
+    def derp := parser.feedMany(input)
     def rv := derp.results()
     traceln(`$rv`)
     return rv
 
 def justFirst(x, y):
-    return [reduction, [catenation, x, y], def _([x, y]) { return [x] }]
+    return (x + y) % def first([x, _]) { return x }
 
 def justSecond(x, y):
-    return [reduction, [catenation, x, y], def _([x, y]) { return [y] }]
+    return (x + y) % def second([_, x]) { return x }
 
-def oneOrMore(l):
-    return [catenation, l, [repeat, l]]
+def oneOrMore(p):
+    return p + p.repeated()
 
 def repToList(l):
     var reps := l
@@ -465,11 +507,9 @@ def repToList(l):
     while (reps != null):
         rv.push(reps[0])
         reps := reps[1]
-    return [rv.snapshot()]
+    return rv.snapshot()
 
-def number := [reduction,
-    oneOrMore([alternation, [[exactly, c] for c in "0123456789"]]),
-    def toNumber(x) { return [atoi(i) for i in repToList(x)] }]
+def number := oneOrMore(makeDerp([alternation, [[exactly, c] for c in "0123456789"]])) % def toNumber(x) { return atoi(repToList(x)) }
 
 def testNumber(assert):
     def testNumberSimple():
@@ -481,10 +521,7 @@ def testNumber(assert):
 def bracket(bra, x, ket):
     return justSecond(bra, justFirst(x, ket))
 
-def parseValue := [reduction,
-     justSecond([exactly, '$'],
-        bracket([exactly, '{'], number, [exactly, '}'])),
-     def _(x) { return [[value, x]] }]
+def parseValue := justSecond(ex('$'), bracket(ex('{'), number, ex('}'))) % def _(x) { return [value, x] }
 
 def testParseValue(assert):
     def testParseValueSimple():
@@ -494,40 +531,32 @@ def testParseValue(assert):
     ]
 
 def oneOf(xs):
-    return [alternation, [[exactly, x] for x in xs]]
+    return makeDerp([alternation, [[exactly, x] for x in xs]])
 
 def catTree(ls):
     switch (ls):
         match [x, ==null]:
-            return [x]
+            return x
         match [x, y]:
-            return [[catenation, x, catTree(y)]]
+            return [catenation, x, catTree(y)]
         match x:
-            return [x]
+            return x
 
 def character := oneOf("xyz")
 
-def charSet := bracket([exactly, '['],
-    [reduction, [repeat, character], repToList],
-    [exactly, ']'])
+def charSet := bracket(ex('['), character.repeated() % repToList, ex(']'))
 
-def anyChar := [reduction, [exactly, '.'], def _(_) { return [anything] }]
+def anyChar := ex('.') % def _(_) { return anything }
 
-def singleItem := [alternation, [
-    [reduction, character, def c(x) { return [[exactly, x]] }],
-    [reduction, charSet, def _(x) { return [oneOf(x)] }],
-    anyChar,
-    parseValue]]
+def singleItem := character % def c(x) { return [exactly, x] } | charSet % oneOf | anyChar | parseValue
 
-def itemMaybe := [reduction, justFirst(singleItem, [exactly, '?']),
-    def interro(x) { return [[alternation, [x, nullSet]]] }]
+def itemMaybe := justFirst(singleItem, ex('?')) % def interro(x) { return [alternation, [x, nullSet]] }
 
-def itemStar := [reduction, justFirst(singleItem, [exactly, '*']),
-    def star(x) { return [[repeat, x]] }]
+def itemStar := justFirst(singleItem, ex('*')) % def star(x) { return [repeat, x] }
 
-def item := [alternation, [itemStar, itemMaybe, singleItem]]
+def item := itemStar | itemMaybe | singleItem
 
-def regex := [reduction, [repeat, item], catTree]
+def regex := item.repeated() % catTree
 
 object derp__quasiParser:
     to valueMaker(template):
