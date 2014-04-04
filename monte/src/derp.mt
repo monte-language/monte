@@ -187,7 +187,7 @@ def trees(l):
         match _:
             return []
 
-def leaders(l):
+def _leaders(l):
     switch (l):
         match ==nullSet:
             return [null]
@@ -200,24 +200,24 @@ def leaders(l):
             return [c]
 
         match [==reduction, inner, _]:
-            return leaders(inner)
+            return _leaders(inner)
 
         match [==alternation, ls]:
             var rv := []
             for inner in ls:
-                rv += leaders(inner)
+                rv += _leaders(inner)
             return rv
 
         match [==catenation, a ? nullable(a), b]:
             if (onlyNull(a)):
-                return leaders(b)
+                return _leaders(b)
             else:
-                return leaders(a) + leaders(b)
+                return _leaders(a) + _leaders(b)
         match [==catenation, a, b]:
-            return leaders(a)
+            return _leaders(a)
 
         match [==repeat, l]:
-            return [null] + leaders(l)
+            return [null] + _leaders(l)
 
         match _:
             return []
@@ -410,42 +410,42 @@ def replaceValues(language, values):
             return x
 
 def makeDerp(language):
-    var l := language
-
     return object parser:
         to unwrap():
             return language
 
-        to reset():
-            return makeDerp(language)
-
         to _printOn(out):
-            return showParser(l, out)
+            return showParser(language, out)
+
+        to leaders():
+            # return _leaders(language).asSet()
+            return _leaders(language)
 
         to feed(c):
-            # traceln(`Leaders: ${leaders(l).asSet()}`)
-            traceln(`Leaders: ${leaders(l)}`)
+            traceln(`Leaders: ${parser.leaders()}`)
             traceln(`Character: $c`)
-            l := derive(l, c)
-            l := compact(l)
-            traceln("Compacted: " + M.toString(parser))
+            def l := compact(derive(language, c))
+            def p := makeDerp(l)
             if (isEmpty(l)):
                 traceln("Language is empty!")
+            traceln("Compacted: " + M.toString(p))
+            return p
 
         to feedMany(cs):
+            var p := parser
             for c in cs:
-                parser.feed(c)
+                p feed= c
+            return p
 
         to results():
-            return trees(l)
+            return trees(language)
 
         to substitute(values):
             traceln(`Substituting values: $values`)
-            return makeDerp(replaceValues(l, values))
+            return makeDerp(replaceValues(language, values))
 
 def testParse(parser, input):
-    def derp := makeDerp(parser)
-    derp.feedMany(input)
+    def derp := makeDerp(parser).feedMany(input)
     def rv := derp.results()
     traceln(`$rv`)
     return rv
@@ -550,8 +550,7 @@ unittest([
 def w := 'w'
 def z := 'z'
 
-def p := derp`${w}x${z}y${w}`
-p.feedMany("wxzyw")
+def p := derp`${w}x${z}y${w}`.feedMany("wxzyw")
 traceln(`${p.results()}`)
 
 var xyzzy := null
