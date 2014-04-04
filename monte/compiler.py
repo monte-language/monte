@@ -274,7 +274,7 @@ class PythonWriter(object):
             return getattr(self, "pattern_"+name)(out, ctx, ej, val, node)
 
     def _generatePatternForParam(self, out, ctx, ej, node):
-        if node.tag.name in ['FinalPattern', 'VarPattern'] and node.args[1].tag.name == 'null':
+        if node.tag.name == 'FinalPattern' and node.args[1].tag.name == 'null':
             #skip assignment entirely, we'll use the requested name directly in the param list
             return ctx.layout.addNoun(node.args[0].args[0].data, node)
         else:
