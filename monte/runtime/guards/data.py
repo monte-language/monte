@@ -1,11 +1,11 @@
 from monte.runtime.base import throw
 from monte.runtime.data import (bwrap, null, true, false, Character, Float,
                                 Integer, String)
-from monte.runtime.guards.base import PythonTypeGuard, Guard, PrintFQN
+from monte.runtime.guards.base import PythonTypeGuard, Guard, PrintFQN, deepFrozenGuard
 
 class VoidGuard(PrintFQN, Guard):
     _m_fqn = "void"
-
+    _m_auditorStamps = (deepFrozenGuard,)
     def _subCoerce(self, specimen, ej):
         if specimen in [None, null]:
             return specimen
@@ -16,6 +16,7 @@ voidGuard = VoidGuard()
 
 class BooleanGuard(PrintFQN, Guard):
     _m_fqn = "bool"
+    _m_auditorStamps = (deepFrozenGuard,)
     def _subCoerce(self, specimen, ej):
         if specimen in [true, false]:
             return specimen
@@ -29,6 +30,7 @@ booleanGuard = BooleanGuard()
 
 class IntegerGuard(PrintFQN, Guard):
     _m_fqn = "int"
+    _m_auditorStamps = (deepFrozenGuard,)
     def _subCoerce(self, specimen, ej):
         if isinstance(specimen, Integer):
             return specimen
@@ -40,6 +42,7 @@ intGuard = IntegerGuard()
 
 class FloatGuard(PrintFQN, Guard):
     _m_fqn = "float"
+    _m_auditorStamps = (deepFrozenGuard,)
     def _subCoerce(self, specimen, ej):
         if isinstance(specimen, Integer):
             return Float(specimen.n)

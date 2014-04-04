@@ -1,7 +1,8 @@
 from monte.runtime.base import MonteObject
 from monte.runtime.data import String, Integer, bwrap, null, true, false
 from monte.runtime.flow import MonteIterator
-from monte.runtime.guards.base import selflessGuard
+from monte.runtime.guards.base import (deepFrozenFunc, deepFrozenGuard,
+                                       selflessGuard, transparentGuard)
 
 
 class EListMixin(object):
@@ -103,7 +104,7 @@ class EListMixin(object):
 
 class ConstList(EListMixin, MonteObject):
     _m_fqn = "__makeList$ConstList"
-    _m_auditorStamps = (selflessGuard,)
+    _m_auditorStamps = (selflessGuard, transparentGuard)
 
     def __init__(self, l):
         self.l = tuple(l)
@@ -120,7 +121,7 @@ class ConstList(EListMixin, MonteObject):
         return self
 
     def _uncall(self):
-        return ConstList([makeMonteList, "run", self])
+        return ConstList([makeMonteList, String(u"run"), self])
 
     #E list methods left out, due to indolence: includes, startOf, lastStartOf
 
@@ -221,13 +222,13 @@ class FlexList(EListMixin, MonteObject):
         return ConstList(self.l[:])
 
     def _uncall(self):
-        return ConstList([ConstList([self.l]), "diverge", ConstList([])])
+        return ConstList([ConstList([self.l]), String(u"diverge"), ConstList([])])
 
     def _makeIterator(self):
         return MonteIterator((Integer(i), o) for (i, o)
                              in zip(range(len(self.l)), self.l))
 
-
+@deepFrozenFunc
 def makeMonteList(*items):
     return ConstList(items)
 
@@ -366,7 +367,7 @@ class EMapMixin(object):
 
 class ConstMap(EMapMixin, MonteObject):
     _m_fqn = "__makeMap$ConstMap"
-    _m_auditorStamps = (selflessGuard,)
+    _m_auditorStamps = (selflessGuard, transparentGuard)
 
     def snapshot(self):
         return self
@@ -447,12 +448,12 @@ class FlexMap(EMapMixin, MonteObject):
             self.put(k, other.d[k])
 
     def _uncall(self):
-        return ConstList([self.snapshot(), "diverge", ConstList([])])
+        return ConstList([self.snapshot(), String(u"diverge"), ConstList([])])
 
 
 class mapMaker(object):
     _m_fqn = "__makeMap"
-    _m_auditorStamps = ()
+    _m_auditorStamps = (deepFrozenGuard,)
     @staticmethod
     def fromPairs(pairs):
         return ConstMap(dict(p for (i, p) in pairs._makeIterator()), [p.get(Integer(0)) for p in pairs])

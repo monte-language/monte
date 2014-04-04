@@ -17,6 +17,7 @@ class MonteIterator(MonteObject):
             ej()
 
 
+#deepFrozenFunc
 def monteLooper(coll, obj):
     it = coll._makeIterator()
     ej = ejector("iteration")
