@@ -6,15 +6,6 @@ def _glueReps([x, xs]):
         return [x]
     return [x] + xs
 
-def concatMap(f):
-    def concatMapper(xss):
-        def rv := [].diverge()
-        for xs in xss:
-            for x in xs:
-                rv.push(f(x))
-        return rv.snapshot()
-    return concatMapper
-
 # The core.
 
 object empty:
@@ -223,11 +214,7 @@ def _leaders(l):
             return []
 
 def _filterEmpty(xs):
-    def rv := [].diverge()
-    for x in xs:
-        if (x != empty):
-            rv.push(x)
-    return rv.snapshot()
+    return [x for x in xs if x != empty]
 
 def derive(l, c):
     switch (l):
@@ -283,7 +270,10 @@ def doCompact(l, i):
 
         match [==reduction, [==reduction, inner, f], g]:
             def compose(x):
-                return concatMap(g)(f(x))
+                var rv := []
+                for item in f(x):
+                    rv += g(item)
+                return rv
             return [reduction, doCompact(inner, j), compose]
 
         match [==reduction, inner, f]:
@@ -428,11 +418,13 @@ def makeDerp(language):
         # EDSL wrapper methods.
 
         to add(other):
-            # Addition is concatenation.
+            # Addition is catenation.
+            traceln(`add $parser + $other`)
             return makeDerp([catenation, language, other.unwrap()])
 
         to or(other):
             # Alternation.
+            traceln(`or $parser | $other`)
             return makeDerp([alternation, [language, other.unwrap()]])
 
         to remainder(other):
@@ -538,7 +530,7 @@ def catTree(ls):
         match [x, ==null]:
             return x
         match [x, y]:
-            return [catenation, x, catTree(y)]
+            return x + catTree(y)
         match x:
             return x
 
@@ -546,13 +538,13 @@ def character := oneOf("xyz")
 
 def charSet := bracket(ex('['), character.repeated() % repToList, ex(']'))
 
-def anyChar := ex('.') % def _(_) { return anything }
+def anyChar := ex('.') % def _(_) { return makeDerp(anything) }
 
-def singleItem := character % def c(x) { return [exactly, x] } | charSet % oneOf | anyChar | parseValue
+def singleItem := character % ex | charSet % oneOf | anyChar | parseValue % makeDerp
 
-def itemMaybe := justFirst(singleItem, ex('?')) % def interro(x) { return [alternation, [x, nullSet]] }
+def itemMaybe := justFirst(singleItem, ex('?')) % def interro(x) { return x | makeDerp(nullSet) }
 
-def itemStar := justFirst(singleItem, ex('*')) % def star(x) { return [repeat, x] }
+def itemStar := justFirst(singleItem, ex('*')) % def star(x) { return x.repeated() }
 
 def item := itemStar | itemMaybe | singleItem
 
