@@ -27,7 +27,8 @@ def eval(source, scope=None, origin="__main"):
                        "_m_evalResult = " + lastline])
     mod.__loader__ = GeneratedCodeLoader(pysrc)
     code = compile(pysrc, name, "exec")
-    __builtins__['eval'](code, mod.__dict__)
+    import __builtin__
+    __builtin__.eval(code, mod.__dict__)
     sys.modules[name] = mod
     linecache.getlines(name, mod.__dict__)
     return mod._m_evalResult
