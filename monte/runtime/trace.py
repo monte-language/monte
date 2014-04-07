@@ -1,9 +1,9 @@
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
 def trace(x):
-    if isinstance(x, unicode):
-        x = x.encode("utf-8")
     print x,
 
 def traceln(x):
-    if isinstance(x, unicode):
-        x = x.encode("utf-8")
     print x
