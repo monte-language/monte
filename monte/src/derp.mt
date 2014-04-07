@@ -539,13 +539,7 @@ def [
     "bracket" => bracket
 ] | _ := import("derp.combiners")
 
-def repToList(l):
-    var reps := l
-    def rv := [].diverge()
-    while (reps != null):
-        rv.push(reps[0])
-        reps := reps[1]
-    return rv.snapshot()
+def repToList := import("hands.consToList")
 
 def oneOf(xs):
     return makeDerp([alternation, [[exactly, x] for x in xs]])
