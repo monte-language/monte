@@ -52,6 +52,36 @@ def _join(xs, glue):
         out += glue
     return out + end
 
+def parserSize(l):
+    switch (l):
+        match ==empty:
+            return 1
+        match ==nullSet:
+            return 1
+        match ==anything:
+            return 1
+        match [==exactly, _]:
+            return 1
+        match [==value, _]:
+            return 1
+
+        match [==term, ts]:
+            return 1 + parserSize(ts)
+        match [==reduction, inner, f]:
+            return 1 + parserSize(inner)
+        match [==alternation, ls]:
+            var sum := 1
+            for l in ls:
+                sum += parserSize(l)
+            return sum
+        match [==catenation, a, b]:
+            return 1 + parserSize(a) + parserSize(b)
+        match [==repeat, inner]:
+            return 1 + parserSize(inner)
+
+        match _:
+            return 1
+
 def showParser(l, out):
     switch (l):
         match ==empty:
@@ -94,6 +124,9 @@ def showParser(l, out):
             out.print("rep(")
             showParser(inner, out)
             out.print(")")
+
+        match [==value, inner]:
+            out.print(`val($inner)`)
 
         match _:
             traceln(`I don't know how to print $l`)
@@ -291,10 +324,8 @@ def doCompact(l, i):
 
         match [==catenation, a ? onlyNull(a), b]:
             def xs := trees(a)
-            traceln(`xs $xs`)
             def curry(y):
                 def ts := [].diverge()
-                traceln(`y $y`)
                 for x in xs:
                     ts.push([x, y])
                 return ts.snapshot()
@@ -390,7 +421,6 @@ def testRepeat(assert):
     ]
 
 def replaceValues(language, values):
-    # traceln(`replace $language $values`)
     switch (language):
         match [==value, index]:
             return [exactly, values[index]]
@@ -412,19 +442,17 @@ def makeDerp(language):
         # Monte core methods.
 
         to _printOn(out):
-            out.print("Parser: ")
+            out.print(`Parser (${parserSize(language)}): `)
             return showParser(language, out)
 
         # EDSL wrapper methods.
 
         to add(other):
             # Addition is catenation.
-            traceln(`add $parser + $other`)
             return makeDerp([catenation, language, other.unwrap()])
 
         to or(other):
             # Alternation.
-            traceln(`or $parser | $other`)
             return makeDerp([alternation, [language, other.unwrap()]])
 
         to remainder(other):
@@ -472,7 +500,6 @@ def makeDerp(language):
         # QL value support.
 
         to substitute(values):
-            traceln(`Substituting values: $values`)
             return makeDerp(replaceValues(language, values))
 
 def ex(x):
@@ -484,14 +511,12 @@ def testParse(parser, input):
     traceln(`$rv`)
     return rv
 
-def justFirst(x, y):
-    return (x + y) % def first([x, _]) { return x }
-
-def justSecond(x, y):
-    return (x + y) % def second([_, x]) { return x }
-
-def oneOrMore(p):
-    return p + p.repeated()
+def [
+    "oneOrMore" => oneOrMore,
+    "justFirst" => justFirst,
+    "justSecond" => justSecond,
+    "bracket" => bracket
+] | _ := import("derp.combiners")
 
 def repToList(l):
     var reps := l
@@ -509,9 +534,6 @@ def testNumber(assert):
     return [
         testNumberSimple,
     ]
-
-def bracket(bra, x, ket):
-    return justSecond(bra, justFirst(x, ket))
 
 def parseValue := justSecond(ex('$'), bracket(ex('{'), number, ex('}'))) % def _(x) { return [value, x] }
 
