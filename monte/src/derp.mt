@@ -35,7 +35,7 @@ object repeat:
 object value:
     pass
 
-def parserSize(l):
+def parserSize(l) :int:
     switch (l):
         match ==empty:
             return 1
@@ -290,13 +290,27 @@ def doCompact(l, i):
                 for item in f(x):
                     rv += g(item)
                 return rv
-            return [reduction, doCompact(inner, j), compose]
+            return doCompact([reduction, inner, compose], j)
 
         match [==reduction, inner, f]:
             return [reduction, doCompact(inner, j), f]
 
         match [==alternation, ls]:
-            def compacted := _filterEmpty([doCompact(l, j) for l in ls])
+            # First, recurse into the subordinate parse trees, and look for
+            # more alternations. We're going to flatten all of them out.
+            var leaves := []
+            var stack := ls
+            while (stack.size() > 0):
+                switch (stack[0]):
+                    match [==alternation, more]:
+                        stack += more
+                    match x:
+                        leaves with= x
+                stack := stack.slice(1, stack.size())
+
+            # Now, compact and filter away empty leaves, and return the
+            # remainder.
+            def compacted := _filterEmpty([doCompact(l, j) for l in leaves])
             switch (compacted):
                 match []:
                     return empty
@@ -312,7 +326,7 @@ def doCompact(l, i):
                 for x in xs:
                     ts.push([x, y])
                 return ts.snapshot()
-            return [reduction, doCompact(b, j), curry]
+            return doCompact([reduction, b, curry], j)
 
         match [==catenation, a, b]:
             if (isEmpty(a) | isEmpty(b)):
@@ -329,7 +343,7 @@ def doCompact(l, i):
             return l
 
 def compact(l):
-    return doCompact(l, 30)
+    return doCompact(l, 20)
 
 def testEmpty(assert):
     def testEmptyDerive():
@@ -356,8 +370,23 @@ def testReduce(assert):
 
 def testAlternation(assert):
     def testAlternationOptimization():
-        def l := [alternation, [empty]]
-        assert.equal(compact(l), empty)
+        def single := [alternation, [empty]]
+        assert.equal(compact(single), empty)
+
+        def deep := [alternation, [
+            [alternation, [
+                [alternation, [[exactly, 'x'], empty]],
+                [alternation, [empty]],
+                [exactly, 'y'],
+            ]],
+            [exactly, 'z'],
+        ]]
+        # Note that the optimizing traversal inverts the tree, so the leaves
+        # are listed here in backwards order from their original positions.
+        assert.equal(compact(deep), [alternation, [
+            [exactly, 'z'],
+            [exactly, 'y'],
+            [exactly, 'x']]])
     def testAlternationPair():
         def l := [alternation, [[exactly, 'x'], [exactly, 'y']]]
         assert.equal(trees(derive(l, 'x')), ['x'])
@@ -457,17 +486,26 @@ def makeDerp(language):
 
         # Parser API.
 
+        to size() :int:
+            return parserSize(language)
+
         to leaders():
             # return _leaders(language).asSet()
             return _leaders(language)
 
+        to compacted():
+            return makeDerp(compact(language))
+
         to feed(c):
-            traceln(`Leaders: ${parser.leaders()}`)
+            # traceln(`Leaders: ${parser.leaders()}`)
             traceln(`Character: $c`)
-            def l := compact(derive(language, c))
-            def p := makeDerp(l)
-            if (isEmpty(l)):
+            def derived := derive(language, c)
+            traceln(`Raw size: ${parserSize(derived)}`)
+            def compacted := compact(derived)
+            if (isEmpty(compacted)):
                 traceln("Language is empty!")
+            traceln(`Compacted size: ${parserSize(compacted)}`)
+            def p := makeDerp(compacted)
             # traceln("Compacted: " + M.toString(p))
             return p
 
@@ -553,7 +591,7 @@ def itemStar := justFirst(singleItem, ex('*')) % def star(x) { return x.repeated
 
 def item := itemStar | itemMaybe | singleItem
 
-def regex := item.repeated() % catTree
+def regex := (item.repeated() % catTree).compacted()
 
 object derp__quasiParser:
     to valueMaker(template):
