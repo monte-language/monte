@@ -1,11 +1,6 @@
 def [_any, _all] := import("anyAll")
 def atoi := import("atoi")
 
-def _glueReps([x, xs]):
-    if (xs == null):
-        return [x]
-    return [x] + xs
-
 # The core.
 
 object empty:
@@ -39,18 +34,6 @@ object repeat:
 
 object value:
     pass
-
-def _join(xs, glue):
-    var out := ""
-    if (xs.size() == 0):
-        return out
-
-    def l := xs.diverge()
-    def end := l.pop()
-    for x in l:
-        out += x
-        out += glue
-    return out + end
 
 def parserSize(l):
     switch (l):
@@ -526,7 +509,10 @@ def repToList(l):
         reps := reps[1]
     return rv.snapshot()
 
-def number := oneOrMore(makeDerp([alternation, [[exactly, c] for c in "0123456789"]])) % def toNumber(x) { return atoi(repToList(x)) }
+def oneOf(xs):
+    return makeDerp([alternation, [[exactly, x] for x in xs]])
+
+def number := oneOrMore(oneOf("0123456789")) % repToList % atoi
 
 def testNumber(assert):
     def testNumberSimple():
@@ -543,9 +529,6 @@ def testParseValue(assert):
     return [
         testParseValueSimple,
     ]
-
-def oneOf(xs):
-    return makeDerp([alternation, [[exactly, x] for x in xs]])
 
 def catTree(ls):
     switch (ls):
