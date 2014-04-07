@@ -69,7 +69,9 @@ class MonteObject(object):
         return self.shiftRight(other)
 
     def __cmp__(self, other):
-        return self.op__cmp(other)
+        # This is a Python-facing method, so unwrap the Integer that was
+        # returned from op__cmp(). If this isn't done, then PyPy complains.
+        return self.op__cmp(other).n
 
     def __eq__(self, other):
         from monte.runtime.equalizer import equalizer

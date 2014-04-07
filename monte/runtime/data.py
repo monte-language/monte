@@ -57,7 +57,7 @@ class Bool(MonteObject):
             raise RuntimeError("Bools can't be compared with non-bools")
         return bwrap(self._b != other._b)
 
-    def  op__cmp(self, other):
+    def op__cmp(self, other):
         if not isinstance(other, Bool):
             raise RuntimeError("%r is not a boolean" % (other,))
         return Integer(cmp(self._b, other._b))
