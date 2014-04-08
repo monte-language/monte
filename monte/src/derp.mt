@@ -278,6 +278,7 @@ def doCompact(l, i):
     switch (l):
         match [==reduction, x ? isEmpty(x), _]:
             return empty
+
         match [==reduction, inner ? onlyNull(inner), f]:
             var reduced := []
             for tree in trees(inner):
@@ -506,7 +507,7 @@ def makeDerp(language):
                 traceln("Language is empty!")
             traceln(`Compacted size: ${parserSize(compacted)}`)
             def p := makeDerp(compacted)
-            # traceln("Compacted: " + M.toString(p))
+            traceln("Compacted: " + M.toString(p))
             return p
 
         to feedMany(cs):
@@ -601,20 +602,22 @@ unittest([
     testAlternation,
     testCatenation,
     testRepeat,
-    testNumber,
-    testParseValue,
+    # testNumber,
+    # testParseValue,
 ])
 
-def w := 'w'
-def z := 'z'
+[makeDerp, ex, oneOf]
 
-def p := derp`${w}x${z}y${w}`.feedMany("wxzyw")
-traceln(`${p.results()}`)
-
-var xyzzy := null
-
-for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
-    traceln("~~~~~")
-    xyzzy := testParse(regex, expr)[0]
-    traceln("~~~~~")
-    testParse(xyzzy, "xyzzy")
+# def w := 'w'
+# def z := 'z'
+#
+# def p := derp`${w}x${z}y${w}`.feedMany("wxzyw")
+# traceln(`${p.results()}`)
+#
+# var xyzzy := null
+#
+# for expr in ["x*y*z*y*", "[xyz]*", "x.z..", "xyzzy?"]:
+#     traceln("~~~~~")
+#     xyzzy := testParse(regex, expr)[0]
+#     traceln("~~~~~")
+#     testParse(xyzzy, "xyzzy")

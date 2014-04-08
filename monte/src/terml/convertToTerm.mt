@@ -27,12 +27,12 @@ def convertToTerm(val, ej):
             return mkt(".char.", v, null)
         match v :str:
             return mkt(".String.", v, null)
-        match v :list:
+        match v :List:
             def l := [convertToTerm(item, ej) for item in v]
             return mkt(".tuple.", null, l)
         # match v :set:
         #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
-        match m :map:
+        match m :Map:
             return mkt(".bag.", null,
                        [mkt(".attr.", null, [convertToTerm(k, ej),
                        convertToTerm(v, ej)])
