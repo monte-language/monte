@@ -101,21 +101,9 @@ class FrameScopeLayout(object):
         else:
             self.selfBinding = None
         self.gensym = SymGenerator().gensym
-        self.fields = [self._createBinding(f) for f in fields]
+        self.fields = [f.bindInFrame(self) for f in fields]
+        self.fields.sort(key=lambda f: f.name)
         self.fqnPrefix = fqnPrefix
-
-    def _createBinding(self, f):
-        if f.name not in self.verbs:
-            pyname = f.pyname
-        else:
-            pyname = self.gensym(mangleIdent(f.name))
-        if f.kind == FRAME:
-            pyname = self.selfName + '.' + pyname.rpartition('.')[2]
-        else:
-            pyname = self.selfName + '.' + pyname
-        slotname = '%s._m_slots["%s"][0]' % (self.selfName, f.name)
-        guardname = '%s._m_slots["%s"][1]' % (self.selfName, f.name)
-        return Binding(f.node, pyname, FRAME, guardname, None, slotname)
 
     def getBinding(self, name, default=_absent):
         if self.selfBinding and name == self.selfBinding.name:
@@ -123,7 +111,6 @@ class FrameScopeLayout(object):
         for f in self.fields:
             if f.name == name:
                 return f
-
 
 #XXX ignoring REPL case for now
 class ScopeLayout(object):
@@ -189,8 +176,7 @@ class ScopeLayout(object):
         pyname = self.pynames[n]
         guardExpr = self.guards.get(n, "_monte.null")
         if node.tag.name == 'BindingPattern':
-            bindingGuardExpr = self.pynames[n] + '.guard'
-            pyname = self.pynames[n] + '.slot'
+            return CustomBinding(node, pyname, LOCAL, pyname)
         elif node.tag.name == 'FinalPattern':
             bindingGuardExpr = '_monte.FinalSlot.asType().get(%s)' % (guardExpr,)
         elif node.tag.name == 'VarPattern':
@@ -199,6 +185,44 @@ class ScopeLayout(object):
 
     def makeInner(self):
         return ScopeLayout(self, self.frame, self.outer)
+
+class CustomBinding(object):
+    def __init__(self, node, pyname, kind, descriptorName):
+        self.node = node
+        self.pyname = pyname
+        self.name = node.args[0].args[0].data
+        self.kind = kind
+        self.descriptorName = descriptorName
+
+    def getDescriptorName(self):
+        return self.descriptorName
+
+    def getValueExpr(self):
+        return self.pyname + '.slot.get()'
+
+    def getBindingGuardExpr(self):
+        return self.pyname + '.guard'
+
+    def getBindingExpr(self):
+        return self.pyname
+
+    def getSlotPairName(self):
+        return mangleIdent(self.name) + "_slotPair"
+
+    def getBindingPair(self):
+        return (self.pyname + '.slot', self.getBindingGuardExpr())
+
+    def bindInFrame(self, frame):
+        if self.name not in frame.verbs:
+            pyname = self.pyname
+        else:
+            pyname = frame.gensym(mangleIdent(self.name))
+        if self.kind == FRAME:
+            pyname = frame.selfName + '.' + pyname.rpartition('.')[2]
+        else:
+            pyname = frame.selfName + '.' + pyname
+        return CustomBinding(self.node, pyname, FRAME, self.descriptorName)
+
 
 class Binding(object):
     def __init__(self, node, pyname, kind, bindingGuardExpr, guardExpr, slotname=None):
@@ -213,6 +237,77 @@ class Binding(object):
             self.slotname = self.pyname
         else:
             self.slotname = slotname
+        self.descriptorName = self.pyname
+
+    def getDescriptorName(self):
+        return self.descriptorName
+
+    def generateInitParam(self):
+        return self.pyname
+
+    def getValueExpr(self):
+        if self.isFinal or self.kind == FRAME:
+            return self.pyname
+        else:
+            return self.pyname + ".get()"
+
+    def getBindingExpr(self):
+        if self.isFinal:
+            bn = "_monte.FinalSlot(%s)" % (self.pyname,)
+        else:
+            bn = self.pyname
+        return "_monte.Binding(%s, %s)" % (self.bindingGuardExpr, bn)
+
+    def getBindingGuardExpr(self):
+        return self.bindingGuardExpr
+
+    def getBindingPair(self):
+        if self.isFinal:
+            pair = ("_monte.FinalSlot(%s, %s, unsafe=True)" % (self.pyname,
+                                                               self.guardExpr),
+                    self.bindingGuardExpr)
+        else:
+            pair = (self.slotname, self.bindingGuardExpr)
+        return pair
+
+    def getSlotPairName(self):
+        return mangleIdent(self.name) + "_slotPair"
+
+    def bindInFrame(self, frame):
+        if self.name not in frame.verbs:
+            pyname = self.pyname
+            descriptorName = self.descriptorName
+        else:
+            descriptorName = pyname = frame.gensym(mangleIdent(self.name))
+
+        if self.kind == FRAME:
+            pyname = frame.selfName + '.' + pyname.rpartition('.')[2]
+        else:
+            pyname = frame.selfName + '.' + pyname
+        slotname = '%s._m_slots["%s"][0]' % (frame.selfName, self.name)
+        guardname = '%s._m_slots["%s"][1]' % (frame.selfName, self.name)
+        b = Binding(self.node, pyname, FRAME, guardname, None, slotname)
+        b.descriptorName = descriptorName
+        return b
+
+    def getAssignStatement(self, temp, frame):
+        if self.kind == FRAME:
+            if self.pyname == frame.selfName:
+                return "%s.%s.put(%s)" % (self.pyname, self.pyname, temp)
+            else:
+                return "%s = %s" % (self.pyname, temp)
+        else:
+            return "%s.put(%s)" % (self.pyname, temp)
+
+    def generateSelfVarSlot(self, val, guardname, temp, ej):
+        return '\n'.join([
+            "%s = _monte.VarSlot(%s)" % (self.pyname, guardname),
+            "%s = %s" % (temp, val),
+            "%s._m_init(%s, %s)" % (self.pyname, temp, ej)])
+
+    def generateSelfFinalSlot(self, val):
+        return '%s = %s' % (self.pyname, val)
+
 
 class CompilationContext(object):
     def __init__(self, parent, mode=None, layout=None, rootWriter=None):
@@ -310,10 +405,7 @@ class PythonWriter(object):
         b = ctx.layout.getBinding(name)
         if b.name in constants:
             return constants[b.name]
-        if b.isFinal or b.kind == FRAME:
-            return b.pyname
-        else:
-            return b.pyname + ".get()"
+        return b.getValueExpr()
 
     def generate_BindingExpr(self, out, ctx, node):
         name = node.args[0].args[0].data
@@ -323,11 +415,7 @@ class PythonWriter(object):
                                                   mangleIdent(name),)
         else:
             b = ctx.layout.getBinding(name)
-            if b.isFinal:
-                bn = "_monte.FinalSlot(%s)" % (b.pyname,)
-            else:
-                bn = b.pyname
-            return "_monte.Binding(%s, %s)" % (b.bindingGuardExpr, bn)
+            return b.getBindingExpr()
 
     def generate_SeqExpr(self, out, ctx, node):
         exprs = node.args[0].args
@@ -421,7 +509,7 @@ class PythonWriter(object):
             paramNames = self._collectSlots(fields)
         else:
             paramNames = [
-                "(%s, %s)" % (selfName, selfBinding.bindingGuardExpr)
+                "(%s, %s)" % (selfName, selfBinding.getBindingGuardExpr())
             ] + self._collectSlots(fields)
             fields = [selfBinding]
             fields += [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
@@ -449,7 +537,7 @@ class PythonWriter(object):
         classBodyOut.writeln("_m_fqn = '%s$%s'" % (
             ctx.layout.frame.fqnPrefix,
             name.encode('string-escape')))
-        if not any([methods, matchers, fields, doc, auditors]):
+        if not any([methods, matchers, frame.fields, doc, auditors]):
             classBodyOut.writeln("pass")
         if matcherNames:
             classBodyOut.writeln('_m_matcherNames = %r' % (matcherNames,))
@@ -459,26 +547,25 @@ class PythonWriter(object):
                 classBodyOut.writeln(ln)
             classBodyOut.writeln('"""')
         fnames = ()
-        if any([fields, auditors, methGuards]):
+        if any([frame.fields, auditors, methGuards]):
             initOut = classBodyOut.indent()
-            fields.sort(key=lambda f: f.name)
-            pyfnames = [mangleIdent(f.name) + "_slotPair" for f in fields]
+            pyfnames = [f.getSlotPairName() for f in frame.fields]
             initParams = pyfnames
             if methGuards:
                 initParams = ["_m_methodGuards"] + initParams
             if auditors:
                 initParams = ["_m_auditors"] + initParams
-            for b in fields:
-                classBodyOut.writeln("%s = _monte._SlotDescriptor(%r)" % (mangleIdent(b.name),
+            for b in frame.fields:
+                classBodyOut.writeln("%s = _monte._SlotDescriptor(%r)" % (b.getDescriptorName(),
                                                                           b.name))
             classBodyOut.writeln("def __init__(%s, %s):" % (selfName,
                                                             ', '.join(initParams)))
             if methGuards:
                 initOut.writeln(selfName + "._m_guardMethods(_m_methodGuards)")
-            if fields:
+            if frame.fields:
                 initOut.writeln(selfName + "._m_slots = {")
                 dictOut = initOut.indent()
-                for b, pyname in zip(fields, pyfnames):
+                for b, pyname in zip(frame.fields, pyfnames):
                     dictOut.writeln("%r: %s," % (b.name, pyname))
                 initOut.writeln("}")
             else:
@@ -540,12 +627,7 @@ class PythonWriter(object):
     def _collectSlots(self, fields):
         makeSlots = []
         for f in sorted(fields, key=lambda f: f.name):
-            if f.isFinal:
-                pair = ("_monte.FinalSlot(%s, %s, unsafe=True)" % (f.pyname,
-                                                                   f.guardExpr),
-                        f.bindingGuardExpr)
-            else:
-                pair = (f.slotname, f.bindingGuardExpr)
+            pair = f.getBindingPair()
             makeSlots.append("(%s, %s)" % pair)
         return makeSlots
 
@@ -554,17 +636,11 @@ class PythonWriter(object):
         name = patt.args[0].data
         v = self._generate(out, ctx.with_(mode=VALUE), expr)
         b = ctx.layout.getBinding(name)
-        temp = ctx.layout.gensym(mangleIdent(b.name))
+        temp = ctx.layout.gensym(mangleIdent(name))
         if b.isFinal:
             self.err("Can't assign to final variable: " + repr(name))
         out.writeln("%s = %s" % (temp, v))
-        if b.kind == FRAME:
-            if b.pyname == ctx.layout.frame.selfName:
-                out.writeln("%s.%s.put(%s)" % (b.pyname, b.pyname, temp))
-            else:
-                out.writeln("%s = %s" % (b.pyname, temp))
-        else:
-            out.writeln("%s.put(%s)" % (b.pyname, temp))
+        out.writeln(b.getAssignStatement(temp, ctx.layout.frame))
         if ctx.mode != FX_ONLY:
             return temp
 
@@ -650,10 +726,12 @@ class PythonWriter(object):
                 ej = "_monte.throw"
             val = "%s.coerce(%s, %s)" % (guardname, val, ej)
         if objname:
-            pyname = ctx.layout.getBinding(name.args[0].data).pyname
+            b = ctx.layout.getBinding(name.args[0].data)
+            out.writeln(b.generateSelfFinalSlot(val))
+            return b.getValueExpr()
         else:
             pyname = ctx.layout.addNoun(name.args[0].data, node, guardname)
-        out.writeln("%s = %s" % (pyname, val))
+            out.writeln("%s = %s" % (pyname, val))
         return pyname
 
     def pattern_IgnorePattern(self, out, ctx, ej, val, node, objname=False):
@@ -682,11 +760,9 @@ class PythonWriter(object):
         else:
             guardname = "_monte.null"
         if objname:
-            pyname = ctx.layout.getBinding(name).pyname
+            b =  ctx.layout.getBinding(name)
             temp = ctx.layout.gensym(mangleIdent(name))
-            out.writeln("%s = _monte.VarSlot(%s)" % (pyname, guardname))
-            out.writeln("%s = %s" % (temp, val))
-            out.writeln("%s._m_init(%s, %s)" % (pyname, temp, ej))
+            out.writeln(b.generateSelfVarSlot(val, guardname, temp, ej))
         else:
             pyname = ctx.layout.addNoun(name, node, guardname)
             temp = ctx.layout.gensym(mangleIdent(name))

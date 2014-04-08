@@ -155,6 +155,31 @@ class CompilerTest(unittest.TestCase):
              foo
              """)
 
+    def test_noMethodCollision(self):
+        self.eq_("""
+            def x := 42
+            object test:
+                method x():
+                    x
+
+            test.x()
+            """,
+            """
+            class _m_test_Script(_monte.MonteObject):
+                _m_fqn = '__main$test'
+                _g_x1 = _monte._SlotDescriptor('x')
+                def __init__(test, x_slotPair):
+                    test._m_slots = {
+                        'x': x_slotPair,
+                    }
+
+                def x(test):
+                    return test._g_x1
+
+            x = _monte.wrap(42)
+            test = _m_test_Script((_monte.FinalSlot(x, _monte.null, unsafe=True), _monte.FinalSlot.asType().get(_monte.null)))
+            test.x()
+            """)
     def test_trivialVarObject(self):
         self.eq_(
             'object var foo { method baz(x, y) { x }}',
@@ -466,7 +491,7 @@ class CompilerTest(unittest.TestCase):
                     foo._m_audit(_m_auditors)
 
                 def run(foo):
-                    return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w.slot)
+                    return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w.slot.get())
 
                 _m_objectExpr = "eJxVTssOwiAQ/BXCqST8hdqTr8QjaRqsa0RxIRRi7dcLYoOcNvPYmTmc7zD4BoPWnLQKpT5K78FhszcBN5N1Db0aQxknyROPyN4irwFs68wMmFx/vPSSso6T0+CUXTrEDvzNXH6IuoA0kl2O5ySrK6n1N6Sk9f1TPmCrRp9alr+iT3X5u4ZzDV9xF0vTRDwfP55UaQ=="
 
@@ -718,7 +743,7 @@ class CompilerTest(unittest.TestCase):
                  def blee(boz):
                      _g_b2 = boz.a
                      boz.b = _g_b2
-                     return _monte.StaticContext('__main$foo$boz', ['b', 'a'], _m_boz_Script._m_objectExpr)
+                     return _monte.StaticContext('__main$foo$boz', ['a', 'b'], _m_boz_Script._m_objectExpr)
 
                  _m_objectExpr = "eJxVjEsKAjEQRK8SepWGXEJEd37AZcgiGRuNhM6Y6YHB09vxg7gqXlH1DulGg1ieS3FmmzmWYxShxnZfZ94sY7OQ6gPQmb7R8D2DM6eh5fH79DuSaz1/CFIhAm3D+6Vjur9cfjVN+fIn7+ofRkBltUUL68pCiwAGxNBtiE9nsTj6"
 
@@ -794,7 +819,7 @@ class CompilerTest(unittest.TestCase):
 
                 def biz(boz):
                     x = _monte.wrap(17)
-                    return _monte.Map((('&b', _monte.getSlot(boz, 'b')), ('&a', _monte.getSlot(boz, 'a'))))
+                    return _monte.Map((('&a', _monte.getSlot(boz, 'a')), ('&b', _monte.getSlot(boz, 'b'))))
 
                 def baz(boz):
                     _g_b5 = boz.b.add(boz.a)
