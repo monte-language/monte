@@ -1,10 +1,8 @@
-object fail:
-    pass
-
 object failure:
     pass
 
 def makeCAMP(instructions, input):
+    var failing :boolean := false
     var position := 0
     var pc := 0
     def end := input.size()
@@ -14,32 +12,33 @@ def makeCAMP(instructions, input):
 
         to _checkEnd() :boolean:
             if (position >= end):
-                pc := fail
-                return true
-            return false
+                failing := true
+                return false
+            return true
 
-        to backtrack() :void:
+        to backtrack() :boolean:
             if (stack.size() > 0):
                 switch (stack.pop()):
                     match [p, i, c]:
                         pc := p
                         position := i
+                        failing := false
                     match _:
-                        return
+                        return true
             else:
-                throw(failure)
+                return false
 
-        to advance(instruction) :void:
+        to process(instruction) :void:
             switch (instruction):
                 match =='A':
-                    if (!machine._checkEnd()):
+                    if (machine._checkEnd()):
                         position += 1
                 match [=='X', obj]:
-                    if (!machine._checkEnd()):
+                    if (machine._checkEnd()):
                         if (input[position] == obj):
                             position += 1
                         else:
-                            pc := fail
+                            failing := true
                 match [=='J', offset]:
                     pc += offset
                 match [=='H', offset]:
@@ -57,19 +56,17 @@ def makeCAMP(instructions, input):
                     pc += offset
                     stack.pop()
                 match =='F':
-                    pc := fail
+                    failing := true
                 match _:
                     traceln(`Stumped: $instruction`)
 
-        to run():
+        to run() :boolean:
             for instruction in instructions:
-                if (pc == fail):
-                    try:
-                        machine.backtrack()
-                    catch failure:
+                if (failing):
+                    if (!machine.backtrack()):
                         return false
-                machine.advance(instruction)
-            return pc != fail
+                machine.process(instruction)
+            return !failing
 
 def testAnything(assert):
     def anythingSuccess():
