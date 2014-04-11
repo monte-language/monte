@@ -34,7 +34,7 @@ def makeCAMP(instructions, input):
                 match =='A':
                     if (!machine._checkEnd()):
                         position += 1
-                match [=='E', obj]:
+                match [=='X', obj]:
                     if (!machine._checkEnd()):
                         if (input[position] == obj):
                             position += 1
@@ -59,7 +59,7 @@ def makeCAMP(instructions, input):
                 match =='F':
                     pc := fail
                 match _:
-                    traceln("Stumped!")
+                    traceln(`Stumped: $instruction`)
 
         to run():
             for instruction in instructions:
@@ -81,7 +81,39 @@ def testAnything(assert):
         anythingFailure,
     ]
 
+def testExactly(assert):
+    def singleChar():
+        assert.equal(makeCAMP([['X', 'x']], "x").run(), true)
+    def wrongChar():
+        assert.equal(makeCAMP([['X', 'x']], "y").run(), false)
+    def multipleChars():
+        def insts := [
+            ['X', 'x'],
+            ['X', 'y'],
+            ['X', 'z'],
+        ]
+        assert.equal(makeCAMP(insts, "xyz").run(), true)
+    def trailing():
+        assert.equal(makeCAMP([['X', 'x']], "xy").run(), true)
+    def shortEmptyString():
+        assert.equal(makeCAMP([['X', 'x']], "").run(), false)
+    def short():
+        def insts := [
+            ['X', 'x'],
+            ['X', 'y'],
+        ]
+        assert.equal(makeCAMP(insts, "x").run(), false)
+    return [
+        singleChar,
+        wrongChar,
+        multipleChars,
+        trailing,
+        shortEmptyString,
+        short,
+    ]
+
 def unittest := import("unittest")
 unittest([
     testAnything,
+    testExactly,
 ])
