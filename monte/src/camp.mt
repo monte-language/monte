@@ -67,7 +67,8 @@ def makeCAMP(instructions, input):
                 if (failing):
                     if (!machine.backtrack()):
                         return false
-                machine.process(instructions[pc])
+                else:
+                    machine.process(instructions[pc])
             return !failing
 
 def testAnything(assert):
@@ -157,10 +158,26 @@ def testOrderedChoice(assert):
         RightXYZ,
     ]
 
+def testNot(assert):
+    def EOF():
+        # eof => ~anything
+        def insts := [
+            ['H', 4],
+            'A',
+            ['M', 1],
+            'F',
+        ]
+        assert.equal(makeCAMP(insts, "").run(), true)
+        assert.equal(makeCAMP(insts, "x").run(), false)
+    return [
+        EOF,
+    ]
+
 
 def unittest := import("unittest")
 unittest([
     testAnything,
     testExactly,
     testOrderedChoice,
+    testNot,
 ])
