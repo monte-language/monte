@@ -10,12 +10,6 @@ def makeCAMP(instructions, input):
 
     return object machine:
 
-        to _checkEnd() :boolean:
-            if (position >= end):
-                failing := true
-                return false
-            return true
-
         to backtrack() :boolean:
             if (stack.size() > 0):
                 switch (stack.pop()):
@@ -31,18 +25,21 @@ def makeCAMP(instructions, input):
         to process(instruction) :void:
             switch (instruction):
                 match =='A':
-                    if (machine._checkEnd()):
-                        position += 1
+                    if (position >= input.size()):
+                        failing := true
+                    position += 1
+                    pc += 1
                 match [=='X', obj]:
-                    if (machine._checkEnd()):
-                        if (input[position] == obj):
-                            position += 1
-                        else:
-                            failing := true
+                    if (position < input.size() && input[position] == obj):
+                        position += 1
+                    else:
+                        failing := true
+                    pc += 1
                 match [=='J', offset]:
                     pc += offset
                 match [=='H', offset]:
                     stack.push([pc + offset, position, null])
+                    pc += 1
                 match [=='L', offset]:
                     pc += offset
                     stack.push([pc])
@@ -56,16 +53,17 @@ def makeCAMP(instructions, input):
                     pc += offset
                     stack.pop()
                 match =='F':
+                    pc += 1
                     failing := true
                 match _:
                     traceln(`Stumped: $instruction`)
 
         to run() :boolean:
-            for instruction in instructions:
+            while (pc < instructions.size()):
                 if (failing):
                     if (!machine.backtrack()):
                         return false
-                machine.process(instruction)
+                machine.process(instructions[pc])
             return !failing
 
 def testAnything(assert):
