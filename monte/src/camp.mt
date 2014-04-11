@@ -1,6 +1,9 @@
 object failure:
     pass
 
+object success:
+    pass
+
 def makeCAMP(instructions, input):
     var failing :boolean := false
     var position := 0
@@ -18,7 +21,8 @@ def makeCAMP(instructions, input):
                         position := i
                         failing := false
                     match _:
-                        return true
+                        pass
+                return true
             else:
                 return false
 
@@ -107,8 +111,56 @@ def testExactly(assert):
         short,
     ]
 
+def testOrderedChoice(assert):
+    def XY():
+        # 'x' | 'y'
+        def insts := [
+            ['H', 3],
+            ['X', 'x'],
+            ['M', 2],
+            ['X', 'y'],
+        ]
+        assert.equal(makeCAMP(insts, "x").run(), true)
+        assert.equal(makeCAMP(insts, "y").run(), true)
+        assert.equal(makeCAMP(insts, "z").run(), false)
+    def LeftXYZ():
+        # ('x' | 'y') | 'z'
+        def insts := [
+            ['H', 6],
+            ['H', 3],
+            ['X', 'x'],
+            ['M', 2],
+            ['X', 'y'],
+            ['M', 2],
+            ['X', 'z'],
+        ]
+        assert.equal(makeCAMP(insts, "x").run(), true)
+        assert.equal(makeCAMP(insts, "y").run(), true)
+        assert.equal(makeCAMP(insts, "z").run(), true)
+    def RightXYZ():
+        # 'x' | ('y' | 'z')
+        def insts := [
+            ['H', 3],
+            ['X', 'x'],
+            ['M', 5],
+            ['H', 3],
+            ['X', 'y'],
+            ['M', 2],
+            ['X', 'z'],
+        ]
+        assert.equal(makeCAMP(insts, "x").run(), true)
+        assert.equal(makeCAMP(insts, "y").run(), true)
+        assert.equal(makeCAMP(insts, "z").run(), true)
+    return [
+        XY,
+        LeftXYZ,
+        RightXYZ,
+    ]
+
+
 def unittest := import("unittest")
 unittest([
     testAnything,
     testExactly,
+    testOrderedChoice,
 ])
