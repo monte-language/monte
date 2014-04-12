@@ -241,10 +241,8 @@ twisted's coiterate to serially compute some items in a iterable, a few at a
 time  and as they were made available, the promises in workItems would get
 resolved
 
+What are M and m?
+-----------------
 
-Will the iterable control when the computations are performed?
------------------------------------------------------------------
-
-That's way outside the scope of an iteration protocol
-
-
+M is a singleton providing runtime services including passing messages to
+farrefs. m is the quasiparser for monte source code. 
