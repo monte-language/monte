@@ -181,3 +181,5 @@ unittest([
     testOrderedChoice,
     testNot,
 ])
+
+makeCAMP
