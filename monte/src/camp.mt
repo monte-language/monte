@@ -4,11 +4,12 @@ object failure:
 object success:
     pass
 
-def makeCAMP(instructions, input):
+def makeCAMP(instructions):
+    var input := null
     var failing :boolean := false
     var position := 0
     var pc := 0
-    def end := input.size()
+    var end := null
     def stack := [].diverge()
 
     return object machine:
@@ -62,7 +63,13 @@ def makeCAMP(instructions, input):
                 match _:
                     traceln(`Stumped: $instruction`)
 
-        to run() :boolean:
+        to run(data) :boolean:
+            input := data
+            position := 0
+            pc := 0
+            failing := false
+            end := input.size()
+
             while (pc < instructions.size()):
                 if (failing):
                     if (!machine.backtrack()):
@@ -73,9 +80,9 @@ def makeCAMP(instructions, input):
 
 def testAnything(assert):
     def anythingSuccess():
-        assert.equal(makeCAMP(['A'], "x").run(), true)
+        assert.equal(makeCAMP(['A'])("x"), true)
     def anythingFailure():
-        assert.equal(makeCAMP(['A'], "").run(), false)
+        assert.equal(makeCAMP(['A'])(""), false)
     return [
         anythingSuccess,
         anythingFailure,
@@ -83,26 +90,26 @@ def testAnything(assert):
 
 def testExactly(assert):
     def singleChar():
-        assert.equal(makeCAMP([['X', 'x']], "x").run(), true)
+        assert.equal(makeCAMP([['X', 'x']])("x"), true)
     def wrongChar():
-        assert.equal(makeCAMP([['X', 'x']], "y").run(), false)
+        assert.equal(makeCAMP([['X', 'x']])("y"), false)
     def multipleChars():
         def insts := [
             ['X', 'x'],
             ['X', 'y'],
             ['X', 'z'],
         ]
-        assert.equal(makeCAMP(insts, "xyz").run(), true)
+        assert.equal(makeCAMP(insts)("xyz"), true)
     def trailing():
-        assert.equal(makeCAMP([['X', 'x']], "xy").run(), true)
+        assert.equal(makeCAMP([['X', 'x']])("xy"), true)
     def shortEmptyString():
-        assert.equal(makeCAMP([['X', 'x']], "").run(), false)
+        assert.equal(makeCAMP([['X', 'x']])(""), false)
     def short():
         def insts := [
             ['X', 'x'],
             ['X', 'y'],
         ]
-        assert.equal(makeCAMP(insts, "x").run(), false)
+        assert.equal(makeCAMP(insts)("x"), false)
     return [
         singleChar,
         wrongChar,
@@ -121,9 +128,9 @@ def testOrderedChoice(assert):
             ['M', 2],
             ['X', 'y'],
         ]
-        assert.equal(makeCAMP(insts, "x").run(), true)
-        assert.equal(makeCAMP(insts, "y").run(), true)
-        assert.equal(makeCAMP(insts, "z").run(), false)
+        assert.equal(makeCAMP(insts)("x"), true)
+        assert.equal(makeCAMP(insts)("y"), true)
+        assert.equal(makeCAMP(insts)("z"), false)
     def LeftXYZ():
         # ('x' | 'y') | 'z'
         def insts := [
@@ -135,9 +142,9 @@ def testOrderedChoice(assert):
             ['M', 2],
             ['X', 'z'],
         ]
-        assert.equal(makeCAMP(insts, "x").run(), true)
-        assert.equal(makeCAMP(insts, "y").run(), true)
-        assert.equal(makeCAMP(insts, "z").run(), true)
+        assert.equal(makeCAMP(insts)("x"), true)
+        assert.equal(makeCAMP(insts)("y"), true)
+        assert.equal(makeCAMP(insts)("z"), true)
     def RightXYZ():
         # 'x' | ('y' | 'z')
         def insts := [
@@ -149,9 +156,9 @@ def testOrderedChoice(assert):
             ['M', 2],
             ['X', 'z'],
         ]
-        assert.equal(makeCAMP(insts, "x").run(), true)
-        assert.equal(makeCAMP(insts, "y").run(), true)
-        assert.equal(makeCAMP(insts, "z").run(), true)
+        assert.equal(makeCAMP(insts)("x"), true)
+        assert.equal(makeCAMP(insts)("y"), true)
+        assert.equal(makeCAMP(insts)("z"), true)
     return [
         XY,
         LeftXYZ,
@@ -167,8 +174,8 @@ def testNot(assert):
             ['M', 1],
             'F',
         ]
-        assert.equal(makeCAMP(insts, "").run(), true)
-        assert.equal(makeCAMP(insts, "x").run(), false)
+        assert.equal(makeCAMP(insts)(""), true)
+        assert.equal(makeCAMP(insts)("x"), false)
     return [
         EOF,
     ]
