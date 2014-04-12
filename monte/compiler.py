@@ -81,12 +81,17 @@ class OuterScopeLayout(object):
     parent = None
     def __init__(self, gensym, outers):
         self.gensym = gensym
-        self.outers = outers
+        self.bindings = {}
+        for name in outers:
+            self.bindings[name] = Binding(
+                t.FinalPattern(t.NounExpr(name), None),
+                '_m_outerScope["%s"]' % name, OUTER,
+                "_monte.anyGuard",
+                None)
 
     def getBinding(self, n, default=_absent):
-        if n in self.outers:
-            return Binding(t.FinalPattern(t.NounExpr(n), None),
-                           '_m_outerScope["%s"]' % n, OUTER, "_monte.anyGuard", None)
+        if n in self.bindings:
+            return self.bindings[n]
         else:
             if default is _absent:
                 raise CompileError("No global named " + repr(n))
@@ -136,15 +141,13 @@ class ScopeLayout(object):
         self.frame = frame
         self.outer = outer
         self.gensym = outer.gensym
-        self.nodes = {}
-        self.pynames = {}
-        self.guards = {}
         self.metaContextExpr = False
+        self.bindings = {}
 
-    def addNoun(self, name, node, guardname="_monte.null"):
-        if name in self.nodes:
+    def _genPyname(self, name):
+        if name in self.bindings:
             raise CompileError("%r already in scope" % (name,))
-        if name in self.outer.outers:
+        if name in self.outer.bindings:
             raise CompileError("Cannot shadow outer-scope name %r" % (name,))
         if self.parent and self.parent.getBinding(name, default=None):
             # a scope outside this one uses the name.  XXX only needs
@@ -154,19 +157,31 @@ class ScopeLayout(object):
             pyname = self.gensym(mangleIdent(name))
         else:
             pyname = mangleIdent(name)
-        self.pynames[name] = pyname
-        self.nodes[name] = node
-        self.guards[name] = guardname
         return pyname
 
-    def addObjectGuard(self, name, guard):
-        if name not in self.pynames:
-            raise CompileError("internal compiler error")
-        self.guards[name] = guard
+    def addCustomBinding(self, name, node):
+        pyname = self._genPyname(name)
+        self.bindings[name] = CustomBinding(node, pyname, LOCAL, pyname)
+        return pyname
+
+    def addFinalBinding(self, name, node, guardExpr="_monte.null"):
+        pyname = self._genPyname(name)
+        bindingGuardExpr = '_monte.FinalSlot.asType().get(%s)' % (guardExpr,)
+        self.bindings[name] = Binding(node, pyname, LOCAL, bindingGuardExpr, guardExpr)
+        return pyname
+
+    def addVarBinding(self, name, node, guardExpr="_monte.null"):
+        pyname = self._genPyname(name)
+        bindingGuardExpr = '_monte.VarSlot.asType().get(%s)' % (guardExpr,)
+        self.bindings[name] = Binding(node, pyname, LOCAL, bindingGuardExpr, guardExpr)
+        return pyname
+
+    def addSelfBinding(self, name, node, guardname):
+        return self.addFinalBinding(name, node, guardname)
 
     def getBinding(self, n, default=_absent):
-        if n in self.nodes:
-            return self._createBinding(n)
+        if n in self.bindings:
+            return self.bindings[n]
         elif self.parent:
             return self.parent.getBinding(n, default)
         else:
@@ -174,18 +189,6 @@ class ScopeLayout(object):
             if b is None:
                 b = self.outer.getBinding(n, default)
             return b
-
-    def _createBinding(self, n):
-        node = self.nodes[n]
-        pyname = self.pynames[n]
-        guardExpr = self.guards.get(n, "_monte.null")
-        if node.tag.name == 'BindingPattern':
-            return CustomBinding(node, pyname, LOCAL, pyname)
-        elif node.tag.name == 'FinalPattern':
-            bindingGuardExpr = '_monte.FinalSlot.asType().get(%s)' % (guardExpr,)
-        elif node.tag.name == 'VarPattern':
-            bindingGuardExpr = '_monte.VarSlot.asType().get(%s)' % (guardExpr,)
-        return Binding(self.nodes[n],  pyname, LOCAL, bindingGuardExpr, guardExpr)
 
     def makeInner(self):
         return ScopeLayout(self, self.frame, self.outer)
@@ -375,7 +378,7 @@ class PythonWriter(object):
     def _generatePatternForParam(self, out, ctx, ej, node):
         if node.tag.name == 'FinalPattern' and node.args[1].tag.name == 'null':
             #skip assignment entirely, we'll use the requested name directly in the param list
-            return ctx.layout.addNoun(node.args[0].args[0].data, node)
+            return ctx.layout.addFinalBinding(node.args[0].args[0].data, node)
         else:
             pattname = node.tag.name
             if pattname.endswith('Pattern'):
@@ -499,12 +502,20 @@ class PythonWriter(object):
             selfName = ctx.layout.gensym("ignore")
         else:
             name = nameNode.args[0].args[0].data
-            selfName = ctx.layout.addNoun(name, nameNode, guardPyname or "_monte.null")
-
+            if nameNode.tag.name == 'FinalPattern':
+                selfName = ctx.layout.addFinalBinding(name, nameNode,
+                                                      guardPyname or "_monte.null")
+            elif nameNode.tag.name == 'VarPattern':
+                selfName = ctx.layout.addVarBinding(name, nameNode,
+                                                      guardPyname or "_monte.null")
+            else:
+                raise RuntimeError("internal compiler error")
         scriptname = "_m_%s_Script" % (selfName,)
         ss = scope(node)
         used = ss.namesUsed()
-        fields = [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
+        outerSet = set(ctx.layout.outer.bindings.keys())
+        fieldNames = used - outerSet
+        fields = [ctx.layout.getBinding(n) for n in fieldNames]
         if nameNode.tag.name != 'IgnorePattern':
             selfBinding = ctx.layout.getBinding(name)
         if nameNode.tag.name in ('FinalPattern', 'IgnorePattern'):
@@ -514,7 +525,7 @@ class PythonWriter(object):
                 "(%s, %s)" % (selfName, selfBinding.getBindingGuardExpr())
             ] + self._collectSlots(fields)
             fields = [selfBinding]
-            fields += [ctx.layout.getBinding(n) for n in used - ctx.layout.outer.outers]
+            fields += [ctx.layout.getBinding(n) for n in fieldNames]
         methods = script.args[1].args
         matchers = script.args[2].args
         verbs = [meth.args[1].data for meth in methods]
@@ -528,8 +539,6 @@ class PythonWriter(object):
         val = "%s(%s)" % (scriptname, ", ".join(paramNames))
 
         selfSlotName = self._generatePattern(out, ctx, None, val, nameNode, True)
-        if guardPyname:
-            ctx.layout.addObjectGuard(selfName, guardPyname)
         frame = FrameScopeLayout(fields, verbs, selfName, nameNode,
                                  '%s$%s' % (ctx.layout.frame.fqnPrefix, name))
         matcherNames = [ctx.layout.gensym("matcher") for _ in matchers]
@@ -732,7 +741,7 @@ class PythonWriter(object):
             out.writeln(b.generateSelfFinalSlot(val))
             return b.getValueExpr()
         else:
-            pyname = ctx.layout.addNoun(name.args[0].data, node, guardname)
+            pyname = ctx.layout.addFinalBinding(name.args[0].data, node, guardname)
             out.writeln("%s = %s" % (pyname, val))
         return pyname
 
@@ -766,7 +775,7 @@ class PythonWriter(object):
             temp = ctx.layout.gensym(mangleIdent(name))
             out.writeln(b.generateSelfVarSlot(val, guardname, temp, ej))
         else:
-            pyname = ctx.layout.addNoun(name, node, guardname)
+            pyname = ctx.layout.addVarBinding(name, node, guardname)
             temp = ctx.layout.gensym(mangleIdent(name))
             out.writeln("%s = %s" % (temp, val))
             out.writeln("%s = _monte.VarSlot(%s, %s, %s)" % (pyname, guardname, temp, ej))
@@ -806,7 +815,7 @@ class PythonWriter(object):
     def pattern_BindingPattern(self, out, ctx, ej, val, node):
         name = node.args[0].args[0].data
         guardname = ctx.layout.gensym("guard")
-        pyname = ctx.layout.addNoun(name, node)
+        pyname = ctx.layout.addCustomBinding(name, node)
         out.writeln("%s = %s" % (pyname, val))
         return pyname
 
