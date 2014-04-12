@@ -24,7 +24,7 @@
        and Monte's semantics are already pretty sane.
   - [ ] Formalize Kernel-E in K
 * TODO Monte is self-hosting [0%]
- - [-] Bootstrapping compiler improvements
+ - [-] Bootstrapping compiler improvements [3/9]
   - [ ] Bikeshed on optional arguments
         Current direction is probably to idiomatically use a map as the final
         argument for methods that want to have kwargs.
@@ -35,17 +35,17 @@
   - [ ] function-implements
   - [ ] Anonymous (lambda/fn) expressions
   - [X] Trivial `import` function
-  - [ ] Lexer/parser
-   - [ ] Indented comments
+  - [-] Lexer/parser
+   - [X] Indented comments
    - [ ] Same-line colon-delimited blocks
          def example(): pass
    - [ ] Preservation of spans through lexing and parsing
          Might be put off until post-bootstrap
-  - [-] Formalized Python<->E object bridge
+  - [-] Formalized Python/E object bridge
    - [X] Name mangling
     - [ ] Keep E from calling arbitrary Python attributes
     - [ ] Document name mangling
-  - [ ] Base objects
+  - [-] Base objects
    - [ ] _m_auditedBy
    - [ ] Selfless
    - [X] Equalizer
@@ -74,10 +74,10 @@
     - [ ] Lexing
     - [ ] Regexes
    - [ ] parsley
-  - [ ] Data structures
+  - [-] Data structures
         Pretty much all of these are up for discussion.
-   - [ ] Catamorphisms
-    - [ ] CRC32
+   - [-] Catamorphisms
+    - [X] CRC32
     - [ ] MD5
     - [ ] SHA256
    - [ ] Containers
@@ -88,7 +88,7 @@
    - [ ] Term trees
    - [ ] Tubes
   - [ ] Auditors
-  - [ ] Refs
+  - [X] Refs
   - [ ] Tables
   - [ ] Universal scope
   - [ ] Compiler
@@ -107,6 +107,7 @@
  - [ ] Github groks Monte
   - [ ] Linguist has a Monte configuration
   - [ ] Pygments has a Monte lexer
+        Currently in progress; the code is written but not yet upstream.
  - [ ] Migration from Python is clearly described in documentation
 * TODO #monte is not #python [0%]
  - [ ] Provide compelling answers to #python FAQs
