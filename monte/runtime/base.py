@@ -88,7 +88,7 @@ class MonteObject(object):
         if self._m_matcherNames:
             return _MonteMatcher(self, verb)
         else:
-            raise AttributeError(verb)
+            raise AttributeError("%r::%s" % (self, verb))
 
     def __call__(self, *args):
         return self.run(*args)
