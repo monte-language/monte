@@ -29,9 +29,12 @@ class MonteObject(object):
     def _m_audit(self, auditors):
         from monte.runtime.audit import Audition
         expr = parseTerm(self._m_objectExpr.decode('base64').decode('zlib'))
+        bindingGuards = dict([(k, v[1]) for k, v in self._m_slots.iteritems()])
+        bindingGuards.update(self._m_outers)
         audition = Audition(
+            self._m_fqn,
             expr,
-            dict([(k, v[1]) for k, v in self._m_slots.iteritems()]),
+            bindingGuards,
             self)
         for auditor in auditors:
             audition.ask(auditor)

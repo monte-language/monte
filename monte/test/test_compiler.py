@@ -453,6 +453,10 @@ class CompilerTest(unittest.TestCase):
                 _m_fqn = '__main$foo'
                 def __init__(foo, _m_auditors):
                     foo._m_slots = {}
+                    foo._m_outers = {
+                        'Data': _monte.deepFrozenGuard,
+                        'DeepFrozen': _monte.deepFrozenGuard,
+                    }
                     foo._m_audit(_m_auditors)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUtEQtQhpl9TUArei/KrUPJAqJPHEkkQlzVgdheDkoswCmB3RsSCsqQkA6LMoKA=="
@@ -488,6 +492,11 @@ class CompilerTest(unittest.TestCase):
                         'y': y_slotPair,
                         'z': z_slotPair,
                     }
+                    foo._m_outers = {
+                        '__makeList': _monte.deepFrozenGuard,
+                        'Data': _monte.deepFrozenGuard,
+                        'DeepFrozen': _monte.deepFrozenGuard,
+                    }
                     foo._m_audit(_m_auditors)
 
                 def run(foo):
@@ -516,6 +525,10 @@ class CompilerTest(unittest.TestCase):
                 _m_fqn = '__main$foo'
                 def __init__(foo, _m_auditors):
                     foo._m_slots = {}
+                    foo._m_outers = {
+                        'DeepFrozen': _monte.deepFrozenGuard,
+                        'Data': _monte.deepFrozenGuard,
+                    }
                     foo._m_audit(_m_auditors)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUtEICZfEkkSQDJJIamqBW1F+VWqekmasjkJwclFmAcz06FgQ1tQEAOtjJiE="
@@ -536,6 +549,10 @@ class CompilerTest(unittest.TestCase):
                 def __init__(foo, _m_auditors, foo_slotPair):
                     foo._m_slots = {
                         'foo': foo_slotPair,
+                    }
+                    foo._m_outers = {
+                        'DeepFrozen': _monte.deepFrozenGuard,
+                        'Data': _monte.deepFrozenGuard,
                     }
                     foo._m_audit(_m_auditors)
 

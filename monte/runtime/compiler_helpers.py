@@ -6,7 +6,7 @@ from monte.runtime.base import (_MatchFailure, _SlotDescriptor, MonteEjection,
 from monte.runtime.bindings import (Binding, FinalSlot, VarSlot, getBinding,
                                     getSlot, reifyBinding, slotFromBinding)
 from monte.runtime.data import true, false, Character, String, Bool, Integer, Float, null
-from monte.runtime.guards.base import anyGuard
+from monte.runtime.guards.base import anyGuard, deepFrozenGuard
 from monte.runtime.guards.data import booleanGuard
 from monte.runtime.meta import StaticContext
 

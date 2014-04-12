@@ -86,7 +86,7 @@ class OuterScopeLayout(object):
             self.bindings[name] = Binding(
                 t.FinalPattern(t.NounExpr(name), None),
                 '_m_outerScope["%s"]' % name, OUTER,
-                "_monte.anyGuard",
+                "_monte.deepFrozenGuard",
                 None)
 
     def getBinding(self, n, default=_absent):
@@ -515,6 +515,7 @@ class PythonWriter(object):
         used = ss.namesUsed()
         outerSet = set(ctx.layout.outer.bindings.keys())
         fieldNames = used - outerSet
+        usedOuters = used & outerSet
         fields = [ctx.layout.getBinding(n) for n in fieldNames]
         if nameNode.tag.name != 'IgnorePattern':
             selfBinding = ctx.layout.getBinding(name)
@@ -582,6 +583,12 @@ class PythonWriter(object):
             else:
                 initOut.writeln(selfName + "._m_slots = {}")
             if auditors:
+                initOut.writeln(selfName + "._m_outers = {")
+                dictOut = initOut.indent()
+                for name in usedOuters:
+                    b = ctx.layout.outer.bindings[name]
+                    dictOut.writeln('%r: %s,' % (name, b.getBindingGuardExpr()))
+                initOut.writeln("}")
                 initOut.writeln(selfName + "._m_audit(_m_auditors)")
 
             initOut.writeln("")
