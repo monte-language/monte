@@ -943,3 +943,59 @@ class DeepFrozenGuardTests(unittest.TestCase):
 
     def test_audited(self):
         self.assertEqual(monte_eval('object _ {} =~ _ :DeepFrozen'), false)
+        self.assertEqual(monte_eval('object _ implements DeepFrozen {} =~ _ :DeepFrozen'), true)
+        self.assertEqual(monte_eval(dedent("""
+            var w := 0
+            def x := 1
+            def y :int := 1
+            object foo implements DeepFrozen:
+                to doStuff(z):
+                    return y + z
+                to doOther():
+                    var a := null
+                    return a
+            foo =~ _ :DeepFrozen
+            """)), true)
+        self.assertEqual(monte_eval(dedent("""
+            object baz as DeepFrozen {}
+            object foo implements DeepFrozen:
+                to doStuff(z):
+                    return baz
+            foo =~ _ :DeepFrozen
+            """)), true)
+
+
+    def test_rejected(self):
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent("""
+            var x :int := 0
+            def y :int := 1
+            object foo implements DeepFrozen:
+                to doStuff(z):
+                    return x + y
+            """))
+
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent("""
+            interface Blee:
+                pass
+            object y as Blee {}
+            object foo implements DeepFrozen:
+                to doStuff(z):
+                    y.push(z)
+                    return y.pull()
+            """))
+
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent("""
+            object baz implements DeepFrozen {}
+            object foo implements DeepFrozen:
+                to doStuff(z):
+                    return baz
+            """))
