@@ -5,11 +5,12 @@ from monte.runtime.guards.data import booleanGuard
 
 class Audition(MonteObject):
     _m_fqn = "Audition"
-    def __init__(self, expr, bindings, obj):
+    def __init__(self, fqn, expr, bindings, obj):
         self.expr = expr
         self.bindings = bindings
         self.approvers = []
         self.obj = obj
+        self.fqn = fqn
         self._active = True
 
     def ask(self, auditor):
@@ -31,6 +32,8 @@ class Audition(MonteObject):
                                (name.s, str(self.obj)))
         return self.bindings[name.s]
 
+    def getFQN(self):
+        return self.fqn
 
 class AuditChecker(MonteObject):
     _m_fqn = "__auditedBy"
