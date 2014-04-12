@@ -62,6 +62,25 @@ def requireDeepFrozen(specimen, sofar, ej, root):
         else:
             throw.eject(ej, "%s is not DeepFrozen because %s is not" % (toQuote(root), toQuote(specimen)))
 
+def auditForDeepFrozen(audition, ej):
+    from monte.expander import scope
+    expr = audition.getObjectExpr()
+    patternSS = scope(expr.args[1])
+    scriptSS = scope(expr.args[3])
+    fqn = audition.getFQN()
+    names = scriptSS.namesUsed().butNot(patternSS.defNames)
+    for name in names:
+        if name in patternSS.varNames:
+            throw.eject(ej, "%s in the definition of %s is a variable pattern "
+                        "and therefore not DeepFrozen" % (toQuote(name), fqn))
+        else:
+            nameObj = String(name.decode('utf8'))
+            guard = audition.getGuard(nameObj)
+            if not deepFrozenGuard.supersetOf(guard):
+                throw.eject(ej, "%s in the lexical scope of %s does not have "
+                            "a guard implying DeepFrozen, but %s" % (
+                                toQuote(name), fqn, toQuote(guard)))
+
 
 class DeepFrozenGuard(MonteObject):
     def coerce(self, specimen, ej):
@@ -76,6 +95,11 @@ class DeepFrozenGuard(MonteObject):
             return true
         if isinstance(guard, FinalSlotGuard):
             return self.supersetOf(guard.valueGuard)
+
+    def audit(self, audition):
+        auditForDeepFrozen(audition, throw)
+        return true
+
 
 deepFrozenGuard = DeepFrozenGuard()
 DeepFrozenGuard._m_auditorStamps = (deepFrozenGuard,)
