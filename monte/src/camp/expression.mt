@@ -1,4 +1,4 @@
-def makeCAMP := import("camp")
+def makeCAMP := import("camp.machine")
 
 def makeParser(code):
     return object campCode:

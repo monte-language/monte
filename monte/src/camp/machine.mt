@@ -21,10 +21,7 @@ def makeCAMP(instructions):
     var end := null
     def stack := [].diverge()
 
-    traceln(`Making machine for instructions $instructions`)
-
     def rules := _findRules(instructions)
-    traceln(`Found rules $rules`)
 
     return object machine:
 
@@ -100,7 +97,7 @@ def makeCAMP(instructions):
                         return false
                 else:
                     machine.process(instructions[pc])
-            return !failing
+            return !failing & position == data.size()
 
 def testAnything(assert):
     def anythingSuccess():
@@ -125,7 +122,7 @@ def testExactly(assert):
         ]
         assert.equal(makeCAMP(insts)("xyz"), true)
     def trailing():
-        assert.equal(makeCAMP([['X', 'x']])("xy"), true)
+        assert.equal(makeCAMP([['X', 'x']])("xy"), false)
     def shortEmptyString():
         assert.equal(makeCAMP([['X', 'x']])(""), false)
     def short():
