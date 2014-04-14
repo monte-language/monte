@@ -1,8 +1,17 @@
+def enumerate := import("hands.enumerate")
+
 object failure:
     pass
 
 object success:
     pass
+
+def _findRules(instructions):
+    def map := [].asMap().diverge()
+    for [index, instruction] in enumerate(instructions):
+        if (instruction =~ [=='U', label]):
+            map[label] := index
+    return map.snapshot()
 
 def makeCAMP(instructions):
     var input := null
@@ -11,6 +20,11 @@ def makeCAMP(instructions):
     var pc := 0
     var end := null
     def stack := [].diverge()
+
+    traceln(`Making machine for instructions $instructions`)
+
+    def rules := _findRules(instructions)
+    traceln(`Found rules $rules`)
 
     return object machine:
 
@@ -45,21 +59,31 @@ def makeCAMP(instructions):
                 match [=='H', offset]:
                     stack.push([pc + offset, position, null])
                     pc += 1
-                match [=='L', offset]:
-                    pc += offset
-                    stack.push([pc])
+                match [=='L', rule]:
+                    stack.push([pc + 1])
+                    pc := rules[rule]
+                match [=='U', _]:
+                    # XXX push rule name onto rule trail
+                    pc += 1
                 match =='R':
-                    switch (stack.pop()):
-                        match [newCounter]:
-                            pc := newCounter
-                        match [newCounter, _, _]:
-                            pc := newCounter
+                    if (stack.size() > 0):
+                        switch (stack.pop()):
+                            match [newCounter]:
+                                pc := newCounter
+                            match [newCounter, _, _]:
+                                pc := newCounter
+                    else:
+                        throw(`Return to empty stack at PC $pc`)
                 match [=='M', offset]:
                     pc += offset
                     stack.pop()
                 match =='F':
                     pc += 1
                     failing := true
+                match =='E':
+                    # We have succeeded unconditionally!
+                    pc := instructions.size()
+                    failing := false
                 match _:
                     traceln(`Stumped: $instruction`)
 

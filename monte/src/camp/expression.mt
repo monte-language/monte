@@ -8,6 +8,10 @@ def makeParser(code):
         to machine():
             return makeCAMP(code)
 
+        to head(rule):
+            def insts := [['L', rule], ['J', code.size() + 1]] + code + ['E']
+            return makeParser(insts)
+
         to add(other):
             return makeParser(code + other.getCode())
 
@@ -36,8 +40,15 @@ def makeParser(code):
             def insts := [['H', len + 2]] + code + [['M', -len - 1]]
             return makeParser(insts)
 
+        to rule(name):
+            def insts := [['U', name]] + code + ['R']
+            return makeParser(insts)
+
 def ex(item):
     return makeParser([['X', item]])
+
+def call(name):
+    return makeParser([['L', name]])
 
 def testCampCode(assert):
     def testEx():
@@ -75,8 +86,23 @@ def testCampCode(assert):
         testRepeat,
     ]
 
+def testRecursion(assert):
+    def balancedParens():
+        var code := (ex('(') + call("s").optional() + ex(')')).rule("s")
+        code head= "s"
+        assert.equal(code.machine()("()"), true)
+        assert.equal(code.machine()("(())"), true)
+        assert.equal(code.machine()("("), false)
+        assert.equal(code.machine()(")"), false)
+    return [
+        balancedParens,
+    ]
+
 def unittest := import("unittest")
 
-unittest([testCampCode])
+unittest([
+    testCampCode,
+    testRecursion,
+])
 
-ex
+[ex, call]
