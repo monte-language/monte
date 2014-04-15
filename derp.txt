@@ -1,0 +1,30 @@
+Syntax stuff
+
+Colons for guards are confusing
+Subscripting isn't obviously connected to .get()
+def for both functions and final declarations is confusing
+(fin for finals)
+(fn for functions)
+& vs &&, | vs ||
+Syntax diagram of current operator syntax
+Keyword `the` for guards: `x the int`
+
+Style stuff
+
+YELLING_CONSTANTS
+
+Semantics
+
+How do I reverse a list or region? I want to count backwards, dammit!
+Let's have a diagram of square peg in round hole for explaining guards on slots.
+
+Other
+
+Ranges are a good idea!
+Why aren't post/preincrements available?
+When do statements get executed? What about globals?
+Why is there a single name at the end of a module?
+Does var let me change the objects passed to my methods?
+Can I change the objects passed into my methods without returning them?
+Why can't I make bindings/names inside objects?
+Wait, I can't use = for assignment?
