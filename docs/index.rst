@@ -24,4 +24,15 @@ use and its implementations don't perform competitively.
 Using Monte
 ===========
 
+To use the Monte implementation hosted in Python, it's best to set up a
+virtualenv: 
 
+.. code-block:: console
+    $ virtualenv v
+    $ source v/bin/activate
+    $ pip install -r requirements.txt
+
+To run Monte code (with your virtualenv activated): 
+
+.. code-block:: console
+    $ bin/monte monte/src/examples/hello.mt
