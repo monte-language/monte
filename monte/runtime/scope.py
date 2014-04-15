@@ -54,7 +54,7 @@ safeScope = {
     # '__makeGuardedSlot': makeGuardedSlot,
     # '__makeTwine': makeTwine,
     # 'term__quasiParser': makeQBuilder,
-    '__makeOrderedSpace': null,
+    # '__makeOrderedSpace': null,
 
     ## Primitive: guards
     'any': anyGuard,
