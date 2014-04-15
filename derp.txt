@@ -28,3 +28,5 @@ Does var let me change the objects passed to my methods?
 Can I change the objects passed into my methods without returning them?
 Why can't I make bindings/names inside objects?
 Wait, I can't use = for assignment?
+I can traceln; can I put user input into my program in any way?
+How do I read from a file?
