@@ -1,13 +1,14 @@
 def fold := import("hands.fold")
+def ["Mod" => Mod] | _ := import("word")
+
+def adlerPrime :int := 65521
 
 def _adler([a, b], d):
     def t := a + d
     return [t, b + t]
 
 def adler32(bytes) :int:
-    def [var a, var b] := fold(_adler, [1, 0], bytes)
-    a %%= 65521
-    b %%= 65521
+    def [a :Mod[adlerPrime], b :Mod[adlerPrime]] := fold(_adler, [1, 0], bytes)
     return b << 16 | a
 
 def testAdler32(assert):

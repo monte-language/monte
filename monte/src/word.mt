@@ -47,4 +47,4 @@ unittest([
     testWord,
 ])
 
-Word
+["Word" => Word, "Mod" => Mod]
