@@ -47,7 +47,7 @@
     - [ ] Document name mangling
   - [-] Base objects
    - [ ] Guards
-    - [ ] int >= 0
+    - [x] int >= 0
    - [ ] _m_auditedBy
    - [ ] Selfless
    - [X] Equalizer
