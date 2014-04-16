@@ -12,6 +12,9 @@ import monte.runtime.load
 # from monte.repl import startRepl
 
 # startRepl()
+from monte.runtime.scope import ioScope, safeScope
+scope = safeScope.copy()
+scope.update(ioScope)
 
 if len(sys.argv) > 1:
-    monte.runtime.load.eval(open(sys.argv[1]).read())
+    monte.runtime.load.eval(open(sys.argv[1]).read(), scope)

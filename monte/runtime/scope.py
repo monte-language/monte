@@ -14,6 +14,7 @@ from monte.runtime.helpers import (accumulateList, accumulateMap, BooleanFlow,
                                    makeVerbFacet, makeViaBinder, matchSame,
                                    switchFailed, suchThat, splitList,
                                    validateFor)
+from monte.runtime.io import stdin
 from monte.runtime.load import monteImport
 from monte.runtime.ref import RefOps
 from monte.runtime.tables import makeMonteList, mapMaker
@@ -141,13 +142,13 @@ safeScope = {
     'help': help,
 }
 
-# ioScope = {
+ioScope = {
 #     'timer': theTimer,
 #     'entropy': rng,
 #     'filesystem': filesystemRoot,
-#     'stdin': stdin,
+    'stdin': stdin,
 #     'stdout': stdout,
 #     'stderr': stderr,
 #     'python': evalPython,
 #     'exceptionUnsealer': exceptionUnsealer,
-# }
+}
