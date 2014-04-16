@@ -539,7 +539,7 @@ expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break
 When([@arg] @block :catchers @finallyblock) expandWhen(arg block catchers finallyblock)
 When(@args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", t.MethodCallExpr(t.NounExpr("__makeList"), "run", args)) block catchers finallyblock)
 
-expandWhen :arg :block [(Catch(@p @b) -> (p, b))*:catchers] :finallyblock !(self.mktemp("resolution")):resolution kerneltry(expandTryCatch(t.If(mcall("Ref", "isBroken", resolution), mcall("Ref", "broken", mcall("Ref", "optProblem", resolution)), block), catchers), finallyblock):body -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, body)], []))))
+expandWhen :arg :block [(Catch(@p @b) -> (p, b))*:catchers] :finallyblock !(self.mktemp("resolution")):resolution kerneltry(expandTryCatch(t.If(mcall("Ref", "isBroken", resolution), mcall("Ref", "broken", mcall("Ref", "optProblem", resolution)), block), catchers) finallyblock):body -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, body)], []))))
 
 """
 

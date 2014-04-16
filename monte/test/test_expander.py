@@ -949,7 +949,7 @@ class ExpanderTest(unittest.TestCase):
                                  [["FinalPattern",
                                    ["NounExpr", "resolution__1"], None]],
                                  None,
-                                 [["If", ["MethodCallExpr",
+                                 ["If", ["MethodCallExpr",
                                          ["NounExpr", "Ref"],
                                          "isBroken",
                                          [["NounExpr", "resolution__1"]]],
@@ -960,7 +960,7 @@ class ExpanderTest(unittest.TestCase):
                                      ["NounExpr", "Ref"],
                                      "optProblem",
                                      [["NounExpr", "resolution__1"]]]]],
-                                   ["NounExpr", "y"]]]]],
+                                   ["NounExpr", "y"]]]],
                                []]]]]])
         self.assertEqual(self.parse("when (x) -> { y } catch p { z }"),
                          ["HideExpr",
@@ -976,7 +976,7 @@ class ExpanderTest(unittest.TestCase):
                                  [["FinalPattern",
                                    ["NounExpr", "resolution__1"], None]],
                                  None,
-                                   [["KernelTry",
+                                   ["KernelTry",
                                      ["If", ["MethodCallExpr",
                                             ["NounExpr", "Ref"],
                                             "isBroken",
@@ -990,8 +990,9 @@ class ExpanderTest(unittest.TestCase):
                                         [["NounExpr", "resolution__1"]]]]],
                                       ["NounExpr", "y"]],
                                      ["FinalPattern", ["NounExpr", "p"], None],
-                                     ["NounExpr", "z"]]]]],
+                                     ["NounExpr", "z"]]]],
                                  []]]]]])
+
 
     def test_quasiexpr(self):
         self.assertEqual(self.parse("`$x`"),
