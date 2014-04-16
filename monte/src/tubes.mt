@@ -1,11 +1,4 @@
-def makeUnpauser(thunk):
-    var called := false
-    return object pause:
-        to unpause():
-            if (!called):
-                called := true
-                thunk()
-
+def makeUnpauser := import("unpauser")
 
 def makeListFount(data):
     var drain := null
