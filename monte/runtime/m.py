@@ -13,7 +13,8 @@ class M(MonteObject):
         raise NotImplementedError()
 
     def sendOnly(self, obj, verb, arglist):
-        raise NotImplementedError()
+        # XXX optimize
+        return self.send(obj, verb, arglist)
 
     def toString(self, obj):
         # XXX use TextWriter.print
