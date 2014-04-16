@@ -9,7 +9,7 @@ res=0
 
 for monteFile in $(find -name '*.mt'); do
   echo "Testing $monteFile"
-  monte "$monteFile"
+  bin/monte "$monteFile"
   res=$(($res | $?))
 done
 
