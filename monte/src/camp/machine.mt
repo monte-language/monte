@@ -1,11 +1,5 @@
 def enumerate := import("hands.enumerate")
 
-object failure:
-    pass
-
-object success:
-    pass
-
 def _findRules(instructions):
     def map := [].asMap().diverge()
     for [index, instruction] in enumerate(instructions):
@@ -14,6 +8,19 @@ def _findRules(instructions):
     return map.snapshot()
 
 def makeCAMP(instructions):
+    # Create a machine for parsers.
+    # The machine understands the following codes:
+    # * A: match Anything
+    # * X item: match eXactly item
+    # * J offset: Jump to offset
+    # * H offset: save cHoice point
+    # * L rule: caLl rule
+    # * U name: enter rUle
+    # * R: Return from rule
+    # * M offset: coMmit choice point
+    # * F: Fail
+    # * E: End
+
     var input := null
     var failing :boolean := false
     var position := 0
