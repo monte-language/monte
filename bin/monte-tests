@@ -5,6 +5,10 @@
 # * Anything that has been broken by compiler errors will fail.
 # * Many modules include tests, and these tests will run.
 
+if [[ $MONTE_TESTS == "false" ]]; then
+  exit 0
+fi
+
 res=0
 
 for monteFile in $(find -name '*.mt'); do

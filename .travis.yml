@@ -12,8 +12,8 @@ env:
     - PYTHON_TESTS=false MONTE_TESTS=true
 
 script:
-    - if $PYTHON_TESTS; then; trial monte; fi
-    - if $MONTE_TESTS; then; bin/monte-tests; fi
+    - bin/monte-tests
+    - bin/python-tests
 
 notifications:
     email: false
