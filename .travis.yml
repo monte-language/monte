@@ -2,7 +2,7 @@ language: python
 python:
     - '2.7'
     - pypy
-    
+
 matrix:
     allowed_failures:
         - pypy
@@ -12,8 +12,8 @@ env:
     - PYTHON_TESTS=false MONTE_TESTS=true
 
 script:
-    - $PYTHON_TESTS && trial monte || true
-    - $MONTE_TESTS && bin/monte-tests || true
+    - if $PYTHON_TESTS; then; trial monte; fi
+    - if $MONTE_TESTS; then; bin/monte-tests; fi
 
 notifications:
     email: false
