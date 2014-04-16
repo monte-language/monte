@@ -36,3 +36,51 @@ To run Monte code (with your virtualenv activated):
 
 .. code-block:: console
     $ bin/monte monte/src/examples/hello.mt
+
+The Repl
+--------
+
+Many languages have an interpreter or "Read - Evaluate - Print Loop" for
+testing code. Monte's should be documented here if/when it gets one. 
+
+Indentation
+-----------
+
+Standardize your indentation to use spaces, because tabs are a syntax error in
+Monte. 
+
+* 1 space: How can you read that?
+* 2 spaces: *sigh* you must be a Googler.
+* 3 spaces: What?
+* **4 spaces**: Yes. Good coder. Use 4 spaces. 
+* 5 spaces: No, five is right out.
+* 8 spaces: How can you read that?
+
+No object created within a scope will be accessible outside of that scope,
+unless a message about it is passed out. In Monte, the only way for object A
+to know that B exists is:
+
+* If B created A or A was created with knowledge of B
+* If A created B
+* If any object that A knows about passed A a message about B
+
+See scope.mt for an example.
+
+Debugging Stuff
+---------------
+
+Monte strives to provide useful error messages. 
+
+Currently the most convenient way to print out messages from your program is 
+with the trace() and traceln() built-in functions. The only difference between
+them is that traceln() automatically adds a newline. 
+
+Methods, Objects, Variables
+---------------------------
+
+Named values can be either final or variable::
+ def aFinal := 42 # aFinal's value cannot be changed
+ var aVariable := 6; aVariable *= 7
+
+
+
