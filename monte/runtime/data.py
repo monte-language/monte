@@ -175,6 +175,9 @@ class Integer(MonteObject):
         return Float(float(self.n))
 
     def toString(self, radix):
+        if not isinstance(radix, Integer):
+            raise RuntimeError("%r is not a integer" % (radix,))
+        radix = radix.n
         if radix == 16:
             return String(hex(self.n)[2:].decode('ascii'))
         elif radix == 10:
