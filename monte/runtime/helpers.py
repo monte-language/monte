@@ -43,20 +43,30 @@ def iterWhile(f):
 
 
 class Comparer(MonteObject):
+    def _check(self, left, right, first, second):
+        try:
+            return getattr(left.op__cmp(right), first)()
+        except RuntimeError:
+            try:
+                return getattr(right.op__cmp(left), second)()
+            except RuntimeError:
+                pass
+            raise  # re-raise from the first except clause.
+
     def greaterThan(self, left, right):
-        return bwrap(left > right)
+        return self._check(left, right, 'aboveZero', 'atMostZero')
 
     def geq(self, left, right):
-        return bwrap(left >= right)
+        return self._check(left, right, 'atLeastZero', 'belowZero')
 
     def lessThan(self, left, right):
-        return bwrap(left < right)
+        return self._check(left, right, 'belowZero', 'atLeastZero')
 
     def leq(self, left, right):
-        return bwrap(left <= right)
+        return self._check(left, right, 'atMostZero', 'aboveZero')
 
     def asBigAs(self, left, right):
-        return bwrap((left <= right) and (left >= right))
+        return self._check(left, right, 'isZero', 'isZero')
 
 comparer = Comparer()
 

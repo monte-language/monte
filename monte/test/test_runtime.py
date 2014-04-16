@@ -5,7 +5,7 @@ from monte.runtime.data import false, true, Integer, String
 from monte.runtime.load import eval as monte_eval
 from monte.runtime.scope import safeScope
 from monte.runtime.tables import ConstList, ConstMap, FlexList
-from twisted.trial.unittest import SkipTest
+from monte.runtime.compiler_helpers import wrap
 
 
 class NullPropertiesTest(unittest.TestCase):
@@ -999,3 +999,36 @@ class DeepFrozenGuardTests(unittest.TestCase):
                 to doStuff(z):
                     return baz
             """))
+
+
+class IntegerGuardTests(unittest.TestCase):
+
+    def test_type(self):
+        monte_eval('def x :int := 1')
+        self.assertRaises(RuntimeError, monte_eval, 'def x :int := "foo"')
+
+    def test_lt(self):
+        monte_eval('def x :(int < 5) := 1')
+        self.assertRaises(RuntimeError, monte_eval, 'def x :(int < 5) := 10')
+
+    def test_gt(self):
+        monte_eval('def x :(int > 5) := 10')
+        self.assertRaises(RuntimeError, monte_eval, 'def x :(int > 5) := 1')
+
+    def test_gte(self):
+        monte_eval('def x :(int >= 0) := 1')
+        monte_eval('def x :(int >= 0) := 0')
+        self.assertRaises(RuntimeError, monte_eval, 'def x :(int >= 0) := -1')
+
+    def test_lte(self):
+        monte_eval('def x :(int <= 9000) := 50')
+        monte_eval('def x :(int <= 9000) := 9000')
+        self.assertRaises(RuntimeError, monte_eval,
+                          'def x :(int <= 9000) := 9001')
+
+    def test_backwards(self):
+        monte_eval('def x :(0 <= int) := 1')
+        self.assertRaises(RuntimeError, monte_eval, 'def x :(0 <= int) := -1')
+
+    def test_compound_fails(self):
+        self.assertRaises(RuntimeError, monte_eval, '0 <= int <= 1')
