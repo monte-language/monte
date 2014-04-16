@@ -1,0 +1,25 @@
+language: python
+python:
+    - '2.7'
+    - pypy
+
+matrix:
+    allowed_failures:
+        - pypy
+
+env:
+    - PYTHON_TESTS=true MONTE_TESTS=false
+    - PYTHON_TESTS=false MONTE_TESTS=true
+
+script:
+    - bin/monte-tests
+    - bin/python-tests
+
+notifications:
+    email: false
+    irc:
+        channels:
+            - "chat.freenode.net#monte"
+        on_success: always
+        on_failure: always
+
