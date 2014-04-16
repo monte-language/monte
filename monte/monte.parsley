@@ -58,7 +58,7 @@ prim = ( literal
 
 parenExpr = "(" expr:s ')' -> s
 block = "{" (seq |-> t.SeqExpr([])):s '}' -> s
-indentBlock = ':' EOLs tok('INDENT') br (indentSeq |tok('pass') -> t.SeqExpr([])):s br
+indentBlock = ':' EOLs tok('INDENT') br ((tok('pass') -> t.SeqExpr([])) | indentSeq):s br
                tok('DEDENT') -> s
 
 seqSep = (";"| EOL)+
@@ -194,7 +194,7 @@ parenParamList = "(" (pattern:p ("," pattern)*:ps ')' -> [p] +  ps
                        | ')' -> [])
 optResultGuard = (':' guard)?
 scriptPair = "{" method*:methods matcher*:matchers br '}' -> [methods, matchers]
-indentScriptPair = ':' EOLs tok('INDENT') br ((tok('pass') -> [[], []]) | indentMethod*:methods indentMatcher*:matchers br tok('DEDENT') -> [methods, matchers])
+indentScriptPair = ':' EOLs tok('INDENT') br ((tok('pass') tok('DEDENT') -> [[], []]) | (indentMethod*:methods indentMatcher*:matchers br tok('DEDENT') -> [methods, matchers]))
 
 method = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g block:b  -> to(doc, v, ps, g, b))
 indentMethod = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g indentBlock:b  -> to(doc, v, ps, g, b))
@@ -209,7 +209,7 @@ iguards = 'guards' pattern
 multiExtends = (('extends' br order:x ("," order)*:xs -> [x] + xs)
                  | -> [])
 iscript = "{" (messageDesc:m br -> m)*:ms '}' -> ms
-indentIScript = ':' EOLs tok('INDENT') br ((tok('pass') -> []) | (messageDesc:m br -> m)*:ms br tok('DEDENT') -> ms)
+indentIScript = ':' EOLs tok('INDENT') br ((tok('pass') -> []) | (messageDesc:m br -> m)*):ms br tok('DEDENT') -> ms
 messageDesc = br (doco?:doc ("to" | "method"):to verb?:v parenParamDescList:ps optGuard:g
                 -> t.MessageDesc(doc, to, v, ps, g))
 paramDesc = (justNoun | ('_') -> None):n optGuard:g -> t.ParamDesc(n, g)
