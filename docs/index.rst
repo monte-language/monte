@@ -78,9 +78,11 @@ them is that traceln() automatically adds a newline.
 Methods, Objects, Variables
 ---------------------------
 
-Named values can be either final or variable::
- def aFinal := 42 # aFinal's value cannot be changed
- var aVariable := 6; aVariable *= 7
+Named values can be either final or variable. A final object cannot be
+changed, whereas a variable one can be changed later. See variables.mt.
 
+Everything is an object. Some objects are created automatically, such as
+variables and methods. Other objects are created explicitly, such as
+demonstrated in obj.mt. 
 
-
+Objects can also be created by functions, such as shown in createobj.mt. 
