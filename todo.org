@@ -46,6 +46,8 @@
     - [ ] Keep E from calling arbitrary Python attributes
     - [ ] Document name mangling
   - [-] Base objects
+   - [ ] Guards
+    - [ ] int >= 0
    - [ ] _m_auditedBy
    - [ ] Selfless
    - [X] Equalizer
@@ -86,7 +88,9 @@
      - [ ] HAMTs
      - [ ] RB trees
    - [ ] Term trees
-   - [ ] Tubes
+   - [-] Tubes
+    - [X] Pure tubes
+    - [ ] I/O tubes
   - [ ] Auditors
   - [X] Refs
   - [ ] Tables
