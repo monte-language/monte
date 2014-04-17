@@ -40,8 +40,7 @@ OPERATORS = {
     '*': (2, 'Multiply'),
     '/': (2, 'Divide'),
     '//': (2, 'FloorDivide'),
-    '%': (2, 'Remainder'),
-    '%%': (2, 'Mod'),
+    '%': (2, 'Mod'),
     '+': (3, 'Add'),
     '-': (3, 'Subtract'),
     '<<': (4, 'ShiftLeft'),
@@ -134,7 +133,7 @@ class EParserBase(OMetaBase):
         return self.convertInfix(6)
 
     def convertInfix(self, maxPrec):
-        leftAssociative = set(['+', '-', '>>', '<<', '/', '*', '//', '%', '%%'])
+        leftAssociative = set(['+', '-', '>>', '<<', '/', '*', '//', '%'])
         selfAssociative = set(['|', '&'])
         lhs, err = self.rule_prefix()
         output = [lhs]
