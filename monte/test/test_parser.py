@@ -220,8 +220,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("x * y"), ["Multiply", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x / y"), ["Divide", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x // y"), ["FloorDivide", ["NounExpr", "x"], ["NounExpr", "y"]])
-        self.assertEqual(parse("x % y"), ["Remainder", ["NounExpr", "x"], ["NounExpr", "y"]])
-        self.assertEqual(parse("x %% y"), ["Mod", ["NounExpr", "x"], ["NounExpr", "y"]])
+        self.assertEqual(parse("x % y"), ["Mod", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x + y"), ["Add", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("(x + y) + z"), ["Add", ["Add", ["NounExpr", "x"], ["NounExpr", "y"]], ["NounExpr", "z"]])
         self.assertEqual(parse("1 + 1"), ["Add", ["LiteralExpr", 1], ["LiteralExpr", 1]])
@@ -290,8 +289,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("x *= y"), ["AugAssign", "Multiply", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x /= y"), ["AugAssign", "Divide", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x //= y"), ["AugAssign", "FloorDivide", ["NounExpr", "x"], ["NounExpr", "y"]])
-        self.assertEqual(parse("x %= y"), ["AugAssign", "Remainder", ["NounExpr", "x"], ["NounExpr", "y"]])
-        self.assertEqual(parse("x %%= y"), ["AugAssign", "Mod", ["NounExpr", "x"], ["NounExpr", "y"]])
+        self.assertEqual(parse("x %= y"), ["AugAssign", "Mod", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x **= y"), ["AugAssign", "Pow", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x >>= y"), ["AugAssign", "ShiftRight", ["NounExpr", "x"], ["NounExpr", "y"]])
         self.assertEqual(parse("x <<= y"), ["AugAssign", "ShiftLeft", ["NounExpr", "x"], ["NounExpr", "y"]])
@@ -303,7 +301,7 @@ class ParserTest(unittest.TestCase):
         """
         Variable declaration expressions.
         """
-        parse = self.getParser("blockExpr")
+        parse = self.getParser("blockEx("pr")
         self.assertEqual(parse("def x := 1"), ["Def", ["FinalPattern", ["NounExpr", "x"], None], None, ["LiteralExpr", 1]])
         self.assertEqual(parse("def x exit e := 1"), ["Def", ["FinalPattern", ["NounExpr", "x"], None], ["NounExpr", "e"], ["LiteralExpr", 1]])
         self.assertEqual(parse("def [a, b] := 1"), ["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "a"], None],["FinalPattern", ["NounExpr", "b"], None]], None], None, ["LiteralExpr", 1]])
