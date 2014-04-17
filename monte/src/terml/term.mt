@@ -1,9 +1,9 @@
-#XXX terrible
-
-def makeTerm := import("terml.makeTerm")
-def TermType := makeTerm(null, null, null, null)._getAllegedType()
+interface TermType:
+    pass
 
 object Term:
     to coerce(specimen, ej):
-        if (specimen._getAllegedType() != TermType):
+        if (specimen =~ t :TermType):
+            return t
+        else:
             throw.eject(ej, "is not a term")
