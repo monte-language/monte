@@ -94,3 +94,5 @@ def unittest := import("unittest")
 unittest([
     testRegions,
 ])
+
+__makeOrderedSpace
