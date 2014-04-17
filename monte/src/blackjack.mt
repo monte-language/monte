@@ -198,3 +198,62 @@ def makeNode(value, left, right, red :Bool):
             node := makeNode(value, left, r, red)
 
             return node.balance(), val
+
+        to delete(val, key):
+            # Delete a value from a tree.
+
+            var node := Node
+
+            # Base case: The empty tree cannot possibly have the desired value.
+            if (node == NIL):
+                pass
+                # XXX Raise some error, KeyError in the Python implementation
+
+            def toDel := key(val)
+            def me := key(value)
+
+            # We lean to the left, so the left case stands alone.
+            if (toDel < me):
+                if (!left.getB() && left != NIL && !left.getL().getB()):
+                    # Delete towards the left
+                    def l := left.delete(val, key)
+                    node := makeNode(value, l, right, red)
+            else:
+                # If we lean left, time to lean right
+                if (left.getB()):
+                    node := node.rotateRight()
+
+                # Best case: The node on our right, which we just put there,
+                # is a red link and also we were just holding the node to
+                # delete. In that case, we just rotated NIL into our current
+                # node, and the node to the right is the lone matching node to
+                # delete. (Whatever that's supposed to mean.)
+
+                if (toDel == me && right == NIL):
+                    return makeNIL()
+
+                # No? Okay. Move more reds to the right so we can continue to
+                # traverse thataways. Here, we do have to confirm that there's
+                # no NIL on our right...
+
+                if (!right.getB() && right != NIL && !right.getL().getB()):
+                    node := node.moveRedRight()
+                if (me < toDel):
+                    # Delete toward the right
+                    def r := right.delete(val, key)
+                    node := makeNode(value, left, r, red)
+                else:
+                    # Annoying case: The current node was the node to delete
+                    # all along! Use right-handed minimum deletion. First find
+                    # the replacement value to rebuild the current node with,
+                    # then delete the replacement value from the right-side
+                    # tree. Finally, create the new node with the old value
+                    # replaced and the replaced value deleted.
+
+                    var rt := right
+                    while (rt != NIL):
+                        rt := rt.getL()
+                    def [r, replacement] := node.getR().deleteMin()
+                    node := makeNode(replacement, left, r, red)
+
+            return node.balance()
