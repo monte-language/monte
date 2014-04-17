@@ -61,6 +61,12 @@ def testRegions(assert):
         def x :(0..!5) := 3
         assert.equal(x, 3)
 
+    def thruCoerceFailure():
+        assert.ejects(def _(ej, fail) {
+            def x :(0..!5) exit ej := 42
+            fail("Guard did not fail")
+        })
+
     def thruIterate():
         assert.equal((0..3).iterate(), [0, 1, 2, 3])
 
@@ -83,6 +89,7 @@ def testRegions(assert):
     return [
         thru,
         thruCoerce,
+        thruCoerceFailure,
         thruIterate,
         tillIterate,
         thruDescending,
