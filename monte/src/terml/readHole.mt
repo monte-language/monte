@@ -1,4 +1,4 @@
-def atoi := import("atoi")
+def atoi := import("hands.atoi")
 
 object value:
     pass

@@ -1,5 +1,5 @@
 def [_any, _all] := import("anyAll")
-def atoi := import("atoi")
+def atoi := import("hands.atoi")
 
 # The core.
 
