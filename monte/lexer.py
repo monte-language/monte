@@ -763,13 +763,7 @@ class MonteLexer(object):
 
         if cur == '%':
             nex = self.nextChar()
-            if nex == '%':
-                nex2 = self.nextChar()
-                if nex2 == '=':
-                    self.nextChar()
-                    return leafTag('%%=', self.endSpan())
-                return leafTag('%%', self.endSpan())
-            elif nex == '=':
+            if nex == '=':
                 self.nextChar()
                 return leafTag('%=', self.endSpan())
             return leafTag('%', self.endSpan())

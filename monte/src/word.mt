@@ -2,7 +2,7 @@ def _makeGuard(mod):
     return object ModGuard:
         to coerce(x, ej) :any:
             if (x =~ i :int):
-                return i %% mod
+                return i % mod
             else:
                 throw.eject(ej, `Not an integer: $x`)
         to makeSlot(x :ModGuard) :any:
