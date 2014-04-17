@@ -288,6 +288,37 @@ class CompilerTest(unittest.TestCase):
             outer(_monte.wrap(0)).inner(_monte.wrap(1))
             """)
 
+    def test_classGensym(self):
+        self.eq_(
+            '''
+            object foo:
+                method x():
+                    object baz:
+                        pass
+                method y():
+                    object baz:
+                        pass
+             ''',
+             """
+             class _m_baz_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo$baz'
+             class _g_baz1_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo$baz'
+             class _m_foo_Script(_monte.MonteObject):
+                 _m_fqn = '__main$foo'
+                 def x(foo):
+                     baz = _m_baz_Script()
+                     return baz
+
+                 def y(foo):
+                     baz = _g_baz1_Script()
+                     return baz
+
+             foo = _m_foo_Script()
+             foo
+             """)
+
+
     def test_frameFinal(self):
         self.eq_(
             '''
