@@ -33,7 +33,19 @@ def testWidths(assert):
         for w in 1..48:
             r.next(w)
 
-    return [testValid]
+    def testTooWide():
+        assert.raises(def _(fail) {
+            r.next(49)
+            fail("javaRandom accepted too wide of a width.")
+        })
+
+    def testTooNarrow():
+        assert.raises(def _(fail) {
+            r.next(0)
+            fail("javaRandom accepted too narrow of a width.")
+        })
+
+    return [testValid, testTooWide, testTooNarrow]
 
 unittest([testKnowns, testWidths])
 
