@@ -301,7 +301,7 @@ class ParserTest(unittest.TestCase):
         """
         Variable declaration expressions.
         """
-        parse = self.getParser("blockEx("pr")
+        parse = self.getParser("blockExpr")
         self.assertEqual(parse("def x := 1"), ["Def", ["FinalPattern", ["NounExpr", "x"], None], None, ["LiteralExpr", 1]])
         self.assertEqual(parse("def x exit e := 1"), ["Def", ["FinalPattern", ["NounExpr", "x"], None], ["NounExpr", "e"], ["LiteralExpr", 1]])
         self.assertEqual(parse("def [a, b] := 1"), ["Def", ["ListPattern", [["FinalPattern", ["NounExpr", "a"], None],["FinalPattern", ["NounExpr", "b"], None]], None], None, ["LiteralExpr", 1]])

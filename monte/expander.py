@@ -359,7 +359,6 @@ Pow(@left @right) -> binop("pow", left, right)
 Multiply(@left @right) -> binop("multiply", left, right)
 Divide(@left @right) -> binop("approxDivide", left, right)
 FloorDivide(@left @right) -> binop("floorDivide", left, right)
-Remainder(@left @right) -> binop("remainder", left, right)
 Mod(Pow(@x @y) @z) -> t.MethodCallExpr(x, "modPow", [y, z])
 Mod(MethodCallExpr(@x "pow" [@y]) @z) -> t.MethodCallExpr(x, "modPow", [y, z])
 Mod(@left @right) -> binop("mod", left, right)
@@ -766,7 +765,6 @@ binops =  {
     "Subtract": "subtract",
     "Multiply": "multiply",
     "Divide": "approxDivide",
-    "Remainder": "remainder",
     "Mod": "mod",
     "Pow": "pow",
     "FloorDivide": "floorDivide",
