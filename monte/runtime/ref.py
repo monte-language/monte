@@ -273,7 +273,7 @@ class RefControllerBase(object):
 class SwitchableRefController(RefControllerBase):
     def __init__(self, ref, target):
         self.ref = ref
-        self.target = target
+        self.target = target._m_controller
         self.isSwitchable = True
 
     def optProblem(self):
