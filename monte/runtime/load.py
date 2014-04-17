@@ -40,8 +40,11 @@ def monteImport(name):
     # XXX hax
     path = os.path.join(os.path.dirname(__file__), '..', 'src',
                         name.replace('.', '/') + '.mt')
+    path = os.path.abspath(path)
     if not os.path.exists(path):
-        raise RuntimeError("%s does not exist" % path)
+        searchPath = [os.path.dirname(path)]
+        raise RuntimeError('Could not import "%s".\nSearch path was %s.'
+                           % (name, searchPath))
     if not monteModules.get(name):
         monteModules[name] = eval(open(path).read(), origin=name)
     return monteModules[name]
