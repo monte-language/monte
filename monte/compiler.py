@@ -330,6 +330,8 @@ class CompilationContext(object):
             self.rootWriter = getattr(parent, 'rootWriter', None)
         else:
             self.rootWriter = rootWriter
+        self.classNames = getattr(parent, 'classNames', [])
+
 
     def with_(self, **kwargs):
         return CompilationContext(self, **kwargs)
@@ -511,6 +513,9 @@ class PythonWriter(object):
             else:
                 raise RuntimeError("internal compiler error")
         scriptname = "_m_%s_Script" % (selfName,)
+        if scriptname in ctx.classNames:
+            scriptname = "%s_Script" % (ctx.layout.gensym(selfName),)
+        ctx.classNames.append(scriptname)
         ss = scope(node)
         used = ss.namesUsed()
         outerSet = set(ctx.layout.outer.bindings.keys())
@@ -549,8 +554,6 @@ class PythonWriter(object):
         classBodyOut.writeln("_m_fqn = '%s$%s'" % (
             ctx.layout.frame.fqnPrefix,
             name.encode('string-escape')))
-        if not any([methods, matchers, frame.fields, doc, auditors]):
-            classBodyOut.writeln("pass")
         if matcherNames:
             classBodyOut.writeln('_m_matcherNames = %r' % (matcherNames,))
         if doc:
