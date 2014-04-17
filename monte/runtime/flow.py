@@ -1,4 +1,4 @@
-from monte.runtime.base import MonteObject, ejector
+from monte.runtime.base import MonteObject, ejector, throw
 
 class MonteIterator(MonteObject):
     def __init__(self, it):
@@ -14,7 +14,7 @@ class MonteIterator(MonteObject):
         try:
             return self.it.next()
         except StopIteration:
-            ej()
+            throw.eject(ej, "iteration done")
 
 
 #deepFrozenFunc
