@@ -3,6 +3,9 @@ from monte.runtime.data import String
 
 class M(MonteObject):
 
+    def __init__(self, vat):
+        self.vat = vat
+
     def call(self, obj, verb, arglist):
         return getattr(obj, verb)(*arglist)
 
@@ -10,7 +13,7 @@ class M(MonteObject):
         return getattr(obj, verb)(*arglist)
 
     def send(self, obj, verb, arglist):
-        raise NotImplementedError()
+        return self.vat.send(obj, verb, arglist)
 
     def sendOnly(self, obj, verb, arglist):
         # XXX optimize
@@ -22,6 +25,3 @@ class M(MonteObject):
 
     def toQuote(self, obj):
         return String(toQuote(obj))
-
-
-theM = M()

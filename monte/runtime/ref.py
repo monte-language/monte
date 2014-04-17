@@ -126,8 +126,8 @@ class RefOps(MonteObject):
     def whenResolved(self, o, callback):
         p, r = self.promise()
         prob = self.vat.sendOnly(
-            o, String('_whenMoreResolved'),
-            ConstList([_whenResolvedReactor(callback, o, r)]))
+            o, String(u'_whenMoreResolved'),
+            ConstList([_whenResolvedReactor(callback, o, r, self.vat)]))
         if prob is not None:
             return self.broken(prob)
         return p
@@ -135,14 +135,14 @@ class RefOps(MonteObject):
     def whenResolvedOnly(self, o, callback):
         p, r = self.promise()
         return self.vat.sendOnly(
-            o, String('_whenMoreResolved'),
-            ConstList([_whenResolvedReactor(callback, o, r)]))
+            o, String(u'_whenMoreResolved'),
+            ConstList([_whenResolvedReactor(callback, o, r, self.vat)]))
 
     def whenBroken(self, o, callback):
         p, r = self.promise()
         prob = self.vat.sendOnly(
-            o, String('_whenMoreResolved'),
-            ConstList([_whenBrokenReactor(callback, o, r)]))
+            o, String(u'_whenMoreResolved'),
+            ConstList([_whenBrokenReactor(callback, o, r, self.vat)]))
         if prob is not None:
             return self.broken(prob)
         return p
@@ -150,8 +150,8 @@ class RefOps(MonteObject):
     def whenBrokenOnly(self, o, callback):
         p, r = self.promise()
         return self.vat.sendOnly(
-            o, String('_whenMoreResolved'),
-            ConstList([_whenBrokenReactor(callback, o, r)]))
+            o, String(u'_whenMoreResolved'),
+            ConstList([_whenBrokenReactor(callback, o, r, self.vat)]))
 
 
     def isDeepFrozen(self, o):

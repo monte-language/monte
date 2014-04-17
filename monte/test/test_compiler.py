@@ -5,12 +5,18 @@ import textwrap
 from twisted.trial import  unittest
 from monte.compiler import ecompile, CompileError, mangleIdent
 from monte.runtime.scope import safeScope
+from monte.runtime.vat import Vat, createVatScope
+
+vat = Vat(None)
+scope = safeScope.copy()
+createVatScope(vat, scope)
 
 class CompilerTest(unittest.TestCase):
     maxDiff = None
     def eq_(self, esrc, pysrc):
-        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip(), safeScope),
-                                  textwrap.dedent(pysrc).strip())
+        self.assertMultiLineEqual(
+                ecompile(textwrap.dedent(esrc).strip(), scope, "__main"),
+                textwrap.dedent(pysrc).strip())
 
     def test_mangle(self):
         self.assertEqual(mangleIdent("foo"), "foo")
@@ -25,17 +31,24 @@ class CompilerTest(unittest.TestCase):
         self.assertEqual(mangleIdent("jim!bob"), "_m_jim33bob")
 
     def test_literal(self):
-        self.assertEqual(ecompile("1", {}), "_monte.wrap(1)")
-        self.assertEqual(ecompile('"foo"', {}), "_monte.wrap(u'foo')")
-        self.assertEqual(ecompile("'x'", {}), "_monte.makeCharacter('x')")
-        self.assertEqual(ecompile("100_312", {}), "_monte.wrap(100312)")
-        self.assertEqual(ecompile('"\\u0061"', {}), "_monte.wrap(u'a')")
+        self.assertEqual(ecompile("1", {}, "__main"),
+                "_monte.wrap(1)")
+        self.assertEqual(ecompile('"foo"', {}, "__main"),
+                "_monte.wrap(u'foo')")
+        self.assertEqual(ecompile("'x'", {}, "__main"),
+                "_monte.makeCharacter('x')")
+        self.assertEqual(ecompile("100_312", {}, "__main"),
+                "_monte.wrap(100312)")
+        self.assertEqual(ecompile('"\\u0061"', {}, "__main"),
+                "_monte.wrap(u'a')")
 
     def test_noun(self):
-         self.assertEqual(ecompile("foo", {'foo': None}), '_m_outerScope["foo"]')
-         self.assertEqual(ecompile('::"if"', {'if': None}),  '_m_outerScope["if"]')
-         self.assertEqual(ecompile('::"hello world!"', {'hello world!': None}),
-                          '_m_outerScope["hello world!"]')
+         self.assertEqual(ecompile("foo", {'foo': None}, "__main"),
+                 '_m_outerScope["foo"]')
+         self.assertEqual(ecompile('::"if"', {'if': None}, "__main"),
+                 '_m_outerScope["if"]')
+         self.assertEqual(ecompile('::"hello world!"', {'hello world!': None},
+             "__main"), '_m_outerScope["hello world!"]')
 
     def test_call(self):
         self.eq_("def x := 1; x.baz(2)",
@@ -85,8 +98,9 @@ class CompilerTest(unittest.TestCase):
             x.put(_g_x2)
             _g_x2
             """)
-        self.assertRaises(CompileError, ecompile, "def x := 1; x := 2", {})
-        self.assertRaises(CompileError, ecompile, "x := 2", {})
+        self.assertRaises(CompileError, ecompile, "def x := 1; x := 2", {},
+                "__main")
+        self.assertRaises(CompileError, ecompile, "x := 2", {}, "__main")
 
     def test_guardpattern(self):
         self.eq_("def x :float := 1",

@@ -830,7 +830,7 @@ class PythonWriter(object):
         out.writeln("%s = %s" % (pyname, val))
         return pyname
 
-def ecompile(source, scope, origin="__main"):
+def ecompile(source, scope, origin):
     ast = expand(parse(source))
     f = StringIO()
     PythonWriter(ast, origin, scope).output(TextWriter(f))

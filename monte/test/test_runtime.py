@@ -2,10 +2,19 @@ from textwrap import dedent
 from monte.test import unittest
 from monte.runtime.base import toQuote
 from monte.runtime.data import false, true, Integer, String
-from monte.runtime.load import eval as monte_eval
+from monte.runtime.load import eval as _monte_eval
 from monte.runtime.scope import safeScope
 from monte.runtime.tables import ConstList, ConstMap, FlexList
 from monte.runtime.compiler_helpers import wrap
+from monte.runtime.vat import Vat, createVatScope
+
+
+def monte_eval(source, **extras):
+    vat = Vat(None)
+    scope = safeScope.copy()
+    createVatScope(vat, scope)
+    scope.update(extras)
+    return _monte_eval(source=source, scope=scope)
 
 
 class NullPropertiesTest(unittest.TestCase):
@@ -255,11 +264,10 @@ class AuditingTest(unittest.TestCase):
 
     def setUp(self):
         self.output = []
-        self.scope = safeScope.copy()
-        self.scope['emit'] = self.output.append
 
     def eq_(self, src, result):
-        self.assertEqual(monte_eval(dedent(src), self.scope), result)
+        self.assertEqual(monte_eval(dedent(src), emit=self.output.append),
+                         result)
 
     def test_auditCalled(self):
         self.eq_("""
@@ -314,7 +322,7 @@ class AuditingTest(unittest.TestCase):
                 object auditSample implements approver {}
                 __auditedBy(approver, auditSample)
             """),
-            self.scope)
+            emit=self.output.append)
 
     def test_nonGozerian(self):
         self.eq_("""
@@ -358,8 +366,7 @@ class BindingGuardTest(unittest.TestCase):
                             else:
                                 throw(`$noun: expected $guard, got ${audition.getGuard(noun)}`)
             """))
-        self.scope = safeScope.copy()
-        self.scope["CheckGuard"] = CheckGuard
+        self.scope = {"CheckGuard": CheckGuard}
 
     def test_doesNotGuard(self):
         err = self.assertRaises(
@@ -372,7 +379,7 @@ class BindingGuardTest(unittest.TestCase):
                 object doesNotGuardX implements CheckGuard["x", FinalSlot[int]]:
                     to f():
                         return x
-                """), self.scope)
+                """), **self.scope)
         self.assertEqual(str(err), "x: expected FinalSlot[int], got FinalSlot[any]")
 
     def test_doesNotMention(self):
@@ -386,7 +393,7 @@ class BindingGuardTest(unittest.TestCase):
                 object doesNotMentionX implements CheckGuard["x", FinalSlot[int]]:
                     to f():
                         return 0
-                """), self.scope)
+                """), **self.scope)
         self.assertEqual(str(err), '"x" is not a free variable in <__main$doesNotMentionX>')
 
     def test_final(self):
@@ -397,7 +404,7 @@ class BindingGuardTest(unittest.TestCase):
             object guardsX implements CheckGuard["x", FinalSlot[int]]:
                 to f():
                     return x
-            """), self.scope)
+            """), **self.scope)
 
     def test_var(self):
         monte_eval(dedent(
@@ -407,7 +414,7 @@ class BindingGuardTest(unittest.TestCase):
             object guardsX implements CheckGuard["x", VarSlot[any]]:
                 to f():
                     return x
-            """), self.scope)
+            """), **self.scope)
 
     def test_guardedVar(self):
         monte_eval(dedent(
@@ -417,7 +424,7 @@ class BindingGuardTest(unittest.TestCase):
             object guardsX implements CheckGuard["x", VarSlot[int]]:
                 to f():
                     return x
-            """), self.scope)
+            """), **self.scope)
 
     def test_objectFinal(self):
         monte_eval(dedent(
@@ -427,7 +434,7 @@ class BindingGuardTest(unittest.TestCase):
             object guardsX implements CheckGuard["x", FinalSlot[any]]:
                 to f():
                     return x
-            """), self.scope)
+            """), **self.scope)
 
     def test_as(self):
         monte_eval(dedent(
@@ -440,7 +447,7 @@ class BindingGuardTest(unittest.TestCase):
             object guardsX implements CheckGuard["x", FinalSlot[approver]]:
                 to f():
                     return x
-            """), self.scope)
+            """), **self.scope)
 
     def test_slot(self):
         monte_eval(dedent(
@@ -450,7 +457,7 @@ class BindingGuardTest(unittest.TestCase):
             object guardsX implements CheckGuard["x", any]:
                 to f():
                     return x
-            """), self.scope)
+            """), **self.scope)
 
     def test_guardedSlot(self):
         monte_eval(dedent(
@@ -461,7 +468,7 @@ class BindingGuardTest(unittest.TestCase):
             object guardsX implements CheckGuard["x", g]:
                 to f():
                     return x
-            """), self.scope)
+            """), **self.scope)
 
 
 class ConstListTest(unittest.TestCase):

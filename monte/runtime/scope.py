@@ -9,16 +9,13 @@ from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, selflessGuard,
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
                                        floatGuard, stringGuard, voidGuard)
 from monte.runtime.guards.tables import listGuard, mapGuard
-from monte.runtime.helpers import (accumulateList, accumulateMap, BooleanFlow,
-                                   comparer, extract, Empty, iterWhile,
-                                   makeVerbFacet, makeViaBinder, matchSame,
-                                   switchFailed, suchThat, splitList,
-                                   validateFor)
+from monte.runtime.helpers import (accumulateList, accumulateMap, comparer,
+                                   extract, Empty, iterWhile, makeVerbFacet,
+                                   makeViaBinder, matchSame, switchFailed,
+                                   suchThat, splitList, validateFor)
 from monte.runtime.io import stdin, stdout
 from monte.runtime.load import monteImport
-from monte.runtime.ref import RefOps
 from monte.runtime.tables import makeMonteList, mapMaker
-from monte.runtime.m import theM
 from monte.runtime.text import simpleQuasiParser, quasiMatcher
 from monte.runtime.trace import trace, traceln
 
@@ -31,14 +28,10 @@ safeScope = {
     'Infinity': infinity,
 
     ## Primitive: flow control
-    # XXX Create this properly per-vat, when we have vats.
-    'M': theM,
     'throw': throw,
     '__loop': monteLooper,
 
     ## Primitive reference/object operations
-    # XXX Create this properly per-vat, when we have vats.
-    "Ref": RefOps(None),
     "DeepFrozen": deepFrozenGuard,
 
     ## Primitive: tracing
@@ -109,7 +102,6 @@ safeScope = {
     '__equalizer': equalizer,
 
     ## Code loading
-    'import': monteImport,
     # 'monte__quasiParser': monteQuasiParser,
     # 'Audition': auditionGuard,
 
@@ -120,8 +112,6 @@ safeScope = {
     '__accumulateList': accumulateList,
     '__accumulateMap': accumulateMap,
     '__bind': makeViaBinder,
-    #XXX vat
-    '__booleanFlow': BooleanFlow(None),
     '__comparer': comparer,
     '__iterWhile': iterWhile,
     '__makeVerbFacet': makeVerbFacet,

@@ -16,5 +16,11 @@ from monte.runtime.scope import ioScope, safeScope
 scope = safeScope.copy()
 scope.update(ioScope)
 
+from monte.runtime.vat import Vat, createVatScope
+
+# XXX pass in a reactor when ready
+vat = Vat(None)
+createVatScope(vat, scope)
+
 if len(sys.argv) > 1:
-    monte.runtime.load.eval(open(sys.argv[1]).read(), scope)
+    monte.runtime.load.eval(source=open(sys.argv[1]).read(), scope=scope)

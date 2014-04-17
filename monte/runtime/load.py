@@ -14,9 +14,8 @@ class GeneratedCodeLoader(object):
     def get_source(self, name):
         return self.source
 
-def eval(source, scope=None, origin="__main"):
-    if scope is None:
-        from monte.runtime.scope import safeScope as scope
+
+def eval(source, scope, origin="__main"):
     name = uuid.uuid4().hex
     mod = module(name)
     mod.__name__ = name
@@ -33,18 +32,24 @@ def eval(source, scope=None, origin="__main"):
     linecache.getlines(name, mod.__dict__)
     return mod._m_evalResult
 
-monteModules = {}
-def monteImport(name):
-    # The name is a String, so deref it.
-    name = name.s
-    # XXX hax
-    path = os.path.join(os.path.dirname(__file__), '..', 'src',
-                        name.replace('.', '/') + '.mt')
-    path = os.path.abspath(path)
-    if not os.path.exists(path):
-        searchPath = [os.path.dirname(path)]
-        raise RuntimeError('Could not import "%s".\nSearch path was %s.'
-                           % (name, searchPath))
-    if not monteModules.get(name):
-        monteModules[name] = eval(open(path).read(), origin=name)
-    return monteModules[name]
+
+def monteImport(vat):
+    monteModules = {}
+
+    def loader(name):
+        # The name is a String, so deref it.
+        name = name.s
+        # XXX hax
+        path = os.path.join(os.path.dirname(__file__), '..', 'src',
+                            name.replace('.', '/') + '.mt')
+        path = os.path.abspath(path)
+        if not os.path.exists(path):
+            searchPath = [os.path.dirname(path)]
+            raise RuntimeError('Could not import "%s".\nSearch path was %s.'
+                               % (name, searchPath))
+        if not monteModules.get(name):
+            monteModules[name] = eval(open(path).read(), vat.scope,
+                                      origin=name)
+        return monteModules[name]
+
+    return loader
