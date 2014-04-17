@@ -468,18 +468,10 @@ def makeDerp(language):
             # Alternation.
             return makeDerp([alternation, [language, other.unwrap()]])
 
-        to remainder(other):
-            # Inspired by lens, which uses `%` for its modification/map API.
-            # Their mnemonic is *mod*ification, for *mod*ulus. However, Monte
-            # uses `%%` for modulus and `%` for remainder. We choose the
-            # latter in order to avoid any accidental expMod() conversions and
-            # also to improve readability.
-            return makeDerp([reduction, language, _pureToList(other)])
-
         to modulus(other):
-            # Okay, I lied. This is a way to craft a reduction that does raw
-            # things and directly returns however many items it desires.
-            return makeDerp([reduction, language, other])
+            # Inspired by lens, which uses `%` for its modification/map API.
+            # Their mnemonic is *mod*ification, for *mod*ulus.
+            return makeDerp([reduction, language, _pureToList(other)])
 
         to repeated():
             # Repeat!
