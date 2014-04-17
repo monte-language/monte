@@ -1086,3 +1086,14 @@ class StringTests(unittest.TestCase):
             def x := "abcd"
             x.slice(1) == "bcd"
             """)), true)
+
+class RefTests(unittest.TestCase):
+    def test_print(self):
+        self.assertEqual(repr(monte_eval("Ref.promise()[0]")), "<m: <Promise>>")
+
+    def test_resolve(self):
+        self.assertEqual(monte_eval(dedent("""
+            def [p, r] := Ref.promise()
+            r.resolve(3)
+            p == 3
+            """)), true)
