@@ -211,7 +211,7 @@ def makeNode(value, left, right, red :boolean):
 
             # We lean to the left, so the left case stands alone.
             if (toDel < me):
-                if (!left.getB() && left != NIL && !left.getL().getB()):
+                if (!left.getB() & left != NIL & !left.getL().getB()):
                     # Delete towards the left
                     def l := left.delete(val, key)
                     node := makeNode(value, l, right, red)
@@ -233,7 +233,7 @@ def makeNode(value, left, right, red :boolean):
                 # traverse thataways. Here, we do have to confirm that there's
                 # no NIL on our right...
 
-                if (!right.getB() && right != NIL && !right.getL().getB()):
+                if (!right.getB() & right != NIL & !right.getL().getB()):
                     node := node.moveRedRight()
                 if (me < toDel):
                     # Delete toward the right
