@@ -138,3 +138,63 @@ def makeNode(value, left, right, red :Bool):
 
             # And balance on the way back up.
             return [node.balance(), insertion]
+
+        to moveRedLeft():
+            # Shuffle red to the left of a tree
+            var node := Node.flip()
+            if (node.getR() != NIL && node.getR().getL().getB()):
+                node := makeNode(value, left, right.rotateRight())
+                node := node.rotateLeft().flip()
+            return node
+
+        to moveRedRight():
+            # Shuffle red to the right of a tree.
+            node := Node.flip()
+            if (left != NIL && left.getL().getL().getB()):
+                node := node.rotateRight().flip()
+            return node
+
+        to deleteMin():
+            # Delete the left-most value from a tree
+
+            node := Node
+
+            # Base case: If nobody is smaller than me, delete myself. 
+            if (left == NIL):
+                return [makeNIL(), value]
+
+            # Acquire more reds if necessary to continue the traversal. The
+            # double-deep check is fine because NIL is red.
+
+            if (!left.getB() && !left.getL().getB()):
+                 node := node.moveRedLeft()
+
+            # Recursive case: Delete minimum of all less than this
+
+            def [l, val] = left.deleteMin()
+            node := makeNode(value, l, right, red)
+
+            return [self.balance(), val]
+
+        to deleteMax():
+            # Delete the right-most value from a tree.
+
+            node := Node
+
+            # Attempt to rotate left-leaning reds to the right.
+            if (left.getB()):
+                node := node.rotateRight()
+
+            # Base case: If there's nothing bigger than me, I go away.
+            if (right == NIL):
+                return [makeNIL(), value]
+
+            # Acquire more reds if necessary to continue. NIL is red.
+            if (!right.getB() && !right.getL().getB()):
+                node := node.moveRedRight()
+
+            # Recursive case: Delete max of larger subtree
+            def [r, val] :=  right.deleteMax()
+            node := makeNode(value, left, r, red)
+
+            return node.balance(), val
