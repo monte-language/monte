@@ -1,4 +1,4 @@
-def enumerate := require("hands.enumerate")
+def enumerate := import("hands.enumerate")
 def rng := import("javaRandom")
 def unittest := import("unittest")
 
