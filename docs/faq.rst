@@ -170,6 +170,13 @@ Vats?
 
 http://erights.org/elib/concurrency/vat.html might help
 
+A vat's an object that sits on the border of the runtime and is responsible 
+for containing, guarding, and passing messages to the objects inside of it.
+
+"A Vat is vaguely like a traditional OS process -- it bundles together a 
+single thread of control and an address space of synchronously accessible data"
+
+
 
 Farrefs?
 --------
