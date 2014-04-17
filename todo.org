@@ -24,7 +24,10 @@
        and Monte's semantics are already pretty sane.
   - [ ] Formalize Kernel-E in K
 * TODO Monte is self-hosting [0%]
- - [-] Bootstrapping compiler improvements [3/9]
+ - [-] Bootstrapping compiler improvements [30%]
+  - [ ] Usability
+   - [ ] Parser traces with actual line numbers
+   - [ ] Better hinting on "No global named 'x'"
   - [ ] Bikeshed on optional arguments
         Current direction is probably to idiomatically use a map as the final
         argument for methods that want to have kwargs.
