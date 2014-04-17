@@ -1032,3 +1032,43 @@ class IntegerGuardTests(unittest.TestCase):
 
     def test_compound_fails(self):
         self.assertRaises(RuntimeError, monte_eval, '0 <= int <= 1')
+
+
+class FloatGuardTests(unittest.TestCase):
+
+    def test_type(self):
+        monte_eval('def x :float := 1.0')
+        self.assertRaises(RuntimeError, monte_eval, 'def x :float := "foo"')
+
+    def test_lt(self):
+        monte_eval('def x :(float < 5.0) := 1.0')
+        self.assertRaises(RuntimeError, monte_eval,
+                          'def x :(float < 5.0) := 10.0')
+
+    def test_gt(self):
+        monte_eval('def x :(float > 5.0) := 10.0')
+        self.assertRaises(RuntimeError, monte_eval,
+                          'def x :(float > 5.0) := 1.0')
+
+    def test_gte(self):
+        monte_eval('def x :(float >= 0.0) := 1.0')
+        self.assertRaises(RuntimeError, monte_eval,
+                          'def x :(float >= 0.0) := -1.0')
+
+    def test_lte(self):
+        monte_eval('def x :(float <= 9000.0) := 50.0')
+        self.assertRaises(RuntimeError, monte_eval,
+                          'def x :(float <= 9000.0) := 9001.0')
+
+    def test_backwards(self):
+        monte_eval('def x :(0.0 <= float) := 1.0')
+        self.assertRaises(RuntimeError, monte_eval,
+                          'def x :(1.0 <= float) := 0.5')
+
+    def test_compound_fails(self):
+        self.assertRaises(RuntimeError, monte_eval, '0.0 <= float <= 1.0')
+
+    def test_integer_coercion(self):
+        monte_eval('def x :(float < 1) := 0.5')
+        self.assertRaises(RuntimeError, monte_eval,
+                          'def x :(float < 1) := 2.0')
