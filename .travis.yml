@@ -4,8 +4,8 @@ python:
     - pypy
 
 matrix:
-    allowed_failures:
-        - pypy
+    allow_failures:
+        - python: pypy
     fast_finish: true
 
 env:
