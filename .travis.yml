@@ -6,6 +6,7 @@ python:
 matrix:
     allowed_failures:
         - pypy
+    fast_finish: true
 
 env:
     - PYTHON_TESTS=true MONTE_TESTS=false
