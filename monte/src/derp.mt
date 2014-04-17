@@ -468,7 +468,7 @@ def makeDerp(language):
             # Alternation.
             return makeDerp([alternation, [language, other.unwrap()]])
 
-        to modulus(other):
+        to mod(other):
             # Inspired by lens, which uses `%` for its modification/map API.
             # Their mnemonic is *mod*ification, for *mod*ulus.
             return makeDerp([reduction, language, _pureToList(other)])
