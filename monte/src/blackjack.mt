@@ -171,7 +171,7 @@ def makeNode(value, left, right, red :Bool):
 
             # Recursive case: Delete minimum of all less than this
 
-            def [l, val] = left.deleteMin()
+            def [l, val] := left.deleteMin()
             node := makeNode(value, l, right, red)
 
             return [self.balance(), val]
