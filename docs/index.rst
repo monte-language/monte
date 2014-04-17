@@ -88,3 +88,14 @@ variables and methods. Other objects are created explicitly, such as
 demonstrated in obj.mt. 
 
 Objects can also be created by functions, such as shown in createobj.mt. 
+
+Built-In Types
+--------------
+
+Int, String, Lists
+
+Data Structures
+---------------
+
+Monte has lists built in natively, and various other data structures
+implemented in the language. 
