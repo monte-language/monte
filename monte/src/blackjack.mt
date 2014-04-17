@@ -1,17 +1,16 @@
 def makeNIL():
-    object NIL():
+    return object NIL:
         to size():
             return 0
         to find(seek, key):
             return null
-            # or raise something about the value not being found
         to findPrekeyed(seek, key):
             return null
-            # or raise some error
 
-def makeNode(value, left, right, red :Bool):
+def NIL := makeNIL()
+
+def makeNode(value, left, right, red :boolean):
     return object Node:
-
         # Oh eww. Silly monte.
         to getL():
             return left
@@ -46,26 +45,22 @@ def makeNode(value, left, right, red :Bool):
                 return value
 
         to rotateLeft():
-
             #     A                  C
             #    / \                / \
             #   B   C      =>      A   E
             #      / \            / \
             #     D   E          B   D
- 
-            def new := makeNode(value, left, right.getL(), True)
+            def new := makeNode(value, left, right.getL(), true)
             def top := makeNode(right.getV(), new, right.getR(), red)
             return top
 
         to rotateRight():
-
             #      A               B
             #     / \             / \
             #    B   C    =>     D   A
             #   / \                 / \
             #  D   E               E   C
-
-            def new := makeNode(value, left, right.getL(), True)
+            def new := makeNode(value, left, right.getL(), true)
             def top := makeNode(right.getV(), new, right.getR(), red)
             return top
 
@@ -117,7 +112,7 @@ def makeNode(value, left, right, red :Bool):
             # node with no children. 
             
             if (node == NIL):
-                return [makeNode(val, makeNIL(), makeNIL(), True), True]
+                return [makeNode(val, makeNIL(), makeNIL(), true), true]
 
             # Recursive case: Insertion into a non-empty tree is insertion is
             # into whichever of the two sides is correctly compared. 
@@ -125,16 +120,18 @@ def makeNode(value, left, right, red :Bool):
             def keyV := key(val)
             def keyMe := key(value)
 
+            def insertion       # HAX eww
+
             if (keyV < keyMe):
-                def [l, insertion] := left.insert(val, key)
+                def [l, bind insertion] := left.insert(val, key)
                 node := makeNode(value, l, right, red)
             else if (keyMe < keyV):
-                def [r, insertion] := right.insert(val, key)
+                def [r, bind insertion] := right.insert(val, key)
                 node := makeNode(value, left, r, red)
-            else if (keyV == keyMe):
+            else:
                 # Exact hit on this node. Perform an update.
                 node := makeNode(val, left, right, red)
-                def insertion := False
+                bind insertion := false
 
             # And balance on the way back up.
             return [node.balance(), insertion]
@@ -149,7 +146,7 @@ def makeNode(value, left, right, red :Bool):
 
         to moveRedRight():
             # Shuffle red to the right of a tree.
-            node := Node.flip()
+            var node := Node.flip()
             if (left != NIL && left.getL().getL().getB()):
                 node := node.rotateRight().flip()
             return node
@@ -157,7 +154,7 @@ def makeNode(value, left, right, red :Bool):
         to deleteMin():
             # Delete the left-most value from a tree
 
-            node := Node
+            var node := Node
 
             # Base case: If nobody is smaller than me, delete myself. 
             if (left == NIL):
@@ -174,12 +171,12 @@ def makeNode(value, left, right, red :Bool):
             def [l, val] := left.deleteMin()
             node := makeNode(value, l, right, red)
 
-            return [self.balance(), val]
+            return [node.balance(), val]
 
         to deleteMax():
             # Delete the right-most value from a tree.
 
-            node := Node
+            var node := Node
 
             # Attempt to rotate left-leaning reds to the right.
             if (left.getB()):
@@ -197,7 +194,7 @@ def makeNode(value, left, right, red :Bool):
             def [r, val] :=  right.deleteMax()
             node := makeNode(value, left, r, red)
 
-            return node.balance(), val
+            return [node.balance(), val]
 
         to delete(val, key):
             # Delete a value from a tree.
