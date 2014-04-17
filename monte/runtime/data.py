@@ -402,6 +402,9 @@ class Float(MonteObject):
     def abs(self):
         return Float(abs(self.n))
 
+    def negate(self):
+        return Float(-self.n)
+
     # Order.
 
     def next(self):
