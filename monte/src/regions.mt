@@ -11,21 +11,33 @@ def makeRegion(bottom, top):
             else:
                 throw.eject(ej, `Not in region: $specimen`)
 
-        to iterate():
-            def rv := [].diverge()
-            var b := bottom
-            while (b <= top):
-                rv.push(b)
-                b := b.next()
-            return rv.snapshot()
+        to _makeIterator():
+            var i := 0
+            var poz := bottom
+            return object regionIterator:
+                to next(ej):
+                    if (poz <= top):
+                        def result := [i, poz]
+                        i += 1
+                        poz := poz.next()
+                        return result
+                    else:
+                        throw.eject(ej, "iteration done")
 
         to descending():
-            def rv := [].diverge()
-            var t := top
-            while (t >= bottom):
-                rv.push(t)
-                t := t.previous()
-            return rv.snapshot()
+            var i := 0
+            var pos := top
+            return object descender:
+                to _makeIterator():
+                    return object regionIteratorDesc:
+                        to next(ej):
+                            if (pos >= bottom):
+                                def result := [i, pos]
+                                i += 1
+                                pos := pos.previous()
+                                return result
+                            else:
+                                throw.eject(ej, "iteration done")
 
         to add(var amount):
             var b := bottom
@@ -50,6 +62,11 @@ object __makeOrderedSpace:
     to op__till(left, right):
         return makeRegion(left, right.previous())
 
+def _id(k, i, _):
+    return i
+
+def asList(x):
+    return __accumulateList(x, _id)
 
 def testRegions(assert):
     def thru():
@@ -68,13 +85,13 @@ def testRegions(assert):
         })
 
     def thruIterate():
-        assert.equal((0..3).iterate(), [0, 1, 2, 3])
+        assert.equal(asList(0..3), [0, 1, 2, 3])
 
     def tillIterate():
-        assert.equal((0..!3).iterate(), [0, 1, 2])
+        assert.equal(asList(0..!3), [0, 1, 2])
 
     def thruDescending():
-        assert.equal((0..3).descending(), [3, 2, 1, 0])
+        assert.equal(asList((0..3).descending()), [3, 2, 1, 0])
 
     def thruAdd():
         def region := (0..3) + 3

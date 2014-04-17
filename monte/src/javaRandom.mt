@@ -30,7 +30,7 @@ def testWidths(assert):
     def r := makeJavaRandom(0)
 
     def testValid():
-        for w in (1..48).iterate():
+        for w in 1..48:
             r.next(w)
 
     return [testValid]
