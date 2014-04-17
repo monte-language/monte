@@ -686,6 +686,9 @@ class PythonWriter(object):
         sub.writeln("raise")
         excTemp = ctx.layout.gensym("exception")
         out.writeln("except BaseException, %s:" % (excTemp,))
+        # If the thing that was thrown got collated by the creation of the
+        # Python-level exception, then we need to do a quick unpacking first.
+        sub.writeln("%s = %s.args[0]" % (excTemp, excTemp))
         self._generatePattern(sub, ctx, None, excTemp, patt)
         newctx = ctx.with_(layout=ctx.layout.makeInner())
         val = self._generate(sub, newctx, catchblock)

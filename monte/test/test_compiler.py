@@ -890,6 +890,7 @@ class CompilerTest(unittest.TestCase):
             except _monte.MonteEjection:
                 raise
             except BaseException, _g_exception2:
+                _g_exception2 = _g_exception2.args[0]
                 p = _g_exception2
                 _g_catch1 = _monte.wrap(2)
             _g_catch1
