@@ -28,6 +28,7 @@ To use the Monte implementation hosted in Python, it's best to set up a
 virtualenv: 
 
 .. code-block:: console
+
     $ virtualenv v
     $ source v/bin/activate
     $ pip install -r requirements.txt
@@ -35,6 +36,7 @@ virtualenv:
 To run Monte code (with your virtualenv activated): 
 
 .. code-block:: console
+
     $ bin/monte monte/src/examples/hello.mt
 
 The Repl
