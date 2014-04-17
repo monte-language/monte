@@ -499,8 +499,11 @@ class String(MonteObject):
     def slice(self, start, end=None):
         if not isinstance(start, Integer):
             raise RuntimeError("%r is not an integer" % (start,))
+        start = start.n
         if end is not None and not isinstance(end, Integer):
             raise RuntimeError("%r is not an integer" % (end,))
+        elif end is not None:
+            end = end.n
         if start < 0:
             raise RuntimeError("Slice indices must be positive")
         if end is not None and end < 0:
