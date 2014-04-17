@@ -8,7 +8,8 @@ class MonteStdin(MonteObject):
     """
 
     def read(self):
-        return sys.stdin.read(16)
+        from monte.runtime.compiler_helpers import wrap
+        return wrap(sys.stdin.read(16))
 
 class MonteStdout(MonteObject):
     """
@@ -16,6 +17,7 @@ class MonteStdout(MonteObject):
     """
 
     def write(self, data):
+        from monte.runtime.data import String
         if not isinstance(data, String):
             raise RuntimeError("%r is not a string" % (data,))
         return sys.stdout.write(data.s)

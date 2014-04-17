@@ -24,3 +24,5 @@ createVatScope(vat, scope)
 
 if len(sys.argv) > 1:
     monte.runtime.load.eval(source=open(sys.argv[1]).read(), scope=scope)
+    while vat.hasTurns():
+        vat.turn()

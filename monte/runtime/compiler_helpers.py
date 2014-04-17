@@ -38,7 +38,7 @@ def getGuard(o, name):
 
 def wrap(pyobj):
     if isinstance(pyobj, str):
-        return Bytes(pyobj)
+        return ConstList(Integer(ord(i)) for i in pyobj)
     if isinstance(pyobj, unicode):
         return String(pyobj)
     # Perform bool check before int because bool subclasses int.
