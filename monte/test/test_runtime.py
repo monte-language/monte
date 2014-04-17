@@ -1077,3 +1077,12 @@ class FloatGuardTests(unittest.TestCase):
         monte_eval('def x :(float < 1) := 0.5')
         self.assertRaises(RuntimeError, monte_eval,
                           'def x :(float < 1) := 2.0')
+
+
+class StringTests(unittest.TestCase):
+
+    def test_slice(self):
+        self.assertEqual(monte_eval(dedent("""
+            def x := "abcd"
+            x.slice(1) == "bcd"
+            """)), true)
