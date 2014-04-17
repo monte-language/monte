@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This runs every monte file in the standard library. This has two results:
-# 
+#
 # * Anything that has been broken by compiler errors will fail.
 # * Many modules include tests, and these tests will run.
 
@@ -9,12 +9,21 @@ if [[ $MONTE_TESTS == "false" ]]; then
   exit 0
 fi
 
-res=0
+tests=0
+fails=0
 
 for monteFile in $(find -name '*.mt'); do
   echo "Testing $monteFile"
-  bin/monte "$monteFile"
-  res=$(($res | $?))
+  output=$(bin/monte "$monteFile")
+  if [[ $? -ne 0 ]]; then
+      fails=$((fails + 1))
+      echo $output
+  fi
+  tests=$((tests + 1))
 done
 
-exit $res
+echo "$tests tests, $fails failures."
+
+if [[ $fails -gt 0 ]]; then
+  exit 1
+fi

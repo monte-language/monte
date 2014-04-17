@@ -8,7 +8,7 @@ def makeInputStream(data, offset, loc):
 
         to tail():
             def [line, col] := loc
-            if (offset < size and data[offset] == '\n'):
+            if (offset < size && data[offset] == '\n'):
                 return makeInputStream(data, offset + 1, [line + 1, 0])
             else:
                 return makeInputStream(data, offset + 1, [line, col + 1])

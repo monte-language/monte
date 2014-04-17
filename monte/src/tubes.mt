@@ -1,4 +1,4 @@
-def makeUnpauser := import("unpauser")
+def makeUnpauser := import("tubes.unpauser")
 
 def makeListFount(data):
     var drain := null
