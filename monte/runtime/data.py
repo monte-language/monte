@@ -215,6 +215,9 @@ class Integer(MonteObject):
     def mod(self, other):
         return numWrap(self.n % other.n)
 
+    def remainder(self, other):
+        return numWrap(self.n % other.n)
+
     def _m_and(self, other):
         return Integer(self.n & other.n)
 
