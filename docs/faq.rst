@@ -16,7 +16,7 @@ Any object that you can access meets one of three criteria:
 * You received it as a result of passing messages to something that met either
   of the first two criteria.
 
-Additionally, you can sue guards and auditors to ensure properties of an
+Additionally, you can use guards and auditors to ensure properties of an
 object. 
 
 Note that using ``when`` on a promise for a far reference still results in a
