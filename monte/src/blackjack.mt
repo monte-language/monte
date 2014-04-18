@@ -1,14 +1,20 @@
-object NIL:
+object NIL implements Selfless:
     to size():
         return 0
     to find(seek, key):
         return null
     to findPrekeyed(seek, key):
         return null
+    to getB():
+        return false
+    to _uncall():
+        return "NIL"
 
-def makeNode(value, left, right, red :boolean):
-    return object Node:
-        # Oh eww. Silly monte.
+def makeNode(value, left, right, red):
+    return object Node implements Selfless:
+        to _uncall():
+            # reducing it to primitives facilitates comparison
+            return [value, left._uncall(), right._uncall(), red]
         to getL():
             return left
         to getR():
@@ -77,7 +83,7 @@ def makeNode(value, left, right, red :boolean):
             var node := Node 
 
             # Always lean left with red nodes.
-            if (right.getR()):
+            if (right.getB()):
                 node := node.rotateLeft()
 
             # Never permit red nodes to have red children. Note that if the
@@ -137,7 +143,7 @@ def makeNode(value, left, right, red :boolean):
             # Shuffle red to the left of a tree
             var node := Node.flip()
             if (node.getR() != NIL && node.getR().getL().getB()):
-                node := makeNode(value, left, right.rotateRight())
+                node := makeNode(value, left, right.rotateRight(), red)
                 node := node.rotateLeft().flip()
             return node
 
@@ -208,7 +214,7 @@ def makeNode(value, left, right, red :boolean):
 
             # We lean to the left, so the left case stands alone.
             if (toDel < me):
-                if (!left.getB() & left != NIL & !left.getL().getB()):
+                if (!left.getB() & (left != NIL) & !left.getL().getB()):
                     # Delete towards the left
                     def l := left.delete(val, key)
                     node := makeNode(value, l, right, red)
@@ -230,7 +236,7 @@ def makeNode(value, left, right, red :boolean):
                 # traverse thataways. Here, we do have to confirm that there's
                 # no NIL on our right...
 
-                if (!right.getB() & right != NIL & !right.getL().getB()):
+                if (!right.getB() & (right != NIL) & !right.getL().getB()):
                     node := node.moveRedRight()
                 if (me < toDel):
                     # Delete toward the right
