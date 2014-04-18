@@ -252,4 +252,4 @@ def makeNode(value, left, right, red :boolean):
 
             return node.balance()
 
-
+[makeNode, NIL]
