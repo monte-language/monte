@@ -6,7 +6,8 @@ def makeWriteDrain := import("tubes.writeDrain")
 def yell(s):
     return s.toUpperCase()
 
-def yellingPump := makeMapPump(yell)
-def yellingTube := makeTube(yellingPump)
+def main():
+    def yellingPump := makeMapPump(yell)
+    def yellingTube := makeTube(yellingPump)
 
-makeReadFount(stdin).flowTo(yellingTube).flowTo(makeWriteDrain(stdout))
+    makeReadFount(stdin).flowTo(yellingTube).flowTo(makeWriteDrain(stdout))
