@@ -943,7 +943,7 @@ class CompilerTest(unittest.TestCase):
             if (1) { 2 } else { 3 }
             ''',
             """
-            if _monte.booleanGuard.coerce(_monte.wrap(1), None):
+            if _monte.booleanGuard.coerce(_monte.wrap(1), _monte.null):
                 _g_if1 = _monte.wrap(2)
             else:
                 _g_if1 = _monte.wrap(3)
@@ -962,7 +962,7 @@ class CompilerTest(unittest.TestCase):
                 3
             ''',
             """
-            if _monte.booleanGuard.coerce(_monte.wrap(1), None):
+            if _monte.booleanGuard.coerce(_monte.wrap(1), _monte.null):
                 _g_if1 = _monte.wrap(2)
             else:
                 _g_if1 = _monte.wrap(3)
@@ -980,10 +980,10 @@ class CompilerTest(unittest.TestCase):
                 5
             ''',
             """
-            if _monte.booleanGuard.coerce(_monte.wrap(1), None):
+            if _monte.booleanGuard.coerce(_monte.wrap(1), _monte.null):
                 _g_if1 = _monte.wrap(2)
             else:
-                if _monte.booleanGuard.coerce(_monte.wrap(3), None):
+                if _monte.booleanGuard.coerce(_monte.wrap(3), _monte.null):
                     _g_if2 = _monte.wrap(4)
                 else:
                     _g_if2 = _monte.wrap(5)
@@ -998,7 +998,7 @@ class CompilerTest(unittest.TestCase):
             if (1) { 2 }
             ''',
             """
-            if _monte.booleanGuard.coerce(_monte.wrap(1), None):
+            if _monte.booleanGuard.coerce(_monte.wrap(1), _monte.null):
                 _g_if1 = _monte.wrap(2)
             else:
                 _g_if1 = _monte.null

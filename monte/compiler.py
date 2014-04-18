@@ -707,7 +707,7 @@ class PythonWriter(object):
         ifctx = ctx.with_(layout=ctx.layout.makeInner())
         tv = self._generate(out, ifctx, test)
         ifTemp = ctx.layout.gensym("if")
-        out.writeln("if _monte.booleanGuard.coerce(%s, None):" % (tv,))
+        out.writeln("if _monte.booleanGuard.coerce(%s, _monte.null):" % (tv,))
         newctx = ifctx.with_(layout=ifctx.layout.makeInner())
         val = self._generate(sub, newctx, consq)
         sub.writeln("%s = %s" % (ifTemp, val))
