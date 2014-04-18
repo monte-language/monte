@@ -184,6 +184,10 @@ class SelflessGuard(Guard):
         # to avoid MonteObject.__eq__'s invocation of equalizer
         return self is other
 
+    def audit(self, auditor):
+        #XXX Fixme
+        return True
+
 selflessGuard = SelflessGuard()
 
 class TransparentGuard(Guard):
