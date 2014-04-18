@@ -13,17 +13,22 @@ class CompileError(Exception):
 class TextWriter(object):
 
     stepSize = 4
+    midLine = False
 
     def __init__(self, f, indentSteps=0):
         self.file = f
         self.indentSteps = indentSteps
 
+    def write(self, data):
+        if data and not data.isspace():
+            if not self.midLine:
+                self.file.write(" " * (self.indentSteps * self.stepSize))
+            self.file.write(data)
 
     def writeln(self, data):
-        if data and not data.isspace():
-            self.file.write(" " * (self.indentSteps * self.stepSize))
-            self.file.write(data)
+        self.write(data)
         self.file.write("\n")
+        self.midLine = False
 
     def indent(self):
         return TextWriter(self.file, self.indentSteps + 1)
