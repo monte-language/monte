@@ -3,6 +3,10 @@ from StringIO import StringIO
 from monte.compiler import TextWriter
 
 
+def notNull(term):
+    return term.tag.name != "null"
+
+
 class MonteWriter(object):
     """
     Moderately-pretty printer for expanded Monte.
@@ -20,7 +24,8 @@ class MonteWriter(object):
     def _generate(self, out, node):
         name = node.tag.name
         if name == "null":
-            return "null"
+            print "null"
+            return
         return getattr(self, "generate_" + name)(out, node)
 
     def generate_LiteralExpr(self, out, node):
@@ -76,12 +81,14 @@ class MonteWriter(object):
 
     def generate_Object(self, out, node):
         doc, nameNode, auditorExprs, script = node.args
-        out.write(" object ")
+        out.write("object ")
         self._generate(out, nameNode)
-        out.write(" implements ")
-        for iface in auditorExprs.args:
-            self._generate(out, iface)
-            out.write(",")
+        if notNull(auditorExprs.args[0]):
+            out.write(" implements (")
+            for iface in auditorExprs.args:
+                self._generate(out, iface)
+                out.write(",")
+            out.write(")")
         out.write(" { ")
         self._generate(out, script)
         out.write(" } ")
@@ -103,7 +110,10 @@ class MonteWriter(object):
             self._generate(out, param)
             out.write(",")
         out.write(")")
-        self._generate(out, rv)
+        if notNull(rv):
+            out.write(" :(")
+            self._generate(out, rv)
+            out.write(")")
         out.write(" { ")
         self._generate(out, body)
         out.write(" } ")
@@ -150,24 +160,28 @@ class MonteWriter(object):
 
     def generate_FinalPattern(self, out, node):
         name, guard = node.args
-        out.write("def ")
         self._generate(out, name)
-        out.write(" :(")
-        self._generate(out, guard)
-        out.write(")")
+        if notNull(guard):
+            out.write(" :(")
+            self._generate(out, guard)
+            out.write(")")
 
     def generate_IgnorePattern(self, out, node):
         guard = node.args[0]
-        out.write("_ :(")
-        self._generate(out, guard)
-        out.write(")")
+        out.write("_")
+        if notNull(guard):
+            out.write(" :(")
+            self._generate(out, guard)
+            out.write(")")
 
     def generate_VarPattern(self, out, node):
         nameExpr, guard = node.args
         name = nameExpr.args[0].data
-        out.write("var %s :(" % name)
-        self._generate(out, guard)
-        out.write(")")
+        out.write("var %s" % name)
+        if notNull(guard):
+            out.write(" :(")
+            self._generate(out, guard)
+            out.write(")")
 
     def generate_ListPattern(self, out, node):
         pattsTerm, extra = node.args
