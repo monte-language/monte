@@ -1,13 +1,10 @@
-def makeNIL():
-    return object NIL:
-        to size():
-            return 0
-        to find(seek, key):
-            return null
-        to findPrekeyed(seek, key):
-            return null
-
-def NIL := makeNIL()
+object NIL:
+    to size():
+        return 0
+    to find(seek, key):
+        return null
+    to findPrekeyed(seek, key):
+        return null
 
 def makeNode(value, left, right, red :boolean):
     return object Node:
@@ -112,7 +109,7 @@ def makeNode(value, left, right, red :boolean):
             # node with no children. 
             
             if (node == NIL):
-                return [makeNode(val, makeNIL(), makeNIL(), true), true]
+                return [makeNode(val, NIL, NIL, true), true]
 
             # Recursive case: Insertion into a non-empty tree is insertion is
             # into whichever of the two sides is correctly compared. 
@@ -158,7 +155,7 @@ def makeNode(value, left, right, red :boolean):
 
             # Base case: If nobody is smaller than me, delete myself. 
             if (left == NIL):
-                return [makeNIL(), value]
+                return [NIL, value]
 
             # Acquire more reds if necessary to continue the traversal. The
             # double-deep check is fine because NIL is red.
@@ -184,7 +181,7 @@ def makeNode(value, left, right, red :boolean):
 
             # Base case: If there's nothing bigger than me, I go away.
             if (right == NIL):
-                return [makeNIL(), value]
+                return [NIL, value]
 
             # Acquire more reds if necessary to continue. NIL is red.
             if (!right.getB() && !right.getL().getB()):
@@ -227,7 +224,7 @@ def makeNode(value, left, right, red :boolean):
                 # delete. (Whatever that's supposed to mean.)
 
                 if (toDel == me && right == NIL):
-                    return makeNIL()
+                    return NIL
 
                 # No? Okay. Move more reds to the right so we can continue to
                 # traverse thataways. Here, we do have to confirm that there's
@@ -254,3 +251,5 @@ def makeNode(value, left, right, red :boolean):
                     node := makeNode(replacement, left, r, red)
 
             return node.balance()
+
+
