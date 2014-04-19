@@ -3,8 +3,8 @@ def makeTube := import("tubes.tube")
 def makeReadFount := import("tubes.readFount")
 def makeWriteDrain := import("tubes.writeDrain")
 
-def yell(s):
-    return s.toUpperCase()
+def yell(bytes):
+    return "".join([c.asChar() for c in bytes]).toUpperCase()
 
 def main():
     def yellingPump := makeMapPump(yell)
