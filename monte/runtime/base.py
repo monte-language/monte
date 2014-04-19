@@ -47,6 +47,16 @@ class MonteObject(object):
     def _m_guardForMethod(self, name):
         return self._m_methodGuards[name]
 
+    def _whenMoreResolved(self, vat, callback):
+        # Welcome to _whenMoreResolved.
+        # This method's implementation, in Monte, should be:
+        # to _whenMoreResolved(callback): callback<-(self)
+        # However, we can't do that in Python land without a vat. So, here we
+        # are; this will be better someday. Perhaps. ~ C.
+        from monte.runtime.data import String
+        from monte.runtime.tables import ConstList
+        vat.sendOnly(callback, String(u"run"), ConstList((self,)))
+
     def __mul__(self, other):
         return self.multiply(other)
 

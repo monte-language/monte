@@ -2,7 +2,7 @@ import weakref
 
 from monte.runtime.base import MonteObject
 from monte.runtime.data import String, bwrap, null, true, false
-from monte.runtime.tables import ConstMap, ConstList
+from monte.runtime.tables import ConstList
 from monte.runtime.guards.base import selflessGuard
 
 BROKEN, EVENTUAL, NEAR = String(u"BROKEN"), String(u"EVENTUAL"), String(u"NEAR")
@@ -127,7 +127,8 @@ class RefOps(MonteObject):
         p, r = self.promise()
         prob = self.vat.sendOnly(
             o, String(u'_whenMoreResolved'),
-            ConstList([_whenResolvedReactor(callback, o, r, self.vat)]))
+            ConstList([self.vat,
+                       _whenResolvedReactor(callback, o, r, self.vat)]))
         if prob is not None:
             return self.broken(prob)
         return p
@@ -136,13 +137,15 @@ class RefOps(MonteObject):
         p, r = self.promise()
         return self.vat.sendOnly(
             o, String(u'_whenMoreResolved'),
-            ConstList([_whenResolvedReactor(callback, o, r, self.vat)]))
+            ConstList([self.vat,
+                       _whenResolvedReactor(callback, o, r, self.vat)]))
 
     def whenBroken(self, o, callback):
         p, r = self.promise()
         prob = self.vat.sendOnly(
             o, String(u'_whenMoreResolved'),
-            ConstList([_whenBrokenReactor(callback, o, r, self.vat)]))
+            ConstList([self.vat,
+                       _whenBrokenReactor(callback, o, r, self.vat)]))
         if prob is not None:
             return self.broken(prob)
         return p
@@ -151,7 +154,8 @@ class RefOps(MonteObject):
         p, r = self.promise()
         return self.vat.sendOnly(
             o, String(u'_whenMoreResolved'),
-            ConstList([_whenBrokenReactor(callback, o, r, self.vat)]))
+            ConstList([self.vat,
+                       _whenBrokenReactor(callback, o, r, self.vat)]))
 
 
     def isDeepFrozen(self, o):
@@ -168,13 +172,23 @@ class RefOps(MonteObject):
         return _isSettled(o)
 
 
+def monteFunction(f):
+    class MonteFunctionWrapper(MonteObject):
+        def run(self, *args):
+            return f(*args)
+    return MonteFunctionWrapper()
+
+
+@monteFunction
 def _whenBrokenReactor(callback, ref, resolver, vat):
+    @monteFunction
     def whenBroken(_):
         if not isinstance(ref, Promise):
             return
 
         if ref._m_controller.state() == EVENTUAL:
-            vat.sendOnly(ref, '_whenMoreResolved', ConstList([whenBroken]))
+            vat.sendOnly(ref, String(u'_whenMoreResolved'),
+                         ConstList([whenBroken]))
         elif ref._m_controller.state() == BROKEN:
             try:
                 outcome = callback(ref)
@@ -186,8 +200,10 @@ def _whenBrokenReactor(callback, ref, resolver, vat):
     return whenBroken
 
 
+@monteFunction
 def _whenResolvedReactor(callback, ref, resolver, vat):
     done = [False]
+    @monteFunction
     def whenResolved(_):
         if done[0]:
             return null
@@ -200,7 +216,8 @@ def _whenResolvedReactor(callback, ref, resolver, vat):
                 resolver.resolve(outcome)
             done[0] = True
         else:
-            vat.sendOnly(ref, '_whenMoreResolved', ConstList([whenResolved]))
+            vat.sendOnly(ref, String(u'_whenMoreResolved'),
+                         ConstList([whenResolved]))
     return whenResolved
 
 
@@ -467,7 +484,8 @@ class UnconnectedRefController(RefControllerBase):
         return self.ref
 
     def doBreakage(self, verb, args):
-        if len(args) == 1 and verb in ('__whenMoreResolved', '__whenBroken'):
+        verbs = (String(u"_whenMoreResolved"), String(u"_whenBroken"))
+        if len(args) == 1 and verb in verbs:
             return self.vat.sendAllOnly(args[0], "run", self.ref)
 
     def callAll(self, verb, args):
