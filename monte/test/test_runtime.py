@@ -1079,6 +1079,60 @@ class FloatGuardTests(unittest.TestCase):
                           'def x :(float < 1) := 2.0')
 
 
+class TransparentGuardTests(unittest.TestCase):
+    def test_reject(self):
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent("""
+            object foo implements Transparent:
+                to doStuff(z):
+                    pass
+            """))
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent("""
+            object foo implements Transparent:
+                to _uncall():
+                    return [__makeList, "run", "not an arglist"]
+            """))
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent("""
+            object foo implements Transparent:
+                to _uncall():
+                    null
+                    return [__makeList, "run", []]
+            """))
+        self.assertRaises(
+            RuntimeError,
+            monte_eval,
+            dedent("""
+            def x := 1
+            object foo implements Transparent:
+                to doStuff():
+                    return x
+                to _uncall():
+                    return [__makeList, "run", []]
+            """))
+
+    def test_accept(self):
+        self.assertEqual(monte_eval(dedent("""
+            def biz := 0
+            def baz := 1
+            def boz := 2
+            object foo implements Transparent:
+                to doStuff(z):
+                    return baz
+                to doOtherStuff():
+                    biz.next()
+                to _uncall():
+                    return [null, "run", [baz, biz]]
+            foo =~ _ :Transparent
+            """)), true)
+
 class StringTests(unittest.TestCase):
 
     def test_slice(self):

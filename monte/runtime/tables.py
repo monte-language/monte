@@ -2,7 +2,7 @@ from monte.runtime.base import MonteObject
 from monte.runtime.data import String, Integer, bwrap, null, true, false
 from monte.runtime.flow import MonteIterator
 from monte.runtime.guards.base import (deepFrozenFunc, deepFrozenGuard,
-                                       selflessGuard, transparentGuard)
+                                       selflessGuard, transparentStamp)
 
 
 class EListMixin(object):
@@ -104,7 +104,7 @@ class EListMixin(object):
 
 class ConstList(EListMixin, MonteObject):
     _m_fqn = "__makeList$ConstList"
-    _m_auditorStamps = (selflessGuard, transparentGuard)
+    _m_auditorStamps = (selflessGuard, transparentStamp)
 
     def __init__(self, l):
         self.l = tuple(l)
@@ -367,7 +367,7 @@ class EMapMixin(object):
 
 class ConstMap(EMapMixin, MonteObject):
     _m_fqn = "__makeMap$ConstMap"
-    _m_auditorStamps = (selflessGuard, transparentGuard)
+    _m_auditorStamps = (selflessGuard, transparentStamp)
 
     def snapshot(self):
         return self

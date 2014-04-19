@@ -5,7 +5,8 @@ from monte.runtime.data import (Integer, true, false, nan, infinity, null)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
 from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, selflessGuard,
-                                       ParamDesc, MessageDesc, ProtocolDesc)
+                                       transparentGuard, ParamDesc, MessageDesc,
+                                       ProtocolDesc)
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
                                        floatGuard, stringGuard, voidGuard)
 from monte.runtime.guards.tables import listGuard, mapGuard
@@ -89,7 +90,7 @@ safeScope = {
 
     ## Primitive: reference conditions
     'Selfless': selflessGuard,
-    # 'Transparent': transparentGuard,
+    'Transparent': transparentGuard,
     ## Reference conditions
     'Data': null,
     # 'near': nearGuard,
