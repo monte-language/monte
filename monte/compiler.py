@@ -595,7 +595,8 @@ class PythonWriter(object):
                     b = ctx.layout.outer.bindings[name]
                     dictOut.writeln('%r: %s,' % (name, b.getBindingGuardExpr()))
                 initOut.writeln("}")
-                initOut.writeln(selfName + "._m_audit(_m_auditors)")
+                # XXX pass actual outers somehow
+                initOut.writeln(selfName + "._m_audit(_m_auditors, _monte.safeScope)")
 
             initOut.writeln("")
         metacontext = False
