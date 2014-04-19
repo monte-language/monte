@@ -26,7 +26,7 @@ class MonteObject(object):
     def _conformTo(self, guard):
         return self
 
-    def _m_audit(self, auditors):
+    def _m_audit(self, auditors, scope):
         from monte.runtime.audit import Audition
         expr = parseTerm(self._m_objectExpr.decode('base64').decode('zlib'))
         bindingGuards = dict([(k, v[1]) for k, v in self._m_slots.iteritems()])
@@ -35,7 +35,8 @@ class MonteObject(object):
             self._m_fqn,
             expr,
             bindingGuards,
-            self)
+            self,
+            scope.keys())
         for auditor in auditors:
             audition.ask(auditor)
         audition._active = False

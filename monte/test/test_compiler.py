@@ -488,7 +488,7 @@ class CompilerTest(unittest.TestCase):
                         'Data': _monte.deepFrozenGuard,
                         'DeepFrozen': _monte.deepFrozenGuard,
                     }
-                    foo._m_audit(_m_auditors)
+                    foo._m_audit(_m_auditors, _monte.safeScope)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUtEQtQhpl9TUArei/KrUPJAqJPHEkkQlzVgdheDkoswCmB3RsSCsqQkA6LMoKA=="
 
@@ -528,7 +528,7 @@ class CompilerTest(unittest.TestCase):
                         'Data': _monte.deepFrozenGuard,
                         'DeepFrozen': _monte.deepFrozenGuard,
                     }
-                    foo._m_audit(_m_auditors)
+                    foo._m_audit(_m_auditors, _monte.safeScope)
 
                 def run(foo):
                     return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w.slot.get())
@@ -560,7 +560,7 @@ class CompilerTest(unittest.TestCase):
                         'DeepFrozen': _monte.deepFrozenGuard,
                         'Data': _monte.deepFrozenGuard,
                     }
-                    foo._m_audit(_m_auditors)
+                    foo._m_audit(_m_auditors, _monte.safeScope)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUtEICZfEkkSQDJJIamqBW1F+VWqekmasjkJwclFmAcz06FgQ1tQEAOtjJiE="
 
@@ -585,7 +585,7 @@ class CompilerTest(unittest.TestCase):
                         'DeepFrozen': _monte.deepFrozenGuard,
                         'Data': _monte.deepFrozenGuard,
                     }
-                    foo._m_audit(_m_auditors)
+                    foo._m_audit(_m_auditors, _monte.safeScope)
 
                 _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLRCAmXxJJEkAySSGpqgVtRflVqnpJmrI5CcHJRZgHM7OhYENbUBACV8CVg"
 
