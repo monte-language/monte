@@ -190,13 +190,72 @@ class SelflessGuard(Guard):
 
 selflessGuard = SelflessGuard()
 
+class TransparentStamp(MonteObject):
+    _m_fqn = "TransparentStamp"
+    def audit(self, audition):
+        return true
+
+transparentStamp = TransparentStamp()
+
+
 class TransparentGuard(Guard):
     def passes(self, specimen):
-        return transparentGuard in getattr(specimen, '_m_auditorStamps', ())
+        return transparentStamp in getattr(specimen, '_m_auditorStamps', ())
 
     def _subCoerce(self, specimen, ej):
-        if not transparentGuard in specimen._m_auditorStamps:
+        if not transparentStamp in specimen._m_auditorStamps:
             throw.eject(ej, "is not Transparent")
+
+    def audit(self, audition):
+        from monte.expander import scope
+        expr = audition.getObjectExpr()
+        patternSS = scope(expr.args[1])
+        scriptSS = scope(expr.args[3])
+        fqn = audition.getFQN()
+        names = (set(scriptSS.namesUsed().butNot(patternSS.defNames)) -
+                 set(audition.outerNames))
+        methods = expr.args[3].args[1].args
+        for m in methods:
+            if m.args[1].data == "_uncall" and m.args[2].args == ():
+                break
+        else:
+            throw("No '_uncall' method in " + fqn)
+
+        uncallExpr = m.args[4]
+        if uncallExpr.tag.name == 'Escape':
+            uncallExpr = uncallExpr.args[1].args[0].args[0]
+            if (uncallExpr.tag.name != 'MethodCallExpr' or
+                uncallExpr.args[0].tag.name != 'NounExpr' or
+                uncallExpr.args[0].args[0].data != '__return' or
+                uncallExpr.args[1].data != 'run'):
+                throw("Transparent auditor only smart enough to handle a "
+                      "single return expression in _uncall")
+            uncallExpr = uncallExpr.args[2].args[0]
+        if (uncallExpr.tag.name != 'MethodCallExpr' or
+            uncallExpr.args[0].tag.name != 'NounExpr' or
+            uncallExpr.args[0].args[0].data != '__makeList' or
+            uncallExpr.args[1].data != 'run'):
+            throw("Transparent auditor expects a list literal as _uncall return value")
+
+        arglist = uncallExpr.args[2].args[2]
+        if (arglist.tag.name != 'MethodCallExpr' or
+            arglist.args[0].tag.name != 'NounExpr' or
+            arglist.args[0].args[0].data != '__makeList' or
+            arglist.args[1].data != 'run'):
+            throw("Transparent auditor expects a list literal as third item "
+                  "in _uncall return value")
+        args = arglist.args[2].args
+        uncallNames = set()
+        for a in args:
+            if a.tag.name != 'NounExpr':
+                continue
+            uncallNames.add(a.args[0].data)
+        unused = names - uncallNames
+        if unused:
+            throw("%s is not transparent because its uncall does not include: %s" %
+                  (fqn, ', '.join(unused)))
+        audition.ask(transparentStamp)
+        return true
 
 transparentGuard = TransparentGuard()
 
