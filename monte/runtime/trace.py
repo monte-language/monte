@@ -7,3 +7,7 @@ def trace(x):
 
 def traceln(x):
     print x
+
+def traceback():
+    import traceback
+    traceback.print_exc()

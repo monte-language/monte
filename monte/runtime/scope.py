@@ -14,10 +14,9 @@ from monte.runtime.helpers import (accumulateList, accumulateMap, comparer,
                                    makeViaBinder, matchSame, switchFailed,
                                    suchThat, splitList, validateFor)
 from monte.runtime.io import stdin, stdout
-from monte.runtime.load import monteImport
 from monte.runtime.tables import makeMonteList, mapMaker
 from monte.runtime.text import simpleQuasiParser, quasiMatcher
-from monte.runtime.trace import trace, traceln
+from monte.runtime.trace import trace, traceln, traceback
 
 safeScope = {
     ## Primitive non-literal values
@@ -37,6 +36,7 @@ safeScope = {
     ## Primitive: tracing
     'trace': trace,
     'traceln': traceln,
+    'traceback': traceback,
 
     ## Data constructors
     '__makeList': makeMonteList,
