@@ -548,7 +548,13 @@ class String(MonteObject):
 
     # E calls this 'rjoin'.
     def join(self, items):
-        return String(self.s.join(items))
+        acc = self.s
+        for item in items:
+            if isinstance(item, Character):
+                acc += item._c
+            elif isinstance(item, String):
+                acc += item.s
+        return String(acc)
 
     # E calls this 'replaceAll'.
     def replace(self, old, new):
