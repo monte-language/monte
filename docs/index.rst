@@ -112,3 +112,14 @@ a list of their names.
 To import a module, simply use `def bar = import("foo")` where the filename of
 the module is foo.mt. See the files module.mt and imports.mt for an example of
 how to export and import objects. 
+
+Testing
+-------
+
+Unit tests are essential to writing good code. Monte's testing framework is
+designed to make it simple to write and run good tests. See the testing.mt
+module for a simple example. Note that for more complex objects, you may need
+to implement an `_uncall()` method which describes how to recreate the object
+out of Monte's built-in primitives. Additionally, such objects will need to
+implement the Selfless interface in order to guarantee they won't have mutable
+state so that they can be compared. 
