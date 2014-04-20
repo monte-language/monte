@@ -270,9 +270,8 @@ class RefControllerBase(object):
             return result._m_controller.resolution()
 
     def state(self):
-        # XXX, uh, what. Commenting out until I can work out the rest of it.
-        # if self.problem() is not None:
-        #     return BROKEN
+        if self.optProblem() is not null:
+             return BROKEN
         target = self.resolutionRef()
         if self.ref is target:
             return EVENTUAL
@@ -433,10 +432,6 @@ class BufferingRefController(object):
 
 
 class NearRefController(RefControllerBase):
-
-    # XXX Can nearrefs have problems?
-    problem = null
-
     def __init__(self, ref, target, vat):
         self.ref = ref
         self.target = target
@@ -444,6 +439,9 @@ class NearRefController(RefControllerBase):
 
     def optProblem(self):
         return null
+
+    def state(self):
+        return NEAR
 
     def resolution(self):
         return self.target
