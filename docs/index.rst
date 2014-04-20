@@ -110,4 +110,5 @@ several objects from the same file, the last line in the file should simply be
 a list of their names. 
 
 To import a module, simply use `def bar = import("foo")` where the filename of
-the module is foo.mt.
+the module is foo.mt. See the files module.mt and imports.mt for an example of
+how to export and import objects. 
