@@ -253,8 +253,8 @@ class RefControllerBase(object):
             return result._m_controller.resolution()
 
     def state(self):
-        if self.problem() is not None:
-            return BROKEN
+        if self.optProblem() is not null:
+             return BROKEN
         target = self.resolutionRef()
         if self.ref is target:
             return EVENTUAL
@@ -422,6 +422,9 @@ class NearRefController(RefControllerBase):
 
     def optProblem(self):
         return null
+
+    def state(self):
+        return NEAR
 
     def resolution(self):
         return self.target
