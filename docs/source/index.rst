@@ -8,12 +8,19 @@ Welcome to Monte's documentation!
 
 Monte is a dynamic language inspired by Python and E. 
 
-Contents:
+For users: 
 
 .. toctree::
 
     intro
     faq
+
+For Developers: 
+
+.. toctree:: 
+
+    tools
+
 
 
 Indices and tables
