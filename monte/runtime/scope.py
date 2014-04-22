@@ -131,6 +131,11 @@ safeScope = {
     # '__identityFunc': identityFunc,
 
     'help': help,
+
+    # XXX hack
+    "Ref": None,
+    "__booleanFlow": None,
+    "M": None,
 }
 
 ioScope = {
