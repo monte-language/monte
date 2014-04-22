@@ -1,5 +1,5 @@
 from monte.runtime.base import MonteObject, ejector, Throw, throw, toQuote, toString
-from monte.runtime.data import MonteNull, Bool, Character, Integer, Float, String, true, false
+from monte.runtime.data import MonteNull, Bool, Character, Integer, Float, String, true, false, null
 from monte.runtime.flow import monteLooper
 
 class PrintFQN(object):
@@ -76,25 +76,30 @@ def auditForDeepFrozen(audition, ej):
         else:
             nameObj = String(name.decode('utf8'))
             guard = audition.getGuard(nameObj)
-            if not deepFrozenGuard.supersetOf(guard):
+            if deepFrozenGuard.supersetOf(guard) is false:
                 throw.eject(ej, "%s in the lexical scope of %s does not have "
                             "a guard implying DeepFrozen, but %s" % (
                                 toQuote(name), fqn, toQuote(guard)))
 
 
 class DeepFrozenGuard(MonteObject):
+    _m_fqn = "DeepFrozen"
     def coerce(self, specimen, ej):
         requireDeepFrozen(specimen, set(), ej, specimen)
         return specimen
 
     def supersetOf(self, guard):
         from monte.runtime.bindings import FinalSlotGuard
+        from monte.runtime.guards.tables import SpecializedConstListGuard
         if guard == deepFrozenGuard:
             return true
         if _isDataGuard(guard):
             return true
+        if isinstance(guard, SpecializedConstListGuard):
+            return self.supersetOf(guard.elementGuard)
         if isinstance(guard, FinalSlotGuard):
             return self.supersetOf(guard.valueGuard)
+        return false
 
     def audit(self, audition):
         auditForDeepFrozen(audition, throw)
@@ -166,7 +171,7 @@ class UnionGuard(MonteObject):
 
     def supersetOf(self, other):
         for g in self.guards:
-            if other == g or g.supersetOf(other):
+            if other == g or (g.supersetOf(other) is true):
                 return true
         return false
 
@@ -250,6 +255,9 @@ class TransparentGuard(Guard):
             if a.tag.name != 'NounExpr':
                 continue
             uncallNames.add(a.args[0].data)
+        uncallTarget = uncallExpr.args[2].args[0]
+        if uncallTarget.tag.name == 'NounExpr':
+            uncallNames.add(uncallTarget.args[0].data)
         unused = names - uncallNames
         if unused:
             throw("%s is not transparent because its uncall does not include: %s" %
@@ -307,12 +315,15 @@ class ProtocolDesc(MonteObject):
     @classmethod
     def makePair(cls, doc, fqn, supers, auditors, msgs):
         from monte.runtime.tables import ConstList
-        stamp = InterfaceStamp()
+        stamp = InterfaceStamp(fqn)
         ig = InterfaceGuard(doc, fqn, supers, auditors, msgs, stamp)
         return ConstList([ig, stamp])
 
 
 class InterfaceStamp(MonteObject):
+    _m_auditorStamps = (deepFrozenGuard,)
+    def __init__(self, fqn):
+        self._m_fqn = fqn.s
 
     def audit(self, audition):
         return true
@@ -327,6 +338,7 @@ class InterfaceGuard(MonteObject):
         self.auditors = auditors
         self.messages = msgs
         self.stamp = stamp
+        self._m_fqn = fqn.s
 
     def coerce(self, specimen, ej):
         from monte.runtime.audit import auditedBy
