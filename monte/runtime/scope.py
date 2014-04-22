@@ -4,9 +4,9 @@ from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
 from monte.runtime.data import (Integer, true, false, nan, infinity, null)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
-from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, selflessGuard,
-                                       transparentGuard, ParamDesc, MessageDesc,
-                                       ProtocolDesc)
+from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, nullOkGuard,
+                                       selflessGuard, transparentGuard,
+                                       ParamDesc, MessageDesc, ProtocolDesc)
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
                                        floatGuard, stringGuard, voidGuard)
 from monte.runtime.guards.tables import listGuard, mapGuard
@@ -92,7 +92,7 @@ safeScope = {
 
     ## Utility guards
     # 'notNull': notNullGuard,
-    # 'nullOk': nullOkGuard,
+    'nullOk': nullOkGuard,
 
     ## Primitive: reference conditions
     'Selfless': selflessGuard,

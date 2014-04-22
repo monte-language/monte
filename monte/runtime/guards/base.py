@@ -267,6 +267,41 @@ class TransparentGuard(Guard):
 
 transparentGuard = TransparentGuard()
 
+
+class NullOkGuard(Guard):
+    _m_fqn = "nullOk"
+    _m_auditorStamps = (deepFrozenGuard,)
+    def coerce(self, specimen, ej):
+        if specimen is not null:
+            throw.eject(ej, "must be null")
+        return null
+
+    def _printOn(self, out):
+        out.raw_print(u"nullOk")
+
+    def get(self, subGuard):
+        return SpecializedNullOkGuard(subGuard)
+
+
+class SpecializedNullOkGuard(Guard):
+    _m_fqn = "nullOk"
+    _m_auditorStamps = (deepFrozenGuard,)
+    def __init__(self, subGuard):
+        self.subGuard = subGuard
+
+    def coerce(self, specimen, ej):
+        if specimen is null:
+            return null
+        return self.subGuard.coerce(specimen, ej)
+
+    def _printOn(self, out):
+        out.raw_print(u"nullOk[")
+        out._m_print(self.subGuard)
+        out.raw_print(u"]")
+
+nullOkGuard = NullOkGuard()
+
+
 def _isDataGuard(g):
     from monte.runtime.guards.data import (booleanGuard, voidGuard, intGuard,
                                            floatGuard, charGuard, stringGuard)
