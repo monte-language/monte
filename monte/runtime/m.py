@@ -7,7 +7,8 @@ class M(MonteObject):
         return getattr(obj, verb)(*arglist)
 
     def callWithPair(self, obj, (verb, arglist)):
-        return getattr(obj, verb)(*arglist)
+        #XXX typecheck
+        return getattr(obj, verb.s)(*arglist.l)
 
     def send(self, obj, verb, arglist):
         raise NotImplementedError()
