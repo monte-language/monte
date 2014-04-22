@@ -970,6 +970,13 @@ class DeepFrozenGuardTests(unittest.TestCase):
                     return baz
             foo =~ _ :DeepFrozen
             """)), true)
+        self.assertEqual(monte_eval(dedent("""
+            def baz :List[int] := []
+            object foo implements DeepFrozen:
+                to doStuff(z):
+                    return baz
+            foo =~ _ :DeepFrozen
+            """)), true)
 
 
     def test_rejected(self):
