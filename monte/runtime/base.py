@@ -148,9 +148,11 @@ class _MonteMatcher(object):
         self.verb = verb
 
     def __call__(self, *a):
+        from monte.runtime.data import String
+        from monte.runtime.tables import ConstList
         for name in self.obj._m_matcherNames:
             try:
-                return getattr(self.obj, name)([self.verb, a])
+                return getattr(self.obj, name)([String(self.verb.decode('ascii')), ConstList(a)])
             except _MatchFailure, e:
                 continue
         raise e
