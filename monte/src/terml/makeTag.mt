@@ -1,32 +1,38 @@
-def makeTag(code, name, dataType):
-    return object tag:
-        to _uncall():
-            return [makeTag, "run", [code, name, dataType]]
+interface Tag :DeepFrozen guards TagStamp :DeepFrozen:
+    pass
 
-        to _printOn(out):
-            out.print("<")
-            out.print(name)
-            if (code != null):
-                out.print(":")
-                out.print(code)
-            if (dataType != null):
-                out.print(":")
-                out.print(dataType)
-            out.print(">")
+object makeTag implements DeepFrozen:
+    to asType():
+        return Tag
+    to run(code :nullOk[int >= 0], name :str, dataGuard :DeepFrozen):
+        return object tag implements Selfless, Transparent, TagStamp:
+            to _uncall():
+                return [makeTag, "run", [code, name, dataGuard]]
 
-        to getTagCode():
-            return code
+            to _printOn(out):
+                out.print("<")
+                out.print(name)
+                if (code != null):
+                    out.print(":")
+                    out.print(code)
+                if (dataGuard != null):
+                    out.print(":")
+                    out.print(dataGuard)
+                out.print(">")
 
-        to getTagName():
-            return name
+            to getTagCode():
+                return code
 
-        to getDataType():
-            return dataType
+            to getTagName():
+                return name
 
-        to isTagForData(data) :boolean:
-            if (data == null):
-                return true
-            if (dataType == null):
-                return false
+            to getDataGuard():
+                return dataGuard
 
-            return data =~ _ :dataType
+            to isTagForData(data) :boolean:
+                if (data == null):
+                    return true
+                if (dataGuard == null):
+                    return false
+
+                return data =~ _ :dataGuard

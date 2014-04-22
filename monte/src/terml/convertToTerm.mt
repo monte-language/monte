@@ -1,18 +1,14 @@
-def makeTerm := import("terml.makeTerm")
-def makeTag := import("terml.makeTag")
+def makeTerm :DeepFrozen := import("terml.makeTerm")
+def makeTag :DeepFrozen := import("terml.makeTag")
+def Term :DeepFrozen := makeTerm.asType()
 
-#XXX obviously bad, replace with interface/guard
-# def TermType := unsafeType(makeTerm(makeTag(null, "x", null), null, null, null))
-interface Term:
-    pass
-
-def mkt(name, data, args):
+def mkt(name, data, args) as DeepFrozen:
     return makeTerm(makeTag(null, name, null), data, args, null)
 
-def convertToTerm(val, ej):
+def convertToTerm(val, ej) as DeepFrozen:
     switch (val):
-        match v :Term:
-            return v
+        match _ :Term:
+            return val
         match ==null:
             return mkt("null", null, null)
         match ==true:
@@ -23,21 +19,20 @@ def convertToTerm(val, ej):
             return mkt(".int.", v, null)
         match v :float:
             return mkt(".float.", v, null)
-        match v :char:
-            return mkt(".char.", v, null)
         match v :str:
             return mkt(".String.", v, null)
-        match v :List:
-            def l := [convertToTerm(item, ej) for item in v]
-            return mkt(".tuple.", null, l)
-        # match v :set:
-        #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
-        match m :Map:
-            return mkt(".bag.", null,
-                       [mkt(".attr.", null, [convertToTerm(k, ej),
-                       convertToTerm(v, ej)])
-                        for k => v in m])
+        # XXX the code below is commented out because of the problem in _m_audit!
+        # match v :char:
+        #     return mkt(".char.", v, null)
+        # match v :List:
+        #     def l := [convertToTerm(item, ej) for item in v]
+        #     return mkt(".tuple.", null, l)
+        # # match v :set:
+        # #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
+        # match m :Map:
+        #     return mkt(".bag.", null,
+        #                [mkt(".attr.", null, [convertToTerm(k, ej),
+        #                convertToTerm(v, ej)])
+        #                 for k => v in m])
         match _:
             throw.eject(ej, `Could not coerce $val to term`)
-
-[convertToTerm, Term]

@@ -1,7 +1,7 @@
-def makeTerm := import("terml.makeTerm")
-def makeTag := import("terml.makeTag")
-def convertToTerm := import("terml.convertToTerm")
-object termFactory:
+def makeTerm :DeepFrozen := import("terml.makeTerm")
+def makeTag :DeepFrozen := import("terml.makeTag")
+def convertToTerm :DeepFrozen := import("terml.convertToTerm")
+object termFactory as DeepFrozen:
     match [name, args]:
         makeTerm(makeTag(null, name, null), null,
-                 [convertToTerm(a) for a in args], null)
+                 [convertToTerm(a, null) for a in args], null)
