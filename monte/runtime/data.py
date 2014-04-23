@@ -108,6 +108,11 @@ class Character(MonteObject):
             return false
         return bwrap(self._c == other._c)
 
+    def op__cmp(self, other):
+        if not isinstance(other, Character):
+            raise RuntimeError("%r is not a character" % (other,))
+        return Integer(cmp(self._c, other._c))
+
     def asInteger(self):
         return Integer(ord(self._c))
 
