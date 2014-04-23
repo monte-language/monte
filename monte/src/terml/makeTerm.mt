@@ -22,7 +22,8 @@ object Term as DeepFrozen:
 object makeTerm as DeepFrozen:
     to asType():
         return Term
-    to run(tag :Tag, data :TermData, args :nullOk[List], span):
+    # XXX to run(tag :Tag, data :TermData, args :nullOk[List], span):
+    to run(tag, data :TermData, args :nullOk[List], span):
         if (data != null && args != null):
             throw(`Term $tag can't have both data and children`)
 
