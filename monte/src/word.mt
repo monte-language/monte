@@ -1,4 +1,4 @@
-def _makeGuard(mod):
+def _makeGuard(mod) :any as DeepFrozen:
     return object ModGuard:
         to coerce(x, ej) :any:
             if (x =~ i :int):
@@ -13,12 +13,12 @@ def _makeGuard(mod):
                 to setValue(x :ModGuard) :void:
                     v := x
 
-object Word:
+object Word as DeepFrozen:
     to get(width):
         def mod := 2 ** width
         return _makeGuard(mod)
 
-object Mod:
+object Mod as DeepFrozen:
     to get(mod):
         return _makeGuard(mod)
 

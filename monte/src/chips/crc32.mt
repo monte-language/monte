@@ -14,7 +14,7 @@ def _CRCByte(poly :int, var c :int) :int:
     return c
 
 # Construct a map of all 256 bytes to their CRC32 states.
-def _makeCRCMap():
+def _makeCRCMap() :Map[int, int]:
     var rv := [].asMap()
     var i := 0
     while (i < 256):
@@ -22,9 +22,9 @@ def _makeCRCMap():
         i += 1
     return rv
 
-def _map := _makeCRCMap()
+def _map :DeepFrozen := _makeCRCMap()
 
-def CRC32(bytes):
+def CRC32(bytes) implements DeepFrozen:
     var state := 0xffffffff
     for byte in bytes:
         def next := state ^ byte

@@ -1,13 +1,13 @@
-def fold := import("hands.fold")
-def ["Mod" => Mod] | _ := import("word")
+def fold :DeepFrozen := import("hands.fold")
+def ["Mod" => Mod :DeepFrozen] | _ := import("word")
 
 def adlerPrime :int := 65521
 
-def _adler([a, b], d):
+def _adler([a, b], d) as DeepFrozen:
     def t := a + d
     return [t, b + t]
 
-def adler32(bytes) :int:
+def adler32(bytes) :int implements DeepFrozen:
     def [a :Mod[adlerPrime], b :Mod[adlerPrime]] := fold(_adler, [1, 0], bytes)
     return b << 16 | a
 
