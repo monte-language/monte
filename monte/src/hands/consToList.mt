@@ -1,4 +1,4 @@
-def consToList(var cons):
+def consToList(var cons) implements DeepFrozen:
     var rv := []
     while (cons != null):
         rv with= cons[0]

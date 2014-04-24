@@ -1,4 +1,4 @@
-def atoi(var cs) :int:
+def atoi(var cs) :int implements DeepFrozen:
     def neg := cs[0] == '-'
     if (neg):
         cs := cs.slice(1)

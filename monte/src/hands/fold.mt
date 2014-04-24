@@ -1,4 +1,4 @@
-object fold:
+object fold implements DeepFrozen:
     # A small collection of useful generalized catamorphisms over iterables.
 
     to run(operation, accumulator, iterable):

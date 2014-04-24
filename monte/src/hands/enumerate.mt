@@ -1,4 +1,4 @@
-object enumerate:
+object enumerate implements DeepFrozen:
     to withStart(iterable, var start):
         def rv := [].diverge()
         for item in iterable:
