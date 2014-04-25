@@ -136,14 +136,14 @@ object makeTerm as DeepFrozen:
                     reps := 1
                     delims := ["{", ",", "}"]
                 else if (args == null):
-                    if (data == null):
-                        out.print("null")
-                    else:
-                        out.print(label)
+                    out.print(label)
                     return
                 else if (args.size() == 1 && (args[0].getTag().getTagName() != null)):
-                    reps := label.size()
-                    delims := ["", null, ""]
+                    out.print(label)
+                    out.print("(")
+                    args[0].prettyPrintOn(out, isQuasi)
+                    out.print(")")
+                    return
                 else if (args.size() == 2 && label == ".attr."):
                     reps := 4
                     delims := ["", ":", ""]

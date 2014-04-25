@@ -14,7 +14,7 @@ def parse(lexer):
         # Handle argless functors.
         if (expectingParen && token != '('):
             expectingParen := false
-            def tag := stack.pop()
+            def tag := stack.pop()[0]
             def term := makeTerm(tag, null, null, null)
             stack[stack.size() - 1].push(term)
             continue
@@ -33,10 +33,11 @@ def parse(lexer):
                 expectingParen := false
             match ==')':
                 def [tag] + args := stack.pop()
+                traceln(`Will make term with $tag and $args`)
                 def term := makeTerm(tag, null, args, null)
                 stack[stack.size() - 1].push(term)
         token := lexer.nextToken()
 
-    return stack
+    return stack[0][0]
 
 traceln(parse(makeLexer("term(42, nested(stuff), terms)")))
