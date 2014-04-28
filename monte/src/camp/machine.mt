@@ -30,8 +30,11 @@ def makeCAMP(instructions):
     # Current position in the input.
     var position := 0
 
-    # current position in the code.
+    # Current position in the code.
     var pc := 0
+
+    # The last captured value.
+    var lastCapture := null
 
     # The call/backtracking stack.
     def stack := [].diverge()
@@ -59,12 +62,15 @@ def makeCAMP(instructions):
         to process(instruction) :void:
             switch (instruction):
                 match =="any":
-                    if (position >= input.size()):
+                    if (position < input.size()):
+                        lastCapture := input[position]
+                        position += 1
+                    else:
                         failing := true
-                    position += 1
                     pc += 1
                 match [=="ex", obj]:
                     if (position < input.size() && input[position] == obj):
+                        lastCapture := input[position]
                         position += 1
                     else:
                         failing := true
