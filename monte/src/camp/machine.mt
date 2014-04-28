@@ -3,23 +3,23 @@ def enumerate := import("hands.enumerate")
 def _findRules(instructions):
     def map := [].asMap().diverge()
     for [index, instruction] in enumerate(instructions):
-        if (instruction =~ [=='U', label]):
+        if (instruction =~ [=="rule", label]):
             map[label] := index
     return map.snapshot()
 
 def makeCAMP(instructions):
     # Create a machine for parsers.
     # The machine understands the following codes:
-    # * A: match Anything
-    # * X item: match eXactly item
-    # * J offset: Jump to offset
-    # * H offset: save cHoice point
-    # * L rule: caLl rule
-    # * U name: enter rUle
-    # * R: Return from rule
-    # * M offset: coMmit choice point
-    # * F: Fail
-    # * E: End
+    # * any: match Anything
+    # * ex item: match eXactly item
+    # * jmp offset: Jump to offset
+    # * cho offset: save cHoice point
+    # * call rule: Call a rule by name
+    # * rule name: Declare named rule
+    # * ret: Return from rule
+    # * com offset: coMmit choice point
+    # * fail: Fail
+    # * end: End
 
     var input := null
     var failing :boolean := false
@@ -47,29 +47,29 @@ def makeCAMP(instructions):
 
         to process(instruction) :void:
             switch (instruction):
-                match =='A':
+                match =="any":
                     if (position >= input.size()):
                         failing := true
                     position += 1
                     pc += 1
-                match [=='X', obj]:
+                match [=="ex", obj]:
                     if (position < input.size() && input[position] == obj):
                         position += 1
                     else:
                         failing := true
                     pc += 1
-                match [=='J', offset]:
+                match [=="jmp", offset]:
                     pc += offset
-                match [=='H', offset]:
+                match [=="cho", offset]:
                     stack.push([pc + offset, position, null])
                     pc += 1
-                match [=='L', rule]:
+                match [=="call", rule]:
                     stack.push([pc + 1])
                     pc := rules[rule]
-                match [=='U', _]:
+                match [=="rule", _]:
                     # XXX push rule name onto rule trail
                     pc += 1
-                match =='R':
+                match =="ret":
                     if (stack.size() > 0):
                         switch (stack.pop()):
                             match [newCounter]:
@@ -78,13 +78,13 @@ def makeCAMP(instructions):
                                 pc := newCounter
                     else:
                         throw(`Return to empty stack at PC $pc`)
-                match [=='M', offset]:
+                match [=="com", offset]:
                     pc += offset
                     stack.pop()
-                match =='F':
+                match =="fail":
                     pc += 1
                     failing := true
-                match =='E':
+                match =="end":
                     # We have succeeded unconditionally!
                     pc := instructions.size()
                     failing := false
@@ -108,9 +108,9 @@ def makeCAMP(instructions):
 
 def testAnything(assert):
     def anythingSuccess():
-        assert.equal(makeCAMP(['A'])("x"), true)
+        assert.equal(makeCAMP(["any"])("x"), true)
     def anythingFailure():
-        assert.equal(makeCAMP(['A'])(""), false)
+        assert.equal(makeCAMP(["any"])(""), false)
     return [
         anythingSuccess,
         anythingFailure,
@@ -118,24 +118,24 @@ def testAnything(assert):
 
 def testExactly(assert):
     def singleChar():
-        assert.equal(makeCAMP([['X', 'x']])("x"), true)
+        assert.equal(makeCAMP([["ex", 'x']])("x"), true)
     def wrongChar():
-        assert.equal(makeCAMP([['X', 'x']])("y"), false)
+        assert.equal(makeCAMP([["ex", 'x']])("y"), false)
     def multipleChars():
         def insts := [
-            ['X', 'x'],
-            ['X', 'y'],
-            ['X', 'z'],
+            ["ex", 'x'],
+            ["ex", 'y'],
+            ["ex", 'z'],
         ]
         assert.equal(makeCAMP(insts)("xyz"), true)
     def trailing():
-        assert.equal(makeCAMP([['X', 'x']])("xy"), false)
+        assert.equal(makeCAMP([["ex", 'x']])("xy"), false)
     def shortEmptyString():
-        assert.equal(makeCAMP([['X', 'x']])(""), false)
+        assert.equal(makeCAMP([["ex", 'x']])(""), false)
     def short():
         def insts := [
-            ['X', 'x'],
-            ['X', 'y'],
+            ["ex", 'x'],
+            ["ex", 'y'],
         ]
         assert.equal(makeCAMP(insts)("x"), false)
     return [
@@ -151,10 +151,10 @@ def testOrderedChoice(assert):
     def XY():
         # 'x' | 'y'
         def insts := [
-            ['H', 3],
-            ['X', 'x'],
-            ['M', 2],
-            ['X', 'y'],
+            ["cho", 3],
+            ["ex", 'x'],
+            ["com", 2],
+            ["ex", 'y'],
         ]
         assert.equal(makeCAMP(insts)("x"), true)
         assert.equal(makeCAMP(insts)("y"), true)
@@ -162,13 +162,13 @@ def testOrderedChoice(assert):
     def LeftXYZ():
         # ('x' | 'y') | 'z'
         def insts := [
-            ['H', 6],
-            ['H', 3],
-            ['X', 'x'],
-            ['M', 2],
-            ['X', 'y'],
-            ['M', 2],
-            ['X', 'z'],
+            ["cho", 6],
+            ["cho", 3],
+            ["ex", 'x'],
+            ["com", 2],
+            ["ex", 'y'],
+            ["com", 2],
+            ["ex", 'z'],
         ]
         assert.equal(makeCAMP(insts)("x"), true)
         assert.equal(makeCAMP(insts)("y"), true)
@@ -176,13 +176,13 @@ def testOrderedChoice(assert):
     def RightXYZ():
         # 'x' | ('y' | 'z')
         def insts := [
-            ['H', 3],
-            ['X', 'x'],
-            ['M', 5],
-            ['H', 3],
-            ['X', 'y'],
-            ['M', 2],
-            ['X', 'z'],
+            ["cho", 3],
+            ["ex", 'x'],
+            ["com", 5],
+            ["cho", 3],
+            ["ex", 'y'],
+            ["com", 2],
+            ["ex", 'z'],
         ]
         assert.equal(makeCAMP(insts)("x"), true)
         assert.equal(makeCAMP(insts)("y"), true)
@@ -197,10 +197,10 @@ def testNot(assert):
     def EOF():
         # eof => ~anything
         def insts := [
-            ['H', 4],
-            'A',
-            ['M', 1],
-            'F',
+            ["cho", 4],
+            "any",
+            ["com", 1],
+            "fail",
         ]
         assert.equal(makeCAMP(insts)(""), true)
         assert.equal(makeCAMP(insts)("x"), false)

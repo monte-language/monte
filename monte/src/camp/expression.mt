@@ -9,7 +9,7 @@ def makeParser(code):
             return makeCAMP(code)
 
         to head(rule):
-            def insts := [['L', rule], ['J', code.size() + 1]] + code + ['E']
+            def insts := [["call", rule], ["jmp", code.size() + 1]] + code + ["end"]
             return makeParser(insts)
 
         to add(other):
@@ -20,35 +20,35 @@ def makeParser(code):
             def first := code.size() + 2
             def second := otherCode.size() + 1
 
-            def insts := [['H', first]] + code + [['M', second]] + otherCode
+            def insts := [["cho", first]] + code + [["com", second]] + otherCode
             return makeParser(insts)
 
         to complement():
             def len := code.size()
-            def insts := [['H', len + 3]] + code + [['M', 1], 'F']
+            def insts := [["cho", len + 3]] + code + [["com", 1], 'F']
             return makeParser(insts)
 
         to optional():
             # Degenerate ordered choice: (code |)
             def first := code.size() + 2
 
-            def insts := [['H', first]] + code + [['M', 1]]
+            def insts := [["cho", first]] + code + [["com", 1]]
             return makeParser(insts)
 
         to repeat():
             def len := code.size()
-            def insts := [['H', len + 2]] + code + [['M', -len - 1]]
+            def insts := [["cho", len + 2]] + code + [["com", -len - 1]]
             return makeParser(insts)
 
         to rule(name):
-            def insts := [['U', name]] + code + ['R']
+            def insts := [["rule", name]] + code + ["ret"]
             return makeParser(insts)
 
 def ex(item):
-    return makeParser([['X', item]])
+    return makeParser([["ex", item]])
 
 def call(name):
-    return makeParser([['L', name]])
+    return makeParser([["call", name]])
 
 def testCampCode(assert):
     def testEx():
