@@ -21,13 +21,24 @@ def makeCAMP(instructions):
     # * fail: Fail
     # * end: End
 
+    # The input stream. Currently should be some sort of finite sequence.
     var input := null
+
+    # Whether the machine is currently in a failing state.
     var failing :boolean := false
+
+    # Current position in the input.
     var position := 0
+
+    # current position in the code.
     var pc := 0
-    var end := null
+
+    # The call/backtracking stack.
     def stack := [].diverge()
 
+    # Locations of all of the rules, so that we can quickly index to them when
+    # performing calls. This will eventually become part of the parser
+    # compiler.
     def rules := _findRules(instructions)
 
     return object machine:
@@ -96,7 +107,6 @@ def makeCAMP(instructions):
             position := 0
             pc := 0
             failing := false
-            end := input.size()
 
             while (pc < instructions.size()):
                 if (failing):
