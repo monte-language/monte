@@ -90,6 +90,9 @@ def makeCAMP(instructions):
                 match [=="rule", _]:
                     # XXX push rule name onto rule trail
                     pc += 1
+                match [=="res", value]:
+                    lastCapture := value
+                    pc += 1
                 match [=="bind", name]:
                     # Bind the last result to the given name.
                     bindings |= [name => lastCapture]

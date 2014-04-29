@@ -29,10 +29,10 @@ def makeParser(code):
             return makeParser(insts)
 
         to optional():
-            # Degenerate ordered choice: (code |)
+            # Degenerate ordered choice: (code |-> None)
             def first := code.size() + 2
 
-            def insts := [["cho", first]] + code + [["com", 1]]
+            def insts := [["cho", first]] + code + [["com", 2], ["res", null]]
             return makeParser(insts)
 
         to repeat():
@@ -68,9 +68,14 @@ def testCampCode(assert):
         def code := ~ex('x') + ex('y')
         assert.equal(code.machine()("y"), [true, 'y'])
 
-    def testOptional():
+    def optionalFirst():
         def code := ex('x').optional() + ex('y')
         assert.equal(code.machine()("y"), [true, 'y'])
+        assert.equal(code.machine()("xy"), [true, 'y'])
+
+    def optionalSecond():
+        def code := ex('x') + ex('y').optional()
+        assert.equal(code.machine()("x"), [true, null])
         assert.equal(code.machine()("xy"), [true, 'y'])
 
     def testRepeat():
@@ -82,7 +87,8 @@ def testCampCode(assert):
         testAdd,
         testOr,
         testComplement,
-        testOptional,
+        optionalFirst,
+        optionalSecond,
         # XXX broken testRepeat,
     ]
 
