@@ -504,7 +504,7 @@ class CompilerTest(unittest.TestCase):
                     }
                     foo._m_audit(_m_auditors, _monte.safeScope)
 
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUtEQtQhpl9TUArei/KrUPJAqJPHEkkQlzVgdheDkoswCmB3RsSCsqQkA6LMoKA=="
+                _m_objectExpr = "0 :)!   #foo '# )!   *DeepFrozen)!   $Data1 ' ' "
 
             foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]])
             foo
@@ -547,7 +547,7 @@ class CompilerTest(unittest.TestCase):
                 def run(foo):
                     return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w.slot.get())
 
-                _m_objectExpr = "eJxVTssOwiAQ/BXCqST8hdqTr8QjaRqsa0RxIRRi7dcLYoOcNvPYmTmc7zD4BoPWnLQKpT5K78FhszcBN5N1Db0aQxknyROPyN4irwFs68wMmFx/vPSSso6T0+CUXTrEDvzNXH6IuoA0kl2O5ySrK6n1N6Sk9f1TPmCrRp9alr+iT3X5u4ZzDV9xF0vTRDwfP55UaQ=="
+                _m_objectExpr = "0 :)!   #foo '# )!   *DeepFrozen)!   $Data1 '!2 !   #run'  ,)!   *__makeList!   #run'$)!   !x)!   !y)!   !z)!   !w' "
 
             _g_guard1 = _m_outerScope["int"]
             x = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
@@ -565,7 +565,7 @@ class CompilerTest(unittest.TestCase):
             '''
             object foo as Data implements DeepFrozen {}
             ''',
-            """
+            r"""
             class _m_foo_Script(_monte.MonteObject):
                 _m_fqn = '__main$foo'
                 def __init__(foo, _m_auditors):
@@ -576,7 +576,7 @@ class CompilerTest(unittest.TestCase):
                     }
                     foo._m_audit(_m_auditors, _monte.safeScope)
 
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRcMvMS8wJSCwpSS3K0/DLL81zrSgo0lBKy89X0tRRAKkBUtEICZfEkkSQDJJIamqBW1F+VWqekmasjkJwclFmAcz06FgQ1tQEAOtjJiE="
+                _m_objectExpr = '0 :)!   #foo \'")!   $Data)!   *DeepFrozen1 \' \' '
 
             foo = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]])
             foo
@@ -587,7 +587,7 @@ class CompilerTest(unittest.TestCase):
             '''
             object var foo as Data implements DeepFrozen {}
             ''',
-            """
+            r"""
             class _m_foo_Script(_monte.MonteObject):
                 _m_fqn = '__main$foo'
                 foo = _monte._SlotDescriptor('foo')
@@ -601,7 +601,7 @@ class CompilerTest(unittest.TestCase):
                     }
                     foo._m_audit(_m_auditors, _monte.safeScope)
 
-                _m_objectExpr = "eJzzT8pKTS7RyCvNydFRCEssCkgsKUktytPwyy/Nc60oKNJQSsvPV9LUUQCpAFLRCAmXxJJEkAySSGpqgVtRflVqnpJmrI5CcHJRZgHM7OhYENbUBACV8CVg"
+                _m_objectExpr = '0 <)!   #foo \'")!   $Data)!   *DeepFrozen1 \' \' '
 
             foo = _monte.VarSlot(_monte.null)
             _g_foo1 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], (foo, _monte.VarSlot.asType().get(_m_outerScope["Data"])))
@@ -791,7 +791,7 @@ class CompilerTest(unittest.TestCase):
                     }
                 }
             }''',
-             """
+            r"""
              class _m_boz_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo$boz'
                  a = _monte._SlotDescriptor('a')
@@ -807,7 +807,7 @@ class CompilerTest(unittest.TestCase):
                      boz.b = _g_b2
                      return _monte.StaticContext('__main$foo$boz', ['a', 'b'], _m_boz_Script._m_objectExpr)
 
-                 _m_objectExpr = "eJxVjEsKAjEQRK8SepWGXEJEd37AZcgiGRuNhM6Y6YHB09vxg7gqXlH1DulGg1ieS3FmmzmWYxShxnZfZ94sY7OQ6gPQmb7R8D2DM6eh5fH79DuSaz1/CFIhAm3D+6Vjur9cfjVN+fIn7+ofRkBltUUL68pCiwAGxNBtiE9nsTj6"
+                 _m_objectExpr = '0 :)!   #boz \'! 1 \'!2 !   $blee\'  +\'"4)!   !b)!   !a9!   \'Context\' '
 
              class _m_foo_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo'

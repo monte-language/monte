@@ -2,7 +2,8 @@
 Bottom level of Monte runtime object support.
 """
 import StringIO
-from terml.parser import parseTerm
+
+from monte import ast
 
 class _SlotDescriptor(object):
 
@@ -28,9 +29,7 @@ class MonteObject(object):
 
     def _m_audit(self, auditors, scope):
         from monte.runtime.audit import Audition
-        # XXX Parsley's parseTerm is lame, it blows out the stack for
-        # medium-size ASTs! need a better serialization method here
-        expr = parseTerm(self._m_objectExpr.decode('base64').decode('zlib'))
+        expr = ast.load(self._m_objectExpr)
         bindingGuards = dict([(k, v[1]) for k, v in self._m_slots.iteritems()])
         bindingGuards.update(self._m_outers)
         audition = Audition(
