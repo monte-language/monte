@@ -35,7 +35,5 @@ def runTests(suites):
             try:
                 t()
                 traceln(` PASSED`)
-            catch [==_failure, f]:
-                traceln(` FAILURE: $f`)
             catch e:
                 traceln(` ERROR: $e`)
