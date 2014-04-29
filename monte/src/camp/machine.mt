@@ -36,6 +36,9 @@ def makeCAMP(instructions):
     # The last captured value.
     var lastCapture := null
 
+    # The current reduction binding, for performing reductions.
+    var bindings :Map := [].asMap()
+
     # The call/backtracking stack.
     def stack := [].diverge()
 
@@ -49,9 +52,10 @@ def makeCAMP(instructions):
         to backtrack() :boolean:
             if (stack.size() > 0):
                 switch (stack.pop()):
-                    match [p, i, c]:
+                    match [p, i, b]:
                         pc := p
                         position := i
+                        bindings := b
                         failing := false
                     match _:
                         pass
@@ -78,13 +82,22 @@ def makeCAMP(instructions):
                 match [=="jmp", offset]:
                     pc += offset
                 match [=="cho", offset]:
-                    stack.push([pc + offset, position, null])
+                    stack.push([pc + offset, position, bindings])
                     pc += 1
                 match [=="call", rule]:
                     stack.push([pc + 1])
                     pc := rules[rule]
                 match [=="rule", _]:
                     # XXX push rule name onto rule trail
+                    pc += 1
+                match [=="bind", name]:
+                    # Bind the last result to the given name.
+                    bindings |= [name => lastCapture]
+                    pc += 1
+                match [=="red", f]:
+                    # Reduction. Apply the function to the bindings, producing
+                    # a result.
+                    lastCapture := f(bindings)
                     pc += 1
                 match =="ret":
                     if (stack.size() > 0):
