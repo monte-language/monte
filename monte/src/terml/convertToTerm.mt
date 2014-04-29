@@ -21,18 +21,17 @@ def convertToTerm(val, ej) as DeepFrozen:
             return mkt(".float.", v, null)
         match v :str:
             return mkt(".String.", v, null)
-        # XXX the code below is commented out because of the problem in _m_audit!
-        # match v :char:
-        #     return mkt(".char.", v, null)
-        # match v :List:
-        #     def l := [convertToTerm(item, ej) for item in v]
-        #     return mkt(".tuple.", null, l)
-        # # match v :set:
-        # #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
-        # match m :Map:
-        #     return mkt(".bag.", null,
-        #                [mkt(".attr.", null, [convertToTerm(k, ej),
-        #                convertToTerm(v, ej)])
-        #                 for k => v in m])
+        match v :char:
+            return mkt(".char.", v, null)
+        match v :List:
+            def l := [convertToTerm(item, ej) for item in v]
+            return mkt(".tuple.", null, l)
+        # match v :set:
+        #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
+        match m :Map:
+            return mkt(".bag.", null,
+                       [mkt(".attr.", null, [convertToTerm(k, ej),
+                       convertToTerm(v, ej)])
+                        for k => v in m])
         match _:
             throw.eject(ej, `Could not coerce $val to term`)
