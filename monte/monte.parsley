@@ -3,6 +3,7 @@ EOLs = EOL+
 br = EOL*
 
 string = tok('.String.')
+# This is a hack to cope with parsley tree transformer losing tag info.
 character = tok('.char.'):c -> t.Character(c)
 float = tok('.float64.')
 integer = tok('.int.')
