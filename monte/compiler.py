@@ -2,6 +2,7 @@ import re, string
 from keyword import iskeyword
 
 from StringIO import StringIO
+from monte import ast
 from monte.parser import parse
 from monte.expander import expand, scope
 
@@ -638,10 +639,7 @@ class PythonWriter(object):
             metacontext = metacontext or mtchctx.layout.metaContextExpr
 
         if auditors or metacontext:
-            classBodyOut.writeln('_m_objectExpr = "%s"\n' %
-                                 node._unparse().encode('zlib')
-                                                .encode('base64')
-                                                .replace('\n', ''))
+            classBodyOut.writeln('_m_objectExpr = %r\n' % (ast.dump(node),))
         cflush()
         if ctx.mode != FX_ONLY:
             return selfSlotName
