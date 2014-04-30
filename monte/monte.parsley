@@ -199,7 +199,7 @@ indentScriptPair = ':' EOLs tok('INDENT') br ((tok('pass') tok('DEDENT') -> [[],
 method = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g block:b  -> to(doc, v, ps, g, b))
 indentMethod = br (doco?:doc (("to" -> t.To) | "method" -> t.Method):to verb?:v parenParamList:ps optResultGuard:g indentBlock:b  -> to(doc, v, ps, g, b))
 matcher = 'match' pattern:p block:b -> t.Matcher(p, b)
-indentMatcher = 'match' pattern:p indentBlock:b -> t.Matcher(p, b)
+indentMatcher = br 'match' pattern:p indentBlock:b -> t.Matcher(p, b)
 
 interfaceExpr = ('interface' objectName:n iguards?:g ((multiExtends:es oImplements:oi iscript:s -> [n, g, es, oi, s])
                        |parenParamDescList:ps optGuard:rg -> [n, g, [], [], t.InterfaceFunction(ps, rg)]))
