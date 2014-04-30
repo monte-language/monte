@@ -562,7 +562,6 @@ class PythonWriter(object):
             for ln in doc.splitlines():
                 classBodyOut.writeln(ln)
             classBodyOut.writeln('"""')
-        fnames = ()
         if any([frame.fields, auditors, methGuards]):
             initOut = classBodyOut.indent()
             pyfnames = [f.getSlotPairName() for f in frame.fields]
@@ -735,6 +734,24 @@ class PythonWriter(object):
             return '_monte.Map((%s))' % ', '.join('(%r, _monte.getSlot(%s, %r))' % ('&' + b.name, f.selfName, b.pyname.split('.')[1])
                                       for b in f.fields)
 
+    def generate_Module(self, out, ctx, node):
+        imports, exports, expr = node.args
+        moduleBodyOut = out.indent()
+        paramOut, flush = out.delay()
+        paramNames = [self._generatePatternForParam(paramOut, ctx, None, p)
+                          for p in imports.args]
+        modFuncName = ctx.layout.gensym("module")
+        out.writeln("def %s(%s):" % (
+                modFuncName,
+                ', '.join(paramNames)))
+        flush()
+        moduleBodyOut.writeln(self._generate(moduleBodyOut, ctx, expr))
+        moduleBodyOut.writeln("return {%s}" % (', '.join(
+            ("%r: %s" % (
+                (noun.args[0].data, self._generate(moduleBodyOut, ctx, noun))))
+            for noun in exports.args)))
+        return modFuncName
+
     def pattern_FinalPattern(self, out, ctx, ej, val, node, objname=False):
         name, guard = node.args
         guardname = "_monte.null"
@@ -823,7 +840,6 @@ class PythonWriter(object):
 
     def pattern_BindingPattern(self, out, ctx, ej, val, node):
         name = node.args[0].args[0].data
-        guardname = ctx.layout.gensym("guard")
         pyname = ctx.layout.addCustomBinding(name, node)
         out.writeln("%s = %s" % (pyname, val))
         return pyname

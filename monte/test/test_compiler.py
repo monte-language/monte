@@ -1073,3 +1073,32 @@ class CompilerTest(unittest.TestCase):
             x = _monte.Binding(_monte.FinalSlot.asType().get(_g_guard1), _monte.FinalSlot(a))
             x.slot.get()
             """)
+
+    def test_module(self):
+        self.eq_(
+            '''
+            module x, y
+            x.foo(y)
+            ''',
+            """
+            def _g_module1(x, y):
+                x.foo(y)
+                return {}
+            _g_module1
+            """)
+
+        self.eq_(
+            '''
+            module x, y
+            export (a)
+            def b := x.foo(y)
+            def a := 1
+            ''',
+            """
+            def _g_module1(x, y):
+                b = x.foo(y)
+                a = _monte.wrap(1)
+                a
+                return {'a': a}
+            _g_module1
+            """)
