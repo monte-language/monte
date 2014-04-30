@@ -531,3 +531,22 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(parse("meta.getState()"), ["Meta", "State"])
         self.assertEqual(parse("meta.scope()"), ["Meta", "Scope"])
         self.assertEqual(parse("meta.context()"), ["Meta", "Context"])
+
+    def test_module(self):
+        """
+        Module declaration and parameters.
+        """
+        parse = self.getParser("start")
+        self.assertEqual(
+            parse("module x, y :A\ntrue"),
+            ["Module", [["FinalPattern", ["NounExpr", "x"], None],
+                        ["FinalPattern", ["NounExpr", "y"], ["Guard", ["NounExpr", "A"], []]]],
+             [],
+             ["SeqExpr", [["NounExpr", "true"]]]])
+
+        self.assertEqual(
+            parse("module x, y :A\nexport (w, z)\ntrue"),
+            ["Module", [["FinalPattern", ["NounExpr", "x"], None],
+                        ["FinalPattern", ["NounExpr", "y"], ["Guard", ["NounExpr", "A"], []]]],
+             [['NounExpr', 'w'], ['NounExpr', 'z']],
+             ["SeqExpr", [["NounExpr", "true"]]]])
