@@ -341,6 +341,7 @@ qtext = QuasiText(:text) -> (text, None, None)
 qehole = QuasiExprHole(@expr) -> (None, expr, None)
 qphole = QuasiPatternHole(@patt) -> (None, None, patt)
 
+Module(@imports :exports @expr) -> t.Module(imports, exports, expr)
 SeqExpr([]) -> None
 SeqExpr(@exprs) -> t.SeqExpr(flattenSeqs(exprs))
 

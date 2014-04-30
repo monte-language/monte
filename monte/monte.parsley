@@ -249,7 +249,10 @@ indentWhenBlock = '->' EOLs tok('INDENT') br (indentSeq | tok('pass') -> t.SeqEx
                tok('DEDENT') -> s
 indentWhenExpr = 'when' parenArgs:a indentWhenBlock:b indentCatcher*:cs (br 'finally' indentBlock)?:fb -> t.When(a, b, cs, fb)
 
+module = modExp:imports exportExp:exports topSeq?:expr -> t.Module(imports, exports, expr)
+modExp = 'module' ((pattern:p ("," pattern)*:ps EOLs -> [p] +  ps) | -> [])
+exportExp = ('export' '(' noun:n ("," noun)*:ns ')' EOLs -> [n] + ns) | -> []
 topSeq = topExpr:x (seqSep topExpr)*:xs seqSep? -> t.SeqExpr([x] + xs)
 pragma = 'pragma' "." verb:v "(" string:s ')' -> t.Pragma(v, s)
 topExpr = (pragma -> t.NounExpr("null")) | blockExpr
-start = br topSeq?
+start = br (module | topSeq)?
