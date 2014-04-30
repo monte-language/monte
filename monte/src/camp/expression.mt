@@ -36,8 +36,20 @@ def makeParser(code):
             return makeParser(insts)
 
         to repeat():
-            def len := code.size()
-            def insts := [["cho", len + 2]] + code + [["com", -len - 1]]
+            # Repeat using a loop. On each iteration, save the result into a
+            # special binding.
+            def appender(["__init" => init, "__last" => last]):
+                return init.with(last)
+
+            def prelude := ["new", ["res", []], ["bind", "__init"]]
+            def after := [
+                ["bind", "__last"],
+                ["red", appender],
+                ["bind", "__init"],
+            ]
+            def body := code + after
+            def len := body.size()
+            def insts := prelude + [["cho", len + 2]] + body + [["com", -len - 1]]
             return makeParser(insts)
 
         to rule(name):
@@ -89,7 +101,7 @@ def testCampCode(assert):
         testComplement,
         optionalFirst,
         optionalSecond,
-        # XXX broken testRepeat,
+        testRepeat,
     ]
 
 def testRecursion(assert):
