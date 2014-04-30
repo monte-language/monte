@@ -28,16 +28,17 @@ def makeCAMP(instructions):
     var failing :boolean := false
 
     # Current position in the input.
-    var position := 0
+    var position :int := 0
 
     # Current position in the code.
-    var pc := 0
+    var pc :int := 0
 
     # The last captured value.
     var lastCapture := null
 
-    # The current reduction binding, for performing reductions.
-    var bindings :Map := [].asMap()
+    # The stack of reduction bindings. This stack gets saved and restored
+    # during backtracking.
+    var bindingStack :List[Map] := []
 
     # The call/backtracking stack.
     def stack := [].diverge()
@@ -55,7 +56,7 @@ def makeCAMP(instructions):
                     match [p, i, b]:
                         pc := p
                         position := i
-                        bindings := b
+                        bindingStack := b
                         failing := false
                     match _:
                         pass
@@ -82,11 +83,14 @@ def makeCAMP(instructions):
                 match [=="jmp", offset]:
                     pc += offset
                 match [=="cho", offset]:
-                    stack.push([pc + offset, position, bindings])
+                    stack.push([pc + offset, position, bindingStack])
                     pc += 1
                 match [=="call", rule]:
                     stack.push([pc + 1])
                     pc := rules[rule]
+                match =="new":
+                    bindingStack with= [].asMap()
+                    pc += 1
                 match [=="rule", _]:
                     # XXX push rule name onto rule trail
                     pc += 1
@@ -95,12 +99,16 @@ def makeCAMP(instructions):
                     pc += 1
                 match [=="bind", name]:
                     # Bind the last result to the given name.
-                    bindings |= [name => lastCapture]
+                    var m := bindingStack.last()
+                    # If the name's already been bound, bind it to the newer
+                    # value.
+                    m := [name => lastCapture] | m
+                    bindingStack := bindingStack.slice(0, bindingStack.size() - 1).with(m)
                     pc += 1
                 match [=="red", f]:
                     # Reduction. Apply the function to the bindings, producing
                     # a result.
-                    lastCapture := f(bindings)
+                    lastCapture := f(bindingStack.last())
                     pc += 1
                 match =="ret":
                     if (stack.size() > 0):
