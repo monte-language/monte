@@ -88,8 +88,11 @@ def makeCAMP(instructions):
                 match [=="call", rule]:
                     stack.push([pc + 1])
                     pc := rules[rule]
-                match =="new":
+                match =="push":
                     bindingStack with= [].asMap()
+                    pc += 1
+                match =="pop":
+                    bindingStack := bindingStack.slice(0, bindingStack.size() - 1)
                     pc += 1
                 match [=="rule", _]:
                     # XXX push rule name onto rule trail

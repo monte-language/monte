@@ -1,4 +1,8 @@
+def atoi := import("hands.atoi")
+
 def [ex, call] := import("camp.expression")
+
+def unittest := import("unittest")
 
 def digit():
     var code := ex('0')
@@ -6,7 +10,25 @@ def digit():
         code |= ex(digit)
     return code
 
-def digits := (digit() + digit().repeat()).rule("digits")
+def reduceDigits(["head" => head, "tail" => tail]) :int:
+    return atoi([head] + tail)
+
+def digits := (digit().bindTo("head") + digit().repeat().bindTo("tail")).reduce(reduceDigits).rule("digits")
+
+def testDigits(assert):
+    def code := digits.head("digits")
+    def single():
+        assert.equal(code.machine()("7"), [true, 7])
+    def multiple():
+        assert.equal(code.machine()("42"), [true, 42])
+    return [
+        single,
+        multiple,
+    ]
+
+unittest([
+    testDigits,
+])
 
 def head():
     var code := ex('_')

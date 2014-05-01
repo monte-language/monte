@@ -23,6 +23,14 @@ def makeParser(code):
             def insts := [["cho", first]] + code + [["com", second]] + otherCode
             return makeParser(insts)
 
+        to bindTo(name):
+            def insts := code + [["bind", name]]
+            return makeParser(insts)
+
+        to reduce(f):
+            def insts := code + [["red", f]]
+            return makeParser(insts)
+
         to complement():
             def len := code.size()
             def insts := [["cho", len + 3]] + code + [["com", 1], 'F']
@@ -41,7 +49,7 @@ def makeParser(code):
             def appender(["__init" => init, "__last" => last]):
                 return init.with(last)
 
-            def prelude := ["new", ["res", []], ["bind", "__init"]]
+            def prelude := ["push", ["res", []], ["bind", "__init"]]
             def after := [
                 ["bind", "__last"],
                 ["red", appender],
@@ -49,11 +57,11 @@ def makeParser(code):
             ]
             def body := code + after
             def len := body.size()
-            def insts := prelude + [["cho", len + 2]] + body + [["com", -len - 1]]
+            def insts := prelude + [["cho", len + 2]] + body + [["com", -len - 1], "pop"]
             return makeParser(insts)
 
         to rule(name):
-            def insts := [["rule", name]] + code + ["ret"]
+            def insts := [["rule", name], "push"] + code + ["pop", "ret"]
             return makeParser(insts)
 
 def ex(item):
