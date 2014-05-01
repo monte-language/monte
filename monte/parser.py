@@ -1,10 +1,11 @@
 # Copyright (c) Twisted Matrix Laboratories.
 # See LICENSE for details.
 import string
+import re
 
 from parsley import ParseError, wrapGrammar
 from ometa.grammar import loadGrammar
-from ometa.runtime import expected, OMetaBase
+from ometa.runtime import expected, OMetaBase, ParseError
 from terml.nodes import Term, Tag, termMaker as t
 
 import monte
@@ -189,4 +190,86 @@ def parse(source, origin="<string>", tracefunc=None):
     p = makeParser(source, origin)
     if tracefunc:
         p._trace = tracefunc
-    return _GrammarWrapper(p, source).start()
+    try:
+        return _GrammarWrapper(p, source).start()
+    except ParseError as e:
+        prettyParseErrorPrinter(e)
+        import sys
+        sys.exit(1)
+
+def prettyParseErrorPrinter(err):
+    """
+    This tries to pretty print code and point out the error.
+
+    This is a hack. It's extracting information by running regexes
+    against the __str__ of innocent objects. It should be taken out and
+    shot as soon as someone fixes the lexer to give better error messages.
+    """
+
+    errLine = str(err).split('\n')[3]
+    errLineRe = re.compile(r'^Parse error .* column (\d+): (.*) trail: (.*)$')
+    errTermNo, message, trail = errLineRe.match(errLine).groups()
+    errTermNo = int(errTermNo)
+
+    extractTermRe = re.compile(r"^term\('(.*)'\)$")
+    terms = [extractTermRe.match(str(term)).group(1) for term in err.input]
+
+    output = ''
+    indent = 0
+
+    noSpaceAfter = set(['('])
+    noSpaceBefore = set(['(', ')', ':', ';'])
+
+    lineNo = 1
+    charNo = 1
+    errOnLine = None
+    errAtChar = None
+    indentSize = 4
+
+    for i, term in enumerate(terms, 1):
+        if i == errTermNo:
+            errOnLine = lineNo
+            errTerm = err.input[i]
+            errAtChar = charNo - 1
+
+        if term == 'EOL':
+            output += '\n'
+            output += ' ' * indent
+            lineNo += 1
+            charNo = indent + 1
+        elif term == 'INDENT':
+            indent += indentSize
+            output += ' ' * indentSize
+            charNo += indentSize
+        elif term == 'DEDENT':
+            indent -= indentSize
+        else:
+            if term in noSpaceBefore and output[-1] == ' ':
+                output = output[:-1]
+                charNo -= 1
+                if errAtChar:
+                    errAtChar -= 1
+            output += term
+            charNo += len(term)
+            if term not in noSpaceAfter:
+                output += ' '
+                charNo += 1
+
+    print ('There was a lexer error. I made up something that should like '
+           'kind of like your file, and noted the error.')
+    print
+
+    for i, line in enumerate(output.split('\n')[:-1], 1):
+        line = line.strip('\n')
+        print '{1}'.format(i, line)
+        if errOnLine == i:
+            errLine = ' ' * errAtChar
+            errLine += '^'
+            if errTerm.span:
+                termWidth = errTerm.span.endCol - errTerm.span.startCol
+                errLine += '~' * termWidth
+            print errLine, errTerm
+
+    print 'Line {0}: {1}'.format(errOnLine, message)
+    print 'Trail:', trail
+    print
