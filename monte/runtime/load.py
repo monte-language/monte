@@ -2,6 +2,11 @@ import linecache, sys, uuid, os
 from types import ModuleType as module
 
 from monte.compiler import ecompile
+from monte.expander import expand, scope
+from monte.parser import parse
+from monte.runtime.base import MonteObject
+from monte.runtime.data import String, null
+from monte.runtime.tables import ConstMap, EMapMixin
 
 
 class GeneratedCodeLoader(object):
@@ -33,18 +38,253 @@ def eval(source, scope=None, origin="__main"):
     linecache.getlines(name, mod.__dict__)
     return mod._m_evalResult
 
-monteModules = {}
-def monteImport(name):
-    # The name is a String, so deref it.
-    name = name.s
-    # XXX hax
-    path = os.path.join(os.path.dirname(__file__), '..', 'src',
-                        name.replace('.', '/') + '.mt')
-    path = os.path.abspath(path)
-    if not os.path.exists(path):
-        searchPath = [os.path.dirname(path)]
-        raise RuntimeError('Could not import "%s".\nSearch path was %s.'
-                           % (name, searchPath))
-    if not monteModules.get(name):
-        monteModules[name] = eval(open(path).read(), origin=name)
-    return monteModules[name]
+
+class FileModuleStructure(MonteObject):
+    _m_fqn = "FileModuleStructure"
+    def __init__(self, filename, imports, exports, scope):
+        self.filename = filename
+        self.imports = imports
+        self.exports = exports
+        self.scope = scope
+
+    def configure(self, params):
+        if params is None:
+            params = ConstMap({})
+        return FileModuleConfiguration(self, params, self.scope)
+
+    def run(self, params=None):
+        return self.configure(params).export()
+
+
+class SyntheticModuleStructure(MonteObject):
+    _m_fqn = "SyntheticModuleStructure"
+    def __init__(self, config, requires, exports):
+        self.config = config
+        self.requires = requires
+        self.imports = requires
+        self.exports = exports
+
+    def configure(self, params):
+        if params is None:
+            params = ConstMap({})
+        return SyntheticModuleConfiguration(self, params)
+
+    def run(self, params=None):
+        return self.configure(params).export()
+
+
+class FileModuleConfiguration(MonteObject):
+    _m_fqn = "FileModuleConfiguration"
+    def __init__(self, structure, args, scope):
+        self.structure = structure
+        self.args = args
+        self.scope = scope
+        self.requires = []
+        for c in args:
+            self.requires.extend(c.requires)
+        self._inputs = None
+        self._contents = None
+
+    def load(self, mapping):
+        if not isinstance(mapping, EMapMixin):
+            raise RuntimeError("must be a mapping")
+        if self._contents is not None:
+            if self._inputs is not mapping:
+                raise RuntimeError("you are confused somehow")
+            return
+        args = [self.args.d[String(name)].load(mapping)
+                for name in self.structure.imports]
+        self._inputs = mapping
+        d = eval(open(self.structure.filename).read(),
+                 self.scope,
+                 origin=self.structure.filename)(*args)
+        self._contents = ConstMap(d)
+
+
+    def export(self):
+        return ConstMap(dict((String(ex), ConfigurationExport(self, ex))
+                             for ex in self.structure.exports))
+
+
+class ConfigurationExport(MonteObject):
+    _m_fqn = "ConfigurationExport"
+    def __init__(self, config, name):
+        self.config = config
+        self.name = name
+        self.requires = self.config.requires
+
+    def load(self, mapping):
+        self.config.load(mapping)
+        return self.config._contents.get(String(self.name))
+
+def extractArglist(mapping, argnames):
+        argnames = set()
+        for k in mapping._keys:
+            if not isinstance(k, String):
+                raise RuntimeError("keys must be strings")
+            argnames.add(k.s)
+
+
+def compareArglists(loadname, provided, required):
+        if provided != required:
+            missing = required - provided
+            extra = provided - required
+            err = "Args mismatch when loading %s." % (loadname,)
+            if missing:
+                err += "Missing: " + ", ".join(missing)
+            if extra:
+                err += "Extra: " + ", ".join(missing)
+            raise RuntimeError(err)
+
+
+class SyntheticModuleConfiguration(MonteObject):
+    _m_fqn = "SyntheticModuleConfiguration"
+    def __init__(self, structure, args):
+        self.structure = structure
+        self.args = args
+        self.requires = self.structure.requires
+        self._contents = None
+        self._inputs = None
+
+    def load(self, mapping):
+        if not isinstance(mapping, EMapMixin):
+            raise RuntimeError("must be a mapping")
+        if self._contents is not None:
+            if self._inputs is not mapping:
+                raise RuntimeError("you are confused somehow")
+            return
+        package = {}
+        for k, v in self.structure.config.d.items():
+            package[k] = v.load(mapping)
+        self._inputs = mapping
+        self._contents = ConstMap(package)
+
+    def export(self):
+        return ConstMap(dict((String(ex), ConfigurationExport(self, ex))
+                             for ex in self.structure.exports))
+
+
+class RequireConfiguration(MonteObject):
+    _m_fqn = "Require"
+    def __init__(self, name):
+        self.name = name
+        self.requires = [name]
+
+    def load(self, mapping):
+        if not isinstance(mapping, EMapMixin):
+            raise RuntimeError("must be a mapping")
+        return mapping.d[self.name]
+
+
+def getModuleStructure(name, location, scope):
+    """
+    Search `location` for a readable module with the given name.
+    """
+    segs = name.split('.')
+    # XXX use a file path library or something
+    location = os.path.join(location, *segs)
+    if os.path.isdir(location):
+        return buildPackage(location, name, scope)
+    fn = location + '.mt'
+    if os.path.exists(fn):
+        imports, exports = readModuleFile(fn)
+        return FileModuleStructure(fn, imports, exports, scope)
+    else:
+        raise ValueError("No module or package named '%s' in '%s'" % (name, location))
+
+
+def readModuleFile(moduleFilename):
+    ast = parse(open(moduleFilename).read())
+    if ast.tag.name != 'Module':
+        raise ValueError("'%s' is not a module" % (moduleFilename,))
+    imports = []
+    exports = []
+    for importNode in ast.args[0].args:
+        modScope = scope(expand(importNode))
+        imports.extend([s.decode('ascii') for s in modScope.outNames()])
+    for exportNode in ast.args[1].args:
+        modScope = scope(expand(exportNode))
+        exports.extend([s.decode('ascii') for s in modScope.namesUsed()])
+    return imports, exports
+
+
+def buildPackage(packageDirectory, name, scope):
+    from monte.runtime.scope import safeScope
+    pkgfile = os.path.join(packageDirectory, 'package.mt')
+    if not os.path.exists(pkgfile):
+        raise ValueError("'%s' does not exist" % (pkgfile,))
+    packageScriptScope = safeScope.copy()
+    packageScriptScope['pkg'] = PackageMangler(name, packageDirectory, scope)
+    return eval(open(pkgfile).read(), packageScriptScope, "packageLoader")
+
+
+class TestCollector(MonteObject):
+    _m_fqn = "TestCollector"
+    requires = ()
+    def run(self, *a):
+        return null
+
+
+class PackageMangler(MonteObject):
+    _m_fqn = "PackageMangler"
+    def __init__(self, name, root, scope):
+        self.name = name
+        self.root = root
+        self.scope = scope
+
+    def readFiles(self, pathstr):
+        if not isinstance(pathstr, String):
+            raise RuntimeError("path must be a string")
+        path = pathstr.s
+
+        def collectModules():
+            root = os.path.join(self.root, path)
+            for p, dirs, fns in os.walk(root):
+                for fn in fns:
+                    if fn.endswith(".mt") and fn != "package.mt":
+                        full = '/'.join([p, fn])
+                        modname = full[len(root):-3].strip('/')
+                        yield modname.decode('utf-8'), full
+
+        structures = {}
+        for name, path in collectModules():
+            imports, exports = readModuleFile(path)
+            structures[String(name)] = FileModuleStructure(
+                path, imports, exports, self.scope)
+
+        return ConstMap(structures)
+
+    def require(self, name):
+        if not isinstance(name, String):
+            raise RuntimeError("name must be a string")
+        return RequireConfiguration(name.s)
+
+    def testCollector(self):
+        return TestCollector()
+
+    def makeModule(self, mapping):
+        if not isinstance(mapping, EMapMixin):
+            raise RuntimeError("must be a mapping")
+        requires = []
+        exports = []
+        for k in mapping._keys:
+            if not isinstance(k, String):
+                raise RuntimeError("keys must be strings")
+            exports.append(k.s)
+            requires.extend(mapping.d[k].requires)
+        return SyntheticModuleStructure(mapping, requires, exports)
+
+
+def monteImport():
+    def loader(name, mapping=None):
+        # The name is a String, so deref it.
+        name = name.s
+        if mapping is None:
+            mapping = ConstMap({})
+        path = os.path.join(os.path.dirname(__file__), '..', 'src')
+        s = getModuleStructure(name, os.path.abspath(path), scope)
+        requires = ConstMap(dict((k, RequireConfiguration(k.s)) for k in mapping.d))
+        conf = s.configure(requires)
+        conf.load(mapping)
+        return conf._contents
+    return loader

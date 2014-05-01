@@ -1,3 +1,6 @@
+module unittest
+export (makeNode)
+
 object NIL implements Selfless:
     to size():
         return 0
@@ -260,8 +263,6 @@ def makeNode(value, left, right, red):
 
 ##############################################################################
 
-def runTests := import("unittest")
-
 def T := true
 def F := false
 
@@ -286,7 +287,7 @@ def makeNodeTests(assert):
 
     return [testBalanceRight] #, testBalanceFour, testBalanceLeftFour]
 
-runTests([makeNodeTests])
+unittest([makeNodeTests])
 
 ##############################################################################
 

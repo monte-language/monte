@@ -1,6 +1,5 @@
-def enumerate := import("hands.enumerate")
-def rng := import("javaRandom")
-def unittest := import("unittest")
+module enumerate, rng, unittest
+export (Heap, makeHeap)
 
 
 interface Heap:
