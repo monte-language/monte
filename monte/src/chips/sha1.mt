@@ -1,15 +1,7 @@
 def __makeOrderedSpace := import("regions")
 def ["Word" => Word] | _ := import("word")
 
-def h0 :Word[32] := 0x64752301
-def h1 :Word[32] := 0xefcdab89
-def h2 :Word[32] := 0x98badcfe
-def h3 :Word[32] := 0x10325476
-def h4 :Word[32] := 0xc3d2e1f0
-
-# XXX Wow, the lack of actual Unicode handling here is crap.
-
-def thatThing(var i):
+def longToBytes(var i):
     var rv := []
     for _ in 0..!8:
         rv := [i & 0xff] + rv
@@ -43,21 +35,15 @@ def _pad(var message):
     # Establish some padding.
     # Pad out to the next 64 bytes, including the length of the message.
     def zeroes := [0x00] * ((55 - message.size()) % 64)
-    message += [0x80] + zeroes + thatThing(ml)
+    message += [0x80] + zeroes + longToBytes(ml)
 
     return message
 
 def make32([a, b, c, d]) :Word[32]:
     return (a << 24) | (b << 16) | (c << 8) | d
 
-def leftRotate(var x :Word[32], var i):
-    while (i > 0):
-        i -= 1
-        if ((x & 0x80000000) != 0):
-            x := (x << 1) | 0x1
-        else:
-            x <<= 1
-    return x
+def leftRotate(x, i) :Word[32]:
+    return (x << i) | (x >> (32 - i))
 
 def unittest := import("unittest")
 
@@ -74,15 +60,20 @@ def testLeftRotate(assert):
         overflow,
     ]
 
-unittest([
-    testChunksOf,
-    testLeftRotate,
-])
+def h :List[Word[32]] := [
+    0x64752301,
+    0xefcdab89,
+    0x98badcfe,
+    0x10325476,
+    0xc3d2e1f0,
+]
 
 def SHA1(message):
-    var h :List[Word[32]] := [h0, h1, h2, h3, h4]
-
-    traceln(chunksOf(64, message))
+    var h0 :Word[32] := h[0]
+    var h1 :Word[32] := h[1]
+    var h2 :Word[32] := h[2]
+    var h3 :Word[32] := h[3]
+    var h4 :Word[32] := h[4]
 
     for chunk in chunksOf(64, message):
         def words := [make32(c) for c in chunksOf(4, chunk)].diverge()
@@ -92,11 +83,11 @@ def SHA1(message):
                                   words[i - 14] ^
                                   words[i - 16], 1))
 
-        var a := h[0]
-        var b := h[1]
-        var c := h[2]
-        var d := h[3]
-        var e := h[4]
+        var a :Word[32] := h0
+        var b :Word[32] := h1
+        var c :Word[32] := h2
+        var d :Word[32] := h3
+        var e :Word[32] := h4
 
         for i in 0..!80:
             # XXX I'd really like to do this with `def [f, k] := if ...` but
@@ -104,9 +95,8 @@ def SHA1(message):
             var f := null
             var k := null
             if (i < 20):
-                # XXX have to use this to get ~b since Words don't actually
-                # wrap ints. Revisit when Words suck less.
-                f := (b & c) | ((b ^ 0xffffffff) & d)
+                # (b & c) | (~b & d)
+                f := d ^ (b & (c ^ d))
                 k := 0x5a827999
             else if (i < 40):
                 f := b ^ c ^ d
@@ -118,7 +108,6 @@ def SHA1(message):
                 f := b ^ c ^ d
                 k := 0xca62c1d6
 
-            traceln(`f $f e $e k $k w[i] ${words[i]}`)
             def temp :Word[32] := leftRotate(h[0], 5) + f + e + k + words[i]
             e := d
             d := c
@@ -126,13 +115,35 @@ def SHA1(message):
             b := a
             a := temp
 
-        traceln(`a $a b $b c $c d $d e $e`)
+        h0 += a
+        h1 += b
+        h2 += c
+        h3 += d
+        h4 += e
 
-        h := [h[0] + a, h[1] + b, h[2] + c, h[3] + d, h[4] + e]
+    return (h0 << 128) | (h1 << 96) | (h2 << 64) | (h3 << 32) | h4
 
-        traceln(`Post h $h`)
+def SHA1String(s):
+    return SHA1(_pad([c.asInteger() for c in s]))
 
-    traceln(`Yay $h`)
-    return (h[0] << 128) | (h[1] << 96) | (h[2] << 64) | (h[3] << 32) | h[4]
+def testSHA1(assert):
+    def empty():
+        assert.equal(SHA1String(""),
+                     0xda39a3ee5e6b4b0d3255bfef95601890afd80709)
+    def fox():
+        assert.equal(SHA1String("The quick brown fox jumps over the lazy dog"),
+                     0x2fd4e1c67a2d28fced849ee1bb76e7391b93eb12)
+    def cog():
+        assert.equal(SHA1String("The quick brown fox jumps over the lazy cog"),
+                     0xde9f2c7fd25e1b3afad3e85a0bd17d9b100db4b3)
+    return [
+        empty,
+        fox,
+        cog,
+    ]
 
-traceln(SHA1(_pad([])))
+unittest([
+    testChunksOf,
+    testLeftRotate,
+    testSHA1,
+])
