@@ -1,5 +1,6 @@
 def __makeOrderedSpace := import("regions")
 def ["Word" => Word] | _ := import("word")
+def ["ubint32" => ubint32, "ubint64" => ubint64] | _ := import("struct")
 
 def longToBytes(var i):
     var rv := []
@@ -33,14 +34,12 @@ def _pad(var message):
     def ml :Word[64] := message.size() * 8
 
     # Establish some padding.
-    # Pad out to the next 64 bytes, including the length of the message.
-    def zeroes := [0x00] * ((55 - message.size()) % 64)
-    message += [0x80] + zeroes + longToBytes(ml)
+    # Pad out to the next 64 bytes, including the length of the message and
+    # the 0x80 pad.
+    def zeroes := [0x00] * ((-1 - ubint64.size() - message.size()) % 64)
+    message += [0x80] + zeroes + ubint64.pack(ml)
 
     return message
-
-def make32([a, b, c, d]) :Word[32]:
-    return (a << 24) | (b << 16) | (c << 8) | d
 
 def leftRotate(x, i) :Word[32]:
     return (x << i) | (x >> (32 - i))
@@ -76,7 +75,7 @@ def SHA1(message):
     var h4 :Word[32] := h[4]
 
     for chunk in chunksOf(64, message):
-        def words := [make32(c) for c in chunksOf(4, chunk)].diverge()
+        def words := [ubint32.unpack(c) for c in chunksOf(4, chunk)].diverge()
         for i in 16..!80:
             words.push(leftRotate(words[i - 3] ^
                                   words[i - 8] ^
