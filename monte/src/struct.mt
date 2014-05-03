@@ -11,6 +11,16 @@ object uint8 implements Struct:
     to size() :int:
         return 1
 
+def testUint8(assert):
+    def pack():
+        assert.equal(uint8.pack(42), [42])
+    def unpack():
+        assert.equal(uint8.unpack([42]), 42)
+    return [
+        pack,
+        unpack,
+    ]
+
 object ubint16 implements Struct:
     to pack(data :int):
         return [data >> 8 & 0xff, data & 0xff]
@@ -18,6 +28,66 @@ object ubint16 implements Struct:
         return bytes[0] << 8 | bytes[1]
     to size() :int:
         return 2
+
+def testUbint16(assert):
+    def pack():
+        assert.equal(ubint16.pack(42), [0, 42])
+    def unpack():
+        assert.equal(ubint16.unpack([0, 42]), 42)
+    return [
+        pack,
+        unpack,
+    ]
+
+object ubint32 implements Struct:
+    to pack(data :int):
+        return [
+            data >> 24 & 0xff,
+            data >> 16 & 0xff,
+            data >> 8 & 0xff,
+            data & 0xff,
+        ]
+    to unpack(bytes) :int:
+        return bytes[0] << 24 |
+        bytes[1] << 16 |
+        bytes[2] << 8 |
+        bytes[3]
+    to size() :int:
+        return 4
+
+def testUbint32(assert):
+    def pack():
+        assert.equal(ubint32.pack(0xdeadbeef), [0xde, 0xad, 0xbe, 0xef])
+    def unpack():
+        assert.equal(ubint32.unpack([0xde, 0xad, 0xbe, 0xef]), 0xdeadbeef)
+    return [
+        pack,
+        unpack,
+    ]
+
+object ubint64 implements Struct:
+    to pack(data :int):
+        return [
+            data >> 56 & 0xff,
+            data >> 48 & 0xff,
+            data >> 40 & 0xff,
+            data >> 32 & 0xff,
+            data >> 24 & 0xff,
+            data >> 16 & 0xff,
+            data >> 8 & 0xff,
+            data & 0xff,
+        ]
+    to unpack(bytes) :int:
+        return bytes[0] << 56 |
+        bytes[1] << 48 |
+        bytes[2] << 40 |
+        bytes[3] << 32 |
+        bytes[4] << 24 |
+        bytes[5] << 16 |
+        bytes[6] << 8 |
+        bytes[7]
+    to size() :int:
+        return 8
 
 def makeStruct(layout) :Struct:
     return object struct implements Struct:
@@ -90,3 +160,19 @@ traceln(`${p.unpack(bytes)}`)
 
 if ([42, 255, 0] =~ struct`@r:$uint8 @q:$ubint16`):
     traceln(`r $r q $q`)
+
+def unittest := import("unittest")
+
+unittest([
+    testUint8,
+    testUbint16,
+    testUbint32,
+])
+
+[
+    "struct" => struct__quasiParser,
+    "uint8" => uint8,
+    "ubint16" => ubint16,
+    "ubint32" => ubint32,
+    "ubint64" => ubint64,
+]
