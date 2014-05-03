@@ -17,8 +17,8 @@ class _ConstListGuard(Guard):
                     if coerced is v:
                         continue
                     else:
-                        remainder = [self.elementGuard.coerce(x, ej)
-                                     for x in specimen.l[i:]]
+                        remainder = tuple([self.elementGuard.coerce(x, ej)
+                                     for x in specimen.l[i:]])
                         return ConstList(specimen.l[:i] + remainder)
                 return specimen
         else:
