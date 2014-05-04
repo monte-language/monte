@@ -333,6 +333,9 @@ class Float(MonteObject):
     def _printOn(self, out):
         out.raw_print(unicode(self.n))
 
+    def log(self):
+        return numWrap(math.log(self.n))
+
     # XXX add trig functions, sqrt
 
     # Operators.
