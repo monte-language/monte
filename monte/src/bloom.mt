@@ -25,7 +25,19 @@ def _makeBloom(width, hashes, var filter :Word[width]):
             # Positive; item might be present.
             return true
 
-        # to size
+        to size() :float:
+            # Estimate the number of items in the filter.
+            # First, we need the number of bits in the filter. There's no
+            # builtin pop count, so we'll open-code it.
+            var popCount := 0
+            var i := filter
+            while (i > 0):
+                if ((i & 1) == 1):
+                    popCount += 1
+                i >>= 1
+
+            def top := (1 - popCount.asFloat() / width).log()
+            return -top * width / hashes.size()
 
 def makeBloom(width, hashes):
     return _makeBloom(width, hashes, 0)
