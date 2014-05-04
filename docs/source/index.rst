@@ -21,6 +21,7 @@ For Developers:
 .. toctree:: 
 
     tools
+    wizard
 
 
 
