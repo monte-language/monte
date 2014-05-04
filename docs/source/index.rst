@@ -17,6 +17,7 @@ For users:
     symbols
     monte-for-wizards
     modules
+    design
 
 For Developers: 
 
