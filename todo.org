@@ -25,8 +25,8 @@
   - [ ] Formalize Kernel-E in K
 * TODO Monte is self-hosting [0%]
  - [-] Bootstrapping compiler improvements [30%]
-  - [ ] Usability
-   - [ ] Parser traces with actual line numbers
+  - [-] Usability
+   - [X] Parser traces with actual line numbers
    - [ ] Better hinting on "No global named 'x'"
   - [ ] Bikeshed on optional arguments
         Current direction is probably to idiomatically use a map as the final
@@ -49,13 +49,13 @@
     - [ ] Keep E from calling arbitrary Python attributes
     - [ ] Document name mangling
   - [-] Base objects
-   - [ ] Guards
-    - [x] int >= 0
+   - [X] Guards
+    - [X] int >= 0
    - [ ] _m_auditedBy
-   - [ ] Selfless
+   - [X] Selfless
    - [X] Equalizer
    - [X] Ref
-   - [ ] Vat
+   - [X] Vat
    - [ ] Runner
    - [ ] Auditor protocol
          auditor.audit(audition :EAudition) :boolean
@@ -71,9 +71,9 @@
    - [ ] Specialized scope for tests: "Shim scope"
    - [X] Monte-in-Python compiler tests
    - [ ] Monte-in-Monte safe scope tests
-   - [-] Full-stack syntax and evaluation tests
+   - [X] Full-stack syntax and evaluation tests
     - [X] Monte-in-Python
-    - [ ] Monte-in-Monte
+    - [X] Monte-in-Monte
   - [ ] Parsers
    - [ ] derp
     - [ ] Lexing
@@ -84,6 +84,7 @@
    - [-] Catamorphisms
     - [X] CRC32
     - [ ] MD5
+    - [X] SHA-1
     - [ ] SHA256
    - [ ] Containers
     - [ ] Bloom filters
@@ -96,7 +97,7 @@
     - [ ] I/O tubes
   - [ ] Auditors
   - [X] Refs
-  - [ ] Tables
+  - [X] Tables
   - [ ] Universal scope
   - [ ] Compiler
    - [ ] Optimizations
