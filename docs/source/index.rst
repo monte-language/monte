@@ -14,6 +14,7 @@ For users:
 
     intro
     faq
+    design
 
 For Developers: 
 
