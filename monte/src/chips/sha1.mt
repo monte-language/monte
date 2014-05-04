@@ -60,7 +60,7 @@ def testLeftRotate(assert):
     ]
 
 def h :List[Word[32]] := [
-    0x64752301,
+    0x67452301,
     0xefcdab89,
     0x98badcfe,
     0x10325476,
@@ -107,7 +107,7 @@ def SHA1(message):
                 f := b ^ c ^ d
                 k := 0xca62c1d6
 
-            def temp :Word[32] := leftRotate(h[0], 5) + f + e + k + words[i]
+            def temp :Word[32] := leftRotate(a, 5) + f + e + k + words[i]
             e := d
             d := c
             c := leftRotate(b, 30)
