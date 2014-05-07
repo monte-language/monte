@@ -6,7 +6,7 @@ from monte.expander import expand, scope
 from monte.parser import parse
 from monte.runtime.base import MonteObject
 from monte.runtime.data import String, null
-from monte.runtime.tables import ConstMap, EMapMixin
+from monte.runtime.tables import ConstList, ConstMap, FlexList, FlexMap
 
 
 class GeneratedCodeLoader(object):
@@ -86,7 +86,7 @@ class FileModuleConfiguration(MonteObject):
         self._contents = None
 
     def load(self, mapping):
-        if not isinstance(mapping, EMapMixin):
+        if not isinstance(mapping, (ConstMap, FlexMap)):
             raise RuntimeError("must be a mapping")
         if self._contents is not None:
             if self._inputs is not mapping:
@@ -95,9 +95,12 @@ class FileModuleConfiguration(MonteObject):
         args = [self.args.d[String(name)].load(mapping)
                 for name in self.structure.imports]
         self._inputs = mapping
+        modname = os.path.basename(self.structure.filename)
+        if modname.endswith(".mt"):
+            modname = modname[:-3]
         d = eval(open(self.structure.filename).read(),
                  self.scope,
-                 origin=self.structure.filename)(*args)
+                 origin=modname)(*args)
         self._contents = ConstMap(d)
 
 
@@ -147,7 +150,7 @@ class SyntheticModuleConfiguration(MonteObject):
         self._inputs = None
 
     def load(self, mapping):
-        if not isinstance(mapping, EMapMixin):
+        if not isinstance(mapping, (ConstMap, FlexMap)):
             raise RuntimeError("must be a mapping")
         if self._contents is not None:
             if self._inputs is not mapping:
@@ -171,12 +174,12 @@ class RequireConfiguration(MonteObject):
         self.requires = [name]
 
     def load(self, mapping):
-        if not isinstance(mapping, EMapMixin):
+        if not isinstance(mapping, (ConstMap, FlexMap)):
             raise RuntimeError("must be a mapping")
         return mapping.d[self.name]
 
 
-def getModuleStructure(name, location, scope):
+def getModuleStructure(name, location, scope, testCollector):
     """
     Search `location` for a readable module with the given name.
     """
@@ -184,7 +187,7 @@ def getModuleStructure(name, location, scope):
     # XXX use a file path library or something
     location = os.path.join(location, *segs)
     if os.path.isdir(location):
-        return buildPackage(location, name, scope)
+        return buildPackage(location, name, scope, testCollector)
     fn = location + '.mt'
     if os.path.exists(fn):
         imports, exports = readModuleFile(fn)
@@ -208,29 +211,65 @@ def readModuleFile(moduleFilename):
     return imports, exports
 
 
-def buildPackage(packageDirectory, name, scope):
+def buildPackage(packageDirectory, name, scope, testCollector):
     from monte.runtime.scope import safeScope
     pkgfile = os.path.join(packageDirectory, 'package.mt')
     if not os.path.exists(pkgfile):
         raise ValueError("'%s' does not exist" % (pkgfile,))
     packageScriptScope = safeScope.copy()
-    packageScriptScope['pkg'] = PackageMangler(name, packageDirectory, scope)
+    packageScriptScope['pkg'] = PackageMangler(name, packageDirectory, scope, testCollector)
     return eval(open(pkgfile).read(), packageScriptScope, "packageLoader")
 
 
 class TestCollector(MonteObject):
     _m_fqn = "TestCollector"
     requires = ()
-    def run(self, *a):
+    def __init__(self):
+        self.tests = FlexMap({})
+
+    def run(self, prefix, tests):
+        if not isinstance(tests, (ConstList, FlexList)):
+            raise RuntimeError("must be a list of test functions")
+        for item in tests.l:
+            self.tests.put(String(prefix  + '.' + item._m_fqn), item)
+        return null
+
+
+class TestStructureFacet(MonteObject):
+    _m_fqn = "TestStructureFacet"
+    requires = ()
+    def __init__(self, prefix, collector):
+        self.prefix = prefix
+        self.collector = collector
+
+    def load(self, args):
+        return TestConfigFacet(self.prefix, self.collector)
+
+class TestConfigFacet(MonteObject):
+    _m_fqn = "TestConfigFacet"
+    requires = ()
+    def __init__(self, prefix, collector):
+        self.prefix = prefix
+        self.collector = collector
+
+    def run(self, tests):
+        return self.collector.run(self.prefix, tests)
+
+
+class NullTestCollector(MonteObject):
+    _m_fqn = "NullTestCollector"
+    requires = ()
+    def run(self, tests):
         return null
 
 
 class PackageMangler(MonteObject):
     _m_fqn = "PackageMangler"
-    def __init__(self, name, root, scope):
+    def __init__(self, name, root, scope, testCollector):
         self.name = name
         self.root = root
         self.scope = scope
+        self._testCollector = testCollector
 
     def readFiles(self, pathstr):
         if not isinstance(pathstr, String):
@@ -254,16 +293,30 @@ class PackageMangler(MonteObject):
 
         return ConstMap(structures)
 
+    def readPackage(self, subpkgName):
+        if not isinstance(subpkgName, String):
+            raise RuntimeError("expected a string")
+        subpkgPath = subpkgName.s
+        subpkgName = os.path.normpath(subpkgPath)
+        subpkg = buildPackage(
+            os.path.join(self.root, subpkgPath),
+            u'.'.join([self.name, subpkgName]),
+            self.scope,
+            self._testCollector)
+        return subpkg
+
     def require(self, name):
         if not isinstance(name, String):
             raise RuntimeError("name must be a string")
         return RequireConfiguration(name.s)
 
     def testCollector(self):
-        return TestCollector()
+        if self._testCollector is None:
+            return NullTestCollector()
+        return TestStructureFacet(self.name, self._testCollector)
 
     def makeModule(self, mapping):
-        if not isinstance(mapping, EMapMixin):
+        if not isinstance(mapping, (ConstMap, FlexMap)):
             raise RuntimeError("must be a mapping")
         requires = []
         exports = []
@@ -282,7 +335,7 @@ def monteImport():
         if mapping is None:
             mapping = ConstMap({})
         path = os.path.join(os.path.dirname(__file__), '..', 'src')
-        s = getModuleStructure(name, os.path.abspath(path), scope)
+        s = getModuleStructure(name, os.path.abspath(path), scope, None)
         requires = ConstMap(dict((k, RequireConfiguration(k.s)) for k in mapping.d))
         conf = s.configure(requires)
         conf.load(mapping)
