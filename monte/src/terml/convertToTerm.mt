@@ -1,4 +1,4 @@
-module makeTerm, Term, makeTag
+module makeTerm :DeepFrozen, Term :DeepFrozen, makeTag :DeepFrozen
 export (convertToTerm)
 
 def mkt(name, data, args) as DeepFrozen:

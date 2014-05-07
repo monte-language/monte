@@ -1,11 +1,19 @@
+import os
 from textwrap import dedent
 from monte.test import unittest
 from monte.runtime.base import toQuote
 from monte.runtime.data import false, true, Integer, String
-from monte.runtime.load import eval as monte_eval
+from monte.runtime.load import (PackageMangler, eval as _monte_eval,
+                                getModuleStructure)
 from monte.runtime.scope import safeScope
 from monte.runtime.tables import ConstList, ConstMap, FlexList
-from monte.runtime.compiler_helpers import wrap
+
+
+def monte_eval(source, scope=None, **extras):
+    if scope is None:
+        scope = safeScope.copy()
+    scope.update(extras)
+    return _monte_eval(source=source, scope=scope)
 
 
 class NullPropertiesTest(unittest.TestCase):
@@ -1135,6 +1143,7 @@ class TransparentGuardTests(unittest.TestCase):
             foo =~ _ :Transparent
             """)), true)
 
+
 class StringTests(unittest.TestCase):
 
     def test_slice(self):
@@ -1142,6 +1151,7 @@ class StringTests(unittest.TestCase):
             def x := "abcd"
             x.slice(1) == "bcd"
             """)), true)
+
 
 class RefTests(unittest.TestCase):
     def test_print(self):
@@ -1153,3 +1163,65 @@ class RefTests(unittest.TestCase):
             r.resolve(3)
             p == 3
             """)), true)
+
+
+MODULE_TEST_DIR = os.path.join(os.path.dirname(__file__), 'module_test')
+
+class ModuleTests(unittest.TestCase):
+    def test_simpleModuleStructure(self):
+        m = getModuleStructure('foo', MODULE_TEST_DIR, safeScope)
+        self.assertEqual(set(m.imports), set(['a', 'b']))
+        self.assertEqual(set(m.exports), set(['c', 'd']))
+
+    def test_nestedModuleStructure(self):
+        m = getModuleStructure('bar.blee', MODULE_TEST_DIR, safeScope)
+        self.assertEqual(set(m.imports), set([]))
+        self.assertEqual(set(m.exports), set(['x']))
+
+    def test_packageModuleStructure(self):
+        m = getModuleStructure('mypkg', MODULE_TEST_DIR, safeScope)
+        self.assertEqual(set(m.imports), set(['a', 'b']))
+        self.assertEqual(set(m.exports), set(['c', 'd']))
+
+
+class PackageManglerTests(unittest.TestCase):
+
+    def test_readFiles(self):
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        files = pkg.readFiles(String(u"."))
+        self.assertEqual(set(f.s for f in files._keys),
+                         set(['foo', 'bar/blee', 'mypkg/moduleA',
+                              'mypkg/moduleB']))
+
+    def test_loadFromPackage(self):
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        files = pkg.readFiles(String(u"."))
+        m = files.get(String(u"bar/blee"))
+        self.assertEqual(m.imports, [])
+        self.assertEqual(m.exports, ['x'])
+
+    def test_require(self):
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        m = pkg.require(String(u'b'))
+        self.assertEqual(m.requires, ['b'])
+
+    def test_makeModuleEmpty(self):
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        mod = pkg.makeModule(ConstMap({}))
+        self.assertEqual(mod.imports, [])
+        self.assertEqual(mod.exports, [])
+
+    def test_makeModuleTree(self):
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        modA = pkg.makeModule(ConstMap({}))
+        modB = pkg.makeModule(ConstMap({}))
+        modC = pkg.makeModule(ConstMap({String(u'a'): modA, String(u'b'): modB},
+                                       [String(u'a'), String(u'b')]))
+        self.assertEqual(modC.imports, [])
+        self.assertEqual(modC.exports, ['a', 'b'])
+
+    def test_makeModuleRequire(self):
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        mod = pkg.makeModule(ConstMap({String(u'a'): pkg.require(String(u'b'))}))
+        self.assertEqual(mod.imports, ['b'])
+        self.assertEqual(mod.exports, ['a'])

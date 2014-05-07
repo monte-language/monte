@@ -737,7 +737,7 @@ class PythonWriter(object):
     def generate_Module(self, out, ctx, node):
         imports, exports, expr = node.args
         moduleBodyOut = out.indent()
-        paramOut, flush = out.delay()
+        paramOut, flush = moduleBodyOut.delay()
         paramNames = [self._generatePatternForParam(paramOut, ctx, None, p)
                           for p in imports.args]
         modFuncName = ctx.layout.gensym("module")
@@ -747,8 +747,9 @@ class PythonWriter(object):
         flush()
         moduleBodyOut.writeln(self._generate(moduleBodyOut, ctx, expr))
         moduleBodyOut.writeln("return {%s}" % (', '.join(
-            ("%r: %s" % (
-                (noun.args[0].data, self._generate(moduleBodyOut, ctx, noun))))
+            ("_monte.wrap(%r): %s" % (
+                (noun.args[0].data.decode('ascii'),
+                 self._generate(moduleBodyOut, ctx, noun))))
             for noun in exports.args)))
         return modFuncName
 

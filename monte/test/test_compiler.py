@@ -1099,6 +1099,6 @@ class CompilerTest(unittest.TestCase):
                 b = x.foo(y)
                 a = _monte.wrap(1)
                 a
-                return {'a': a}
+                return {_monte.wrap(u'a'): a}
             _g_module1
             """)

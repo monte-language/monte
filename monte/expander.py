@@ -211,6 +211,7 @@ def expandDef(self, patt, optEj, rval, nouns):
         resDef = t.Def(resPatt, None, t.Def(patt, optEj, rval))
         return t.SeqExpr(promises + [resDef] + resolves)
 
+
 computeStaticScopeRules = """
 null = anything:t ?(t is None or t.tag.name == 'null') -> StaticScope()
 LiteralExpr(:val) -> StaticScope()
@@ -222,6 +223,7 @@ HideExpr(@blockScope) -> blockScope.hide()
 Meta("Context") -> StaticScope()
 Meta("State") -> StaticScope(metaStateExprFlag=True)
 SeqExpr(@scopes) -> union(scopes)
+Module(@imports @exports :body) -> union(imports).add(union(exports))
 MethodCallExpr(@receiverScope :verb @argScopes) -> union(argScopes, receiverScope)
 
 Def(@patternScope @exitScope @exprScope) -> patternScope.add(exitScope).add(exprScope)
