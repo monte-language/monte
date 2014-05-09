@@ -23,6 +23,15 @@ vat = Vat(None)
 createVatScope(vat, scope)
 
 if len(sys.argv) > 1:
-    monte.runtime.load.eval(source=open(sys.argv[1]).read(), scope=scope)
-    while vat.hasTurns():
-        vat.turn()
+    if sys.argv[1] == "-c":
+        # Compile-only mode!
+        source = open(sys.argv[2]).read()
+        from monte.parser import parse
+        from monte.expander import expand
+        from monte.ast import dump
+        ast = expand(parse(source))
+        sys.stdout.write(dump(ast))
+    else:
+        monte.runtime.load.eval(source=open(sys.argv[1]).read(), scope=scope)
+        while vat.hasTurns():
+            vat.turn()
