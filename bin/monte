@@ -16,4 +16,13 @@ safeScope = createSafeScope(bootScope)
 scriptScope = safeScope.copy()
 scriptScope["import"] = monteImport(safeScope)
 if len(sys.argv) > 1:
-    monte_eval(open(sys.argv[1]).read(), scriptScope)
+    if sys.argv[1] == "-c":
+        # Compile-only mode!
+        source = open(sys.argv[2]).read()
+        from monte.parser import parse
+        from monte.expander import expand
+        from monte.ast import dump
+        ast = expand(parse(source))
+        sys.stdout.write(dump(ast))
+    else:
+        monte_eval(open(sys.argv[1]).read(), scriptScope)
