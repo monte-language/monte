@@ -41,7 +41,7 @@ kernelNodeInfo = [
     ('Matcher', 2),
     ('Assign', 2),
     ('Finally', 2),
-    ('KernelTry', 2),
+    ('KernelTry', 3),
     ('HideExpr', 1),
     ('If', 3),
     ('Meta', 1),
