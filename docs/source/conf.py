@@ -87,6 +87,9 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+# And the default language for this repository is...
+highlight_language = 'monte'
+
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 

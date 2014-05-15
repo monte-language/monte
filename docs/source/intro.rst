@@ -16,7 +16,7 @@ Why Monte?
 Python is great for usability, but has all the security vulnerabilities of its
 prececessors. E is a relatively obscure language whose fundamental design
 precludes many types of common vulnerability, but its syntax is difficult to
-use and its implementations don't perform competitively. 
+use and its implementations don't perform competitively.
 
 Where do I start?
 -----------------
@@ -39,7 +39,7 @@ Using Monte
 ===========
 
 To use the Monte implementation hosted in Python, it's best to set up a
-virtualenv: 
+virtualenv:
 
 .. code-block:: console
 
@@ -47,7 +47,7 @@ virtualenv:
     $ source v/bin/activate
     $ pip install -r requirements.txt
 
-To run Monte code (with your virtualenv activated): 
+To run Monte code (with your virtualenv activated):
 
 .. code-block:: console
 
@@ -57,18 +57,18 @@ The Repl
 --------
 
 Many languages have an interpreter or "Read - Evaluate - Print Loop" for
-testing code. Monte's should be documented here if/when it gets one. 
+testing code. Monte's should be documented here if/when it gets one.
 
 Indentation
 -----------
 
 Standardize your indentation to use spaces, because tabs are a syntax error in
-Monte. 
+Monte.
 
 * 1 space: How can you read that?
 * 2 spaces: *sigh* you must be a Googler.
 * 3 spaces: What?
-* **4 spaces**: Yes. Good coder. Use 4 spaces. 
+* **4 spaces**: Yes. Good coder. Use 4 spaces.
 * 5 spaces: No, five is right out.
 * 8 spaces: How can you read that?
 
@@ -80,28 +80,71 @@ to know that B exists is:
 * If A created B
 * If any object that A knows about passed A a message about B
 
-See scope.mt for an example.
+For example::
+
+    def scope():
+        def a := 1
+        def innerScope():
+            def b := 2
+            traceln(`a is $a and b is $b`)
+
+        # This line would cause a compile-time error, since the name `b` isn't
+        # accessible in this scope!
+        # traceln(`I cannot access $b here`)
+
+        return innerScope
+
+    scope()()
 
 Debugging Stuff
 ---------------
 
-Monte strives to provide useful error messages. 
+Monte strives to provide useful error messages.
 
-Currently the most convenient way to print out messages from your program is 
-with the trace() and traceln() built-in functions. The only difference between
-them is that traceln() automatically adds a newline. 
+Currently the most convenient way to print out messages from your program is
+with the ``trace()`` and ``traceln()`` built-in functions. The only difference
+between them is that ``traceln()`` automatically adds a newline.
 
 Methods, Objects, Variables
 ---------------------------
 
 Named values can be either final or variable. A final object cannot be
-changed, whereas a variable one can be changed later. See variables.mt.
+changed, whereas a variable one can be changed later::
+
+    var myVariableValue := 6
+
+    myVariableValue *= 7
+
+    trace("My variable value: ")
+    traceln(`$myVariableValue`)
+
+    def myFinalValue := 42
+    # Trying to change a final value will result in a compile-time error. See
+    # what happens when this next line is uncommented!
+    # myFinalValue /= 6
+
+    trace("My final value: ")
+    traceln(`$myFinalValue`)
 
 Everything is an object. Some objects are created automatically, such as
-variables and methods. Other objects are created explicitly, such as
-demonstrated in obj.mt. 
+variables and methods. Other objects are created explicitly::
 
-Objects can also be created by functions, such as shown in createobj.mt. 
+    object helloThere:
+        to greet(whom):
+            traceln(`Hello, my dear $whom!`)
+
+    helloThere.greet("Student")
+
+Objects can also be created by functions::
+
+    def makeSalutation(time):
+        return object helloThere:
+            to greet(whom):
+                traceln(`Good $time, my dear $whom!`)
+
+    def hi := makeSalutation("morning")
+
+    hi.greet("Student")
 
 Built-In Types
 --------------
@@ -153,6 +196,19 @@ Data Structures
 Monte has lists built in natively, and various other data structures
 implemented in the language.
 
+Monte Modules
+-------------
+
+A Monte module is a single file. The last statement in the file describes what
+it exports. If the last statement in a file defines a method or object, that
+method or object is what you get when you import it. If you want to export
+several objects from the same file, the last line in the file should simply be
+a list of their names.
+
+To import a module, simply use `def bar = import("foo")` where the filename of
+the module is foo.mt. See the files module.mt and imports.mt for an example of
+how to export and import objects.
+
 Testing
 -------
 
@@ -165,7 +221,7 @@ module for a simple example. Note that for more complex objects, you may need
 to implement an `_uncall()` method which describes how to recreate the object
 out of Monte's built-in primitives. Additionally, such objects will need to
 implement the Selfless interface in order to guarantee they won't have mutable
-state so that they can be compared. 
+state so that they can be compared.
 
 To test the Python tools surrounding Monte, use Trial. For instance, ``trial
 monte.test.test_ast`` (when run from the root of the project) will run the ast
