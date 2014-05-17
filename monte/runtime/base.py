@@ -20,7 +20,7 @@ class _SlotDescriptor(object):
 class MonteObject(object):
     _m_matcherNames = ()
     _m_auditorStamps = ()
-
+    _m_fqn = "<no name>"
     def __init__(self):
         self._m_slots = {}
 
