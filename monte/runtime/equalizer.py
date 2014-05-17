@@ -5,6 +5,9 @@ from monte.runtime.data import null, true, false, bwrap, Integer, Float, String,
 from monte.runtime.guards.base import deepFrozenGuard, selflessGuard
 from monte.runtime.tables import ConstList, ConstMap
 
+def isIn(val, container):
+    return any(val is x for x in container)
+
 def _findSofar(left, right, sofar):
     lid, rid = id(left), id(right)
     if rid < lid:
@@ -51,8 +54,8 @@ def _same(left, right, sofar):
     if t in DOES_OWN_HASHING:
         return left == right
 
-    if (selflessGuard in getattr(left, '_m_auditorStamps', ()) and
-        selflessGuard in getattr(right, '_m_auditorStamps', ())):
+    if (isIn(selflessGuard, getattr(left, '_m_auditorStamps', ())) and
+        isIn(selflessGuard, getattr(right, '_m_auditorStamps', ()))):
         _pushSofar(left, right, sofar)
         return _same(left._uncall(), right._uncall(), sofar)
 

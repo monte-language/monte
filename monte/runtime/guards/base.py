@@ -91,14 +91,14 @@ class DeepFrozenGuard(MonteObject):
     def supersetOf(self, guard):
         from monte.runtime.bindings import FinalSlotGuard
         from monte.runtime.guards.tables import SpecializedConstListGuard
-        if guard == deepFrozenGuard:
+        if guard is deepFrozenGuard:
             return true
-        if _isDataGuard(guard):
-            return true
-        if isinstance(guard, SpecializedConstListGuard):
-            return self.supersetOf(guard.elementGuard)
         if isinstance(guard, FinalSlotGuard):
             return self.supersetOf(guard.valueGuard)
+        if isinstance(guard, SpecializedConstListGuard):
+            return self.supersetOf(guard.elementGuard)
+        if _isDataGuard(guard):
+            return true
         return false
 
     def audit(self, audition):
@@ -305,8 +305,8 @@ nullOkGuard = NullOkGuard()
 def _isDataGuard(g):
     from monte.runtime.guards.data import (booleanGuard, voidGuard, intGuard,
                                            floatGuard, charGuard, stringGuard)
-    return g in (booleanGuard, voidGuard, intGuard, floatGuard, charGuard,
-                 stringGuard)
+    return any(g is dg for dg in  (booleanGuard, voidGuard, intGuard,
+                                   floatGuard, charGuard, stringGuard))
 
 class ParamDesc(MonteObject):
     _m_auditorStamps = (deepFrozenGuard,)
