@@ -15,15 +15,12 @@ object Term as DeepFrozen:
                 throw.eject(ej, `not a Term: ${M.toQuote(specimen)}`)
         return specimen
 
-# Craft a term. The tag represents the functor, and either data or args are
-# provided. The args are for complex functors, while the data is for primitive
-# functors. The span should relate to the original source string that the term
-# is representing.
+
 object makeTerm as DeepFrozen:
     to asType():
         return Term
-    # XXX to run(tag :Tag, data :TermData, args :nullOk[List], span):
-    to run(tag, data :TermData, args :nullOk[List], span):
+
+    to run(tag :Tag, data :TermData, args :nullOk[List], span):
         if (data != null && args != null):
             throw(`Term $tag can't have both data and children`)
 
@@ -76,22 +73,13 @@ object makeTerm as DeepFrozen:
                 return myHeight
 
             to _conformTo(guard):
-                def argsAreEmpty :boolean := args != null && args.size() == 0
-                if (argsAreEmpty && [str, float, int, char].contains(guard)):
+                def x := args != null && args.size() == 0
+                if (x && [str, float, int, char].contains(guard)):
                     if (data == null):
                         return tag.getTagName()
                     return data
                 else:
                     return term
-
-            # Create a new term tree by recursively visiting and rewriting all of
-            # our constituent terms.
-            to rewrite(f):
-                if (args == null):
-                    return f(term)
-                else:
-                    def newArgs := [arg.rewrite(f) for arg in args]
-                    return f(makeTerm(tag, data, newArgs, span))
 
             to _printOn(out):
                 return term.prettyPrintOn(out, false)

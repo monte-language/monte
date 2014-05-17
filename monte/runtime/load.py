@@ -92,6 +92,7 @@ class FileModuleConfiguration(MonteObject):
             if self._inputs is not mapping:
                 raise RuntimeError("you are confused somehow")
             return
+        print "**", self.args
         args = [self.args.d[String(name)].load(mapping)
                 for name in self.structure.imports]
         self._inputs = mapping
