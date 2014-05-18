@@ -152,7 +152,7 @@ has neither generators nor threads nor C#-style async/await.
 
 At an 'await' or 'yield' point, you don't know what subset of the code has
 already been read. Since Monte is intended to be useful in an environment with
-an umbounded amount of code, and 'await' and 'yield' force you to assume that
+an unbounded amount of code, and 'await' and 'yield' force you to assume that
 all of the code has been read, they cannot be available in Monte.
 
 
