@@ -149,6 +149,8 @@ Objects can also be created by functions::
 Built-In Types
 --------------
 
+Monte provides some classic and common value types directly in the syntax.
+
 Int
 ~~~
 
@@ -176,12 +178,14 @@ surrounded by apostrophes (``'``) and are always unicode.
 
     def u := '☃'
 
+Characters are permitted to be adorable.
+
 String
 ~~~~~~
 
 Strings are objects with built-in methods and capabilities, rather than
-character arrays. Monte's strings are always unicode, like Python3 (but unlike
-Python2). Strings are always surrounded by double-quotes (`"`).
+character arrays. Monte's strings are always Unicode, like Python 3 (but
+unlike Python 2). Strings are always surrounded by double-quotes (`"`).
 
 .. code-block:: monte
 
@@ -189,6 +193,16 @@ Python2). Strings are always surrounded by double-quotes (`"`).
     def t := s.replace("World", "Monte hackers") # Hello Monte hackers!
     def u := "¿Dónde aquí habla Monte o español?"
 
+Lists
+~~~~~
+
+Among Monte's collection types, the list is a very common type. Lists are
+heterogenous ordered unsorted collections with sequencing and indexing, and
+have the performance characteristics of arrays in C, vectors in C++, or lists
+in Python::
+
+    def l := ['I', "love", "Monte", 42, 0.5]
+    def x := l[3] # x == 42
 
 Data Structures
 ---------------
