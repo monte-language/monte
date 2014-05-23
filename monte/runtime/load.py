@@ -6,7 +6,6 @@ from monte.expander import expand, scope
 from monte.parser import parse
 from monte.runtime.base import MonteObject
 from monte.runtime.data import String, null
-from monte.runtime.scope import safeScope
 from monte.runtime.tables import ConstMap, EMapMixin
 
 
@@ -210,6 +209,7 @@ def readModuleFile(moduleFilename):
 
 
 def buildPackage(packageDirectory, name, scope):
+    from monte.runtime.scope import safeScope
     pkgfile = os.path.join(packageDirectory, 'package.mt')
     if not os.path.exists(pkgfile):
         raise ValueError("'%s' does not exist" % (pkgfile,))
@@ -288,4 +288,3 @@ def monteImport():
         conf.load(mapping)
         return conf._contents
     return loader
->>>>>>> bad3ba1... modules and module loading
