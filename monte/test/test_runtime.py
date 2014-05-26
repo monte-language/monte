@@ -1,12 +1,12 @@
 import os
 from textwrap import dedent
 from monte.test import unittest
-from monte.runtime.base import toQuote
+from monte.runtime.base import MonteObject, toQuote
 from monte.runtime.data import false, true, Integer, String
-from monte.runtime.load import (PackageMangler, eval as _monte_eval,
-                                getModuleStructure)
+from monte.runtime.load import (PackageMangler, TestCollector,
+                                eval as _monte_eval, getModuleStructure)
 from monte.runtime.scope import safeScope
-from monte.runtime.tables import ConstList, ConstMap, FlexList
+from monte.runtime.tables import ConstList, ConstMap, FlexList, FlexMap
 
 
 def monte_eval(source, scope=None, **extras):
@@ -1169,17 +1169,17 @@ MODULE_TEST_DIR = os.path.join(os.path.dirname(__file__), 'module_test')
 
 class ModuleTests(unittest.TestCase):
     def test_simpleModuleStructure(self):
-        m = getModuleStructure('foo', MODULE_TEST_DIR, safeScope)
+        m = getModuleStructure('foo', MODULE_TEST_DIR, safeScope, None)
         self.assertEqual(set(m.imports), set(['a', 'b']))
         self.assertEqual(set(m.exports), set(['c', 'd']))
 
     def test_nestedModuleStructure(self):
-        m = getModuleStructure('bar.blee', MODULE_TEST_DIR, safeScope)
+        m = getModuleStructure('bar.blee', MODULE_TEST_DIR, safeScope, None)
         self.assertEqual(set(m.imports), set([]))
         self.assertEqual(set(m.exports), set(['x']))
 
     def test_packageModuleStructure(self):
-        m = getModuleStructure('mypkg', MODULE_TEST_DIR, safeScope)
+        m = getModuleStructure('mypkg', MODULE_TEST_DIR, safeScope, None)
         self.assertEqual(set(m.imports), set(['a', 'b']))
         self.assertEqual(set(m.exports), set(['c', 'd']))
 
@@ -1187,32 +1187,32 @@ class ModuleTests(unittest.TestCase):
 class PackageManglerTests(unittest.TestCase):
 
     def test_readFiles(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
         files = pkg.readFiles(String(u"."))
         self.assertEqual(set(f.s for f in files._keys),
                          set(['foo', 'bar/blee', 'mypkg/moduleA',
                               'mypkg/moduleB']))
 
-    def test_loadFromPackage(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+    def test_loadFromSubdir(self):
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
         files = pkg.readFiles(String(u"."))
         m = files.get(String(u"bar/blee"))
         self.assertEqual(m.imports, [])
         self.assertEqual(m.exports, ['x'])
 
     def test_require(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
         m = pkg.require(String(u'b'))
         self.assertEqual(m.requires, ['b'])
 
     def test_makeModuleEmpty(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
         mod = pkg.makeModule(ConstMap({}))
         self.assertEqual(mod.imports, [])
         self.assertEqual(mod.exports, [])
 
     def test_makeModuleTree(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
         modA = pkg.makeModule(ConstMap({}))
         modB = pkg.makeModule(ConstMap({}))
         modC = pkg.makeModule(ConstMap({String(u'a'): modA, String(u'b'): modB},
@@ -1221,7 +1221,28 @@ class PackageManglerTests(unittest.TestCase):
         self.assertEqual(modC.exports, ['a', 'b'])
 
     def test_makeModuleRequire(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
         mod = pkg.makeModule(ConstMap({String(u'a'): pkg.require(String(u'b'))}))
         self.assertEqual(mod.imports, ['b'])
         self.assertEqual(mod.exports, ['a'])
+
+    def test_testCollectorCollects(self):
+        t = TestCollector()
+        pkg = PackageMangler(u"test", MODULE_TEST_DIR, safeScope, t)
+        f = pkg.testCollector()
+        class TestOne(MonteObject):
+            _m_fqn = "testOne"
+        class TestTwo(MonteObject):
+            _m_fqn = "testTwo"
+        t1, t2 = TestOne(), TestTwo()
+        f.run(ConstList([t1]))
+        f.run(ConstList([t2]))
+        self.assertEqual(type(t.tests), FlexMap)
+        self.assertEqual(t.tests.d, {String(u"test.testOne"): t1,
+                                     String(u"test.testTwo"): t2})
+
+    def test_readPackage(self):
+        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
+        subpkg = pkg.readPackage(String(u'mypkg'))
+        self.assertEqual(set(subpkg.imports), set(['a', 'b']))
+        self.assertEqual(set(subpkg.exports), set(['c', 'd']))

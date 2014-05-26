@@ -1,4 +1,4 @@
-module
+module unittest
 export (Tag, makeTag)
 
 interface Tag :DeepFrozen guards TagStamp :DeepFrozen:
@@ -39,3 +39,12 @@ object makeTag implements DeepFrozen:
                     return false
 
                 return data =~ _ :dataGuard
+
+def testPrint(assert):
+    def t1 := makeTag(1, "foo", int)
+    assert.equal(M.toString(t1), "<foo:1:int>")
+
+    def t2 := makeTag(null, "foo", null)
+    assert.equal(M.toString(t2), "<foo>")
+
+unittest([testPrint])
