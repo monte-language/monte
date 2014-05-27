@@ -1,3 +1,6 @@
+object _failure:
+    pass
+
 object unitTestAssertions:
     to equal(left, right):
         if (left != right):
