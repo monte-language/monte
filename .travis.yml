@@ -8,13 +8,8 @@ matrix:
         - python: pypy
     fast_finish: true
 
-env:
-    - PYTHON_TESTS=true MONTE_TESTS=false
-    - PYTHON_TESTS=false MONTE_TESTS=true
-
 script:
-    - bin/monte-tests
-    - bin/python-tests
+    - bin/tests
 
 notifications:
     email: false

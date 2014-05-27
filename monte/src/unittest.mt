@@ -4,7 +4,7 @@ object _failure:
 object unitTestAssertions:
     to equal(left, right):
         if (left != right):
-            throw([_failure, `Not equal: $left != $right`])
+            throw(`Not equal: $left != $right`)
 
     to ejects(f):
         var reason := null
@@ -13,7 +13,7 @@ object unitTestAssertions:
         escape ej:
             f(ej, fail)
         if (reason != null):
-            throw([_failure, "Failed to eject: " + reason])
+            throw("Failed to eject: " + reason)
 
     to raises(f):
         var reason := null
@@ -24,16 +24,4 @@ object unitTestAssertions:
         catch e:
             pass
         if (reason != null):
-            throw([_failure, "Failed to raise: " + reason])
-
-def runTests(suites):
-    for s in suites:
-        traceln(`testing suite $s`)
-        def tests := s(unitTestAssertions)
-        for t in tests:
-            traceln(`$t`)
-            t()
-
-
-runTests
-
+            throw("Failed to raise: " + reason)
