@@ -24,7 +24,20 @@
     - [ ] Lexing
     - [ ] Regexes
    - [ ] parsley
+  - [ ] Testing
+   - [ ] "shim scope" for tests
+   - [X] Monte-In-Python safe scope tests
+   - [ ] Monte-In-Monte safe scope tests
 * TODO Monte has compelling uses [0%]
+ - [ ] Bootstrapping compiler
+  - [ ] Better message than "No global named foo"
+  - [ ] Decide how to handle optional arguments
+  - [ ] Decide whether to allow arity overloading
+        Current consensus: No. But consider E compatibility.
+  - [ ] Anonymous expressions
+  - [ ] Lexer/parser
+   - [ ] One-liners
+         def foo(): pass
  - [ ] Examples
   - [ ] Diplomacy adjudicator
   - [ ] IRC bot
