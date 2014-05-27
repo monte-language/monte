@@ -1,0 +1,4 @@
+Parsley==1.2
+Twisted==14.0.0
+wsgiref==0.1.2
+zope.interface==4.1.1
