@@ -5,8 +5,6 @@ Monte is Serious Business
 Introduction
 ============
 
-
-
 What's Monte?
 -------------
 
@@ -92,7 +90,42 @@ Objects can also be created by functions, such as shown in createobj.mt.
 Built-In Types
 --------------
 
-Int, String, Lists
+Int
+~~~
+
+Monte has integer literals. 
+
+.. code-block:: monte
+
+    def x := 5
+    def x := 128 ** 128 ** 128
+
+A variety of mathematical methods are available. Integers aren't fixed-width;
+they can store arbitrarily large values. 
+
+Char
+~~~~
+
+Monte's character type is distinct from the string type. Characters are always
+surrounded by apostrophes (`'`). Characters are always unicode. 
+
+.. code-block:: monte
+
+    def u := '☃'
+
+String
+~~~~~~
+
+Strings are objects with built-in methods and capabilities, rather than
+character arrays. Monte's strings are always unicode, like Python3 (but unlike
+Python2). Strings are always surrounded by double-quotes (`"`).
+
+.. code-block:: monte
+
+    def s := "Hello World!"
+    def t := s.replace("World", "Monte hackers") # Hello Monte hackers!
+    def u := "¿Dónde aquí habla Monte o español?"
+
 
 Data Structures
 ---------------
