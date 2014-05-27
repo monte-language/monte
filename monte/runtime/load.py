@@ -259,6 +259,8 @@ class TestConfigFacet(MonteObject):
 class NullTestCollector(MonteObject):
     _m_fqn = "NullTestCollector"
     requires = ()
+    def load(self, tests):
+        return self
     def run(self, tests):
         return null
 
@@ -330,12 +332,13 @@ class PackageMangler(MonteObject):
 
 def monteImport():
     def loader(name, mapping=None):
+        from monte.runtime.scope import safeScope
         # The name is a String, so deref it.
         name = name.s
         if mapping is None:
             mapping = ConstMap({})
         path = os.path.join(os.path.dirname(__file__), '..', 'src')
-        s = getModuleStructure(name, os.path.abspath(path), scope, None)
+        s = getModuleStructure(name, os.path.abspath(path), safeScope, None)
         requires = ConstMap(dict((k, RequireConfiguration(k.s)) for k in mapping.d))
         conf = s.configure(requires)
         conf.load(mapping)

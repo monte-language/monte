@@ -15,4 +15,4 @@ from monte.runtime.scope import safeScope
 scope = safeScope.copy()
 scope["import"] = monteImport()
 if len(sys.argv) > 1:
-    monte.runtime.load.eval(open(sys.argv[1]).read(), scope)
+    monte_eval(open(sys.argv[1]).read(), scope)
