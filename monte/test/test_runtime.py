@@ -1229,12 +1229,13 @@ class PackageManglerTests(unittest.TestCase):
     def test_testCollectorCollects(self):
         t = TestCollector()
         pkg = PackageMangler(u"test", MODULE_TEST_DIR, safeScope, t)
-        f = pkg.testCollector()
+        coll = pkg.testCollector()
         class TestOne(MonteObject):
             _m_fqn = "testOne"
         class TestTwo(MonteObject):
             _m_fqn = "testTwo"
         t1, t2 = TestOne(), TestTwo()
+        f = coll.load(None)
         f.run(ConstList([t1]))
         f.run(ConstList([t2]))
         self.assertEqual(type(t.tests), FlexMap)
