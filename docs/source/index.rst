@@ -14,6 +14,9 @@ For users:
 
     intro
     faq
+    symbols
+    monte-for-wizards
+    modules
 
 For Developers: 
 
