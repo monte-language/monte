@@ -88,7 +88,6 @@ class MonteObject(object):
         if self._m_matcherNames:
             return _MonteMatcher(self, verb)
         else:
-            import pdb; pdb.set_trace()
             raise AttributeError(verb)
 
     def __call__(self, *args):
