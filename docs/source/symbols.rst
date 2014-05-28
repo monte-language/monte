@@ -38,4 +38,45 @@ languages where you can compile after typo-ing `==`.
 
 Exponentiation. `2 ** 3 == 8`
 
+`*`
+---
 
+Multiplication. `2 * 3 == 6`
+
+
+Boolean Operators
+=================
+
+`==`
+----
+
+Equality comparison. Can compare references, integers, etc.
+
+`<`, `>`
+--------
+
+Less than or greater than. 
+
+.. code-block:: monte
+
+    3 < 2 == False
+    3 > 2 == True
+    3 < 3 == False
+
+`<=`, `>=`
+----------
+
+Less than or equal to, greater than or equal to. 
+
+Same as above, but `3 <= 3 == True`
+
+`&&`
+----
+
+And. 
+
+.. code-block:: monte
+
+    True && True == True
+    True && False == False
+    False && False == False
