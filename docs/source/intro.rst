@@ -133,19 +133,6 @@ Data Structures
 Monte has lists built in natively, and various other data structures
 implemented in the language.
 
-Monte Modules
--------------
-
-A Monte module is a single file. The last statement in the file describes what
-it exports. If the last statement in a file defines a method or object, that
-method or object is what you get when you import it. If you want to export
-several objects from the same file, the last line in the file should simply be
-a list of their names. 
-
-To import a module, simply use `def bar = import("foo")` where the filename of
-the module is foo.mt. See the files module.mt and imports.mt for an example of
-how to export and import objects. 
-
 Testing
 -------
 
