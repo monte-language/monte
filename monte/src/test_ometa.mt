@@ -1,10 +1,11 @@
-def ometa := import("ometa")
-def runTests := import("unittest")
+module makeOMeta, unittest
+export (foo)
+def foo := null
 
 def makeRuntimeTests(assert):
     def test_anything():
         def data := "foo"
-        def o := ometa(data)
+        def o := makeOMeta(data)
         for i => c in data:
             def [v, [line, col]] := o.rule_anything(null)
             assert.equal([c, [1, i]], [v, [line, col]])
@@ -15,4 +16,4 @@ def makeRuntimeTests(assert):
 
     return [test_anything]
 
-runTests([makeRuntimeTests])
+unittest([makeRuntimeTests])

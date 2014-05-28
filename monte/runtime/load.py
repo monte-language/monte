@@ -290,10 +290,18 @@ class PackageMangler(MonteObject):
         structures = {}
         for name, path in collectModules():
             imports, exports = readModuleFile(path)
-            structures[String(name)] = FileModuleStructure(
-                path, imports, exports, self.scope)
+            structures[String(name)] = FileModuleStructure(path, imports,
+                                                           exports, self.scope)
 
         return ConstMap(structures)
+
+    def readFile(self, pathstr):
+        if not isinstance(pathstr, String):
+            raise RuntimeError("path must be a string")
+        path = pathstr.s
+        fullpath = os.path.join(self.root, path)
+        imports, exports = readModuleFile(fullpath)
+        return FileModuleStructure(fullpath, imports, exports, self.scope)
 
     def readPackage(self, subpkgName):
         if not isinstance(subpkgName, String):

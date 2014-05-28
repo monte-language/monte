@@ -25,7 +25,7 @@ def makeNode(value, left, right, red):
         to getV():
             return value
         to getB():
-            return red 
+            return red
 
         to size():
             # Recursively find the size of a tree. Slow.
@@ -78,12 +78,12 @@ def makeNode(value, left, right, red):
             return top
 
         to balance():
-            # Balance a node. 
+            # Balance a node.
             # The balance is inductive and relies on all subtrees being
             # balanced recursively or by construction. If the subtrees are not
-            # balanced, this will NOT fix them. 
+            # balanced, this will NOT fix them.
 
-            var node := Node 
+            var node := Node
 
             # Always lean left with red nodes.
             if (right.getB()):
@@ -106,22 +106,22 @@ def makeNode(value, left, right, red):
         to insert(val, key):
             # Insert a value into a tree rooted at the given node, and return
             # whether this was an insertion or update.
- 
-            # Balances the tree during insertion. 
+
+            # Balances the tree during insertion.
 
             # An update is performed instead of an insertion if a value in the
-            # tree compares equal to the new value. 
+            # tree compares equal to the new value.
 
             var node := Node
 
             # Base case: Insertion into the empty tree is just creating a new
-            # node with no children. 
-            
+            # node with no children.
+
             if (node == NIL):
                 return [makeNode(val, NIL, NIL, true), true]
 
             # Recursive case: Insertion into a non-empty tree is insertion is
-            # into whichever of the two sides is correctly compared. 
+            # into whichever of the two sides is correctly compared.
 
             def keyV := key(val)
             def keyMe := key(value)
@@ -162,7 +162,7 @@ def makeNode(value, left, right, red):
 
             var node := Node
 
-            # Base case: If nobody is smaller than me, delete myself. 
+            # Base case: If nobody is smaller than me, delete myself.
             if (left == NIL):
                 return [NIL, value]
 
@@ -174,7 +174,7 @@ def makeNode(value, left, right, red):
 
             # Recursive case: Delete minimum of all less than this
 
-            def [l, val] = left.deleteMin()
+            def [l, val] := left.deleteMin()
             node := makeNode(value, l, right, red)
 
             return [node.balance(), val]
@@ -273,9 +273,9 @@ def makeNodeTests(assert):
         assert.equal(node.balance(), balanced)
 
     def testBalanceFour():
-        def node := makeNode(2, makeNode(1, NIL, NIL, T), 
+        def node := makeNode(2, makeNode(1, NIL, NIL, T),
                                 makeNode(3, NIL, NIL, T), F)
-        def balanced := makeNode(2, makeNode(1, NIL, NIL, F), 
+        def balanced := makeNode(2, makeNode(1, NIL, NIL, F),
                                     makeNode(3, NIL, NIL, F), T)
         assert.equal(node.balance(), balanced)
 
@@ -290,5 +290,3 @@ def makeNodeTests(assert):
 unittest([makeNodeTests])
 
 ##############################################################################
-
-makeNode

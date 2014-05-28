@@ -1,3 +1,5 @@
+module
+export (makeOMeta)
 def makeInputStream(data, offset, loc):
     def size := data.size()
     return object inputStream:
