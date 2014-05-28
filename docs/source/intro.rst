@@ -150,9 +150,11 @@ Testing
 -------
 
 Unit tests are essential to writing good code. Monte's testing framework is
-designed to make it simple to write and run good tests. See the testing.mt
+designed to make it simple to write and run good tests. See the testing.mt_
 module for a simple example. Note that for more complex objects, you may need
 to implement an `_uncall()` method which describes how to recreate the object
 out of Monte's built-in primitives. Additionally, such objects will need to
 implement the Selfless interface in order to guarantee they won't have mutable
 state so that they can be compared. 
+
+.. _testing.mt: https://github.com/monte-language/monte/blob/master/monte/src/examples/testing.mt
