@@ -107,7 +107,7 @@ Char
 ~~~~
 
 Monte's character type is distinct from the string type. Characters are always
-surrounded by apostrophes (`'`). Characters are always unicode. 
+surrounded by apostrophes (`'`) and are always unicode. 
 
 .. code-block:: monte
 
