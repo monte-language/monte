@@ -18,6 +18,22 @@ prececessors. E is a relatively obscure language whose fundamental design
 precludes many types of common vulnerability, but its syntax is difficult to
 use and its implementations don't perform competitively. 
 
+Where do I start?
+-----------------
+
+If you'd like to get involved with developing or using the Monte language,
+start by getting acquainted with Python_'s syntax and the computational
+concepts of E_. 
+
+Then clone the repo_ and follow the directions below to begin running Monte
+code. If you have problems, join us in #monte on irc.freenode.net, ask your
+question (use a pastebin_ to share any errors, rather than pasting into the
+channel), and wait a few hours if nobody is around. 
+
+.. _Python: https://docs.python.org/2/tutorial/
+.. _E: http://www.skyhunter.com/marcs/ewalnut.html
+.. _repo: https://github.com/monte-language/monte
+.. _pastebin: http://bpaste.net/
 
 Using Monte
 ===========
