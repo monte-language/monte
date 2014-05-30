@@ -23,7 +23,12 @@ def makeUnicodeTest(assert):
         traceln(snowman)
         assert.equal(snowman, "☃")
 
+    def test_mixed_string():
+        def snowman := "as☃df"
+        traceln(snowman)
+        assert.equal(snowman, "as☃df")
+
     return [test_escaped_char, test_escaped_string,
-            test_raw_char, test_raw_string]
+            test_raw_char, test_raw_string, test_mixed_string]
 
 unittest([makeUnicodeTest])
