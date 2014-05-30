@@ -34,3 +34,19 @@ of the commit message. There are more docs on skipping commits `here`_.
 .. _Travis: https://travis-ci.org/monte-language/monte
 .. _here: http://docs.travis-ci.com/user/how-to-skip-a-build/
 
+
+Editor Syntax Highlighting
+==========================
+
+Atom
+----
+
+Make changes to the grammar as needed and commit those changes. Atom's package
+manager, apm, will handle package.json updating for you. When ready to publish
+the new version run
+
+    apm publish minor
+
+unless it's a major version change, then
+
+    apm publish major
