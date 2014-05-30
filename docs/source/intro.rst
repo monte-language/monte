@@ -156,6 +156,9 @@ implemented in the language.
 Testing
 -------
 
+.. note:: Tests are not automatically discovered at present. You need to add
+    your test to monte/src/package.mt for it to be run correctly.
+
 Unit tests are essential to writing good code. Monte's testing framework is
 designed to make it simple to write and run good tests. See the testing.mt_
 module for a simple example. Note that for more complex objects, you may need
