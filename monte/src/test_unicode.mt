@@ -28,7 +28,18 @@ def makeUnicodeTest(assert):
         traceln(snowman)
         assert.equal(snowman, "as☃df")
 
+    def test_consecutive_unicode():
+        def monte := "ℳøη⊥℮"
+        traceln(monte)
+        assert.equal(monte, "ℳøη⊥℮")
+
+    def test_mixed_consecutive():
+        def monte := "♏◎η☂℮ is an awesome ℒαᾔ❡üαℊℯ!"
+        traceln(monte)
+        assert.equal(monte, "♏◎η☂℮ is an awesome ℒαᾔ❡üαℊℯ!")
+
     return [test_escaped_char, test_escaped_string,
-            test_raw_char, test_raw_string, test_mixed_string]
+            test_raw_char, test_raw_string, test_mixed_string,
+            test_consecutive_unicode, test_mixed_consecutive]
 
 unittest([makeUnicodeTest])
