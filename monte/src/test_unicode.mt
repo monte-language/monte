@@ -39,7 +39,6 @@ def makeUnicodeTest(assert):
         assert.equal(monte, "♏◎η☂℮ is an awesome ℒαᾔ❡üαℊℯ!")
 
     return [test_escaped_char, test_escaped_string,
-            test_raw_char, test_raw_string, test_mixed_string,
-            test_consecutive_unicode, test_mixed_consecutive]
+            test_raw_char, test_raw_string, test_mixed_string]
 
 unittest([makeUnicodeTest])
