@@ -1,7 +1,6 @@
-def __makeOrderedSpace := import("regions") 
-
 def fizzBuzz(top):
-    for t in (0..top).iterate():
+    var t := 1
+    while (t < top):
         if ((t % 3 == 0) || (t % 5 == 0)):
             if (t % 15 == 0):
                 traceln(`$t  FizzBuzz`)
@@ -9,5 +8,6 @@ def fizzBuzz(top):
                 traceln(`$t  Fizz`)
             else:
                 traceln(`$t  Buzz`)
+        t += 1
 
 fizzBuzz(42)
