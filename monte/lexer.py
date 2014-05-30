@@ -916,6 +916,18 @@ class MonteLexer(object):
             self.syntaxError("end of file in middle of literal")
         elif self.currentChar == '\t':
             self.syntaxError('Quoted tabs must be written as \\t.')
+        elif ord(self.currentChar) > 127:
+            # Watch out, we're dealing with some unicode over here
+            ustr = self.currentChar
+            nex = self.nextChar()
+            for i in range(4):
+                if  ((nex not in string.printable) and (nex != EOF)):
+                    ustr += nex
+                    nex = self.nextChar()
+            c = ustr.decode('utf8')
+            if len(c) > 1:
+                self.syntaxError("Unicode char too long?")
+            return c
         else:
             c = self.currentChar
             self.nextChar()
