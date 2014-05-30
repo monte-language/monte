@@ -11,6 +11,6 @@ def makeUnicodeTest(assert):
         def snowman := "☃"
         traceln(snowman)
         assert.equal(snowman, "☃")
-    return [test_char, test_string]
+   return [test_char, test_string]
 
 unittest([makeUnicodeTest])
