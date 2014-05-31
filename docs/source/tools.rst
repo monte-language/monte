@@ -41,12 +41,4 @@ Editor Syntax Highlighting
 Atom
 ----
 
-Make changes to the grammar as needed and commit those changes. Atom's package
-manager, apm, will handle package.json updating for you. When ready to publish
-the new version run
-
-    apm publish minor
-
-unless it's a major version change, then
-
-    apm publish major
+Use Atom to install the package language-monte
