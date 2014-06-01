@@ -212,8 +212,9 @@ def prettyParseErrorPrinter(err):
     errTermNo = int(errTermNo)
 
     extractTermRe = re.compile(r"^term\('(.*)'\)$")
-    terms = [extractTermRe.match(str(term)).group(1) for term in err.input]
-
+    terms = [t.group(1) for t in 
+                        [extractTermRe.match(str(term)) for term in err.input] 
+                                             if not isinstance(t, type(None))]
     output = ''
     indent = 0
 
