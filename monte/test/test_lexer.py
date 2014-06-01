@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from monte.test import unittest
 from monte.lexer import MonteLexer, StringFeeder, ParseError
 from terml.nodes import Tag, Term
@@ -19,6 +21,10 @@ class LexerTests(unittest.TestCase):
         self.assertEqual(lex("'z'"),          [Term(Tag(".char."), "z", None, None)])
         self.assertEqual(lex("'\\n'"),        [Term(Tag(".char."), "\n", None, None)])
         self.assertEqual(lex("'\\u0061'"),    [Term(Tag(".char."), "a", None, None)])
+
+    def test_unicode_char(self):
+        self.assertEqual(lex("'\u2603'"),     [Term(Tag(".char."), "\u2603", None, None)])
+        self.assertEqual(lex("'☃'"),          [Term(Tag(".char."), "\u2603", None, None)])
 
     def test_string(self):
         self.assertEqual(lex('"foo\\\nbar"'), [Term(Tag(".String."), 'foobar', None, None)])
