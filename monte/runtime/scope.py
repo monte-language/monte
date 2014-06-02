@@ -6,6 +6,7 @@ from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
 from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, nullOkGuard,
                                        sameGuardMaker, selflessGuard,
+                                       subrangeGuardMaker,
                                        transparentGuard, ParamDesc,
                                        MessageDesc, ProtocolDesc)
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
@@ -41,7 +42,10 @@ safeScope = {
     # XXX Create this properly per-vat, when we have vats.
     "Ref": RefOps(None),
     "DeepFrozen": deepFrozenGuard,
+
+    # XXX move these somewhere importable instead, eventually
     "Same": sameGuardMaker,
+    "SubrangeGuard": subrangeGuardMaker,
 
     ## Primitive: tracing
     'trace': trace,

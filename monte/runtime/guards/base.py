@@ -1,6 +1,15 @@
 from monte.runtime.base import MonteObject, ejector, Throw, throw, toQuote, toString
-from monte.runtime.data import MonteNull, Bool, Character, Integer, Float, String, true, false, null
+from monte.runtime.data import MonteNull, Bool, Character, Integer, Float, String, bwrap, true, false, null
 from monte.runtime.flow import monteLooper
+
+def tryCoerce(guard, specimen):
+    ej = ejector("coercion attempt")
+    try:
+        return guard.coerce(specimen, ej)
+    except ej._m_type, p:
+        return None
+    finally:
+        ej.disable()
 
 class PrintFQN(object):
     def _printOn(self, out):
@@ -44,7 +53,7 @@ def requireDeepFrozen(specimen, sofar, ej, root):
         return
     if _isBroken(specimen):
         requireDeepFrozen(_optProblem(specimen), sofar, ej, root)
-    if selflessGuard.passes(specimen):
+    if selflessGuard.passes(specimen) is true:
         if transparentGuard.passes(specimen):
             portrayal = specimen._uncall()
             if not isinstance(portrayal, ConstList):
@@ -73,7 +82,7 @@ def auditForDeepFrozen(audition, ej):
             throw.eject(ej, "%s in the definition of %s is a variable pattern "
                         "and therefore not DeepFrozen" % (toQuote(name), fqn))
         else:
-            nameObj = String(name.decode('utf8'))
+            nameObj = String(name)
             guard = audition.getGuard(nameObj)
             if deepFrozenGuard.supersetOf(guard) is false:
                 throw.eject(ej, "%s in the lexical scope of %s does not have "
@@ -113,7 +122,6 @@ class DeepFrozenGuard(MonteObject):
     def audit(self, audition):
         auditForDeepFrozen(audition, throw)
         return true
-
 
 deepFrozenGuard = DeepFrozenGuard()
 DeepFrozenGuard._m_auditorStamps = (deepFrozenGuard,)
@@ -170,12 +178,10 @@ class UnionGuard(MonteObject):
         out.raw_print(u']')
 
     def coerce(self, specimen, ej):
-        cej = ejector("next")
         for guard in self.guards:
-            try:
-                return guard.coerce(specimen, cej)
-            except cej._m_type:
-                continue
+            val = tryCoerce(guard, specimen)
+            if val is not None:
+                return val
         throw.eject(ej, "doesn't match any of %s" % (self.guards,))
 
     def supersetOf(self, other):
@@ -188,7 +194,7 @@ class UnionGuard(MonteObject):
 class SelflessGuard(Guard):
     _m_auditorStamps = (deepFrozenGuard,)
     def passes(self, specimen):
-        return selflessGuard in getattr(specimen, '_m_auditorStamps', ())
+        return bwrap(selflessGuard in getattr(specimen, '_m_auditorStamps', ()))
 
     def _subCoerce(self, specimen, ej):
         if not selflessGuard in specimen._m_auditorStamps:
@@ -206,6 +212,7 @@ selflessGuard = SelflessGuard()
 
 class TransparentStamp(MonteObject):
     _m_fqn = "TransparentStamp"
+    _m_auditorStamps = (deepFrozenGuard,)
     def audit(self, audition):
         return true
 
@@ -213,6 +220,8 @@ transparentStamp = TransparentStamp()
 
 
 class TransparentGuard(Guard):
+    _m_fqn = "Transparent"
+    _m_auditorStamps = (deepFrozenGuard,)
     def passes(self, specimen):
         return transparentStamp in getattr(specimen, '_m_auditorStamps', ())
 
@@ -282,6 +291,11 @@ class SameGuard(MonteObject):
     def __init__(self, obj):
         self.obj = obj
 
+    def _printOn(self, out):
+        out.raw_print(u"Same[")
+        out.quote(self.obj)
+        out.raw_print(u"]")
+
     def getAllowed(self):
         return self.obj
 
@@ -314,6 +328,77 @@ class SameGuardMaker(MonteObject):
 
 sameGuardMaker = SameGuardMaker()
 
+
+
+class SubrangeGuardMaker(MonteObject):
+    _m_fqn = "SubrangeGuardMaker"
+    _m_auditorStamps = (deepFrozenGuard,)
+    def get(self, superrangeGuard):
+        return SubrangeGuard(superrangeGuard)
+
+
+class SubrangeGuard(MonteObject):
+    _m_fqn = "SubrangeGuard"
+    _m_auditorStamps = (deepFrozenGuard, transparentStamp, selflessGuard)
+
+    def __init__(self, superrangeGuard):
+        self.superrangeGuard = superrangeGuard
+
+    def _uncall(self):
+        from monte.runtime.data import String
+        from monte.runtime.tables import ConstList
+        return ConstList((subrangeGuardMaker, String("get"),
+                          ConstList((superrangeGuard,))))
+
+    def coerce(self, specimen, ejector):
+        if auditedBy(self, specimen):
+            return specimen
+        c = specimen._conformTo(self)
+        if auditedBy(self, c):
+            return c
+        throw.eject(ejector, "%s isn't approved as a SubrangeGuard[%s]" % (
+            toQuote(specimen), toQuote(self.superrangeGuard)))
+
+    def passes(self, specimen):
+        return auditedBy(self, specimen)
+
+    def _printOn(self, out):
+        out.quote(subrangeGuardMaker)
+        out.raw_print(u"[")
+        out.quote(self.superrangeGuard)
+        out.raw_print(u"]")
+
+    def audit(self, audition):
+        from monte.runtime.bindings import FinalSlotGuard
+        expr = audition.getObjectExpr()
+        methods = expr.args[3].args[1].args
+        fqn = audition.getFQN()
+        for m in methods:
+            verb = m.args[1]
+            if verb.data == "coerce":
+                guardTerm = m.args[3]
+                if guardTerm.tag.name == "NounExpr":
+                    noun = guardTerm.args[0].data
+                    resultGuardSlotGuard = audition.getGuard(String(noun))
+                    if isinstance(resultGuardSlotGuard, FinalSlotGuard):
+                        guard2 = resultGuardSlotGuard.getValueGuard()
+                        if isinstance(guard2, SameGuard):
+                            resultGuard = guard2.getAllowed()
+                            if resultGuard == self.superrangeGuard:
+                                return true
+                            m = getattr(self.superrangeGuard, "supersetOf")
+                            if m is not None and m(resultGuard):
+                                return true
+                            else:
+                                throw("%s does not have a result guard implying %s, but %s" %(
+                                    fqn, toQuote(self.superrangeGuard), toQuote(resultGuard)))
+                    throw("%s does not have a determinable result guard, but <& %s> :%s" % (
+                        fqn, noun, resultGuardSlotGuard))
+                throw("%s does not have a noun as its `coerce` result guard" % (fqn,))
+        else:
+            throw("%s has no `coerce` method" % (fqn,))
+
+subrangeGuardMaker = SubrangeGuardMaker()
 
 class NullOkGuard(Guard):
     _m_fqn = "nullOk"

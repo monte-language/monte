@@ -43,7 +43,7 @@ class AuditChecker(MonteObject):
     _m_fqn = "__auditedBy"
     _m_auditorStamps = (deepFrozenGuard,)
     def run(self, auditor, specimen):
-        return bwrap(auditor in specimen._m_auditorStamps)
+        return bwrap(auditor in getattr(specimen, "_m_auditorStamps", ()))
 
 
 auditedBy = AuditChecker()

@@ -87,7 +87,10 @@ class OuterScopeLayout(object):
             self.bindings[name] = Binding(
                 t.FinalPattern(t.NounExpr(name), None),
                 '_m_outerScope["%s"]' % name, OUTER,
-                "_monte.deepFrozenGuard",
+
+                '_monte.FinalSlot.asType().get(_m_outerScope["Same"].get('
+                '_m_outerScope["%s"]))' % name,
+
                 None)
 
     def getBinding(self, n, default=_absent):

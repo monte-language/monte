@@ -1,8 +1,10 @@
 from monte.runtime.base import MonteObject, toString, toQuote
 from monte.runtime.data import String
+from monte.runtime.guards.base import deepFrozenGuard
 
 class M(MonteObject):
-
+    _m_fqn = "M"
+    _m_auditorStamps = (deepFrozenGuard,)
     def call(self, obj, verb, arglist):
         return getattr(obj, verb)(*arglist)
 

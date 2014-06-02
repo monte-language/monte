@@ -485,8 +485,8 @@ class CompilerTest(unittest.TestCase):
                 def __init__(foo, _m_auditors):
                     foo._m_slots = {}
                     foo._m_outers = {
-                        'Data': _monte.deepFrozenGuard,
-                        'DeepFrozen': _monte.deepFrozenGuard,
+                        'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
+                        'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
                     }
                     foo._m_audit(_m_auditors, _monte.safeScope)
 
@@ -524,9 +524,9 @@ class CompilerTest(unittest.TestCase):
                         'z': z_slotPair,
                     }
                     foo._m_outers = {
-                        '__makeList': _monte.deepFrozenGuard,
-                        'Data': _monte.deepFrozenGuard,
-                        'DeepFrozen': _monte.deepFrozenGuard,
+                        '__makeList': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["__makeList"])),
+                        'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
+                        'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
                     }
                     foo._m_audit(_m_auditors, _monte.safeScope)
 
@@ -557,8 +557,8 @@ class CompilerTest(unittest.TestCase):
                 def __init__(foo, _m_auditors):
                     foo._m_slots = {}
                     foo._m_outers = {
-                        'DeepFrozen': _monte.deepFrozenGuard,
-                        'Data': _monte.deepFrozenGuard,
+                        'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
+                        'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
                     }
                     foo._m_audit(_m_auditors, _monte.safeScope)
 
@@ -582,8 +582,8 @@ class CompilerTest(unittest.TestCase):
                         'foo': foo_slotPair,
                     }
                     foo._m_outers = {
-                        'DeepFrozen': _monte.deepFrozenGuard,
-                        'Data': _monte.deepFrozenGuard,
+                        'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
+                        'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
                     }
                     foo._m_audit(_m_auditors, _monte.safeScope)
 

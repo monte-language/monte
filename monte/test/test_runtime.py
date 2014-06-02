@@ -946,6 +946,28 @@ class SameGuardTests(unittest.TestCase):
         self.assertEqual(monte_eval("object foo {}; Same[foo] == Same[foo]"), true)
 
 
+class SubrangeGuardTests(unittest.TestCase):
+    def test_deepFrozen(self):
+        self.assertEqual(monte_eval("SubrangeGuard[int] =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("Selfless.passes(SubrangeGuard[int])"), true)
+
+    def test_fail(self):
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] {}} catch p {p}")),
+                         "__main$x has no `coerce` method")
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) {return a}}} catch p {p}")),
+                         "__main$x does not have a noun as its `coerce` result guard")
+        self.assertEqual(str(monte_eval("object z as DeepFrozen {}; try {object x implements SubrangeGuard[int] { to coerce(a, b) :z {return a}}} catch p {p}")),
+                         "__main$x does not have a determinable result guard, but <& z> :FinalSlot[<DeepFrozen>]")
+
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) :boolean {return a}}} catch p {p}")),
+                         "__main$x does not have a result guard implying int, but boolean")
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) :(1 + 1) {return a}}} catch p {p}")),
+                         "__main$x does not have a noun as its `coerce` result guard")
+
+    def test_success(self):
+        self.assertEqual(monte_eval("object x implements SubrangeGuard[int] { to coerce(a, b) :int {return 42}};def y :x := 3; y"), Integer(42))
+        self.assertEqual(monte_eval("object x implements SubrangeGuard[DeepFrozen] { to coerce(a, b) :int {return 42}}; def y :x := 3; y"), Integer(42))
+
 
 class DeepFrozenGuardTests(unittest.TestCase):
     def test_prims(self):

@@ -24,7 +24,7 @@ voidGuard = VoidGuard()
 
 
 class BooleanGuard(PrintFQN, Guard):
-    _m_fqn = "bool"
+    _m_fqn = "boolean"
     _m_auditorStamps = (deepFrozenGuard,)
     def _subCoerce(self, specimen, ej):
         if specimen in [true, false]:

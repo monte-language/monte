@@ -1,5 +1,6 @@
 from monte.runtime.base import MonteObject, throw, toString
 from monte.runtime.data import String, Character
+from monte.runtime.guards.base import deepFrozenGuard
 from monte.runtime.tables import ConstList, FlexList
 
 def findOneOf(elts, specimen, start):
@@ -10,6 +11,7 @@ def findOneOf(elts, specimen, start):
 
 class Substituter(MonteObject):
     _m_fqn = "simple__quasiParser$Substituter"
+    _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, template):
         if not isinstance(template, String):
             raise RuntimeError("%r is not a string" % (template,))
@@ -113,6 +115,7 @@ class Substituter(MonteObject):
 
 class SimpleQuasiParser(MonteObject):
     _m_fqn = "simple__quasiParser"
+    _m_auditorStamps = (deepFrozenGuard,)
     def valueMaker(self, template):
         return Substituter(template)
 
