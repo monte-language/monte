@@ -27,7 +27,6 @@ class Guard(MonteObject):
     def supersetOf(self, other):
         return false
 
-
 def deepFrozenFunc(f):
     f._m_auditorStamps = (deepFrozenGuard,)
     return f
@@ -99,6 +98,16 @@ class DeepFrozenGuard(MonteObject):
             return self.supersetOf(guard.elementGuard)
         if _isDataGuard(guard):
             return true
+        tryej = ejector("Same guard")
+        try:
+            value = sameGuardMaker.matchGet(guard, tryej)
+            if sameGuardMaker.get(value) == guard:
+                requireDeepFrozen(value, set(), tryej, value)
+                return true
+        except tryej._m_type, p:
+            return false
+        finally:
+            tryej.disable()
         return false
 
     def audit(self, audition):
@@ -266,6 +275,44 @@ class TransparentGuard(Guard):
         return true
 
 transparentGuard = TransparentGuard()
+
+class SameGuard(MonteObject):
+    _m_fqn = "Same$Same1"
+    _m_auditorStamps = (selflessGuard, transparentStamp)
+    def __init__(self, obj):
+        self.obj = obj
+
+    def getAllowed(self):
+        return self.obj
+
+    def coerce(self, specimen, ej):
+        from monte.runtime.equalizer import equalizer
+        if equalizer.sameYet(specimen, self.obj):
+            return specimen
+        else:
+            throw.eject(ej, "%s is not %s" % (toQuote(specimen), toQuote(self.obj)))
+
+    def _uncall(self):
+        from monte.runtime.data import String
+        from monte.runtime.tables import ConstList
+        return ConstList((sameGuardMaker, String(u'get'), ConstList((self.obj,))))
+
+sameGuardType = PythonTypeGuard(SameGuard, "SameGuard")
+
+class SameGuardMaker(MonteObject):
+    _m_fqn = "Same"
+    _m_auditorStamps = (deepFrozenGuard,)
+    def asType(self):
+        return sameGuardType
+
+    def get(self, obj):
+        return SameGuard(obj)
+
+    def matchGet(self, specimen, ejector):
+        return sameGuardType.coerce(specimen, ejector).getAllowed()
+
+
+sameGuardMaker = SameGuardMaker()
 
 
 class NullOkGuard(Guard):

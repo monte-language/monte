@@ -933,6 +933,19 @@ class MapGuardTests(unittest.TestCase):
             "escape e {def x :Map[int, char] exit e := [3 => 'b'].diverge(); 1} catch v {2}"),
                          Integer(2))
 
+class SameGuardTests(unittest.TestCase):
+    def test_guard(self):
+        self.assertEqual(monte_eval("object foo {}; foo =~ _ :Same[foo]"), true)
+        self.assertEqual(monte_eval("object foo {}; null =~ _ :Same[foo]"), false)
+
+    def test_matchGet(self):
+        self.assertEqual(monte_eval("object foo {}; def g := Same[foo]; Same.matchGet(g, throw) == foo"),
+                         true)
+
+    def test_sameySame(self):
+        self.assertEqual(monte_eval("object foo {}; Same[foo] == Same[foo]"), true)
+
+
 
 class DeepFrozenGuardTests(unittest.TestCase):
     def test_prims(self):
@@ -978,6 +991,16 @@ class DeepFrozenGuardTests(unittest.TestCase):
                     return baz
             foo =~ _ :DeepFrozen
             """)), true)
+
+        self.assertEqual(monte_eval(dedent("""
+            def blee :int := 3
+            def baz :Same[blee] := blee
+            object foo implements DeepFrozen:
+                to doStuff(z):
+                    return baz
+            foo =~ _ :DeepFrozen
+            """)), true)
+
 
 
     def test_rejected(self):
