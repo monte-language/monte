@@ -34,23 +34,15 @@ def makeIntPatternTests(assert):
         assert.equal(foo(0), 0)
         assert.equal(foo(42), 1)
 
-    return [test_equal, test_suchthat_pythonic, test_suchthat_brackets]
+    def test_mixing_brackets():
+        def foo(n):
+            switch(n):
+                match n ? (n < 3) { return 0 }
+                match _           { return 1 }
+        assert.equal(foo(0), 0)
+        assert.equal(foo(42), 1)
 
-#    def these_are_broken():
-#        def foo(n):
-#            switch(n):
-#                match n ? (n < 3) { return 0 }
-#                match _           { return 1 }
-#        def bar(n):
-#            switch (n) {
-#                match x ? (x < 3): 
-#                    return 0
-#                match _ :
-#                    return 1
-#            }
-#        assert.equal(foo(0), 0)
-#        assert.equal(foo(42), 1)
-#        assert.equal(bar(0), 0)
-#        assert.equal(bar(42), 1)
+    return [test_equal, test_suchthat_pythonic, test_suchthat_brackets,
+            test_mixing_brackets]
 
-unittest([makeIntPatternTests])
+    unittest([makeIntPatternTests])
