@@ -104,23 +104,17 @@ class OuterScopeLayout(object):
 
 
 class FrameScopeLayout(object):
-    def __init__(self, fields, verbs, selfName, selfNameNode, fqnPrefix):
+    def __init__(self, fields, verbs, selfName, selfBinding, fqnPrefix):
         self.selfName = selfName
         self.verbs = verbs
-        if selfNameNode and selfNameNode.tag.name != 'IgnorePattern':
-            self.selfBinding = Binding(selfNameNode, selfName, FRAME,
-                                       '_monte.getObjectGuard(%s)' % selfName,
-                                       None)
-        else:
-            self.selfBinding = None
         self.gensym = SymGenerator().gensym
         self.fields = [f.bindInFrame(self) for f in fields]
         self.fields.sort(key=lambda f: f.name)
+        if selfBinding is not None:
+            self.fields.insert(0, selfBinding.bindInFrame(self))
         self.fqnPrefix = fqnPrefix
 
     def getBinding(self, name, default=_absent):
-        if self.selfBinding and name == self.selfBinding.name:
-            return self.selfBinding
         for f in self.fields:
             if f.name == name:
                 return f
@@ -303,10 +297,7 @@ class Binding(object):
 
     def getAssignStatement(self, temp, frame):
         if self.kind == FRAME:
-            if self.pyname == frame.selfName:
-                return "%s.%s.put(%s)" % (self.pyname, self.pyname, temp)
-            else:
-                return "%s = %s" % (self.pyname, temp)
+            return "%s = %s" % (self.pyname, temp)
         else:
             return "%s.put(%s)" % (self.pyname, temp)
 
@@ -526,16 +517,24 @@ class PythonWriter(object):
         fieldNames = used - outerSet
         usedOuters = used & outerSet
         fields = [ctx.layout.getBinding(n) for n in fieldNames]
-        if nameNode.tag.name != 'IgnorePattern':
-            selfBinding = ctx.layout.getBinding(name)
+        selfBindingGuardOnly = False
+        selfBinding = None
         if nameNode.tag.name in ('FinalPattern', 'IgnorePattern'):
-            paramNames = self._collectSlots(fields)
+            for mss in scope(script.args[1]) + scope(script.args[2]):
+                if name in mss.namesUsed():
+                    selfBindingGuardOnly = True
+                    selfBinding = ctx.layout.getBinding(name)
+                    paramNames = ["(None, %s)" % selfBinding.getBindingGuardExpr()
+                              ] + self._collectSlots(fields)
+                    break
+            else:
+                paramNames = self._collectSlots(fields)
         else:
+            selfBinding = ctx.layout.getBinding(name)
             paramNames = [
                 "(%s, %s)" % (selfName, selfBinding.getBindingGuardExpr())
             ] + self._collectSlots(fields)
-            fields = [selfBinding]
-            fields += [ctx.layout.getBinding(n) for n in fieldNames]
+
         methods = script.args[1].args
         matchers = script.args[2].args
         verbs = [meth.args[1].data for meth in methods]
@@ -546,10 +545,11 @@ class PythonWriter(object):
             paramNames.insert(0, '{%s}' % ', '.join(methGuards))
         if auditors:
             paramNames.insert(0, '[%s]' % ', '.join(auditors))
+
         val = "%s(%s)" % (scriptname, ", ".join(paramNames))
 
         selfSlotName = self._generatePattern(out, ctx, None, val, nameNode, True)
-        frame = FrameScopeLayout(fields, verbs, selfName, nameNode,
+        frame = FrameScopeLayout(fields, verbs, selfName, selfBinding,
                                  '%s$%s' % (ctx.layout.frame.fqnPrefix, name))
         matcherNames = [ctx.layout.gensym("matcher") for _ in matchers]
         classOut, cflush = ctx.classWriter()
@@ -581,6 +581,12 @@ class PythonWriter(object):
             if methGuards:
                 initOut.writeln(selfName + "._m_guardMethods(_m_methodGuards)")
             if frame.fields:
+                if selfBindingGuardOnly:
+                    selfname = mangleIdent(selfBinding.name)
+                    pairname = selfBinding.getSlotPairName()
+                    initOut.writeln(
+                        "%s = (_monte.FinalSlot(%s, %s, unsafe=True), %s[1])" %
+                        (pairname, selfname, selfBinding.guardExpr, pairname))
                 initOut.writeln(selfName + "._m_slots = {")
                 dictOut = initOut.indent()
                 for b, pyname in zip(frame.fields, pyfnames):
