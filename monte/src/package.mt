@@ -6,10 +6,11 @@ def unittest := pkg.testCollector()
 
 def blackjack := pkg.readFile("blackjack.mt")([=> unittest])
 def example := pkg.readFile("examples/testing.mt")([=> unittest])
+def regions := pkg.readFile("prim/regions.mt")([=> unittest])
 def [=> makeOMeta] := pkg.readFile("ometa.mt")()
 def ometaTests := pkg.readFile("test_ometa.mt")([=> makeOMeta, => unittest])
 def terml := pkg.readPackage("./terml")()
 def testUnicode := pkg.readFile("test_unicode.mt")([=> unittest])
 def testSwitch := pkg.readFile("test_switch.mt")([=> unittest])
 
-pkg.makeModule(terml | blackjack | example | ometaTests | testUnicode)
+pkg.makeModule(terml | blackjack | example | ometaTests | testUnicode | regions)

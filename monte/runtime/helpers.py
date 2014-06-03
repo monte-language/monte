@@ -46,30 +46,21 @@ def iterWhile(f):
 class Comparer(MonteObject):
     _m_fqn = "__comparer"
     _m_auditorStamps = (deepFrozenGuard,)
-    def _check(self, left, right, first, second):
-        try:
-            return getattr(left.op__cmp(right), first)()
-        except RuntimeError:
-            try:
-                return getattr(right.op__cmp(left), second)()
-            except RuntimeError:
-                pass
-            raise  # re-raise from the first except clause.
 
     def greaterThan(self, left, right):
-        return self._check(left, right, 'aboveZero', 'atMostZero')
+        return left.op__cmp(right).aboveZero()
 
     def geq(self, left, right):
-        return self._check(left, right, 'atLeastZero', 'belowZero')
+        return left.op__cmp(right).atLeastZero()
 
     def lessThan(self, left, right):
-        return self._check(left, right, 'belowZero', 'atLeastZero')
+        return left.op__cmp(right).belowZero()
 
     def leq(self, left, right):
-        return self._check(left, right, 'atMostZero', 'aboveZero')
+        return left.op__cmp(right).atMostZero()
 
     def asBigAs(self, left, right):
-        return self._check(left, right, 'isZero', 'isZero')
+        return left.op__cmp(right).isZero()
 
 comparer = Comparer()
 
