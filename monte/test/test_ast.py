@@ -73,3 +73,6 @@ class CodecTests(unittest.TestCase):
                                t.Matcher(t.FinalPattern(t.NounExpr("etc"), t.null()),
                                          t.NounExpr("etc"))]))])
         self.check(term)
+
+    def test_module(self):
+        self.check(t.Module("unittest", "foo", "bar"))
