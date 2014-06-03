@@ -101,6 +101,8 @@ class DeepFrozenGuard(MonteObject):
         from monte.runtime.guards.tables import SpecializedConstListGuard
         if guard is deepFrozenGuard:
             return true
+        if subrangeGuardMaker.get(deepFrozenGuard).passes(guard):
+            return true
         if isinstance(guard, FinalSlotGuard):
             return self.supersetOf(guard.valueGuard)
         if isinstance(guard, SpecializedConstListGuard):
@@ -347,10 +349,11 @@ class SubrangeGuard(MonteObject):
     def _uncall(self):
         from monte.runtime.data import String
         from monte.runtime.tables import ConstList
-        return ConstList((subrangeGuardMaker, String("get"),
-                          ConstList((superrangeGuard,))))
+        return ConstList((subrangeGuardMaker, String(u"get"),
+                          ConstList((self.superrangeGuard,))))
 
     def coerce(self, specimen, ejector):
+        from monte.runtime.audit import auditedBy
         if auditedBy(self, specimen):
             return specimen
         c = specimen._conformTo(self)
@@ -360,6 +363,7 @@ class SubrangeGuard(MonteObject):
             toQuote(specimen), toQuote(self.superrangeGuard)))
 
     def passes(self, specimen):
+        from monte.runtime.audit import auditedBy
         return auditedBy(self, specimen)
 
     def _printOn(self, out):
