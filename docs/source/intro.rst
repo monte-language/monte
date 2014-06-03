@@ -157,7 +157,7 @@ Testing
 -------
 
 .. note:: Tests are not automatically discovered at present. You need to add
-    your test to monte/src/package.mt for it to be run correctly.
+    your test to a package.mt file for it to be run correctly.
 
 Unit tests are essential to writing good code. Monte's testing framework is
 designed to make it simple to write and run good tests. See the testing.mt_
@@ -166,5 +166,9 @@ to implement an `_uncall()` method which describes how to recreate the object
 out of Monte's built-in primitives. Additionally, such objects will need to
 implement the Selfless interface in order to guarantee they won't have mutable
 state so that they can be compared. 
+
+To test the Python tools surrounding Monte, use Trial. For instance, ``trial
+monte.test.test_ast`` (when run from the root of the project) will run the ast
+tests.
 
 .. _testing.mt: https://github.com/monte-language/monte/blob/master/monte/src/examples/testing.mt
