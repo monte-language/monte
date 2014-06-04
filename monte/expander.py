@@ -504,6 +504,14 @@ Object(@doco VarPattern(@name @guard):vp @auditors Script(@extends @methods @mat
 Object(@doco @name @auditors Script(@extends @methods @matchers)) =
     objectSuper(doco name auditors extends methods matchers []):o -> t.Def(name, None, o)
 
+objectSuper :doco :name :auditors NounExpr(@extends) :methods :matchers :maybeSlot !(self.mktemp("pair")):p -> t.HideExpr(t.SeqExpr([
+       t.Def(t.BindingPattern(t.NounExpr("super")),
+           None, t.BindingExpr(t.NounExpr(extends))),
+       t.Object(doco, name, auditors,
+           t.Script(None, methods,
+               matchers + [t.Matcher(t.FinalPattern(p, None),
+                           mcall("M", "callWithPair", t.NounExpr("super"), p))]))
+       ] + maybeSlot))
 objectSuper :doco :name :auditors :extends :methods :matchers :maybeSlot !(self.mktemp("pair")):p -> t.HideExpr(t.SeqExpr([
        t.Def(t.FinalPattern(t.NounExpr("super"), None),
            None, extends),
