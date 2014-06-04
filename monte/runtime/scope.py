@@ -1,7 +1,7 @@
 from monte.runtime.audit import auditedBy
 from monte.runtime.base import throw
 from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
-from monte.runtime.data import (Integer, true, false, nan, infinity, null)
+from monte.runtime.data import (Integer, String, true, false, nan, infinity, null)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
 from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, nullOkGuard,
@@ -114,8 +114,6 @@ bootScope = {
     '__auditedBy': auditedBy,
     '__equalizer': equalizer,
 
-    ## Code loading
-    'import': monteImport,
     # 'monte__quasiParser': monteQuasiParser,
     # 'Audition': auditionGuard,
 
@@ -149,6 +147,11 @@ bootScope = {
 }
 
 def createSafeScope(scope):
+    loader = monteImport(bootScope)
+    bits = loader(String(u"prim"))
+    scope = scope.copy()
+    for k, v in bits.d.iteritems():
+        scope[k.s] = v
     return scope
 
 # ioScope = {
