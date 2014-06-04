@@ -531,7 +531,7 @@ class CompilerTest(unittest.TestCase):
                     foo._m_audit(_m_auditors, _monte.safeScope)
 
                 def run(foo):
-                    return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w.slot.get())
+                    return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w)
 
                 _m_objectExpr = "0 :)!   #foo '# )!   *DeepFrozen)!   $Data1 '!2 !   #run'  ,)!   *__makeList!   #run'$)!   !x)!   !y)!   !z)!   !w' "
 

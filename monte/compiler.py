@@ -203,7 +203,10 @@ class CustomBinding(object):
         return self.descriptorName
 
     def getValueExpr(self):
-        return self.pyname + '.slot.get()'
+        if self.kind == FRAME:
+            return self.pyname
+        else:
+            return self.pyname + '.slot.get()'
 
     def getBindingGuardExpr(self):
         return self.pyname + '.guard'
