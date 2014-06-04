@@ -20,8 +20,6 @@ class GeneratedCodeLoader(object):
         return self.source
 
 def eval(source, scope=None, origin="__main"):
-    if scope is None:
-        from monte.runtime.scope import safeScope as scope
     name = uuid.uuid4().hex
     mod = module(name)
     mod.__name__ = name
@@ -212,11 +210,14 @@ def readModuleFile(moduleFilename):
 
 
 def buildPackage(packageDirectory, name, scope, testCollector):
-    from monte.runtime.scope import safeScope
+
+    # TODO decide if the boot scope is sufficient for package scripts; it
+    # should be, nothing fancy goes on in them currently
+    from monte.runtime.scope import bootScope
     pkgfile = os.path.join(packageDirectory, 'package.mt')
     if not os.path.exists(pkgfile):
         raise ValueError("'%s' does not exist" % (pkgfile,))
-    packageScriptScope = safeScope.copy()
+    packageScriptScope = bootScope.copy()
     packageScriptScope['pkg'] = PackageMangler(name, packageDirectory, scope, testCollector)
     return eval(open(pkgfile).read(), packageScriptScope, "packageLoader")
 
@@ -338,15 +339,13 @@ class PackageMangler(MonteObject):
         return SyntheticModuleStructure(mapping, requires, exports)
 
 
-def monteImport():
+def monteImport(scope):
     def loader(name, mapping=None):
-        from monte.runtime.scope import safeScope
-        # The name is a String, so deref it.
         name = name.s
         if mapping is None:
             mapping = ConstMap({})
         path = os.path.join(os.path.dirname(__file__), '..', 'src')
-        s = getModuleStructure(name, os.path.abspath(path), safeScope, None)
+        s = getModuleStructure(name, os.path.abspath(path), scope, None)
         requires = ConstMap(dict((k, RequireConfiguration(k.s)) for k in mapping.d))
         conf = s.configure(requires)
         conf.load(mapping)

@@ -4,12 +4,12 @@ import textwrap
 
 from twisted.trial import  unittest
 from monte.compiler import ecompile, CompileError, mangleIdent
-from monte.runtime.scope import safeScope
+from monte.runtime.scope import bootScope
 
 class CompilerTest(unittest.TestCase):
     maxDiff = None
     def eq_(self, esrc, pysrc):
-        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip(), safeScope),
+        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip(), bootScope),
                                   textwrap.dedent(pysrc).strip())
 
     def test_mangle(self):
@@ -488,7 +488,7 @@ class CompilerTest(unittest.TestCase):
                         'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
                         'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
                     }
-                    foo._m_audit(_m_auditors, _monte.safeScope)
+                    foo._m_audit(_m_auditors, _m_outerScope)
 
                 _m_objectExpr = "0 :)!   #foo '# )!   *DeepFrozen)!   $Data1 ' ' "
 
@@ -528,7 +528,7 @@ class CompilerTest(unittest.TestCase):
                         'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
                         'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
                     }
-                    foo._m_audit(_m_auditors, _monte.safeScope)
+                    foo._m_audit(_m_auditors, _m_outerScope)
 
                 def run(foo):
                     return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w)
@@ -560,7 +560,7 @@ class CompilerTest(unittest.TestCase):
                         'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
                         'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
                     }
-                    foo._m_audit(_m_auditors, _monte.safeScope)
+                    foo._m_audit(_m_auditors, _m_outerScope)
 
                 _m_objectExpr = '0 :)!   #foo \'")!   $Data)!   *DeepFrozen1 \' \' '
 
@@ -585,7 +585,7 @@ class CompilerTest(unittest.TestCase):
                         'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
                         'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
                     }
-                    foo._m_audit(_m_auditors, _monte.safeScope)
+                    foo._m_audit(_m_auditors, _m_outerScope)
 
                 _m_objectExpr = '0 <)!   #foo \'")!   $Data)!   *DeepFrozen1 \' \' '
 

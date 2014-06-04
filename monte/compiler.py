@@ -605,7 +605,7 @@ class PythonWriter(object):
                     dictOut.writeln('%r: %s,' % (name, b.getBindingGuardExpr()))
                 initOut.writeln("}")
                 # XXX pass actual outers somehow
-                initOut.writeln(selfName + "._m_audit(_m_auditors, _monte.safeScope)")
+                initOut.writeln(selfName + "._m_audit(_m_auditors, _m_outerScope)")
 
             initOut.writeln("")
         metacontext = False

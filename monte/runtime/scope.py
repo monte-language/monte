@@ -24,7 +24,7 @@ from monte.runtime.m import theM
 from monte.runtime.text import simpleQuasiParser, quasiMatcher
 from monte.runtime.trace import trace, traceln
 
-safeScope = {
+bootScope = {
     ## Primitive non-literal values
     'true': true,
     'false': false,
@@ -147,6 +147,9 @@ safeScope = {
 
     'help': help,
 }
+
+def createSafeScope(scope):
+    return scope
 
 # ioScope = {
 #     'timer': theTimer,
