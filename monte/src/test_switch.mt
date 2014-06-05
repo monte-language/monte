@@ -1,7 +1,5 @@
 module unittest
-export (foo)
-
-def foo := null
+export (makeIntPatternTests)
 
 def makeIntPatternTests(assert):
 
