@@ -19,7 +19,7 @@ module configuration
   with objects. Created from a module structure.
 
 package
-  A module composed from other modules.
+  A module structure composed from various module configurations.
 
 package script
   A source file run at link time that produces a module structure for
@@ -33,7 +33,7 @@ requirement
 Module Declaration Syntax
 -------------------------
 
-Modules start with a `module` declaration of the form::
+Module files start with a `module` declaration of the form::
     module dependency1, dependency2, ...
     export (name1, name2, ...)
 
@@ -48,8 +48,9 @@ Mechanics
 Scripts are run in a scope with an ``import(name, parameters)``
 function, which can be invoked to load modules. The name is used to
 locate either a module file or a directory containing a package script
-(currently required to be named ``package.mt``). The module is loaded
-and its exports are returned as a map.
+(currently required to be named ``package.mt``). A configuration is
+created from the structure read from this, and then loaded with the
+parameters given, and its exports are returned as a map.
 
 
 Package Scripts
@@ -60,8 +61,11 @@ package loader object ``pkg``.
 
 The package provides these methods:
 
+``readFile(relativePath)``
+  Read the module file at the given path and return a module structure.
+
 ``readFiles(relativePath)``
-  Creates a map of module names to module structures, for all modules
+  Creates a map of module names to module structures, for all module files
   found recursively on the given path.
 
 ``readPackage(relativePath)``
