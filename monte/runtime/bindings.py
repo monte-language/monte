@@ -1,6 +1,6 @@
 from monte.runtime.base import MonteObject, throw
 from monte.runtime.data import null
-from monte.runtime.guards.base import Guard, anyGuard, deepFrozenGuard, selflessGuard
+from monte.runtime.guards.base import Guard, anyGuard, deepFrozenFunc, deepFrozenGuard, selflessGuard
 from monte.runtime.tables import ConstList
 
 class FinalSlot(MonteObject):
@@ -8,7 +8,7 @@ class FinalSlot(MonteObject):
     _m_auditorStamps = (deepFrozenGuard,)
     @classmethod
     def asType(cls):
-        return FinalSlotGuard(null, maker=True)
+        return theFinalSlotGuard
 
     def __init__(self, val, guard=null, ej=throw, unsafe=False):
         if guard is not null:
@@ -106,6 +106,7 @@ class FinalSlotGuard(Guard):
         out._m_print(self.valueGuard)
         out.raw_print(u']')
 
+theFinalSlotGuard = FinalSlotGuard(null, maker=True)
 
 class VarSlotGuard(Guard):
     _m_fqn = "VarSlot"
@@ -175,6 +176,7 @@ def getBinding(o, name):
 def getSlot(o, name):
     raise NotImplementedError()
 
+@deepFrozenFunc
 def reifyBinding(arg, ej=_absent):
     """
     Create a binding object from a slot object.
@@ -186,6 +188,6 @@ def reifyBinding(arg, ej=_absent):
     else:
         return Binding(anyGuard, arg)
 
-
+@deepFrozenFunc
 def slotFromBinding(b):
     return b.slot

@@ -4,12 +4,12 @@ import textwrap
 
 from twisted.trial import  unittest
 from monte.compiler import ecompile, CompileError, mangleIdent
-from monte.runtime.scope import safeScope
+from monte.runtime.scope import bootScope
 
 class CompilerTest(unittest.TestCase):
     maxDiff = None
     def eq_(self, esrc, pysrc):
-        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip(), safeScope),
+        self.assertMultiLineEqual(ecompile(textwrap.dedent(esrc).strip(), bootScope),
                                   textwrap.dedent(pysrc).strip())
 
     def test_mangle(self):
@@ -485,10 +485,10 @@ class CompilerTest(unittest.TestCase):
                 def __init__(foo, _m_auditors):
                     foo._m_slots = {}
                     foo._m_outers = {
-                        'Data': _monte.deepFrozenGuard,
-                        'DeepFrozen': _monte.deepFrozenGuard,
+                        'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
+                        'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
                     }
-                    foo._m_audit(_m_auditors, _monte.safeScope)
+                    foo._m_audit(_m_auditors, _m_outerScope)
 
                 _m_objectExpr = "0 :)!   #foo '# )!   *DeepFrozen)!   $Data1 ' ' "
 
@@ -524,14 +524,14 @@ class CompilerTest(unittest.TestCase):
                         'z': z_slotPair,
                     }
                     foo._m_outers = {
-                        '__makeList': _monte.deepFrozenGuard,
-                        'Data': _monte.deepFrozenGuard,
-                        'DeepFrozen': _monte.deepFrozenGuard,
+                        '__makeList': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["__makeList"])),
+                        'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
+                        'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
                     }
-                    foo._m_audit(_m_auditors, _monte.safeScope)
+                    foo._m_audit(_m_auditors, _m_outerScope)
 
                 def run(foo):
-                    return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w.slot.get())
+                    return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w)
 
                 _m_objectExpr = "0 :)!   #foo '# )!   *DeepFrozen)!   $Data1 '!2 !   #run'  ,)!   *__makeList!   #run'$)!   !x)!   !y)!   !z)!   !w' "
 
@@ -557,10 +557,10 @@ class CompilerTest(unittest.TestCase):
                 def __init__(foo, _m_auditors):
                     foo._m_slots = {}
                     foo._m_outers = {
-                        'DeepFrozen': _monte.deepFrozenGuard,
-                        'Data': _monte.deepFrozenGuard,
+                        'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
+                        'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
                     }
-                    foo._m_audit(_m_auditors, _monte.safeScope)
+                    foo._m_audit(_m_auditors, _m_outerScope)
 
                 _m_objectExpr = '0 :)!   #foo \'")!   $Data)!   *DeepFrozen1 \' \' '
 
@@ -582,10 +582,10 @@ class CompilerTest(unittest.TestCase):
                         'foo': foo_slotPair,
                     }
                     foo._m_outers = {
-                        'DeepFrozen': _monte.deepFrozenGuard,
-                        'Data': _monte.deepFrozenGuard,
+                        'DeepFrozen': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["DeepFrozen"])),
+                        'Data': _monte.FinalSlot.asType().get(_m_outerScope["Same"].get(_m_outerScope["Data"])),
                     }
-                    foo._m_audit(_m_auditors, _monte.safeScope)
+                    foo._m_audit(_m_auditors, _m_outerScope)
 
                 _m_objectExpr = '0 <)!   #foo \'")!   $Data)!   *DeepFrozen1 \' \' '
 
@@ -682,10 +682,17 @@ class CompilerTest(unittest.TestCase):
             """
             class _m_foo_Script(_monte.MonteObject):
                 _m_fqn = '__main$foo'
+                foo = _monte._SlotDescriptor('foo')
+                def __init__(foo, foo_slotPair):
+                    foo_slotPair = (_monte.FinalSlot(foo, _monte.null, unsafe=True), foo_slotPair[1])
+                    foo._m_slots = {
+                        'foo': foo_slotPair,
+                    }
+
                 def run(foo, x):
                     _m___return = _monte.ejector("__return")
                     try:
-                        _m___return(foo(x))
+                        _m___return(foo.foo(x))
                         _g_escape2 = _monte.null
                     except _m___return._m_type, _g___return1:
                         _g_escape2 = _g___return1.args[0]
@@ -693,7 +700,7 @@ class CompilerTest(unittest.TestCase):
                         _m___return.disable()
                     return _g_escape2
 
-            foo = _m_foo_Script()
+            foo = _m_foo_Script((None, _monte.FinalSlot.asType().get(_monte.null)))
             foo
             """
         )
@@ -712,7 +719,7 @@ class CompilerTest(unittest.TestCase):
 
                  def baz(foo, x, y):
                      _g_foo2 = _monte.wrap(1)
-                     foo.foo.put(_g_foo2)
+                     foo.foo = _g_foo2
                      return x
 
              foo = _monte.VarSlot(_monte.null)
@@ -720,32 +727,6 @@ class CompilerTest(unittest.TestCase):
              foo._m_init(_g_foo1, _monte.throw)
              _g_foo1
              """)
-
-    def test_escape(self):
-        self.eq_(
-            '''
-            var x := 1
-            escape e {
-              e(2)
-            } catch v {
-              x := v
-            }
-            ''',
-            """
-            _g_x1 = _monte.wrap(1)
-            x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
-            e = _monte.ejector("e")
-            try:
-                _g_escape3 = e(_monte.wrap(2))
-            except e._m_type, _g_e2:
-                v = _g_e2.args[0]
-                _g_x4 = v
-                x.put(_g_x4)
-                _g_escape3 = _g_x4
-            finally:
-                e.disable()
-            _g_escape3
-            """)
 
     def test_unusedEscape(self):
         self.eq_(

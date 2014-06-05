@@ -666,7 +666,7 @@ class ExpanderTest(unittest.TestCase):
                           [None],
                           ["Script", None,
                            [], []]])
-        self.assertEqual(self.parse("object foo extends baz {}"),
+        self.assertEqual(self.parse("object foo extends (baz.get()) {}"),
                          ["Def", ["FinalPattern", ["NounExpr", "foo"], None],
                           None,
                           ["HideExpr",
@@ -674,7 +674,7 @@ class ExpanderTest(unittest.TestCase):
                             [["Def", ["FinalPattern", ["NounExpr", "super"],
                                       None],
                               None,
-                              ["NounExpr", "baz"]],
+                              ["MethodCallExpr", ["NounExpr", "baz"], "get", []]],
                              ["Object", None,
                               ["FinalPattern", ["NounExpr", "foo"], None],
                               [None],
@@ -686,6 +686,27 @@ class ExpanderTest(unittest.TestCase):
                                   "callWithPair",
                                   [["NounExpr", "super"],
                                    ["NounExpr", "pair__1"]]]]]]]]]]])
+        self.assertEqual(self.parse("object foo extends baz {}"),
+                         ["Def", ["FinalPattern", ["NounExpr", "foo"], None],
+                          None,
+                          ["HideExpr",
+                           ["SeqExpr",
+                            [["Def", ["BindingPattern", ["NounExpr", "super"]],
+                              None,
+                              ["BindingExpr", ["NounExpr", "baz"]]],
+                             ["Object", None,
+                              ["FinalPattern", ["NounExpr", "foo"], None],
+                              [None],
+                              ["Script", None,
+                               [],
+                               [["Matcher",
+                                 ["FinalPattern", ["NounExpr", "pair__1"], None],
+                                 ["MethodCallExpr", ["NounExpr", "M"],
+                                  "callWithPair",
+                                  [["NounExpr", "super"],
+                                   ["NounExpr", "pair__1"]]]]]]]]]]])
+
+
 
     def test_to(self):
         self.assertEqual(self.parse("object foo { to baz() { x } }"),

@@ -3,7 +3,7 @@ import weakref
 from monte.runtime.base import MonteObject
 from monte.runtime.data import String, bwrap, null, true, false
 from monte.runtime.tables import ConstMap, ConstList
-from monte.runtime.guards.base import selflessGuard
+from monte.runtime.guards.base import deepFrozenGuard, selflessGuard
 
 BROKEN, EVENTUAL, NEAR = String(u"BROKEN"), String(u"EVENTUAL"), String(u"NEAR")
 _notARef = object()
@@ -63,7 +63,8 @@ class RefOps(MonteObject):
     """
     Public functions for ref manipulation. Exposed in safescope as 'Ref'.
     """
-
+    _m_fqn = "Ref"
+    _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, vat):
         self.vat = vat
 

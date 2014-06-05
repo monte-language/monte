@@ -507,7 +507,7 @@ class MonteLexer(object):
                     self._canStartIndentedBlock = False
                     self._queuedTokens.insert(0,
                         leafTag('INDENT', self.getSpan(self._indentPositionStack[-1],
-                                                       self.position)))
+                                                       self.position)[1]))
                     return self.leafEOL()
                 else:
                     self.syntaxError("Expected an indented block")

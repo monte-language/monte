@@ -7,7 +7,7 @@ from twisted.trial.itrial import ITestCase
 
 import monte
 from monte.runtime.load import TestCollector, buildPackage, eval as monte_eval
-from monte.runtime.scope import safeScope
+from monte.runtime.scope import bootScope, createSafeScope
 from monte.runtime.tables import ConstMap
 
 @implementer(ITestCase)
@@ -45,11 +45,11 @@ class MonteTestCase(object):
 
 def testSuite():
     srcdir = os.path.join(os.path.dirname(monte.__file__), 'src')
+    safeScope = createSafeScope(bootScope)
     asserts = monte_eval(open(os.path.join(srcdir, "unittest.mt")).read(), safeScope)
     tests = []
     c = TestCollector()
-    pkg = buildPackage(srcdir,
-                 u"", safeScope, c)
+    pkg = buildPackage(srcdir, u"", safeScope, c)
     pkg.configure(None).load(ConstMap({}))
     for (name, obj) in c.tests.d.items():
         tests.append(MonteTestCase(name.s, obj, asserts))

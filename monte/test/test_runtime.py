@@ -5,13 +5,13 @@ from monte.runtime.base import MonteObject, toQuote
 from monte.runtime.data import false, true, Integer, String
 from monte.runtime.load import (PackageMangler, TestCollector,
                                 eval as _monte_eval, getModuleStructure)
-from monte.runtime.scope import safeScope
+from monte.runtime.scope import bootScope
 from monte.runtime.tables import ConstList, ConstMap, FlexList, FlexMap
 
 
 def monte_eval(source, scope=None, **extras):
     if scope is None:
-        scope = safeScope.copy()
+        scope = bootScope.copy()
     scope.update(extras)
     return _monte_eval(source=source, scope=scope)
 
@@ -263,7 +263,7 @@ class AuditingTest(unittest.TestCase):
 
     def setUp(self):
         self.output = []
-        self.scope = safeScope.copy()
+        self.scope = bootScope.copy()
         self.scope['emit'] = self.output.append
 
     def eq_(self, src, result):
@@ -366,7 +366,7 @@ class BindingGuardTest(unittest.TestCase):
                             else:
                                 throw(`$noun: expected $guard, got ${audition.getGuard(noun)}`)
             """))
-        self.scope = safeScope.copy()
+        self.scope = bootScope.copy()
         self.scope["CheckGuard"] = CheckGuard
 
     def test_doesNotGuard(self):
@@ -933,6 +933,41 @@ class MapGuardTests(unittest.TestCase):
             "escape e {def x :Map[int, char] exit e := [3 => 'b'].diverge(); 1} catch v {2}"),
                          Integer(2))
 
+class SameGuardTests(unittest.TestCase):
+    def test_guard(self):
+        self.assertEqual(monte_eval("object foo {}; foo =~ _ :Same[foo]"), true)
+        self.assertEqual(monte_eval("object foo {}; null =~ _ :Same[foo]"), false)
+
+    def test_matchGet(self):
+        self.assertEqual(monte_eval("object foo {}; def g := Same[foo]; Same.matchGet(g, throw) == foo"),
+                         true)
+
+    def test_sameySame(self):
+        self.assertEqual(monte_eval("object foo {}; Same[foo] == Same[foo]"), true)
+
+
+class SubrangeGuardTests(unittest.TestCase):
+    def test_deepFrozen(self):
+        self.assertEqual(monte_eval("SubrangeGuard[int] =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("Selfless.passes(SubrangeGuard[int])"), true)
+
+    def test_fail(self):
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] {}} catch p {p}")),
+                         "__main$x has no `coerce` method")
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) {return a}}} catch p {p}")),
+                         "__main$x does not have a noun as its `coerce` result guard")
+        self.assertEqual(str(monte_eval("object z as DeepFrozen {}; try {object x implements SubrangeGuard[int] { to coerce(a, b) :z {return a}}} catch p {p}")),
+                         "__main$x does not have a determinable result guard, but <& z> :FinalSlot[<DeepFrozen>]")
+
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) :boolean {return a}}} catch p {p}")),
+                         "__main$x does not have a result guard implying int, but boolean")
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) :(1 + 1) {return a}}} catch p {p}")),
+                         "__main$x does not have a noun as its `coerce` result guard")
+
+    def test_success(self):
+        self.assertEqual(monte_eval("object x implements SubrangeGuard[int] { to coerce(a, b) :int {return 42}};def y :x := 3; y"), Integer(42))
+        self.assertEqual(monte_eval("object x implements SubrangeGuard[DeepFrozen] { to coerce(a, b) :int {return 42}}; def y :x := 3; y"), Integer(42))
+
 
 class DeepFrozenGuardTests(unittest.TestCase):
     def test_prims(self):
@@ -979,6 +1014,16 @@ class DeepFrozenGuardTests(unittest.TestCase):
             foo =~ _ :DeepFrozen
             """)), true)
 
+        self.assertEqual(monte_eval(dedent("""
+            def blee :int := 3
+            def baz :Same[blee] := blee
+            object foo implements DeepFrozen:
+                to doStuff(z):
+                    return baz
+            foo =~ _ :DeepFrozen
+            """)), true)
+
+
 
     def test_rejected(self):
         self.assertRaises(
@@ -1022,72 +1067,12 @@ class IntegerGuardTests(unittest.TestCase):
         monte_eval('def x :int := 1')
         self.assertRaises(RuntimeError, monte_eval, 'def x :int := "foo"')
 
-    def test_lt(self):
-        monte_eval('def x :(int < 5) := 1')
-        self.assertRaises(RuntimeError, monte_eval, 'def x :(int < 5) := 10')
-
-    def test_gt(self):
-        monte_eval('def x :(int > 5) := 10')
-        self.assertRaises(RuntimeError, monte_eval, 'def x :(int > 5) := 1')
-
-    def test_gte(self):
-        monte_eval('def x :(int >= 0) := 1')
-        monte_eval('def x :(int >= 0) := 0')
-        self.assertRaises(RuntimeError, monte_eval, 'def x :(int >= 0) := -1')
-
-    def test_lte(self):
-        monte_eval('def x :(int <= 9000) := 50')
-        monte_eval('def x :(int <= 9000) := 9000')
-        self.assertRaises(RuntimeError, monte_eval,
-                          'def x :(int <= 9000) := 9001')
-
-    def test_backwards(self):
-        monte_eval('def x :(0 <= int) := 1')
-        self.assertRaises(RuntimeError, monte_eval, 'def x :(0 <= int) := -1')
-
-    def test_compound_fails(self):
-        self.assertRaises(RuntimeError, monte_eval, '0 <= int <= 1')
-
 
 class FloatGuardTests(unittest.TestCase):
 
     def test_type(self):
         monte_eval('def x :float := 1.0')
         self.assertRaises(RuntimeError, monte_eval, 'def x :float := "foo"')
-
-    def test_lt(self):
-        monte_eval('def x :(float < 5.0) := 1.0')
-        self.assertRaises(RuntimeError, monte_eval,
-                          'def x :(float < 5.0) := 10.0')
-
-    def test_gt(self):
-        monte_eval('def x :(float > 5.0) := 10.0')
-        self.assertRaises(RuntimeError, monte_eval,
-                          'def x :(float > 5.0) := 1.0')
-
-    def test_gte(self):
-        monte_eval('def x :(float >= 0.0) := 1.0')
-        self.assertRaises(RuntimeError, monte_eval,
-                          'def x :(float >= 0.0) := -1.0')
-
-    def test_lte(self):
-        monte_eval('def x :(float <= 9000.0) := 50.0')
-        self.assertRaises(RuntimeError, monte_eval,
-                          'def x :(float <= 9000.0) := 9001.0')
-
-    def test_backwards(self):
-        monte_eval('def x :(0.0 <= float) := 1.0')
-        self.assertRaises(RuntimeError, monte_eval,
-                          'def x :(1.0 <= float) := 0.5')
-
-    def test_compound_fails(self):
-        self.assertRaises(RuntimeError, monte_eval, '0.0 <= float <= 1.0')
-
-    def test_integer_coercion(self):
-        monte_eval('def x :(float < 1) := 0.5')
-        self.assertRaises(RuntimeError, monte_eval,
-                          'def x :(float < 1) := 2.0')
-
 
 class TransparentGuardTests(unittest.TestCase):
     def test_reject(self):
@@ -1169,17 +1154,17 @@ MODULE_TEST_DIR = os.path.join(os.path.dirname(__file__), 'module_test')
 
 class ModuleTests(unittest.TestCase):
     def test_simpleModuleStructure(self):
-        m = getModuleStructure('foo', MODULE_TEST_DIR, safeScope, None)
+        m = getModuleStructure('foo', MODULE_TEST_DIR, bootScope, None)
         self.assertEqual(set(m.imports), set(['a', 'b']))
         self.assertEqual(set(m.exports), set(['c', 'd']))
 
     def test_nestedModuleStructure(self):
-        m = getModuleStructure('bar.blee', MODULE_TEST_DIR, safeScope, None)
+        m = getModuleStructure('bar.blee', MODULE_TEST_DIR, bootScope, None)
         self.assertEqual(set(m.imports), set([]))
         self.assertEqual(set(m.exports), set(['x']))
 
     def test_packageModuleStructure(self):
-        m = getModuleStructure('mypkg', MODULE_TEST_DIR, safeScope, None)
+        m = getModuleStructure('mypkg', MODULE_TEST_DIR, bootScope, None)
         self.assertEqual(set(m.imports), set(['a', 'b']))
         self.assertEqual(set(m.exports), set(['c', 'd']))
 
@@ -1187,32 +1172,32 @@ class ModuleTests(unittest.TestCase):
 class PackageManglerTests(unittest.TestCase):
 
     def test_readFiles(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         files = pkg.readFiles(String(u"."))
         self.assertEqual(set(f.s for f in files._keys),
                          set(['foo', 'bar/blee', 'mypkg/moduleA',
                               'mypkg/moduleB']))
 
     def test_loadFromSubdir(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         files = pkg.readFiles(String(u"."))
         m = files.get(String(u"bar/blee"))
         self.assertEqual(m.imports, [])
         self.assertEqual(m.exports, ['x'])
 
     def test_require(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         m = pkg.require(String(u'b'))
         self.assertEqual(m.requires, ['b'])
 
     def test_makeModuleEmpty(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         mod = pkg.makeModule(ConstMap({}))
         self.assertEqual(mod.imports, [])
         self.assertEqual(mod.exports, [])
 
     def test_makeModuleTree(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         modA = pkg.makeModule(ConstMap({}))
         modB = pkg.makeModule(ConstMap({}))
         modC = pkg.makeModule(ConstMap({String(u'a'): modA, String(u'b'): modB},
@@ -1221,14 +1206,14 @@ class PackageManglerTests(unittest.TestCase):
         self.assertEqual(modC.exports, ['a', 'b'])
 
     def test_makeModuleRequire(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         mod = pkg.makeModule(ConstMap({String(u'a'): pkg.require(String(u'b'))}))
         self.assertEqual(mod.imports, ['b'])
         self.assertEqual(mod.exports, ['a'])
 
     def test_testCollectorCollects(self):
         t = TestCollector()
-        pkg = PackageMangler(u"test", MODULE_TEST_DIR, safeScope, t)
+        pkg = PackageMangler(u"test", MODULE_TEST_DIR, bootScope, t)
         coll = pkg.testCollector()
         class TestOne(MonteObject):
             _m_fqn = "testOne"
@@ -1243,7 +1228,7 @@ class PackageManglerTests(unittest.TestCase):
                                      String(u"test.testTwo"): t2})
 
     def test_readPackage(self):
-        pkg = PackageMangler("test", MODULE_TEST_DIR, safeScope, None)
+        pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         subpkg = pkg.readPackage(String(u'mypkg'))
         self.assertEqual(set(subpkg.imports), set(['a', 'b']))
         self.assertEqual(set(subpkg.exports), set(['c', 'd']))

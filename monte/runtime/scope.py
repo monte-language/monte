@@ -1,12 +1,14 @@
 from monte.runtime.audit import auditedBy
 from monte.runtime.base import throw
 from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
-from monte.runtime.data import (Integer, true, false, nan, infinity, null)
+from monte.runtime.data import (Integer, String, true, false, nan, infinity, null)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
 from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, nullOkGuard,
-                                       selflessGuard, transparentGuard,
-                                       ParamDesc, MessageDesc, ProtocolDesc)
+                                       sameGuardMaker, selflessGuard,
+                                       subrangeGuardMaker,
+                                       transparentGuard, ParamDesc,
+                                       MessageDesc, ProtocolDesc)
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
                                        floatGuard, stringGuard, voidGuard)
 from monte.runtime.guards.tables import listGuard, mapGuard
@@ -22,7 +24,7 @@ from monte.runtime.m import theM
 from monte.runtime.text import simpleQuasiParser, quasiMatcher
 from monte.runtime.trace import trace, traceln
 
-safeScope = {
+bootScope = {
     ## Primitive non-literal values
     'true': true,
     'false': false,
@@ -40,6 +42,10 @@ safeScope = {
     # XXX Create this properly per-vat, when we have vats.
     "Ref": RefOps(None),
     "DeepFrozen": deepFrozenGuard,
+
+    # XXX move these somewhere importable instead, eventually
+    "Same": sameGuardMaker,
+    "SubrangeGuard": subrangeGuardMaker,
 
     ## Primitive: tracing
     'trace': trace,
@@ -108,8 +114,6 @@ safeScope = {
     '__auditedBy': auditedBy,
     '__equalizer': equalizer,
 
-    ## Code loading
-    'import': monteImport,
     # 'monte__quasiParser': monteQuasiParser,
     # 'Audition': auditionGuard,
 
@@ -141,6 +145,14 @@ safeScope = {
 
     'help': help,
 }
+
+def createSafeScope(scope):
+    loader = monteImport(bootScope)
+    bits = loader(String(u"prim"))
+    scope = scope.copy()
+    for k, v in bits.d.iteritems():
+        scope[k.s] = v
+    return scope
 
 # ioScope = {
 #     'timer': theTimer,

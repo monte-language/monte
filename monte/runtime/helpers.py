@@ -5,15 +5,16 @@ from monte.runtime.base import MonteObject, ejector, throw
 from monte.runtime.data import true, false, null, String, Integer, bwrap
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import MonteIterator
+from monte.runtime.guards.base import deepFrozenGuard, deepFrozenFunc
 from monte.runtime.ref import UnconnectedRef
 from monte.runtime.tables import ConstList, FlexList, ConstMap, FlexMap, mapMaker
 
-
+@deepFrozenFunc
 def validateFor(flag):
     if not flag:
         raise RuntimeError("For-loop body isn't valid after for-loop exits.")
 
-
+@deepFrozenFunc
 def accumulateList(coll, obj):
     it = coll._makeIterator()
     skip = ejector("listcomp_skip")
@@ -33,46 +34,40 @@ def accumulateList(coll, obj):
 
     return ConstList(acc)
 
-
+@deepFrozenFunc
 def accumulateMap(coll, obj):
     return mapMaker.fromPairs(accumulateList(coll, obj))
 
-
+@deepFrozenFunc
 def iterWhile(f):
     return MonteIterator((null, v) for v in iter(f, false))
 
 
 class Comparer(MonteObject):
-    def _check(self, left, right, first, second):
-        try:
-            return getattr(left.op__cmp(right), first)()
-        except RuntimeError:
-            try:
-                return getattr(right.op__cmp(left), second)()
-            except RuntimeError:
-                pass
-            raise  # re-raise from the first except clause.
+    _m_fqn = "__comparer"
+    _m_auditorStamps = (deepFrozenGuard,)
 
     def greaterThan(self, left, right):
-        return self._check(left, right, 'aboveZero', 'atMostZero')
+        return left.op__cmp(right).aboveZero()
 
     def geq(self, left, right):
-        return self._check(left, right, 'atLeastZero', 'belowZero')
+        return left.op__cmp(right).atLeastZero()
 
     def lessThan(self, left, right):
-        return self._check(left, right, 'belowZero', 'atLeastZero')
+        return left.op__cmp(right).belowZero()
 
     def leq(self, left, right):
-        return self._check(left, right, 'atMostZero', 'aboveZero')
+        return left.op__cmp(right).atMostZero()
 
     def asBigAs(self, left, right):
-        return self._check(left, right, 'isZero', 'isZero')
+        return left.op__cmp(right).isZero()
 
 comparer = Comparer()
 
 
 class MakeVerbFacet(MonteObject):
     _m_fqn = "__makeVerbFacet$verbFacet"
+    _m_auditorStamps = (deepFrozenGuard,)
     def curryCall(self, obj, verb):
         if not isinstance(verb, String):
             raise RuntimeError("%r is not a string" % (verb,))
@@ -83,6 +78,7 @@ class MakeVerbFacet(MonteObject):
 makeVerbFacet = MakeVerbFacet()
 
 
+@deepFrozenFunc
 def matchSame(expected):
     def sameMatcher(specimen, ej):
         if equalizer.sameEver(specimen, expected) is true:
@@ -91,7 +87,7 @@ def matchSame(expected):
             ej("%r is not %r" % (specimen, expected))
     return sameMatcher
 
-
+@deepFrozenFunc
 def switchFailed(specimen, *failures):
     raise RuntimeError("%s did not match any option: [%s]" % (
         specimen,
@@ -99,6 +95,7 @@ def switchFailed(specimen, *failures):
 
 
 _absent = object()
+@deepFrozenFunc
 def suchThat(x, y=_absent):
     if y is _absent:
         # 1-arg invocation.
@@ -109,7 +106,7 @@ def suchThat(x, y=_absent):
     else:
         return ConstList([x, None])
 
-
+@deepFrozenFunc
 def extract(x, instead=_absent):
     if instead is _absent:
         # 1-arg invocation.
@@ -128,13 +125,15 @@ def extract(x, instead=_absent):
 
 
 class Empty:
+    _m_fqn = "Empty"
+    _m_auditorStamps = (deepFrozenGuard,)
     def coerce(self, specimen, ej):
         if specimen.size() == Integer(0):
             return specimen
         else:
             throw.eject(ej, "Not empty: %s" % specimen)
 
-
+@deepFrozenFunc
 def splitList(cut):
     if not isinstance(cut, Integer):
         raise RuntimeError("%r is not an integer" % (cut,))
@@ -154,6 +153,7 @@ def splitList(cut):
 
 class BooleanFlow(MonteObject):
     _m_fqn = "__booleanFlow"
+    _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, vat):
         self.vat = vat
 
@@ -165,7 +165,7 @@ class BooleanFlow(MonteObject):
             raise RuntimeError("%r is not an integer" % (size,))
         return ConstList([false] + [self.broken()] * size.n)
 
-
+@deepFrozenFunc
 def makeViaBinder(resolver, guard):
     def bindit(specimen, ej):
         if guard is null:

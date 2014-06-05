@@ -234,7 +234,7 @@ metaExpr = 'meta' "." identifier:i (?(i == 'getState') -> "State"
                                    |?(i == 'scope') -> "Scope"
                                    |?(i == 'context') -> "Context"):s "(" ')' -> t.Meta(s)
 switchExpr = 'switch' parenExpr:e "{" (matcher:m br -> m)*:ms '}' -> t.Switch(e, ms)
-indentSwitchExpr = 'switch' parenExpr:e ':' EOLs tok('INDENT') br (indentMatcher:m br -> m)*:ms tok('DEDENT') -> t.Switch(e, ms)
+indentSwitchExpr = 'switch' parenExpr:e ':' EOLs tok('INDENT') br ((matcher | indentMatcher):m br -> m)*:ms tok('DEDENT') -> t.Switch(e, ms)
 
 tryExpr = 'try' block:tb catcher*:cs ('finally' block)?:fb -> t.Try(tb, cs, fb)
 indentTryExpr = 'try' indentBlock:tb indentCatcher*:cs (br 'finally' indentBlock)?:fb -> t.Try(tb, cs, fb)

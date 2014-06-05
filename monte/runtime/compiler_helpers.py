@@ -9,7 +9,6 @@ from monte.runtime.data import true, false, Character, String, Bool, Integer, Fl
 from monte.runtime.guards.base import anyGuard, deepFrozenGuard
 from monte.runtime.guards.data import booleanGuard
 from monte.runtime.meta import StaticContext
-from monte.runtime.scope import safeScope
 
 makeCharacter = Character
 

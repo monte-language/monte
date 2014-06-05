@@ -11,8 +11,9 @@ from monte.runtime.load import eval as monte_eval, monteImport
 # from monte.repl import startRepl
 
 # startRepl()
-from monte.runtime.scope import safeScope
-scope = safeScope.copy()
-scope["import"] = monteImport()
+from monte.runtime.scope import bootScope, createSafeScope
+safeScope = createSafeScope(bootScope)
+scriptScope = safeScope.copy()
+scriptScope["import"] = monteImport(safeScope)
 if len(sys.argv) > 1:
-    monte_eval(open(sys.argv[1]).read(), scope)
+    monte_eval(open(sys.argv[1]).read(), scriptScope)

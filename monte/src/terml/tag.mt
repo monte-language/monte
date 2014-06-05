@@ -4,7 +4,7 @@ export (Tag, makeTag)
 interface Tag :DeepFrozen guards TagStamp :DeepFrozen:
     pass
 
-object makeTag implements DeepFrozen:
+object makeTag as DeepFrozen:
     to asType():
         return Tag
     to run(code :nullOk[int >= 0], name :str, dataGuard :DeepFrozen):

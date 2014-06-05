@@ -51,7 +51,8 @@ kernelNodeInfo = [
     ('ListPattern', 2),
     ('ViaPattern', 2),
     ('BindingPattern', 1),
-    ('Character', 1)
+    ('Character', 1),
+    ('Module', 3)
 ]
 
 SHORT_INT, LONG_INT  = (4, 5) # indices of the two '.int.'s above
