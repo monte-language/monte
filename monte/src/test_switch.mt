@@ -5,7 +5,7 @@ def foo := null
 
 def makeIntPatternTests(assert):
 
-    def test_equal():
+    def test_pattern_equal():
         def foo(n):
             switch (n){
                 match == 0 { return 0 }
@@ -42,7 +42,7 @@ def makeIntPatternTests(assert):
         assert.equal(foo(0), 0)
         assert.equal(foo(42), 1)
 
-    return [test_equal, test_suchthat_pythonic, test_suchthat_brackets,
+    return [test_pattern_equal, test_suchthat_pythonic, test_suchthat_brackets,
             test_mixing_brackets]
 
     unittest([makeIntPatternTests])
