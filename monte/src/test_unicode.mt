@@ -1,6 +1,5 @@
 module unittest
-export(foo)     # Until https://github.com/monte-language/monte/issues/23 
-def foo := null
+export(makeUnicodeTest)     # Until https://github.com/monte-language/monte/issues/23 
 
 def makeUnicodeTest(assert):
     def test_unicode_char():
