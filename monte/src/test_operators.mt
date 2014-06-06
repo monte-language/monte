@@ -1,64 +1,63 @@
 module unittest
-export(foo)
-def foo := null
+export(makeOperatorTests)
 
 def makeOperatorTests(assert):
-    def test_rocket():
+    def test_op_rocket():
         def now := 3
         var stuff := ["what" => now]
 
         var fromStuff := 0
 
         for a => b in stuff:
-                fromStuff := b
+            fromStuff := b
 
         assert.equal(fromStuff, 3)
 
-    def test_asBigAs():
+    def test_op_asBigAs():
         assert.equal(4 <=> 4, true)
         assert.equal(4 <=> 8, false)
 
-    def test_assign():
+    def test_op_assign():
         def a := 3
         var b := 8
         assert.equal(a, 3)
         assert.equal(b, 8)
 
-    def test_exponent():
+    def test_op_exponent():
         assert.equal(2 ** 8, 256)
 
-    def test_multiply():
+    def test_op_multiply():
         assert.equal(2 * 8, 16)
 
-    def test_equality():
+    def test_op_equality():
         assert.equal(4 == 4, true)
         assert.equal(4 == 7, false)
 
-    def test_lessThan():
+    def test_op_lessThan():
         assert.equal(2 < 5, true)
         assert.equal(5 < 2, false)
 
-    def test_greaterThan():
+    def test_op_greaterThan():
         assert.equal(9 > 3, true)
         assert.equal(3 > 9, false)
 
-    def test_lessThanOrEqual():
+    def test_op_lessThanOrEqual():
         assert.equal(6 <= 9, true)
         assert.equal(6 <= 6, true)
         assert.equul(9 <= 6, false)
 
-    def test_greaterThanOrEqual():
+    def test_op_greaterThanOrEqual():
         assert.equal(8 >= 0, true)
         assert.equal(0 >= 0, true)
         assert.equal(0 >= 8, false)
 
-    def test_and():
+    def test_op_and():
         assert.equal(true && true, true)
         assert.equal(false && false, true)
         assert.equal(true && false, false)
         assert.equal(false && true, false)
 
-    return [test_rocket, test_asBigAs, test_assign, test_exponent, test_multiply, test_equality,
-                test_lessThan, test_greaterThan, test_lessThanOrEqual, test_greaterThanOrEqual, test_and]
+    return [test_op_rocket, test_op_asBigAs, test_op_assign, test_op_exponent, test_op_multiply, test_op_equality,
+                test_op_lessThan, test_op_greaterThan, test_op_lessThanOrEqual, test_op_greaterThanOrEqual, test_op_and]
 
 unittest([makeOperatorTests])
