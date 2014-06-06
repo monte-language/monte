@@ -12,5 +12,6 @@ def ometaTests := pkg.readFile("test_ometa.mt")([=> makeOMeta, => unittest])
 def terml := pkg.readPackage("./terml")()
 def testUnicode := pkg.readFile("test_unicode.mt")([=> unittest])
 def testSwitch := pkg.readFile("test_switch.mt")([=> unittest])
+def testOperators := pkg.readFile("test_operators.mt")([=> unittest])
 
-pkg.makeModule(terml | blackjack | example | ometaTests | testUnicode | regionTests)
+pkg.makeModule(terml | blackjack | example | ometaTests | testUnicode | regionTests | testOperators)
