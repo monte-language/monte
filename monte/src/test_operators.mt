@@ -3,15 +3,13 @@ export(makeOperatorTests)
 
 def makeOperatorTests(assert):
     def test_op_rocket():
-        def now := 3
-        var stuff := ["what" => now]
+        def ar := [1,3]
+        var change_me := 0
 
-        var fromStuff := 0
+        for a => b in ar:
+            change_me := b
 
-        for a => b in stuff:
-            fromStuff := b
-
-        assert.equal(fromStuff, 3)
+        assert.equal(change_me, 3)
 
     def test_op_asBigAs():
         assert.equal(4 <=> 4, true)
