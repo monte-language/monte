@@ -67,9 +67,9 @@ class CompilerTest(unittest.TestCase):
         """)
 
     def test_guardedVar(self):
-        self.eq_("var x :(1..!10) := 1",
+        self.eq_("var x :int := 1",
         """
-        _g_guard1 = _m_outerScope["__makeOrderedSpace"].op__till(_monte.wrap(1), _monte.wrap(10))
+        _g_guard1 = _m_outerScope["int"]
         _g_x2 = _monte.wrap(1)
         x = _monte.VarSlot(_g_guard1, _g_x2, _monte.throw)
         _g_x2
