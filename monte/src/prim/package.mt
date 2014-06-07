@@ -4,12 +4,13 @@ def files := pkg.readFiles(".")
 def [=> OrderedSpaceMaker,
      => OrderedRegionMaker] := files["regions"]([=> unittest])
 
-def [=> charSpace,
+def [=> __makeOrderedSpace,
+     => charSpace,
      => intSpace,
-      => floatSpace] := files["primSpaces"]([=> OrderedSpaceMaker])
+     => floatSpace] := files["primSpaces"]([=> OrderedSpaceMaker])
 
 pkg.makeModule([
-    "__makeOrderedSpace" => OrderedSpaceMaker,
+    => __makeOrderedSpace,
     "char" => charSpace,
     "int" => intSpace,
     "float" => floatSpace])

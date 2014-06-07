@@ -61,7 +61,6 @@ bootScope = {
     # '__makeGuardedSlot': makeGuardedSlot,
     # '__makeTwine': makeTwine,
     # 'term__quasiParser': makeQBuilder,
-    '__makeOrderedSpace': null,
 
     ## Primitive: guards
     'any': anyGuard,
