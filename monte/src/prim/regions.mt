@@ -515,37 +515,6 @@ object OrderedRegionMaker as DeepFrozen:
 object OrderedSpaceMaker as DeepFrozen:
 
     /**
-     * Given a value of a type whose reflexive (x <=> x) instances are
-     * fully ordered, this returns the corresponding OrderedSpace
-     */
-    to spaceOfValue(value):
-        if (value =~ i :int):
-            return int
-        else if (value =~ f :float):
-            return float
-        else if (value =~ c :char):
-            return char
-        else:
-            def type := value._getAllegedType()
-            return OrderedSpaceMaker(type, M.toQuote(type))
-
-    /**
-     * start..!bound is equivalent to
-     * (space >= start) & (space < bound)
-     */
-    to op__till(start, bound):
-        def space := OrderedSpaceMaker.spaceOfValue(start)
-        return (space >= start) & (space < bound)
-
-    /**
-     * start..stop is equivalent to
-     * (space >= start) & (space <= stop)
-     */
-    to op__thru(start, stop):
-        def space := OrderedSpaceMaker.spaceOfValue(start)
-        return (space >= start) & (space <= stop)
-
-    /**
      * Given a type whose reflexive (x <=> x) instances are fully
      * ordered, this makes an OrderedSpace for making Regions and
      * Twisters for those instances using operator notation.
