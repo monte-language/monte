@@ -1,6 +1,4 @@
 module unittest
-export (foo)
-def foo := null
 
 def testIterable(assert):
     assert.equal([x for x in 0..!5], [0, 1, 2, 3, 4])

@@ -1,5 +1,4 @@
 module unittest
-export (makeIntPatternTests)
 
 def makeIntPatternTests(assert):
 
@@ -15,7 +14,7 @@ def makeIntPatternTests(assert):
     def test_suchthat_pythonic():
         def foo(n):
             switch(n):
-                match x ? (x < 3): 
+                match x ? (x < 3):
                     return 0
                 match _ :
                     return 1

@@ -37,6 +37,23 @@ def eval(source, scope=None, origin="__main"):
     return mod._m_evalResult
 
 
+class ModuleMap(ConstMap):
+    _m_fqn = "ModuleMap"
+    def __init__(self, configs, d, keys=None):
+        ConstMap.__init__(self, d, keys=None)
+        self.configs = configs
+
+    def _m_or(self, behind):
+        newconfigs = self.configs + getattr(behind, 'configs', ())
+        newmap = ConstMap._m_or(self, behind)
+        return ModuleMap(newconfigs, newmap.d, newmap._keys)
+
+    def getConfigs(self):
+        return ConstList(tuple(self.configs))
+
+    # XXX add maker and uncall
+
+
 class FileModuleStructure(MonteObject):
     _m_fqn = "FileModuleStructure"
     def __init__(self, filename, imports, exports, scope):
@@ -89,6 +106,7 @@ class FileModuleConfiguration(MonteObject):
     def load(self, mapping):
         if not isinstance(mapping, (ConstMap, FlexMap)):
             raise RuntimeError("must be a mapping")
+        # XXX reorganize to be less side-effect-y
         if self._contents is not None:
             if self._inputs is not mapping:
                 raise RuntimeError("you are confused somehow")
@@ -105,8 +123,8 @@ class FileModuleConfiguration(MonteObject):
         self._contents = ConstMap(d)
 
     def export(self):
-        return ConstMap(dict((String(ex), ConfigurationExport(self, ex))
-                             for ex in self.structure.exports))
+        return ModuleMap((self,), dict((String(ex), ConfigurationExport(self, ex))
+                                       for ex in self.structure.exports))
 
     def _printOn(self, out):
         out.raw_print(u"<")
@@ -132,6 +150,11 @@ class ConfigurationExport(MonteObject):
     def load(self, mapping):
         self.config.load(mapping)
         return self.config._contents.get(String(self.name))
+
+    def _printOn(self, out):
+        out._m_print(self.config)
+        out.raw_print(u"::" + self.name)
+
 
 def extractArglist(mapping, argnames):
         argnames = set()
@@ -165,6 +188,7 @@ class SyntheticModuleConfiguration(MonteObject):
     def load(self, mapping):
         if not isinstance(mapping, (ConstMap, FlexMap)):
             raise RuntimeError("must be a mapping")
+        # XXX reorganize to be less side-effect-y
         if self._contents is not None:
             if self._inputs is not mapping:
                 raise RuntimeError("you are confused somehow")
@@ -172,12 +196,15 @@ class SyntheticModuleConfiguration(MonteObject):
         package = {}
         for k, v in self.structure.config.d.items():
             package[k] = v.load(mapping)
+
+        for config in getattr(self.structure.config, 'configs', ()):
+            config.load(mapping)
         self._inputs = mapping
         self._contents = ConstMap(package)
 
     def export(self):
-        return ConstMap(dict((String(ex), ConfigurationExport(self, ex))
-                             for ex in self.structure.exports))
+        return ModuleMap((self,), dict((String(ex), ConfigurationExport(self, ex))
+                                    for ex in self.structure.exports))
 
 
 class RequireConfiguration(MonteObject):
@@ -247,7 +274,9 @@ class TestCollector(MonteObject):
         if not isinstance(tests, (ConstList, FlexList)):
             raise RuntimeError("must be a list of test functions")
         for item in tests.l:
-            self.tests.put(String(prefix  + '.' + item._m_fqn), item)
+            if prefix:
+                prefix += '.'
+            self.tests.put(String(prefix + item._m_fqn.replace('$', '.')), item)
         return null
 
 
@@ -324,9 +353,13 @@ class PackageMangler(MonteObject):
             raise RuntimeError("expected a string")
         subpkgPath = subpkgName.s
         subpkgName = os.path.normpath(subpkgPath)
+        if self.name:
+            name = u'.'.join([self.name, subpkgName])
+        else:
+            name = subpkgName
         subpkg = buildPackage(
             os.path.join(self.root, subpkgPath),
-            u'.'.join([self.name, subpkgName]),
+            name,
             self.scope,
             self._testCollector)
         return subpkg
