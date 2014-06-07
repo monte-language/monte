@@ -1,6 +1,4 @@
 module makeOMeta, unittest
-export (foo)
-def foo := null
 
 def makeRuntimeTests(assert):
     def test_anything():

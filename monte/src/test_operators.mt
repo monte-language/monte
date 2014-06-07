@@ -1,5 +1,4 @@
 module unittest
-export(makeOperatorTests)
 
 def makeOperatorTests(assert):
     def test_op_rocket():

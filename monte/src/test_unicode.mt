@@ -1,5 +1,4 @@
 module unittest
-export(makeUnicodeTest)     # Until https://github.com/monte-language/monte/issues/23 
 
 def makeUnicodeTest(assert):
     def test_unicode_char():
