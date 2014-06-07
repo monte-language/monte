@@ -53,6 +53,9 @@ class FileModuleStructure(MonteObject):
     def run(self, params=None):
         return self.configure(params).export()
 
+    def _printOn(self, out):
+        out.raw_print("<Module %s>" % (self.filename,))
+
 
 class SyntheticModuleStructure(MonteObject):
     _m_fqn = "SyntheticModuleStructure"
@@ -101,10 +104,22 @@ class FileModuleConfiguration(MonteObject):
                  origin=modname)(*args)
         self._contents = ConstMap(d)
 
-
     def export(self):
         return ConstMap(dict((String(ex), ConfigurationExport(self, ex))
                              for ex in self.structure.exports))
+
+    def _printOn(self, out):
+        out.raw_print(u"<")
+        out._m_print(self.structure)
+        out.raw_print(u"([")
+        if self.structure.imports:
+            for name in self.structure.imports[:-1]:
+                out.raw_print(u"%s => " % (name,))
+                out._m_print(self.args.d[String(name)])
+                out.raw_print(u", ")
+            out.raw_print(u"%s => " % (self.structure.imports[-1],))
+            out._m_print(self.args.d[String(self.structure.imports[-1])])
+        out.raw_print(u"])")
 
 
 class ConfigurationExport(MonteObject):
