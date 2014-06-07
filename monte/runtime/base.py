@@ -88,7 +88,8 @@ class MonteObject(object):
         if self._m_matcherNames:
             return _MonteMatcher(self, verb)
         else:
-            raise AttributeError(verb)
+            # Has to be AttributeError because some Python code might use getattr()
+            raise AttributeError("No such method: %s.%s()" % (self._m_fqn, verb))
 
     def __call__(self, *args):
         return self.run(*args)
