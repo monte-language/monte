@@ -10,23 +10,17 @@ def asciiShift(bs):
 def asciiUnshift(bs):
     return ''.join(chr((ord(b) - 32) % 256) for b in bs)
 
-LONG_SHIFT = 15
-LONG_BASE = 1 << LONG_SHIFT
-LONG_MASK = LONG_BASE - 1
-
 kernelNodeInfo = [
     ('null', 0),
+    ('true', 0),
+    ('false', 0),
     ('.String.', None),
     ('.float64.', None),
     ('.char.', None),
-    # different tags for short ints...
     ('.int.', None),
-    # ... and long ints
-    ('.int.', None),
-    # this one for small tuples...
     ('.tuple.', None),
-    # ... this one for large
-    ('.tuple.', None),
+    ('.bag.', None),
+    ('.attr.', 2),
     ('LiteralExpr', 1),
     ('NounExpr', 1),
     ('BindingExpr', 1),
@@ -55,12 +49,49 @@ kernelNodeInfo = [
     ('Module', 3)
 ]
 
-SHORT_INT, LONG_INT  = (4, 5) # indices of the two '.int.'s above
-BIG_TUPLE, SMALL_TUPLE  = (6, 7) # indices of the two '.int.'s above
-
 nodeLookup = dict((v[0], k) for k, v in enumerate(kernelNodeInfo))
 arities = dict(kernelNodeInfo)
 tags = dict((i, Tag(k)) for (i, (k, a)) in enumerate(kernelNodeInfo))
+
+def zze(val):
+  if val < 0:
+    return ((val * 2) ^ -1) | 1
+  else:
+    return val * 2
+
+
+def zzd(val):
+    if val & 1:
+        return (val / 2) ^ -1
+    return val / 2
+
+
+def dumpVarint(value):
+    if value == 0:
+        target = "\x00"
+    else:
+        target = []
+    while value > 0:
+        chunk = value & 0x7f
+        value >>= 7
+        if value > 0:
+            target.append(chr(chunk | 0x80))
+        else:
+            target.append(chr(chunk))
+    return asciiShift(target)
+
+
+def loadVarint(data, i):
+    val = 0
+    pos = 0
+    while i < len(data):
+        byte = (ord(data[i]) - 32) % 256
+        val |= (byte & 0x7f) << pos
+        pos += 7
+        i += 1
+        if not (byte & 0x80):
+            return val, i
+    raise ValueError("Input truncated")
 
 
 def load(data):
@@ -93,22 +124,10 @@ def loadTerm(data, i, dataStack, opStack):
     arity = arities[tag.name]
     literalVal = None
     if tag.name == '.int.':
-        if kind == SHORT_INT:
-            literalVal = readInt32(data, i)
-            i += 4
-        else:
-            literalVal = 0
-            siz = readInt32(data, i)
-            i += 4
-            chunks = []
-            for j in range(siz):
-                chunk = struct.unpack('!h', asciiUnshift(data[i:i + 2]))[0]
-                chunks.append(chunk)
-                i += 2
-                literalVal |= (chunk << LONG_SHIFT * j)
+        val, i = loadVarint(data, i)
+        literalVal = zzd(val)
     elif tag.name == '.String.':
-        siz = readInt32(data, i)
-        i += 4
+        siz, i = loadVarint(data, i)
         literalVal = data[i:i + siz].decode('utf-8')
         i += siz
     elif tag.name == '.float64.':
@@ -122,22 +141,13 @@ def loadTerm(data, i, dataStack, opStack):
             literalVal = de.decode(data[i])
             i += 1
     elif tag.name == '.tuple.':
-        if kind == BIG_TUPLE:
-            arity = readInt32(data, i)
-            i += 4
-        else:
-            arity = ord(asciiUnshift(data[i]))
-            i += 1
+            arity, i = loadVarint(data, i)
     if arity is None:
         dataStack.append(Term(tag, literalVal, (), None))
     else:
         opStack.append(createTerm(tag, arity))
         opStack.extend([loadTerm] * arity)
     return i
-
-
-def readInt32(data, i):
-    return struct.unpack('!i', asciiUnshift(data[i:i + 4]))[0]
 
 
 def dump(ast):
@@ -149,44 +159,16 @@ def dump(ast):
 def dumpTerm(term, out):
     o = term.data
     name = term.tag.name
+    out.write(asciiShift(chr(nodeLookup[name])))
     if name == '.int.':
-        if abs(o) < 2**31:
-            out.write(asciiShift(chr(SHORT_INT)))
-            writeInt32(o, out)
-        else:
-            out.write(asciiShift(chr(LONG_INT)))
-            chunks = []
-            done = False
-            while True:
-                if abs(o) > LONG_BASE:
-                    c = o & LONG_MASK
-                else:
-                    c = o
-                chunks.append(struct.pack('!h', c))
-                o >>= LONG_SHIFT
-                if o == 0:
-                    break
-                if o == -1:
-                    if done:
-                        break
-                    done = True
-            writeInt32(len(chunks), out)
-            out.write(asciiShift(''.join(chunks)))
-        return
+        out.write(dumpVarint(zze(o)))
     elif name == '.tuple.':
-        if len(term.args) > 255:
-            out.write(asciiShift(chr(BIG_TUPLE)))
-            out.write(asciiShift(struct.pack('!i', len(t.args))))
-        else:
-            out.write(asciiShift(chr(SMALL_TUPLE)))
-            out.write(asciiShift(chr(len(term.args))))
+        out.write(dumpVarint(len(term.args)))
         for t in term.args:
             dumpTerm(t, out)
-        return
-    out.write(asciiShift(chr(nodeLookup[name])))
-    if name == '.String.':
+    elif name == '.String.':
         bs = o.encode('utf-8')
-        writeInt32(len(bs), out)
+        out.write(dumpVarint(len(bs)))
         out.write(bs)
     elif name == '.float64.':
         out.write(asciiShift(struct.pack('!d', o)))
@@ -195,7 +177,3 @@ def dumpTerm(term, out):
     else:
         for t in term.args:
             dumpTerm(t, out)
-
-
-def writeInt32(i, out):
-    out.write(asciiShift(struct.pack('!i', i)))

@@ -490,7 +490,7 @@ class CompilerTest(unittest.TestCase):
                     }
                     foo._m_audit(_m_auditors, _m_outerScope)
 
-                _m_objectExpr = "0 :)!   #foo '# )!   *DeepFrozen)!   $Data1 ' ' "
+                _m_objectExpr = "2 <+##foo '# +#*DeepFrozen+#$Data3 ' ' "
 
             foo = _m_foo_Script([_m_outerScope["DeepFrozen"], _m_outerScope["Data"]])
             foo
@@ -533,7 +533,7 @@ class CompilerTest(unittest.TestCase):
                 def run(foo):
                     return _m_outerScope["__makeList"](foo.x, foo.y, foo.z, foo.w)
 
-                _m_objectExpr = "0 :)!   #foo '# )!   *DeepFrozen)!   $Data1 '!2 !   #run'  ,)!   *__makeList!   #run'$)!   !x)!   !y)!   !z)!   !w' "
+                _m_objectExpr = "2 <+##foo '# +#*DeepFrozen+#$Data3 '!4 ##run'  .+#*__makeList##run'$+#!x+#!y+#!z+#!w' "
 
             _g_guard1 = _m_outerScope["int"]
             x = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
@@ -562,7 +562,7 @@ class CompilerTest(unittest.TestCase):
                     }
                     foo._m_audit(_m_auditors, _m_outerScope)
 
-                _m_objectExpr = '0 :)!   #foo \'")!   $Data)!   *DeepFrozen1 \' \' '
+                _m_objectExpr = '2 <+##foo \'"+#$Data+#*DeepFrozen3 \' \' '
 
             foo = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]])
             foo
@@ -587,7 +587,7 @@ class CompilerTest(unittest.TestCase):
                     }
                     foo._m_audit(_m_auditors, _m_outerScope)
 
-                _m_objectExpr = '0 <)!   #foo \'")!   $Data)!   *DeepFrozen1 \' \' '
+                _m_objectExpr = '2 >+##foo \'"+#$Data+#*DeepFrozen3 \' \' '
 
             foo = _monte.VarSlot(_monte.null)
             _g_foo1 = _m_foo_Script([_m_outerScope["Data"], _m_outerScope["DeepFrozen"]], (foo, _monte.VarSlot.asType().get(_m_outerScope["Data"])))
@@ -774,7 +774,7 @@ class CompilerTest(unittest.TestCase):
                      boz.b = _g_b2
                      return _monte.StaticContext('__main$foo$boz', ['a', 'b'], _m_boz_Script._m_objectExpr)
 
-                 _m_objectExpr = '0 :)!   #boz \'! 1 \'!2 !   $blee\'  +\'"4)!   !b)!   !a9!   \'Context\' '
+                 _m_objectExpr = '2 <+##boz \'! 3 \'!4 #$blee\'  -\'"6+#!b+#!a;#\'Context\' '
 
              class _m_foo_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo'
