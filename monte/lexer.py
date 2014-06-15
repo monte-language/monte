@@ -894,6 +894,14 @@ class MonteLexer(object):
                 else:
                     self.nextChar()
                     return unichr(v)
+            if nex == 'x':
+                try:
+                    v = int(self.nextChar() + self.nextChar(), 16)
+                except ValueError:
+                    self.syntaxError('\\u escape must be four hex digits')
+                else:
+                    self.nextChar()
+                    return unichr(v)
             if nex == EOF:
                 self.syntaxError("end of file in middle of literal")
             c = {
