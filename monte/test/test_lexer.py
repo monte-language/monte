@@ -19,6 +19,7 @@ class LexerTests(unittest.TestCase):
         self.assertEqual(lex("'z'"),          [Term(Tag(".char."), "z", None, None)])
         self.assertEqual(lex("'\\n'"),        [Term(Tag(".char."), "\n", None, None)])
         self.assertEqual(lex("'\\u0061'"),    [Term(Tag(".char."), "a", None, None)])
+        self.assertEqual(lex("'\\x61'"),      [Term(Tag(".char."), "a", None, None)])
 
     def test_string(self):
         self.assertEqual(lex('"foo\\\nbar"'), [Term(Tag(".String."), 'foobar', None, None)])
