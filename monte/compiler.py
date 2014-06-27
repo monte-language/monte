@@ -454,7 +454,7 @@ class PythonWriter(object):
             return n
 
     def generate_Escape(self, out, ctx, node):
-        patt, body, catcher = node.args
+        patt, body, catchpatt, catchbody = node.args
         bodyScope = scope(body)
         pattScope = scope(patt)
         # only generate ejector code if it's mentioned in the body
@@ -471,10 +471,10 @@ class PythonWriter(object):
             val = self._generate(sub, newctx, body)
             sub.writeln("%s = %s" % (escapeTemp, val))
             out.writeln("except %s._m_type, %s:" % (ej, ejTemp))
-            if catcher.tag.name != 'null':
+            if catchpatt.tag.name != 'null':
                 self._generatePattern(sub, ctx, None,
-                                      ejTemp + '.args[0]', catcher.args[0])
-                val = self._generate(sub, ctx, catcher.args[1])
+                                      ejTemp + '.args[0]', catchpatt)
+                val = self._generate(sub, ctx, catchbody)
                 sub.writeln("%s = %s" % (escapeTemp, val))
             else:
                 sub.writeln("%s = %s.args[0]" % (escapeTemp, ejTemp))

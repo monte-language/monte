@@ -1,12 +1,13 @@
 from monte.runtime.base import MonteObject, ejector, Throw, throw, toQuote, toString
-from monte.runtime.data import MonteNull, Bool, Character, Integer, Float, String, bwrap, true, false, null
+from monte.runtime.data import (MonteNull, Bool, Bytestring, Character, Integer,
+                                Float, String, bwrap, true, false, null)
 from monte.runtime.flow import monteLooper
 
 def tryCoerce(guard, specimen):
     ej = ejector("coercion attempt")
     try:
         return guard.coerce(specimen, ej)
-    except ej._m_type, p:
+    except ej._m_type:
         return None
     finally:
         ej.disable()
@@ -129,8 +130,8 @@ deepFrozenGuard = DeepFrozenGuard()
 DeepFrozenGuard._m_auditorStamps = (deepFrozenGuard,)
 
 #To avoid circular imports
-for o in (MonteNull, Bool, Character, Integer, Float, String, Throw,
-          monteLooper):
+for o in (MonteNull, Bool, Bytestring, Character, Integer, Float, String,
+          Throw, monteLooper):
     o._m_auditorStamps = (deepFrozenGuard,)
 
 

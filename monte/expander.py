@@ -249,8 +249,8 @@ Matcher(@patternScope @blockScope) -> patternScope.add(blockScope).hide()
 If(@testScope @consqScope @altScope) -> testScope.add(consqScope).hide().add(altScope).hide()
 KernelTry(@tryScope @patternScope @catchScope) -> tryScope.hide().add(patternScope.add(catchScope)).hide()
 Finally(@tryScope @finallyScope) -> tryScope.hide().add(finallyScope).hide()
-Escape(@ejScope @bodyScope Catch(@argScope @catcherScope)) -> ejScope.add(bodyScope).hide().add(argScope.add(catcherScope)).hide()
-Escape(@ejScope @bodyScope null) -> ejScope.add(bodyScope).hide()
+Escape(@ejScope @bodyScope null null) -> ejScope.add(bodyScope).hide()
+Escape(@ejScope @bodyScope @argScope @catcherScope) -> ejScope.add(bodyScope).hide().add(argScope.add(catcherScope)).hide()
 
 MatchBind(@specimen @pattern) -> specimen.add(pattern)
 
@@ -492,7 +492,7 @@ Object(@doco @name @auditors Function(@params @guard @block))
     -> t.Object(doco, name, auditors, t.Script(None,
                                   [t.Method(doco, "run", params, guard,
                                        t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
-                                           t.SeqExpr([block, t.NounExpr("null")]), None))],
+                                           t.SeqExpr([block, t.NounExpr("null")]), None, None))],
                                   []))
 
 Object(@doco @name @auditors Script(null @methods @matchers)) -> t.Object(doco, name, auditors, t.Script(None, methods, matchers))
@@ -521,7 +521,7 @@ objectSuper :doco :name :auditors :extends :methods :matchers :maybeSlot !(self.
                            mcall("M", "callWithPair", t.NounExpr("super"), p))]))
        ] + maybeSlot))
 To(:doco @verb @params @guard @block) -> t.Method(doco, verb, params, guard, t.Escape(t.FinalPattern(t.NounExpr("__return"), None),
-                                                  t.SeqExpr([block, t.NounExpr("null")]), None))
+                                                  t.SeqExpr([block, t.NounExpr("null")]), None, None))
 
 For(:key :value @coll @block @catcher)
     -> expandFor(self, key, value, coll, block, catcher)
@@ -544,12 +544,12 @@ kerneltry :tryexpr :finallyexpr -> t.Finally(tryexpr, finallyexpr)
 
 While(@test @block @catcher) = expandWhile(test block catcher)
 
-expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", mcall("__iterWhile", "run", t.Object(None, t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [], None, test)], []))), t.Object("While loop body", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.IgnorePattern(None), t.IgnorePattern(None)], t.NounExpr("boolean"),  t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None), t.NounExpr("true")]))], []))), catcher)
+expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", mcall("__iterWhile", "run", t.Object(None, t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [], None, test)], []))), t.Object("While loop body", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.IgnorePattern(None), t.IgnorePattern(None)], t.NounExpr("boolean"),  t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None, None), t.NounExpr("true")]))], []))), *catcher)
 
 When([@arg] @block :catchers @finallyblock) expandWhen(arg block catchers finallyblock)
 When(@args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", t.MethodCallExpr(t.NounExpr("__makeList"), "run", args)) block catchers finallyblock)
 
-expandWhen :arg :block [(Catch(@p @b) -> (p, b))*:catchers] :finallyblock !(self.mktemp("resolution")):resolution kerneltry(expandTryCatch(t.If(mcall("Ref", "isBroken", resolution), mcall("Ref", "broken", mcall("Ref", "optProblem", resolution)), block), catchers) finallyblock):body -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, body)], []))))
+expandWhen :arg :block [([@p @b] -> (p, b))*:catchers] :finallyblock !(self.mktemp("resolution")):resolution kerneltry(expandTryCatch(t.If(mcall("Ref", "isBroken", resolution), mcall("Ref", "broken", mcall("Ref", "optProblem", resolution)), block), catchers) finallyblock):body -> t.HideExpr(mcall("Ref", "whenResolved", arg, t.Object("when-catch 'done' function", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.FinalPattern(resolution, None)], None, body)], []))))
 
 """
 
@@ -579,8 +579,8 @@ def matchExpr(self, matchers, sp, failures):
             t.SeqExpr([
                 t.Def(m.args[0], ej, sp),
                 m.args[1]]),
-            t.Catch(t.FinalPattern(fail, None),
-                    block))
+            t.FinalPattern(fail, None),
+            block)
     return block
 
 def expandTryCatch(tryblock, catchers):
@@ -668,6 +668,7 @@ def expandFor(self, key, value, coll, block, catcher):
                                   t.Def(value, None, vTemp),
                                   block,
                                   t.NounExpr("null")]),
+                              None,
                               None)]))],
             []))
     return t.Escape(
@@ -682,7 +683,7 @@ def expandFor(self, key, value, coll, block, catcher):
                            [coll, obj]),
                        t.Assign(fTemp, t.NounExpr("false"))),
                    t.NounExpr("null")]),
-        catcher)
+        *catcher)
 
 
 def expandComprehension(self, key, value, coll, filtr, exp, collector):
@@ -751,13 +752,13 @@ def expandMatchBind(self, spec, patt):
                 t.SeqExpr([
                     t.Def(patt, ejector, sp),
                     mcall("__makeList", "run",
-                          TRUE, *[t.BindingExpr(n) for n in patternNouns])]),
-                t.Catch(t.FinalPattern(problem, None),
-                        t.SeqExpr([
-                            t.Def(slotpatt(broken), None,
-                                  mcall("Ref", "broken", problem)),
-                            mcall("__makeList", "run",
-                                  FALSE, *([t.BindingExpr(broken)] * len(patternNouns)))])))),
+                        TRUE, *[t.BindingExpr(n) for n in patternNouns])]),
+                t.FinalPattern(problem, None),
+                t.SeqExpr([
+                    t.Def(slotpatt(broken), None,
+                          mcall("Ref", "broken", problem)),
+                    mcall("__makeList", "run",
+                          FALSE, *([t.BindingExpr(broken)] * len(patternNouns)))]))),
         result])
 
 def broke(br, ex):

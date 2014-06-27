@@ -7,7 +7,9 @@ def [=> convertToTerm] := files["convertToTerm"]([=> makeTerm, => Term,
                                                   => makeTag, => unittest])
 def [=> termFactory] := files["termFactory"]([=> makeTerm, => makeTag,
                                               => convertToTerm])
+def [=> baseSchema] := files["schema"]([=> convertToTerm, => termFactory,
+                                        => unittest])
 
-def terml := pkg.makeModule([=> Tag, => Term, => makeTag, => makeTerm,
-                             => termFactory])
+def terml := pkg.makeModule([=> Tag, => Term, => baseSchema, => makeTag,
+                             => makeTerm, => termFactory])
 terml
