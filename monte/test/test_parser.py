@@ -433,8 +433,8 @@ class ParserTest(unittest.TestCase):
         While expression.
         """
         parse = self.getParser("blockExpr")
-        self.assertEqual(parse("while (true) {1}"), ["While", ["NounExpr", "true"], ["LiteralExpr", 1], None])
-        self.assertEqual(parse("while (true):\n 1"), ["While", ["NounExpr", "true"], ["LiteralExpr", 1], None])
+        self.assertEqual(parse("while (true) {1}"), ["While", ["NounExpr", "true"], ["LiteralExpr", 1], [None, None]])
+        self.assertEqual(parse("while (true):\n 1"), ["While", ["NounExpr", "true"], ["LiteralExpr", 1], [None, None]])
 
     def test_when(self):
         """
@@ -443,7 +443,7 @@ class ParserTest(unittest.TestCase):
         parse = self.getParser("blockExpr")
         self.assertEqual(parse("when (d) -> {1}"), ["When", [["NounExpr", "d"]], ["LiteralExpr", 1], [], None])
         self.assertEqual(parse("when (d) ->\n 1"), ["When", [["NounExpr", "d"]], ["LiteralExpr", 1], [], None])
-        self.assertEqual(parse("when (d) ->\n 1\ncatch p:\n 2"), ["When", [["NounExpr", "d"]], ["LiteralExpr", 1], [["Catch", ["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]]], None])
+        self.assertEqual(parse("when (d) ->\n 1\ncatch p:\n 2"), ["When", [["NounExpr", "d"]], ["LiteralExpr", 1], [[["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]]], None])
         self.assertEqual(parse("when (d) -> {1} finally {3}"), ["When", [["NounExpr", "d"]], ["LiteralExpr", 1], [], ["LiteralExpr", 3]])
         self.assertEqual(parse("when (d) ->\n 1\nfinally:\n 3"), ["When", [["NounExpr", "d"]], ["LiteralExpr", 1], [], ["LiteralExpr", 3]])
         self.assertEqual(parse("when (e, d) -> {1}"), ["When", [["NounExpr", "e"], ["NounExpr", "d"]], ["LiteralExpr", 1], [], None])
@@ -467,12 +467,12 @@ class ParserTest(unittest.TestCase):
         For-loop expression.
         """
         parse = self.getParser("blockExpr")
-        self.assertEqual(parse("for k => v in x {}"), ["For", ["FinalPattern", ["NounExpr", "k"], None], ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["SeqExpr", []], None])
-        self.assertEqual(parse("for k => v in x:\n pass"), ["For", ["FinalPattern", ["NounExpr", "k"], None], ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["SeqExpr", []], None])
-        self.assertEqual(parse("for v in x {}"), ["For", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["SeqExpr", []], None])
-        self.assertEqual(parse("for v in x:\n pass"), ["For", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["SeqExpr", []], None])
-        self.assertEqual(parse("for v in x {1} catch p {2}"), ["For", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["LiteralExpr", 1], ["Catch", ["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]]])
-        self.assertEqual(parse("for v in x:\n 1\ncatch p:\n 2"), ["For", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["LiteralExpr", 1], ["Catch", ["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]]])
+        self.assertEqual(parse("for k => v in x {}"), ["For", ["FinalPattern", ["NounExpr", "k"], None], ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["SeqExpr", []], [None, None]])
+        self.assertEqual(parse("for k => v in x:\n pass"), ["For", ["FinalPattern", ["NounExpr", "k"], None], ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["SeqExpr", []], [None, None]])
+        self.assertEqual(parse("for v in x {}"), ["For", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["SeqExpr", []], [None, None]])
+        self.assertEqual(parse("for v in x:\n pass"), ["For", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["SeqExpr", []], [None, None]])
+        self.assertEqual(parse("for v in x {1} catch p {2}"), ["For", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["LiteralExpr", 1], [["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]]])
+        self.assertEqual(parse("for v in x:\n 1\ncatch p:\n 2"), ["For", None, ["FinalPattern", ["NounExpr", "v"], None], ["NounExpr", "x"], ["LiteralExpr", 1], [["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]]])
 
     def test_if(self):
         """
@@ -490,10 +490,10 @@ class ParserTest(unittest.TestCase):
         Escape expression.
         """
         parse = self.getParser("blockExpr")
-        self.assertEqual(parse("escape e {1}"), ["Escape", ["FinalPattern", ["NounExpr", "e"], None], ["LiteralExpr", 1], None])
-        self.assertEqual(parse("escape e {1} catch p {2}"), ["Escape", ["FinalPattern", ["NounExpr", "e"], None], ["LiteralExpr", 1], ["Catch", ["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]]])
-        self.assertEqual(parse("escape e:\n 1"), ["Escape", ["FinalPattern", ["NounExpr", "e"], None], ["LiteralExpr", 1], None])
-        self.assertEqual(parse("escape e:\n 1\ncatch p:\n 2"), ["Escape", ["FinalPattern", ["NounExpr", "e"], None], ["LiteralExpr", 1], ["Catch", ["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]]])
+        self.assertEqual(parse("escape e {1}"), ["Escape", ["FinalPattern", ["NounExpr", "e"], None], ["LiteralExpr", 1], None, None])
+        self.assertEqual(parse("escape e {1} catch p {2}"), ["Escape", ["FinalPattern", ["NounExpr", "e"], None], ["LiteralExpr", 1], ["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]])
+        self.assertEqual(parse("escape e:\n 1"), ["Escape", ["FinalPattern", ["NounExpr", "e"], None], ["LiteralExpr", 1], None, None])
+        self.assertEqual(parse("escape e:\n 1\ncatch p:\n 2"), ["Escape", ["FinalPattern", ["NounExpr", "e"], None], ["LiteralExpr", 1], ["FinalPattern", ["NounExpr", "p"], None], ["LiteralExpr", 2]])
 
     def test_updoc(self):
         """

@@ -27,8 +27,7 @@ kernelNodeInfo = [
     ('SeqExpr', 1),
     ('MethodCallExpr', 3),
     ('Def', 3),
-    ('Escape', 3),
-    ('Catch', 2),
+    ('Escape', 4),
     ('Object', 4),
     ('Script', 3),
     ('Method', 5),
@@ -97,6 +96,7 @@ def loadVarint(data, i):
 def load(data):
     dataStack = []
     opStack = []
+
     i = loadTerm(data, 0, dataStack, opStack)
     while opStack:
         i = opStack.pop()(data, i, dataStack, opStack)

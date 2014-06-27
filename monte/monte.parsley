@@ -215,11 +215,11 @@ messageDesc = br (doco?:doc ("to" | "method"):to verb?:v parenParamDescList:ps o
 paramDesc = (justNoun | ('_') -> None):n optGuard:g -> t.ParamDesc(n, g)
 parenParamDescList = "(" paramDesc:p ("," paramDesc)*:ps ')' -> [p] +  ps
 
-escapeExpr = 'escape' pattern:p block:b catcher?:c -> t.Escape(p, b, c)
-indentEscapeExpr = 'escape' pattern:p indentBlock:b indentCatcher?:c -> t.Escape(p, b, c)
+escapeExpr = 'escape' pattern:p block:b (catcher | -> (None, None)):c -> t.Escape(p, b, *c)
+indentEscapeExpr = 'escape' pattern:p indentBlock:b (indentCatcher | -> (None, None)):c -> t.Escape(p, b, *c)
 
-forExpr = 'for' forPattern:p 'in' br assign:a block:b catcher?:c -> t.For(*(p + [a, b, c]))
-indentForExpr = 'for' forPattern:p 'in' br assign:a indentBlock:b indentCatcher?:c -> t.For(*(p + [a, b, c]))
+forExpr = 'for' forPattern:p 'in' br assign:a block:b (catcher | -> (None, None)):c -> t.For(*(p + [a, b, c]))
+indentForExpr = 'for' forPattern:p 'in' br assign:a indentBlock:b (indentCatcher | -> (None, None)):c -> t.For(*(p + [a, b, c]))
 
 forPattern = pattern:p (br "=>" pattern:px -> [p, px]
                            | -> [None, p])
@@ -236,13 +236,13 @@ metaExpr = 'meta' "." identifier:i (?(i == 'getState') -> "State"
 switchExpr = 'switch' parenExpr:e "{" (matcher:m br -> m)*:ms '}' -> t.Switch(e, ms)
 indentSwitchExpr = 'switch' parenExpr:e ':' EOLs tok('INDENT') br ((matcher | indentMatcher):m br -> m)*:ms tok('DEDENT') -> t.Switch(e, ms)
 
-tryExpr = 'try' block:tb catcher*:cs ('finally' block)?:fb -> t.Try(tb, cs, fb)
-indentTryExpr = 'try' indentBlock:tb indentCatcher*:cs (br 'finally' indentBlock)?:fb -> t.Try(tb, cs, fb)
-catcher = 'catch' pattern:p block:b -> t.Catch(p, b)
-indentCatcher = br 'catch' pattern:p indentBlock:b -> t.Catch(p, b)
+tryExpr = 'try' block:tb catcher*:cs ('finally' block)?:fb -> t.Try(tb, [t.Catch(*c) for c in cs], fb)
+indentTryExpr = 'try' indentBlock:tb indentCatcher*:cs (br 'finally' indentBlock)?:fb -> t.Try(tb, [t.Catch(*c) for c in cs], fb)
+catcher = 'catch' pattern:p block:b -> (p, b)
+indentCatcher = br 'catch' pattern:p indentBlock:b -> (p, b)
 
-whileExpr = 'while' parenExpr:e block:b catcher?:c -> t.While(e, b, c)
-indentWhileExpr = 'while' parenExpr:e indentBlock:b indentCatcher?:c -> t.While(e, b, c)
+whileExpr = 'while' parenExpr:e block:b (catcher | -> (None, None)):c -> t.While(e, b, c)
+indentWhileExpr = 'while' parenExpr:e indentBlock:b (indentCatcher | -> (None, None)):c -> t.While(e, b, c)
 
 whenExpr = 'when' parenArgs:a br "->" block:b catcher*:cs ('finally' block)?:fb -> t.When(a, b, cs, fb)
 indentWhenBlock = '->' EOLs tok('INDENT') br (indentSeq | tok('pass') -> t.SeqExpr([])):s br
