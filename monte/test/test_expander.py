@@ -1012,22 +1012,23 @@ class ExpanderTest(unittest.TestCase):
 
 
     def test_quasiexpr(self):
-        self.assertEqual(self.parse("`$x`"),
+        self.assertEqual(self.parse("`hello $x world`"),
                          ['MethodCallExpr',
-                             ['MethodCallExpr',
-                                 ['NounExpr', 'simple__quasiParser'],
-                                 'valueMaker', [['LiteralExpr', '${0}']]],
-                             'substitute',
-                             [['MethodCallExpr', ['NounExpr', '__makeList'],
-                                 'run', [['NounExpr', 'x']]]]])
-        self.assertEqual(self.parse("`($x)`"),
-                         ['MethodCallExpr',
-                             ['MethodCallExpr',
-                                 ['NounExpr', 'simple__quasiParser'],
-                                 'valueMaker', [['LiteralExpr', '(${0})']]],
-                             'substitute',
-                             [['MethodCallExpr', ['NounExpr', '__makeList'],
-                                 'run', [['NounExpr', 'x']]]]])
+                          ['MethodCallExpr',
+                           ['NounExpr', 'simple__quasiParser'],
+                           'valueMaker', [
+                               ["MethodCallExpr",
+                                ["NounExpr", "__makeList"],
+                                "run",
+                                [['LiteralExpr', 'hello '],
+                                 ['MethodCallExpr',
+                                  ['NounExpr', 'simple__quasiParser'],
+                                  'valueHole',
+                                  [['LiteralExpr', 0]]],
+                                 ['LiteralExpr', ' world']]]]],
+                          'substitute',
+                          [['MethodCallExpr', ['NounExpr', '__makeList'],
+                            'run', [['NounExpr', 'x']]]]])
 
     def test_quasipattern(self):
         self.assertEqual(self.parse("def foo`(@x)` := 1"),
@@ -1038,7 +1039,15 @@ class ExpanderTest(unittest.TestCase):
                             "run",
                             [['MethodCallExpr',
                              ['NounExpr', 'foo__quasiParser'],
-                             'matchMaker', [['LiteralExpr', '(@{0})']]],
+                             'matchMaker',
+                              [['MethodCallExpr', ['NounExpr', '__makeList'],
+                                'run', [
+                                    ['LiteralExpr', '('],
+                                    ['MethodCallExpr',
+                                     ['NounExpr', 'foo__quasiParser'],
+                                     'patternHole',
+                                     [['LiteralExpr', 0]]],
+                                    ['LiteralExpr', ')']]]]],
                             ['MethodCallExpr', ['NounExpr', '__makeList'],
                                  'run', []]]],
                            ['ListPattern', [['FinalPattern', ['NounExpr', 'x'], None]],
@@ -1055,10 +1064,23 @@ class ExpanderTest(unittest.TestCase):
                             "run",
                             [['MethodCallExpr',
                              ['NounExpr', 'foo__quasiParser'],
-                              'matchMaker', [['LiteralExpr', '(@{0}:${0})']]],
-                            ['MethodCallExpr', ['NounExpr', '__makeList'],
+                              'matchMaker', [
+                                  ['MethodCallExpr', ['NounExpr', '__makeList'],
+                                   'run', [
+                                       ['LiteralExpr', '('],
+                                       ['MethodCallExpr',
+                                        ['NounExpr', 'foo__quasiParser'],
+                                        'patternHole',
+                                        [['LiteralExpr', 0]]],
+                                       ['LiteralExpr', ':'],
+                                       ['MethodCallExpr',
+                                        ['NounExpr', 'foo__quasiParser'],
+                                        'valueHole',
+                                        [['LiteralExpr', 0]]],
+                                       ['LiteralExpr', ')']]]]],
+                             ['MethodCallExpr', ['NounExpr', '__makeList'],
                               'run', [['NounExpr', 'y']]]]],
                            ['ListPattern', [['FinalPattern', ['NounExpr', 'x'], None]],
-                              None]],
+                            None]],
                           None,
                           ['LiteralExpr', 1]])

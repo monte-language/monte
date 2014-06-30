@@ -9,48 +9,18 @@ def findOneOf(elts, specimen, start):
             return i + start
     return -1
 
+LITERAL, VALUE_HOLE, PATTERN_HOLE = object(), object(), object()
+
 class Substituter(MonteObject):
     _m_fqn = "simple__quasiParser$Substituter"
     _m_auditorStamps = (deepFrozenGuard,)
     def __init__(self, template):
-        if not isinstance(template, String):
-            raise RuntimeError("%r is not a string" % (template,))
-        self.template = template.s
         self.segments = segs = []
-        last = 0
-        i = 0
-        while i < len(self.template):
-            i = findOneOf('$@', self.template, last)
-            if i == -1:
-                # No more QL values or patterns; just go ahead and package up
-                # the last segment if it exists.
-                if last < len(self.template):
-                    segs.append(('literal', self.template[last:]))
-                break
-            if self.template[i + 1] == self.template[i]:
-                segs.append(('literal', self.template[last:i]))
-                last = i
-            elif self.template[i + 1] != '{':
-                i -= 1
+        for seg in template:
+            if isinstance(seg, String):
+                segs.append((LITERAL, seg.s))
             else:
-                if last != i and last < len(self.template) - 1:
-                    segs.append(('literal', self.template[last:i]))
-                    last = i
-                if self.template[i] == '@':
-                    typ = 'pattern'
-                else:
-                    typ = 'value'
-                i += 2
-                sub = i
-                while True:
-                    i += 1
-                    c = self.template[i]
-                    if c == '}':
-                        break
-                    elif not c.isdigit():
-                        raise RuntimeError("Missing '}'", self.template)
-                segs.append((typ, int(self.template[sub:i])))
-                last = i + 1
+                segs.append(seg)
 
     def substitute(self, values):
         if not isinstance(values, (ConstList, FlexList)):
@@ -59,9 +29,9 @@ class Substituter(MonteObject):
 
     def _sub(self, values):
         for typ, val in self.segments:
-            if typ == 'literal':
+            if typ is LITERAL:
                 yield val
-            elif typ == 'value':
+            elif typ is VALUE_HOLE:
                 yield toString(values[val])
             else:
                 raise RuntimeError("Can't substitute with a pattern")
@@ -78,12 +48,12 @@ class Substituter(MonteObject):
         bindings = []
         for n in range(len(self.segments)):
             typ, val = self.segments[n]
-            if typ == 'literal':
+            if typ is LITERAL:
                 j = i + len(val)
                 if specimen[i:j] != val:
                     throw.eject(ej, "expected %r..., found %r" % (
                         val, specimen[i:j]))
-            elif typ == 'value':
+            elif typ is VALUE_HOLE:
                 s = values[val]
                 if not isinstance(s, String):
                         raise RuntimeError("%r is not a string" % (s,))
@@ -92,21 +62,21 @@ class Substituter(MonteObject):
                 if specimen[i:j] != s:
                     throw.eject(ej, "expected %r... ($-hole %s), found %r" % (
                         s, val, specimen[i:j]))
-            elif typ == 'pattern':
+            elif typ is PATTERN_HOLE:
                 nextVal = None
                 if n == len(self.segments) - 1:
                     bindings.append(String(specimen[i:]))
                     continue
                 nextType, nextVal = self.segments[n + 1]
-                if nextType == 'value':
+                if nextType is VALUE_HOLE:
                     nextVal = values[nextVal]
                     if not isinstance(nextVal, String):
                         raise RuntimeError("%r is not a string" % (nextVal,))
                     nextVal = nextVal.s
-                elif nextType == 'pattern':
+                elif nextType is PATTERN_HOLE:
                     bindings.append(String(u""))
                     continue
-                j = specimen.find(nextVal)
+                j = specimen.find(nextVal, i)
                 if j == -1:
                     throw.eject(ej, "expected %r..., found %r" % (nextVal.s, specimen[i:]))
                 bindings.append(String(specimen[i:j]))
@@ -116,6 +86,12 @@ class Substituter(MonteObject):
 class SimpleQuasiParser(MonteObject):
     _m_fqn = "simple__quasiParser"
     _m_auditorStamps = (deepFrozenGuard,)
+    def valueHole(self, n):
+        return (VALUE_HOLE, n.n)
+
+    def patternHole(self, n):
+        return (PATTERN_HOLE, n.n)
+
     def valueMaker(self, template):
         return Substituter(template)
 
