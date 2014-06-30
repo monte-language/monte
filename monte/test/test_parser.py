@@ -121,7 +121,7 @@ class ParserTest(unittest.TestCase):
         Test that quasiliterals and braces don't smash each other up.
         """
         parse = self.getParser("seq")
-        self.assertEqual(parse("{`${x}`}; 1"), ["SeqExpr", [["HideExpr", ["QuasiExpr", None, [["QuasiExprHole", ["NounExpr", "x"]], ["QuasiText", '']]]], ["LiteralExpr", 1]]])
+        self.assertEqual(parse("{`${x}`}; 1"), ["SeqExpr", [["HideExpr", ["QuasiExpr", None, [["QuasiExprHole", ["NounExpr", "x"]]]]], ["LiteralExpr", 1]]])
 
     def test_collections(self):
         """

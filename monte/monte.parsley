@@ -21,7 +21,7 @@ justNoun = ((identifier:id -> self.keywordCheck(id)
 sourceHole = ('${' integer:i '}' -> t.QuasiLiteralExpr(i)
              |'@{' integer:i '}' -> t.QuasiPatternExpr(i))
 
-quasiString = subquasi*:qs 'QUASI_CLOSE':qc -> qs + [t.QuasiText(qc)]
+quasiString = subquasi*:qs 'QUASI_CLOSE':qc -> qs + ([t.QuasiText(qc)] if len(qc) else [])
 subquasi = ('QUASI_OPEN':q -> t.QuasiText(q)
            |'${' seq:e '}' -> t.QuasiExprHole(e)
            |'_' !(noIgnoreExpressionHole())
