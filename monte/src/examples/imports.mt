@@ -1,4 +1,4 @@
-def [makeFoo, mkB, baz] := import("examples/module")
+def [=> makeFoo, "makeBar" => mkB, => Baz] := import("examples/module", ["magicNumber" => 42])
 
 traceln("Imported some things. Let's make them do stuff.")
 
@@ -8,4 +8,4 @@ oof.doSomething()
 def bar := mkB()
 bar.doSomething()
 
-baz.doSomething()
+Baz.doSomething()
