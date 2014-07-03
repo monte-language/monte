@@ -216,7 +216,7 @@ class RequireConfiguration(MonteObject):
     def load(self, mapping):
         if not isinstance(mapping, (ConstMap, FlexMap)):
             raise RuntimeError("must be a mapping")
-        return mapping.d[self.name]
+        return mapping.d[String(self.name)]
 
 
 def getModuleStructure(name, location, scope, testCollector):

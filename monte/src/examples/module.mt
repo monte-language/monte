@@ -1,7 +1,9 @@
+module magicNumber
+export (makeFoo, makeBar, Baz)
 def makeFoo(title):
     return object Foo:
         to doSomething():
-            traceln(`Hi, I'm a Foo called $title`)
+            traceln(`Hi, I'm a Foo called $title. The magic number is $magicNumber`)
 
 def makeBar():
     return object Bar:
@@ -11,5 +13,3 @@ def makeBar():
 object Baz:
     to doSomething():
         traceln("Beep!")
-
-[makeFoo, makeBar, Baz]
