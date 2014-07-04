@@ -137,7 +137,8 @@ def getExports(scope, used):
 
 def union(scopes, result=StaticScope()):
     for sc in scopes:
-        result = result.add(sc)
+        if sc:
+            result = result.add(sc)
     return result
 
 def foldr(f, a, bs):
