@@ -14,6 +14,17 @@ class ASCIIShiftTests(unittest.TestCase):
                          [0, 17, 64, 250, 224, 239])
 
 
+class VarIntTests(unittest.TestCase):
+    def test_single_roundtrip(self):
+        i = 42
+        j, _ = ast.loadVarint(ast.dumpVarint(i), 0)
+        self.assertEqual(i, j)
+
+    def test_double_roundtrip(self):
+        i = 402
+        j, _ = ast.loadVarint(ast.dumpVarint(i), 0)
+        self.assertEqual(i, j)
+
 
 class CodecTests(unittest.TestCase):
     def check(self, term):
