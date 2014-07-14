@@ -121,6 +121,9 @@ class Character(MonteObject):
             return false
         return bwrap(self._c == other._c)
 
+    def asInteger(self):
+        return Integer(ord(self._c))
+
     def add(self, other):
         other = typecheck(other, Integer)
         return Character(unichr(ord(self._c) + other.n))
