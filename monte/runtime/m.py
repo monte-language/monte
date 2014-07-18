@@ -1,5 +1,6 @@
 from monte.runtime.base import MonteObject, toString, toQuote
-from monte.runtime.data import String
+from monte.runtime.data import String, Twine, unicodeFromTwine
+from monte.runtime.tables import ConstList, FlexList
 from monte.runtime.guards.base import deepFrozenGuard
 
 class M(MonteObject):
@@ -9,8 +10,11 @@ class M(MonteObject):
         return getattr(obj, verb)(*arglist)
 
     def callWithPair(self, obj, (verb, arglist)):
-        #XXX typecheck
-        return getattr(obj, verb.s)(*arglist.l)
+        if not isinstance(verb, Twine):
+            raise RuntimeError("%r is not a string" % (verb,))
+        if not isinstance(arglist, (FlexList, ConstList)):
+            raise RuntimeError("%r is not a list" % (arglist,))
+        return getattr(obj, unicodeFromTwine(verb))(*arglist.l)
 
     def send(self, obj, verb, arglist):
         raise NotImplementedError()
