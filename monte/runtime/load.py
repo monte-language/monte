@@ -5,7 +5,7 @@ from monte.compiler import ecompile
 from monte.expander import expand, scope
 from monte.parser import parse
 from monte.runtime.base import MonteObject
-from monte.runtime.data import String, null
+from monte.runtime.data import String, Twine, null, unicodeFromTwine
 from monte.runtime.tables import ConstList, ConstMap, FlexList, FlexMap
 
 
@@ -159,9 +159,9 @@ class ConfigurationExport(MonteObject):
 def extractArglist(mapping, argnames):
         argnames = set()
         for k in mapping._keys:
-            if not isinstance(k, String):
+            if not isinstance(k, Twine):
                 raise RuntimeError("keys must be strings")
-            argnames.add(k.s)
+            argnames.add(unicodeFromTwine(k))
 
 
 def compareArglists(loadname, provided, required):
@@ -319,9 +319,9 @@ class PackageMangler(MonteObject):
         self._testCollector = testCollector
 
     def readFiles(self, pathstr):
-        if not isinstance(pathstr, String):
+        if not isinstance(pathstr, Twine):
             raise RuntimeError("path must be a string")
-        path = pathstr.s
+        path = unicodeFromTwine(pathstr)
 
         def collectModules():
             root = os.path.join(self.root, path)
@@ -341,17 +341,17 @@ class PackageMangler(MonteObject):
         return ConstMap(structures)
 
     def readFile(self, pathstr):
-        if not isinstance(pathstr, String):
+        if not isinstance(pathstr, Twine):
             raise RuntimeError("path must be a string")
-        path = pathstr.s
+        path = unicodeFromTwine(pathstr)
         fullpath = os.path.join(self.root, path)
         imports, exports = readModuleFile(fullpath)
         return FileModuleStructure(fullpath, imports, exports, self.scope)
 
     def readPackage(self, subpkgName):
-        if not isinstance(subpkgName, String):
+        if not isinstance(subpkgName, Twine):
             raise RuntimeError("expected a string")
-        subpkgPath = subpkgName.s
+        subpkgPath = unicodeFromTwine(subpkgName)
         subpkgName = os.path.normpath(subpkgPath)
         if self.name:
             name = u'.'.join([self.name, subpkgName])
@@ -365,9 +365,9 @@ class PackageMangler(MonteObject):
         return subpkg
 
     def require(self, name):
-        if not isinstance(name, String):
+        if not isinstance(name, Twine):
             raise RuntimeError("name must be a string")
-        return RequireConfiguration(name.s)
+        return RequireConfiguration(unicodeFromTwine(name))
 
     def testCollector(self):
         if self._testCollector is None:
@@ -380,9 +380,9 @@ class PackageMangler(MonteObject):
         requires = []
         exports = []
         for k in mapping._keys:
-            if not isinstance(k, String):
+            if not isinstance(k, Twine):
                 raise RuntimeError("keys must be strings")
-            exports.append(k.s)
+            exports.append(unicodeFromTwine(k))
             requires.extend(mapping.d[k].requires)
         return SyntheticModuleStructure(mapping, requires, exports)
 
@@ -394,7 +394,8 @@ def monteImport(scope):
             mapping = ConstMap({})
         path = os.path.join(os.path.dirname(__file__), '..', 'src')
         s = getModuleStructure(name, os.path.abspath(path), scope, None)
-        requires = ConstMap(dict((k, RequireConfiguration(k.s)) for k in mapping.d))
+        requires = ConstMap(dict((k, RequireConfiguration(unicodeFromTwine(k)))
+                                 for k in mapping.d))
         conf = s.configure(requires)
         conf.load(mapping)
         return conf._contents

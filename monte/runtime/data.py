@@ -217,7 +217,7 @@ class Bytestring(MonteObject):
         if not isinstance(other, Bytestring):
             raise RuntimeError("%r is not a bytestring" % (other,))
 
-        return bwrap(self.b.startswith(other.s))
+        return bwrap(self.b.startswith(other.b))
 
     def endsWith(self, other):
         if not isinstance(other, Bytestring):
@@ -243,7 +243,7 @@ class Bytestring(MonteObject):
             pass
         finally:
             ej.disable()
-        return Bytestring(self.s.join(segments))
+        return Bytestring(self.b.join(segments))
 
     # E calls this 'replaceAll'.
     def replace(self, old, new):
@@ -573,8 +573,15 @@ def numWrap(n):
 nan = Float(float('nan'))
 infinity = Float(float('inf'))
 
+def unicodeFromTwine(t):
+    if isinstance(t, String):
+        return t.s
+    raise RuntimeError("wip")
 
-class String(MonteObject):
+class Twine(MonteObject):
+    pass
+
+class String(Twine):
     _m_fqn = "__makeStr$str"
     #_m_auditorStamps = (deepFrozenGuard,)
 
@@ -582,12 +589,6 @@ class String(MonteObject):
         if not isinstance(s, unicode):
             raise RuntimeError("%r is not a unicode string" % (s,))
         self.s = s
-
-    def _printOn(self, out):
-        out.raw_print(self.s)
-
-    def quote(self):
-        return String(u''.join([u'"'] + [escapedChar(c) for c in self.s] + [u'"']))
 
     def __hash__(self):
         return hash(self.s)
@@ -597,8 +598,22 @@ class String(MonteObject):
             return false
         return bwrap(self.s == other.s)
 
-    def _makeIterator(self):
-        return MonteIterator(enumerate(Character(c) for c in self.s))
+    def add(self, other):
+        if not isinstance(other, String):
+            raise RuntimeError("%r is not a string" % (other,))
+
+        return String(self.s + other.s)
+
+    def endsWith(self, other):
+        if not isinstance(other, String):
+            raise RuntimeError("%r is not a string" % (other,))
+
+        return bwrap(self.s.endswith(other.s))
+
+    def get(self, idx):
+        if not isinstance(idx, Integer):
+            raise RuntimeError("%r is not an integer" % (idx,))
+        return Character(self.s[idx.n])
 
     def op__cmp(self, other):
         if not isinstance(other, String):
@@ -606,10 +621,13 @@ class String(MonteObject):
 
         return Integer(cmp(self.s, other.s))
 
-    def get(self, idx):
-        if not isinstance(idx, Integer):
-            raise RuntimeError("%r is not an integer" % (idx,))
-        return Character(self.s[idx.n])
+    def multiply(self, n):
+        if not isinstance(n, Integer):
+            raise RuntimeError("%r is not an integer" % (n,))
+        return String(self.s * n.n)
+
+    def quote(self):
+        return String(u''.join([u'"'] + [escapedChar(c) for c in self.s] + [u'"']))
 
     def slice(self, start, end=None):
         if not isinstance(start, Integer):
@@ -625,37 +643,17 @@ class String(MonteObject):
             raise RuntimeError("Slice indices must be positive")
         return String(self.s[start:end])
 
-    def size(self):
-        return Integer(len(self.s))
-
-    def add(self, other):
+    def split(self, other):
+        from monte.runtime.tables import ConstList
         if not isinstance(other, String):
             raise RuntimeError("%r is not a string" % (other,))
-
-        return String(self.s + other.s)
-
-    def multiply(self, n):
-        if not isinstance(n, Integer):
-            raise RuntimeError("%r is not an integer" % (n,))
-        return String(self.s * n.n)
+        return ConstList(String(x) for x in self.s.split(other.s))
 
     def startsWith(self, other):
         if not isinstance(other, String):
             raise RuntimeError("%r is not a string" % (other,))
 
         return bwrap(self.s.startswith(other.s))
-
-    def endsWith(self, other):
-        if not isinstance(other, String):
-            raise RuntimeError("%r is not a string" % (other,))
-
-        return bwrap(self.s.endswith(other.s))
-
-    def split(self, other):
-        from monte.runtime.tables import ConstList
-        if not isinstance(other, String):
-            raise RuntimeError("%r is not a string" % (other,))
-        return ConstList(String(x) for x in self.s.split(other.s))
 
      # E calls this 'replaceAll'.
     def replace(self, old, new):
@@ -670,5 +668,12 @@ class String(MonteObject):
 
     def toLowerCase(self):
         return String(self.s.lower())
+
+    def _makeIterator(self):
+        return MonteIterator(enumerate(Character(c) for c in self.s))
+
+    def _printOn(self, out):
+        out.raw_print(self.s)
+
 
     # XXX Twine methods.

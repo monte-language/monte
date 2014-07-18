@@ -1,5 +1,5 @@
 from monte.runtime.base import MonteObject, throw, toString
-from monte.runtime.data import String, Character
+from monte.runtime.data import String, Twine, Character, unicodeFromTwine
 from monte.runtime.guards.base import deepFrozenGuard
 from monte.runtime.tables import ConstList, FlexList
 
@@ -17,8 +17,8 @@ class Substituter(MonteObject):
     def __init__(self, template):
         self.segments = segs = []
         for seg in template:
-            if isinstance(seg, String):
-                segs.append((LITERAL, seg.s))
+            if isinstance(seg, Twine):
+                segs.append((LITERAL, unicodeFromTwine(seg)))
             else:
                 segs.append(seg)
 
@@ -38,11 +38,11 @@ class Substituter(MonteObject):
 
     def matchBind(self, values, specimen, ej):
         #XXX maybe put this on a different object?
-        if not isinstance(specimen, String):
+        if not isinstance(specimen, Twine):
             raise RuntimeError("%r is not a string" % (specimen,))
         if not isinstance(values, (ConstList, FlexList)):
             raise RuntimeError("%r is not a list" % (values,))
-        specimen = specimen.s
+        specimen = unicodeFromTwine(specimen)
         values = values.l
         i = 0
         bindings = []
@@ -57,7 +57,7 @@ class Substituter(MonteObject):
                 s = values[val]
                 if not isinstance(s, String):
                         raise RuntimeError("%r is not a string" % (s,))
-                s = s.s
+                s = unicodeFromTwine(s)
                 j = i + len(s)
                 if specimen[i:j] != s:
                     throw.eject(ej, "expected %r... ($-hole %s), found %r" % (
@@ -72,13 +72,15 @@ class Substituter(MonteObject):
                     nextVal = values[nextVal]
                     if not isinstance(nextVal, String):
                         raise RuntimeError("%r is not a string" % (nextVal,))
-                    nextVal = nextVal.s
+                    nextVal = unicodeFromTwine(nextVal)
                 elif nextType is PATTERN_HOLE:
                     bindings.append(String(u""))
                     continue
                 j = specimen.find(nextVal, i)
                 if j == -1:
-                    throw.eject(ej, "expected %r..., found %r" % (nextVal.s, specimen[i:]))
+                    throw.eject(ej, "expected %r..., found %r" % (
+                        unicodeFromTwine(nextVal),
+                        specimen[i:]))
                 bindings.append(String(specimen[i:j]))
             i = j
         return ConstList(bindings)

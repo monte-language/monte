@@ -2,12 +2,14 @@
 Objects used by Monte syntax expansions.
 """
 from monte.runtime.base import MonteObject, ejector, throw
-from monte.runtime.data import true, false, null, String, Integer, bwrap
+from monte.runtime.data import (true, false, null, Twine, Integer,
+                                unicodeFromTwine)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import MonteIterator
 from monte.runtime.guards.base import deepFrozenGuard, deepFrozenFunc
 from monte.runtime.ref import UnconnectedRef
-from monte.runtime.tables import ConstList, FlexList, ConstMap, FlexMap, mapMaker
+from monte.runtime.tables import (ConstList, FlexList, ConstMap, FlexMap,
+                                  mapMaker)
 
 @deepFrozenFunc
 def validateFor(flag):
@@ -69,10 +71,11 @@ class MakeVerbFacet(MonteObject):
     _m_fqn = "__makeVerbFacet$verbFacet"
     _m_auditorStamps = (deepFrozenGuard,)
     def curryCall(self, obj, verb):
-        if not isinstance(verb, String):
+        if not isinstance(verb, Twine):
             raise RuntimeError("%r is not a string" % (verb,))
+        verb = unicodeFromTwine(verb)
         def facet(*a):
-            return getattr(obj, verb.s)(*a)
+            return getattr(obj, verb)(*a)
         return facet
 
 makeVerbFacet = MakeVerbFacet()

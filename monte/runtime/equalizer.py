@@ -1,7 +1,8 @@
 import warnings
 
 from monte.runtime.base import MonteObject, toQuote
-from monte.runtime.data import null, true, false, bwrap, Integer, Float, String, Character, Bool
+from monte.runtime.data import (null, true, false, bwrap, Integer, Float,
+                                String, Character, Bool)
 from monte.runtime.guards.base import deepFrozenGuard, selflessGuard
 from monte.runtime.tables import ConstList, ConstMap
 
@@ -68,13 +69,13 @@ def _same(left, right, sofar):
         return bwrap(left.n == right.n)
     elif t is Bool:
         return bwrap(left._b == right._b)
-    elif t is String:
+    elif t is String: # Other Twines have uncall methods.
         return bwrap(left.s == right.s)
     elif t is Character:
         return bwrap(left._c == right._c)
 
     warnings.warn("Asked to equalize unknown type %r" % t,
-            RuntimeWarning)
+                  RuntimeWarning)
     return false
 
 

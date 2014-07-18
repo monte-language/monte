@@ -3,7 +3,7 @@ from functools import partial
 
 from monte.runtime.base import throw
 from monte.runtime.data import (bwrap, null, true, false, Character, Float,
-                                Integer, String)
+                                Integer, Twine)
 from monte.runtime.guards.base import PythonTypeGuard, Guard, PrintFQN, deepFrozenGuard
 
 
@@ -78,5 +78,5 @@ class FloatGuard(PrintFQN, Guard):
 floatGuard = FloatGuard()
 
 charGuard = PythonTypeGuard(Character, "char")
-stringGuard = PythonTypeGuard(String, "str")
+stringGuard = PythonTypeGuard(Twine, "str")
 

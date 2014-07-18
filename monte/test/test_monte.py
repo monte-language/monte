@@ -6,6 +6,7 @@ from twisted.python import failure
 from twisted.trial.itrial import ITestCase
 
 import monte
+from monte.runtime.data import unicodeFromTwine
 from monte.runtime.load import TestCollector, buildPackage, eval as monte_eval
 from monte.runtime.scope import bootScope, createSafeScope
 from monte.runtime.tables import ConstMap
@@ -52,5 +53,5 @@ def testSuite():
     pkg = buildPackage(srcdir, u"", safeScope, c)
     pkg.configure(None).load(ConstMap({}))
     for (name, obj) in sorted(c.tests.d.items()):
-        tests.append(MonteTestCase(name.s, obj, asserts))
+        tests.append(MonteTestCase(unicodeFromTwine(name), obj, asserts))
     return unittest.TestSuite(tests)
