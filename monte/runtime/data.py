@@ -73,21 +73,24 @@ def bwrap(b):
     return true if b else false
 
 _CHAR_ESCAPES = {
-    '\b': '\\b',
-    '\t': '\\t',
-    '\n': '\\n',
-    '\f': '\\f',
-    '\r': '\\r',
-    '"': '\\"',
-    '\'': '\\\'',
+    u'\B': u'\\b',
+    u'\t': u'\\t',
+    u'\n': u'\\n',
+    u'\f': u'\\f',
+    u'\r': u'\\r',
+    u'"': u'\\"',
+    u'\'': u'\\\'',
 }
+
+
 def escapedChar(c):
     if c in _CHAR_ESCAPES:
         return _CHAR_ESCAPES[c]
     i = ord(c)
     if i < 32 or i > 126:
-        return '\\u%04x' % i
+        return u'\\u%04x' % i
     return c
+
 
 def escapedByte(c):
     if c in _CHAR_ESCAPES:
@@ -96,7 +99,7 @@ def escapedByte(c):
     if i > 255:
         raise RuntimeError("not a bytestring")
     if i < 32 or i > 126:
-        return '\\x%02x' % i
+        return u'\\x%02x' % i
     return c
 
 
@@ -573,13 +576,237 @@ def numWrap(n):
 nan = Float(float('nan'))
 infinity = Float(float('inf'))
 
+
 def unicodeFromTwine(t):
+    if isinstance(t, EmptyTwine):
+        return u""
     if isinstance(t, String):
         return t.s
     raise RuntimeError("wip")
 
+
+class TwineMaker(MonteObject):
+    _m_fqn = "__makeString"
+
+    def fromParts(self, parts):
+        from monte.runtime.tables import ConstList, FlexList
+        if not isinstance(parts, (ConstList, FlexList)):
+            raise RuntimeError("%r is not a list" % (parts,))
+        if len(parts.l) == 0:
+            return theEmptyTwine
+        elif len(parts.l) == 1:
+            return parts.l[0]
+        elif all(isinstance(p, String) for p in parts):
+            return String(u''.join(p.s for p in parts))
+        else:
+            return CompositeTwine(parts)
+
+    def fromString(self, s, span=null):
+        if not isinstance(s, Twine):
+            raise RuntimeError("%r is not a string" % (s,))
+        if span is null:
+            return s
+        else:
+            return LocatedTwine(unicodeFromTwine(s), span)
+
+    def fromChars(self, chars):
+        from monte.runtime.tables import ConstList, FlexList
+        if not isinstance(chars, (ConstList, FlexList)):
+            raise RuntimeError("%r is not a list" % (chars,))
+        if not all(isinstance(c, Character) for c in chars.l):
+            raise RuntimeError("%r is not a list of characters" % (chars,))
+        return String(u''.join(c._c for c in chars.l))
+
+theTwineMaker = TwineMaker()
+
+
 class Twine(MonteObject):
-    pass
+    def add(self, other):
+        from monte.runtime.tables import ConstList
+        if not isinstance(other, Twine):
+            raise RuntimeError("%r is not a string" % (other,))
+        mine = self.getParts().l
+        his = other.getParts().l
+        if len(mine) > 1 and len(his) > 1:
+            # Smush the last and first segments together, if they'll fit.
+            mine = mine[:-1] + mine[-1].mergedParts(his[0])
+            his = his[1:]
+        return theTwineMaker.fromParts(ConstList(mine + his))
+
+    def asFrom(self, origin, startLine, startCol):
+        from monte.runtime.tables import ConstList
+        parts = []
+        s = self.bare()
+        end = len(s)
+        i = 0
+        j = s.s.index(u'\n')
+        while i < end:
+            if j == -1:
+                j = end - i
+            endCol = startCol + j - i
+            span = SourceSpan(origin, true, startLine, startCol,
+                              startLine, endCol)
+            parts.append(LocatedTwine(s.s[i:j + 1], span))
+            startLine += 1
+            startCol = 0
+            i = j + 1
+        return theTwineMaker.fromParts(ConstList(parts))
+
+    def endsWith(self, other):
+        return self.bare().endsWith(other)
+
+    def getPartAt(self, pos):
+        if pos < 0:
+            raise RuntimeError("Index out of bounds")
+        parts = self.getParts().l
+        sofar = 0
+        for (i, atom) in enumerate(parts):
+            siz = atom.size()
+            if pos < sofar + siz.n:
+                return [i, pos - sofar]
+            sofar += siz
+        raise RuntimeError("%s bigger than %s" % (pos, sofar))
+
+    def getSourceMap(self):
+        from monte.runtime.tables import ConstList, ConstMap
+        parts = self.getParts().l
+        result = []
+        offset = 0
+        for part in parts:
+            partSize = part.size().n
+            span = part.getSpan()
+            if span is not null:
+                k = ConstList([Integer(offset), Integer(offset + partSize)])
+                result.append((k, span))
+            offset += partSize
+        return ConstMap(dict(result), [x[0] for x in result])
+
+    def infect(self, other, oneToOne=false):
+        if not isinstance(other, Twine):
+            raise RuntimeError("%r is not a string" % (other,))
+        if oneToOne is true:
+            if self.size() == other.size():
+                return self.infectOneToOne(other)
+            else:
+                raise RuntimeError("%r and %r must be the same size" %
+                                   (other, self))
+        else:
+            span = self.getSpan()
+            if span is not null:
+                span = span.notOneToOne()
+            return theTwineMaker.fromString(other, span)
+
+    def op__cmp(self, other):
+        return self.bare().op__cmp(other.bare())
+
+    def multiply(self, n):
+        if not isinstance(n, Integer):
+            raise RuntimeError("%r is not an integer" % (n,))
+        result = theEmptyTwine
+        for _ in range(n.n):
+            result = result.add(self)
+        return result
+
+    def quote(self):
+        result = String(u'"')
+        p1 = 0
+        for p2 in range(self.size().n):
+            ch = self.get(Integer(p2))
+            if ch._c != '\n':
+                ech = escapedChar(ch._c)
+                if len(ech) > 1:
+                    result = result.add(self.slice(Integer(p1), Integer(p2)))
+                    result = result.add(self.slice(Integer(p2), Integer(p2 + 1))
+                                        .infect(String(ech)))
+                    p1 = p2 + 1
+        result = result.add(self.slice(Integer(p1), self.size()))
+        return result.add(String(u'"'))
+
+    def split(self, other):
+        from monte.runtime.tables import ConstList
+        if not isinstance(other, Twine):
+            raise RuntimeError("%r is not a string" % (other,))
+        sepLen = other.size().n
+        if sepLen == Integer(0):
+            raise RuntimeError("separator must not empty")
+        result = []
+        p1 = 0
+        p2 = self.indexOf(other)
+        while p2 != 1:
+            result.append(self.slice(Integer(p1), Integer(p2)))
+            p1 = p2 + sepLen
+            p2 = self.indexOf(other, Integer(p1))
+        result.append(self.slice(Integer(p1), self.size()))
+        return ConstList(result)
+
+    def startsWith(self, other):
+        return self.bare().startsWith(other)
+
+     # E calls this 'replaceAll'.
+    def replace(self, old, new):
+        if not isinstance(old, String):
+            raise RuntimeError("%r is not a string" % (old,))
+        if not isinstance(new, String):
+            raise RuntimeError("%r is not a string" % (new,))
+        result = theEmptyTwine
+        oldLen = old.size().n
+        if oldLen == 0:
+            raise RuntimeError("can't replace the null string")
+        p1 = 0
+        p2 = self.indexOf(old)
+        while p2 != -1:
+            left = self.slice(Integer(p1), Integer(p2))
+            chunk = self.slice(Integer(p2), Integer(p2 + oldLen))
+            result = result.add(left).add(chunk.infect(new, false))
+            p1 = p2 + oldLen
+        result = result.add(self.slice(Integer(p1), self.size()))
+        return result
+
+    def toUpperCase(self):
+        return self.infect(self.bare().s.upper(), true)
+
+    def toLowerCase(self):
+        return self.infect(self.bare().s.lower(), true)
+
+
+
+
+class EmptyTwine(Twine):
+    def _uncall(self):
+        from monte.runtime.tables import ConstList
+        return ConstList([theTwineMaker, "fromParts",
+                          ConstList([ConstList([])])])
+
+    def size(self):
+        return Integer(0)
+
+    def bare(self):
+        return self
+
+    def get(self, idx):
+        raise RuntimeError("index out of bounds")
+
+    def getParts(self):
+        from monte.runtime.tables import ConstList
+        return ConstList([])
+
+    def getSpan(self):
+        return null
+
+    def infectOneToOne(self, other):
+        return other
+
+    def isBare(self):
+        return true
+
+    def slice(self, start, end=None):
+        return self
+
+    def _printOn(self, out):
+        out.raw_print(u"")
+
+theEmptyTwine = EmptyTwine()
+
 
 class String(Twine):
     _m_fqn = "__makeStr$str"
@@ -598,22 +825,29 @@ class String(Twine):
             return false
         return bwrap(self.s == other.s)
 
-    def add(self, other):
-        if not isinstance(other, String):
-            raise RuntimeError("%r is not a string" % (other,))
-
-        return String(self.s + other.s)
+    def bare(self):
+        return self
 
     def endsWith(self, other):
-        if not isinstance(other, String):
+        if not isinstance(other, Twine):
             raise RuntimeError("%r is not a string" % (other,))
-
-        return bwrap(self.s.endswith(other.s))
+        suffix = unicodeFromTwine(other)
+        return bwrap(self.s.endswith(suffix))
 
     def get(self, idx):
         if not isinstance(idx, Integer):
             raise RuntimeError("%r is not an integer" % (idx,))
         return Character(self.s[idx.n])
+
+    def getParts(self):
+        from monte.runtime.tables import ConstList
+        return ConstList([self])
+
+    def getSpan(self):
+        return null
+
+    def isBare(self):
+        return true
 
     def op__cmp(self, other):
         if not isinstance(other, String):
@@ -621,13 +855,8 @@ class String(Twine):
 
         return Integer(cmp(self.s, other.s))
 
-    def multiply(self, n):
-        if not isinstance(n, Integer):
-            raise RuntimeError("%r is not an integer" % (n,))
-        return String(self.s * n.n)
-
-    def quote(self):
-        return String(u''.join([u'"'] + [escapedChar(c) for c in self.s] + [u'"']))
+    def size(self):
+        return Integer(len(self.s))
 
     def slice(self, start, end=None):
         if not isinstance(start, Integer):
@@ -643,11 +872,11 @@ class String(Twine):
             raise RuntimeError("Slice indices must be positive")
         return String(self.s[start:end])
 
-    def split(self, other):
-        from monte.runtime.tables import ConstList
-        if not isinstance(other, String):
-            raise RuntimeError("%r is not a string" % (other,))
-        return ConstList(String(x) for x in self.s.split(other.s))
+    # def split(self, other):
+    #     from monte.runtime.tables import ConstList
+    #     if not isinstance(other, String):
+    #         raise RuntimeError("%r is not a string" % (other,))
+    #     return ConstList(String(x) for x in self.s.split(other.s))
 
     def startsWith(self, other):
         if not isinstance(other, String):
@@ -655,25 +884,8 @@ class String(Twine):
 
         return bwrap(self.s.startswith(other.s))
 
-     # E calls this 'replaceAll'.
-    def replace(self, old, new):
-        if not isinstance(old, String):
-            raise RuntimeError("%r is not a string" % (old,))
-        if not isinstance(new, String):
-            raise RuntimeError("%r is not a string" % (new,))
-        return String(self.s.replace(old.s, new.s))
-
-    def toUpperCase(self):
-        return String(self.s.upper())
-
-    def toLowerCase(self):
-        return String(self.s.lower())
-
     def _makeIterator(self):
         return MonteIterator(enumerate(Character(c) for c in self.s))
 
     def _printOn(self, out):
         out.raw_print(self.s)
-
-
-    # XXX Twine methods.

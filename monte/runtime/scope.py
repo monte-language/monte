@@ -2,7 +2,7 @@ from monte.runtime.audit import auditedBy
 from monte.runtime.base import throw
 from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
 from monte.runtime.data import (Integer, String, true, false, nan, infinity,
-                                null, unicodeFromTwine)
+                                null, theTwineMaker, unicodeFromTwine)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
 from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, nullOkGuard,
@@ -60,7 +60,7 @@ bootScope = {
     '__makeVarSlot': VarSlot,
     # '__makeCoercedSlot': makeCoercedSlot,
     # '__makeGuardedSlot': makeGuardedSlot,
-    # '__makeTwine': makeTwine,
+    '__makeString': theTwineMaker,
     # 'term__quasiParser': makeQBuilder,
 
     ## Primitive: guards
