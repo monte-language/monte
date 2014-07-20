@@ -1129,7 +1129,82 @@ class TransparentGuardTests(unittest.TestCase):
             """)), true)
 
 
-class StringTests(unittest.TestCase):
+class _TwineTests(object):
+
+    def test_endsWith(self):
+        self.assertEqual(monte_eval('x.endsWith("blee")',
+                                    x=self.makeString(u'foo blee')),
+                         true)
+        self.assertEqual(monte_eval('x.endsWith("blue")',
+                                    x=self.makeString(u'foo blee')),
+                         false)
+
+    def test_startsWith(self):
+        self.assertEqual(monte_eval('x.startsWith("foo")',
+                                    x=self.makeString(u'foo blee')),
+                         true)
+        self.assertEqual(monte_eval('x.startsWith("fu")',
+                                    x=self.makeString(u'foo blee')),
+                         false)
+
+    def test_add(self):
+        self.assertEqual(self.makeString(u'foo ').add(self.makeString(u'blee')
+                                                  ).bare().s,
+                         u'foo blee')
+
+    def test_singleLineAsFrom(self):
+        s = self.makeString(u'foo blee').asFrom(
+            String(u'test'), Integer(3), Integer(4))
+        self.assertEqual(s.bare().s, u'foo blee')
+        span = s.getSpan()
+        self.assertEqual(span._isOneToOne, true)
+        self.assertEqual(span.startLine.n, 3)
+        self.assertEqual(span.startCol.n, 4)
+        self.assertEqual(span.endLine.n, 3)
+        self.assertEqual(span.endCol.n, 11)
+
+    def test_multiLineAsFrom(self):
+        s = self.makeString(u'foo blee\nbar baz').asFrom(
+            String(u'test'), Integer(3), Integer(4))
+        self.assertEqual(s.bare().s, u'foo blee\nbar baz')
+        span = s.getSpan()
+        self.assertEqual(span._isOneToOne, false)
+        self.assertEqual(span.startLine.n, 3)
+        self.assertEqual(span.startCol.n, 4)
+        self.assertEqual(span.endLine.n, 4)
+        self.assertEqual(span.endCol.n, 6)
+
+        parts = s.getParts()
+        self.assertEqual(parts.size().n, 2)
+        first, second = parts.l
+        self.assertEqual(first.bare().s, u'foo blee\n')
+        self.assertEqual(second.bare().s, u'bar baz')
+        span1 = first.getSpan()
+        self.assertEqual(span1._isOneToOne, true)
+        self.assertEqual(span1.startLine.n, 3)
+        self.assertEqual(span1.startCol.n, 4)
+        self.assertEqual(span1.endLine.n, 3)
+        self.assertEqual(span1.endCol.n, 12)
+
+        span2 = second.getSpan()
+        self.assertEqual(span2._isOneToOne, true)
+        self.assertEqual(span2.startLine.n, 4)
+        self.assertEqual(span2.startCol.n, 0)
+        self.assertEqual(span2.endLine.n, 4)
+        self.assertEqual(span2.endCol.n, 6)
+
+
+class StringTests(_TwineTests, unittest.TestCase):
+
+    def makeString(self, s):
+        return String(s)
+
+    def test_getPartAt(self):
+        s = String(u"foo")
+        self.assertEqual(s.getPartAt(Integer(0)),
+                         ConstList([Integer(0), Integer(0)]))
+        self.assertEqual(s.getPartAt(Integer(2)),
+                         ConstList([Integer(0), Integer(2)]))
 
     def test_slice(self):
         self.assertEqual(monte_eval(dedent("""
