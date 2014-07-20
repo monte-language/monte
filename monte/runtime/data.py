@@ -635,27 +635,33 @@ class Twine(MonteObject):
 
     def asFrom(self, origin, startLine, startCol):
         from monte.runtime.tables import ConstList
+        if not isinstance(startLine, Integer):
+            raise RuntimeError("%r is not an integer" % (startLine,))
+        if not isinstance(startCol, Integer):
+            raise RuntimeError("%r is not an integer" % (startCol,))
         parts = []
-        s = self.bare()
+        s = self.bare().s
         end = len(s)
         i = 0
-        j = s.s.index(u'\n')
+        j = s.find(u'\n')
         while i < end:
             if j == -1:
-                j = end - i
-            endCol = startCol + j - i
+                j = end - 1
+            endCol = Integer(startCol.n + j - i)
             span = SourceSpan(origin, true, startLine, startCol,
                               startLine, endCol)
-            parts.append(LocatedTwine(s.s[i:j + 1], span))
-            startLine += 1
-            startCol = 0
+            parts.append(LocatedTwine(s[i:j + 1], span))
+            startLine = Integer(startLine.n + 1)
+            startCol = Integer(0)
             i = j + 1
+            j = s.find(u'\n', i)
         return theTwineMaker.fromParts(ConstList(parts))
 
     def endsWith(self, other):
         return self.bare().endsWith(other)
 
     def getPartAt(self, pos):
+        from monte.runtime.tables import ConstList
         if not isinstance(pos, Integer):
             raise RuntimeError("%r is not an integer" % (pos,))
         if pos.n < 0:
@@ -920,11 +926,14 @@ class LocatedTwine(AtomicTwine):
         self.span = span
 
         if (span._isOneToOne is true and
-            len(s) != (span.endCol - span.startCol + 1)):
+            len(s) != (span.endCol.n - span.startCol.n + 1)):
             raise RuntimeError("one to one must have matching size")
 
     def bare(self):
         return String(self.s)
+
+    def getSpan(self):
+        return self.span
 
     def isBare(self):
         return false
@@ -973,7 +982,7 @@ class CompositeTwine(Twine):
         self.sizeCache = None
 
     def bare(self):
-        return String(u''.join(p.bare() for p in self.parts.l))
+        return String(u''.join(p.bare().s for p in self.parts.l))
 
     def get(self, idx):
         if not isinstance(idx, Integer):
@@ -988,8 +997,8 @@ class CompositeTwine(Twine):
     def getSpan(self):
         if not self.parts:
             return null
-        result = self.parts[0].getSpan()
-        for p in self.parts[1:]:
+        result = self.parts.l[0].getSpan()
+        for p in self.parts.l[1:]:
             if result is null:
                 return null
             result = spanCover(result, p.getSpan())
