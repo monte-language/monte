@@ -656,16 +656,18 @@ class Twine(MonteObject):
         return self.bare().endsWith(other)
 
     def getPartAt(self, pos):
-        if pos < 0:
+        if not isinstance(pos, Integer):
+            raise RuntimeError("%r is not an integer" % (pos,))
+        if pos.n < 0:
             raise RuntimeError("Index out of bounds")
         parts = self.getParts().l
         sofar = 0
         for (i, atom) in enumerate(parts):
             siz = atom.size()
-            if pos < sofar + siz.n:
-                return [i, pos - sofar]
+            if pos.n < sofar + siz.n:
+                return ConstList([Integer(i), Integer(pos.n - sofar)])
             sofar += siz
-        raise RuntimeError("%s bigger than %s" % (pos, sofar))
+        raise RuntimeError("%s bigger than %s" % (pos.n, sofar))
 
     def getSourceMap(self):
         from monte.runtime.tables import ConstList, ConstMap
@@ -963,6 +965,91 @@ class LocatedTwine(AtomicTwine):
 class CompositeTwine(Twine):
     _m_fqn = "__makeString$CompositeTwine"
 
+    def __init__(self, parts):
+        from monte.runtime.tables import FlexList, ConstList
+        if not isinstance(parts, (ConstList, FlexList)):
+            raise RuntimeError("%r is not a list" % (parts,))
+        self.parts = parts
+        self.sizeCache = None
+
+    def bare(self):
+        return String(u''.join(p.bare() for p in self.parts.l))
+
+    def get(self, idx):
+        if not isinstance(idx, Integer):
+            raise RuntimeError("%r is not an integer" % (idx,))
+        part, offset = self.getPartAt(idx).l
+        return self.parts[part].get(offset)
+
+    def getParts(self):
+        from monte.runtime.tables import ConstList
+        return ConstList(self.parts)
+
+    def getSpan(self):
+        if not self.parts:
+            return null
+        result = self.parts[0].getSpan()
+        for p in self.parts[1:]:
+            if result is null:
+                return null
+            result = spanCover(result, p.getSpan())
+        return result
+
+    def isBare(self):
+        return false
+
+    def slice(self, start, end=None):
+        from monte.runtime.tables import ConstList
+        if not isinstance(start, Integer):
+            raise RuntimeError("%r is not an integer" % (start,))
+        startn = start.n
+        if end is not None and not isinstance(end, Integer):
+            raise RuntimeError("%r is not an integer" % (end,))
+        elif end is not None:
+            endn = end.n
+        if startn < 0:
+            raise RuntimeError("Slice indices must be positive")
+        if end is not None and endn < 0:
+            raise RuntimeError("Slice indices must be positive")
+        if (startn == endn):
+            return theEmptyTwine
+        leftIdx, leftOffset = self.getPartAt(start).l
+        rightIdx, rightOffset = self.getPartAt(Integer(endn - 1)).l
+        if leftIdx.n == rightIdx.n:
+            return self.parts[leftIdx.n].slice(leftOffset,
+                                               Integer(rightOffset.n + 1))
+        left = self.parts[leftIdx.n]
+        middle = self.parts[leftIdx.n + 1:rightIdx.n]
+        right = self.parts[rightIdx.n].slice(Integer(0),
+                                             Integer(rightOffset.n + 1))
+        result = (left.slice(leftOffset, left.size())
+                  .add(theTwineMaker.fromParts(ConstList([middle])))
+                  .add(right))
+        return result
+
+    def size(self):
+        if self.sizeCache is None:
+            self.sizeCache = Integer(sum(p.size().n for p in self.parts))
+        return seif.sizeCache
+
+    def _printOn(self, out):
+        for p in self.parts:
+            out._m_print(p)
+
+    def _uncall(self):
+        from monte.runtime.tables import ConstList
+        return ConstList([theTwineMaker, String(u'fromParts'),
+                          self.parts])
+
+    def _m_infectOneToOne(self, other):
+        result = theEmptyTwine
+        pos = 0
+        for p in self.parts:
+            siz = p.size().n
+            segment = other.bare().s[pos:pos + siz]
+            result = result.add(p._m_infectOneToOne(String(segment)))
+            pos += siz
+        return result
 
 def makeSourceSpan(*a):
     return SourceSpan(*a)
