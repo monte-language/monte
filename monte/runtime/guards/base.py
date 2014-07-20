@@ -1,6 +1,9 @@
-from monte.runtime.base import MonteObject, ejector, Throw, throw, toQuote, toString
-from monte.runtime.data import (MonteNull, Bool, Bytestring, Character, Integer,
-                                Float, String, bwrap, true, false, null)
+from monte.runtime.base import (MonteObject, ejector, Throw, throw, toQuote,
+                                toString)
+from monte.runtime.data import (MonteNull, Bool, Bytestring, Character,
+                                CompositeTwine, Integer, Float, LocatedTwine,
+                                SourceSpan, String, bwrap, makeSourceSpan,
+                                theTwineMaker, true, false, null)
 from monte.runtime.flow import monteLooper
 
 def tryCoerce(guard, specimen):
@@ -131,7 +134,7 @@ DeepFrozenGuard._m_auditorStamps = (deepFrozenGuard,)
 
 #To avoid circular imports
 for o in (MonteNull, Bool, Bytestring, Character, Integer, Float, String,
-          Throw, monteLooper):
+          SourceSpan, Throw, theTwineMaker, makeSourceSpan, monteLooper):
     o._m_auditorStamps = (deepFrozenGuard,)
 
 
@@ -221,6 +224,8 @@ class TransparentStamp(MonteObject):
 
 transparentStamp = TransparentStamp()
 
+for o in CompositeTwine, LocatedTwine, SourceSpan:
+    o._m_auditorStamps = (selflessGuard, transparentStamp)
 
 class TransparentGuard(Guard):
     _m_fqn = "Transparent"
