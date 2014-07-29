@@ -1193,6 +1193,11 @@ class _TwineTests(object):
         self.assertEqual(span2.endLine.n, 4)
         self.assertEqual(span2.endCol.n, 6)
 
+    def test_infect_base(self):
+        s = self.makeString(u"foo")
+        self.assertRaises(RuntimeError, s.infect, Integer(0))
+        self.assertRaises(RuntimeError, s.infect, String(u"xy"), true)
+
 
 class StringTests(_TwineTests, unittest.TestCase):
 
@@ -1206,11 +1211,21 @@ class StringTests(_TwineTests, unittest.TestCase):
         self.assertEqual(s.getPartAt(Integer(2)),
                          ConstList([Integer(0), Integer(2)]))
 
+    def test_getSourceMap(self):
+        s = String(u"foo")
+        self.assertEqual(s.getSourceMap(), ConstMap({}))
+
+    def test_infect(self):
+        s = String(u"foo")
+        t = String(u"baz")
+        self.assertEqual(t, s.infect(t))
+
     def test_slice(self):
         self.assertEqual(monte_eval(dedent("""
             def x := "abcd"
             x.slice(1) == "bcd"
             """)), true)
+
 
 
 class RefTests(unittest.TestCase):
