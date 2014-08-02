@@ -578,12 +578,7 @@ infinity = Float(float('inf'))
 
 
 def unicodeFromTwine(t):
-    if isinstance(t, EmptyTwine):
-        return u""
-    if isinstance(t, String):
-        return t.s
-    raise RuntimeError("wip")
-
+    return t.bare().s
 
 class TwineMaker(MonteObject):
     _m_fqn = "__makeString"
@@ -629,11 +624,11 @@ class Twine(MonteObject):
         his = other.getParts().l
         if len(mine) > 1 and len(his) > 1:
             # Smush the last and first segments together, if they'll fit.
-            mine = mine[:-1] + mine[-1].mergedParts(his[0]).l
+            mine = mine[:-1] + mine[-1]._m_mergedParts(his[0]).l
             his = his[1:]
         return theTwineMaker.fromParts(ConstList(mine + his))
 
-    def asFrom(self, origin, startLine, startCol):
+    def asFrom(self, origin, startLine=Integer(1), startCol=Integer(0)):
         from monte.runtime.tables import ConstList
         if not isinstance(startLine, Integer):
             raise RuntimeError("%r is not an integer" % (startLine,))
@@ -672,8 +667,8 @@ class Twine(MonteObject):
             siz = atom.size()
             if pos.n < sofar + siz.n:
                 return ConstList([Integer(i), Integer(pos.n - sofar)])
-            sofar += siz
-        raise RuntimeError("%s bigger than %s" % (pos.n, sofar))
+            sofar += siz.n
+        raise RuntimeError("%s not in  0..!%s" % (pos.n, sofar))
 
     def getSourceMap(self):
         from monte.runtime.tables import ConstList, ConstMap
@@ -694,7 +689,7 @@ class Twine(MonteObject):
             raise RuntimeError("%r is not a string" % (other,))
         if oneToOne is true:
             if self.size() == other.size():
-                return self.infectOneToOne(other)
+                return self._m_infectOneToOne(other)
             else:
                 raise RuntimeError("%r and %r must be the same size" %
                                    (other, self))
@@ -752,9 +747,9 @@ class Twine(MonteObject):
 
      # E calls this 'replaceAll'.
     def replace(self, old, new):
-        if not isinstance(old, String):
+        if not isinstance(old, Twine):
             raise RuntimeError("%r is not a string" % (old,))
-        if not isinstance(new, String):
+        if not isinstance(new, Twine):
             raise RuntimeError("%r is not a string" % (new,))
         result = theEmptyTwine
         oldLen = old.size().n
@@ -772,10 +767,10 @@ class Twine(MonteObject):
         return result
 
     def toUpperCase(self):
-        return self.infect(self.bare().s.upper(), true)
+        return self.infect(String(self.bare().s.upper()), true)
 
     def toLowerCase(self):
-        return self.infect(self.bare().s.lower(), true)
+        return self.infect(String(self.bare().s.lower()), true)
 
 
 class EmptyTwine(Twine):
@@ -891,7 +886,7 @@ class String(AtomicTwine):
     def bare(self):
         return self
 
-    def mergedParts(self, other):
+    def _m_mergedParts(self, other):
         from monte.runtime.tables import ConstList
         if isinstance(other, String):
             return ConstList([self.s + other.s])
@@ -943,7 +938,7 @@ class LocatedTwine(AtomicTwine):
     def isBare(self):
         return false
 
-    def mergedParts(self, other):
+    def _m_mergedParts(self, other):
         from monte.runtime.tables import ConstList
         if isinstance(other, LocatedTwine):
             if self.span._isOneToOne is true:
@@ -955,14 +950,16 @@ class LocatedTwine(AtomicTwine):
         return ConstList([self, other])
 
     def slice(self, start, stop=None):
-        sl = _slice(self, start, stop)
+        sl = String(_slice(self, start, stop))
         if self.span._isOneToOne is true:
-            if stop is None:
+            if stop is not None:
+                stop = stop.n
+            else:
                 stop = len(self.s)
-            startCol = self.span.startCol + start
-            endCol = startCol + (stop - start) - 1
+            startCol = self.span.startCol.n + start.n
+            endCol = startCol + (stop - start.n) - 1
             span = SourceSpan(self.span.uri, true, self.span.startLine,
-                              startCol, self.span.endLine, endCol)
+                              Integer(startCol), self.span.endLine, Integer(endCol))
         else:
             span = self.span
         return theTwineMaker.fromString(sl, span)
@@ -993,7 +990,7 @@ class CompositeTwine(Twine):
         if not isinstance(idx, Integer):
             raise RuntimeError("%r is not an integer" % (idx,))
         part, offset = self.getPartAt(idx).l
-        return self.parts[part].get(offset)
+        return self.parts.l[part].get(offset)
 
     def getParts(self):
         from monte.runtime.tables import ConstList
@@ -1030,14 +1027,14 @@ class CompositeTwine(Twine):
         leftIdx, leftOffset = self.getPartAt(start).l
         rightIdx, rightOffset = self.getPartAt(Integer(endn - 1)).l
         if leftIdx.n == rightIdx.n:
-            return self.parts[leftIdx.n].slice(leftOffset,
+            return self.parts.l[leftIdx.n].slice(leftOffset,
                                                Integer(rightOffset.n + 1))
-        left = self.parts[leftIdx.n]
-        middle = self.parts[leftIdx.n + 1:rightIdx.n]
-        right = self.parts[rightIdx.n].slice(Integer(0),
+        left = self.parts.l[leftIdx.n]
+        middle = self.parts.l[leftIdx.n + 1:rightIdx.n]
+        right = self.parts.l[rightIdx.n].slice(Integer(0),
                                              Integer(rightOffset.n + 1))
         result = (left.slice(leftOffset, left.size())
-                  .add(theTwineMaker.fromParts(ConstList([middle])))
+                  .add(theTwineMaker.fromParts(ConstList(middle)))
                   .add(right))
         return result
 
@@ -1086,6 +1083,9 @@ class SourceSpan(MonteObject):
     span. Column numbers start at 0.
 
     """
+    _m_fqn = "SourceSpan"
+    #_m_auditorStamps = (deepFrozenGuard,)
+
     def __init__(self, uri, isOneToOne, startLine, startCol,
                  endLine, endCol):
         if (startLine != endLine and isOneToOne):
@@ -1132,7 +1132,7 @@ class SourceSpan(MonteObject):
         out.raw_print(u"<")
         out._m_print(self.uri)
         out.raw_print(u"#:")
-        out.raw_print(u"span" if self.isOneToOne else u"blob")
+        out.raw_print(u"span" if self._isOneToOne is true else u"blob")
         out.raw_print(u"::")
         for x in (self.startLine, self.startCol, self.endLine):
             out._m_print(x)

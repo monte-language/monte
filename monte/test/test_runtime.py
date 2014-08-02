@@ -2,7 +2,7 @@ import os
 from textwrap import dedent
 from monte.test import unittest
 from monte.runtime.base import MonteObject, toQuote
-from monte.runtime.data import false, true, null, Integer, String
+from monte.runtime.data import false, true, null, Integer, String, SourceSpan
 from monte.runtime.load import (PackageMangler, TestCollector,
                                 eval as _monte_eval, getModuleStructure)
 from monte.runtime.scope import bootScope
@@ -1148,9 +1148,14 @@ class _TwineTests(object):
                          false)
 
     def test_add(self):
-        self.assertEqual(self.makeString(u'foo ').add(self.makeString(u'blee')
-                                                  ).bare().s,
-                         u'foo blee')
+        s = self.makeString(u'foo ')
+        t = self.makeString2(u'blee')
+        st = s.add(t)
+        self.assertEqual(st.bare().s, u'foo blee')
+        self.assertEqual(st.slice(Integer(0), Integer(4)).getSpan(),
+                         s.getSpan())
+        self.assertEqual(st.slice(Integer(4), Integer(8)).getSpan(),
+                         t.getSpan())
 
     def test_singleLineAsFrom(self):
         s = self.makeString(u'foo blee').asFrom(
@@ -1219,7 +1224,7 @@ class _TwineTests(object):
         self.assertEqual(q.slice(Integer(10), Integer(14)).getSpan(),
                          null)
         self.assertEqual(q.slice(Integer(1), Integer(9)).getSpan(),
-                         s.slice(Integer(0), Integer(4)).getSpan())
+                         s.slice(Integer(0), Integer(4)).getSpan().notOneToOne())
         self.assertEqual(q.slice(Integer(10), Integer(13)).getSpan(),
                          s.slice(Integer(4), Integer(7)).getSpan())
 
@@ -1234,17 +1239,21 @@ class _TwineTests(object):
                           for (i, j) in
                           [(0, 3), (5, 8), (10, 13)]])
 
-    def test_replace(self):
-        s = self.makeString(u'foo blee boz')
-        s2 = self.makeString2(u'baz')
-        t = s.replace(String(u'blee'), s2)
-        self.assertEqual(t.bare().s, u'foo baz boz')
-        self.assertEqual(t.slice(Integer(0), Integer(4)).getSpan(),
-                         s.slice(Integer(0), Integer(4)).getSpan())
-        self.assertEqual(t.slice(Integer(4), Integer(7)).getSpan(),
-                         s2.getSpan())
-        self.assertEqual(t.slice(Integer(7), Integer(11)).getSpan(),
-                         s.slice(Integer(7), Integer(11)).getSpan())
+    def test_upcase(self):
+        s = self.makeString(u'Foo')
+        u = s.toUpperCase()
+        self.assertEqual(u.bare().s, u'FOO')
+        self.assertEqual(u.getSpan(), s.getSpan())
+
+    def test_downcase(self):
+        s = self.makeString(u'Foo')
+        u = s.toLowerCase()
+        self.assertEqual(u.bare().s, u'foo')
+        self.assertEqual(u.getSpan(), s.getSpan())
+
+    def test_size(self):
+        s = self.makeString(u'foo baz')
+        self.assertEqual(s.size(), Integer(7))
 
 
 class StringTests(_TwineTests, unittest.TestCase):
@@ -1270,13 +1279,83 @@ class StringTests(_TwineTests, unittest.TestCase):
         t = String(u"baz")
         self.assertEqual(t, s.infect(t))
 
+    def test_quote(self):
+        s = self.makeString(u'foo\xa0baz')
+        q = s.quote()
+        self.assertEqual(q.bare().s, u'"foo\\u00a0baz"')
+        self.assertEqual(q.slice(Integer(0), Integer(1)).getSpan(), null)
+        self.assertEqual(q.slice(Integer(10), Integer(14)).getSpan(), null)
+        self.assertEqual(q.slice(Integer(1), Integer(9)).getSpan(), null)
+        self.assertEqual(q.slice(Integer(10), Integer(13)).getSpan(), null)
+
     def test_slice(self):
         self.assertEqual(monte_eval(dedent("""
             def x := "abcd"
             x.slice(1) == "bcd"
             """)), true)
 
+    def test_replace(self):
+        s = self.makeString(u'foo blee boz')
+        s2 = self.makeString2(u'baz')
+        t = s.replace(String(u'blee'), s2)
+        self.assertEqual(t.bare().s, u'foo baz boz')
+        self.assertEqual(t.slice(Integer(0), Integer(4)).getSpan(), null)
+        self.assertEqual(t.slice(Integer(4), Integer(7)).getSpan(), null)
+        self.assertEqual(t.slice(Integer(7), Integer(11)).getSpan(), null)
 
+
+class LocatedTwineTests(_TwineTests, unittest.TestCase):
+
+    def makeString(self, s):
+        return String(s).asFrom(String(u'test string'), Integer(1), Integer(0))
+
+    def makeString2(self, s):
+        return String(s).asFrom(String(u'test string 2'),
+                                Integer(1), Integer(0))
+
+    def test_getPartAt(self):
+        s = self.makeString(u'foo')
+        self.assertEqual(s.getPartAt(Integer(0)),
+                         ConstList([Integer(0), Integer(0)]))
+        self.assertEqual(s.getPartAt(Integer(2)),
+                         ConstList([Integer(0), Integer(2)]))
+
+    def test_getSourceMap(self):
+        s = self.makeString(u'foo')
+        self.assertEqual(
+            s.getSourceMap(),
+            ConstMap({ConstList([Integer(0), Integer(3)]): s.getSpan()}))
+
+    def test_infect(self):
+        s = self.makeString(u'foo')
+        t = self.makeString2(u'baz')
+        u = s.infect(t)
+        self.assertEqual(t.bare().s, u.bare().s)
+        self.assertEqual(s.getSpan().notOneToOne(), u.getSpan())
+
+    def test_replace(self):
+        s = self.makeString(u'foo blee boz')
+        s2 = self.makeString2(u'baz')
+        t = s.replace(String(u'blee'), s2)
+        self.assertEqual(t.bare().s, u'foo baz boz')
+        self.assertEqual(t.slice(Integer(0), Integer(4)).getSpan(),
+                         s.slice(Integer(0), Integer(4)).getSpan())
+        self.assertEqual(t.slice(Integer(4), Integer(7)).getSpan(),
+                         SourceSpan(String(u'test string'), false,
+                                    Integer(1), Integer(4),
+                                    Integer(1), Integer(7)))
+        self.assertEqual(t.slice(Integer(8), Integer(11)).getSpan(),
+                         s.slice(Integer(9), Integer(12)).getSpan())
+
+    def test_slice(self):
+        s = self.makeString(u'abcd')
+        t = s.slice(Integer(1))
+        self.assertEqual(t.bare().s, s.bare().s[1:])
+        self.assertEqual(t.getSpan(),
+                         SourceSpan(String(u'test string'),
+                                    true,
+                                    Integer(1), Integer(1),
+                                    Integer(1), Integer(3)))
 
 class RefTests(unittest.TestCase):
     def test_print(self):
