@@ -2,7 +2,7 @@ import os
 from textwrap import dedent
 from monte.test import unittest
 from monte.runtime.base import MonteObject, toQuote
-from monte.runtime.data import false, true, Integer, String
+from monte.runtime.data import false, true, null, Integer, String
 from monte.runtime.load import (PackageMangler, TestCollector,
                                 eval as _monte_eval, getModuleStructure)
 from monte.runtime.scope import bootScope
@@ -1198,11 +1198,61 @@ class _TwineTests(object):
         self.assertRaises(RuntimeError, s.infect, Integer(0))
         self.assertRaises(RuntimeError, s.infect, String(u"xy"), true)
 
+    def test_cmp(self):
+        a = self.makeString(u'aaa')
+        b = self.makeString(u'aab')
+        self.assertEqual(a.op__cmp(b), Integer(-1))
+        self.assertEqual(a.op__cmp(a), Integer(0))
+        self.assertEqual(b.op__cmp(a), Integer(1))
+
+    def test_multiply(self):
+        s = self.makeString(u'ab')
+        self.assertEqual(s.multiply(Integer(3)).bare().s,
+                         u'ababab')
+
+    def test_quote(self):
+        s = self.makeString(u'foo\xa0baz')
+        q = s.quote()
+        self.assertEqual(q.bare().s, u'"foo\\u00a0baz"')
+        self.assertEqual(q.slice(Integer(0), Integer(1)).getSpan(),
+                         null)
+        self.assertEqual(q.slice(Integer(10), Integer(14)).getSpan(),
+                         null)
+        self.assertEqual(q.slice(Integer(1), Integer(9)).getSpan(),
+                         s.slice(Integer(0), Integer(4)).getSpan())
+        self.assertEqual(q.slice(Integer(10), Integer(13)).getSpan(),
+                         s.slice(Integer(4), Integer(7)).getSpan())
+
+    def test_split(self):
+        s = self.makeString(u'foo, bar, baz')
+        x = s.split(String(u', '))
+        self.assertIsInstance(x, ConstList)
+        self.assertEqual([t.bare().s for t in x.l],
+                         [u'foo', u'bar', u'baz'])
+        self.assertEqual([t.getSpan() for t in x.l],
+                         [s.slice(Integer(i), Integer(j)).getSpan()
+                          for (i, j) in
+                          [(0, 3), (5, 8), (10, 13)]])
+
+    def test_replace(self):
+        s = self.makeString(u'foo blee boz')
+        s2 = self.makeString2(u'baz')
+        t = s.replace(String(u'blee'), s2)
+        self.assertEqual(t.bare().s, u'foo baz boz')
+        self.assertEqual(t.slice(Integer(0), Integer(4)).getSpan(),
+                         s.slice(Integer(0), Integer(4)).getSpan())
+        self.assertEqual(t.slice(Integer(4), Integer(7)).getSpan(),
+                         s2.getSpan())
+        self.assertEqual(t.slice(Integer(7), Integer(11)).getSpan(),
+                         s.slice(Integer(7), Integer(11)).getSpan())
+
 
 class StringTests(_TwineTests, unittest.TestCase):
 
     def makeString(self, s):
         return String(s)
+
+    makeString2 = makeString
 
     def test_getPartAt(self):
         s = String(u"foo")
