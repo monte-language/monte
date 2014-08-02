@@ -73,7 +73,7 @@ def bwrap(b):
     return true if b else false
 
 _CHAR_ESCAPES = {
-    u'\B': u'\\b',
+    u'\b': u'\\b',
     u'\t': u'\\t',
     u'\n': u'\\n',
     u'\f': u'\\f',
@@ -739,11 +739,11 @@ class Twine(MonteObject):
             raise RuntimeError("separator must not empty")
         result = []
         p1 = 0
-        p2 = self.indexOf(other)
-        while p2 != 1:
+        p2 = self.indexOf(other).n
+        while p2 != -1:
             result.append(self.slice(Integer(p1), Integer(p2)))
             p1 = p2 + sepLen
-            p2 = self.indexOf(other, Integer(p1))
+            p2 = self.indexOf(other, Integer(p1)).n
         result.append(self.slice(Integer(p1), self.size()))
         return ConstList(result)
 
@@ -761,12 +761,13 @@ class Twine(MonteObject):
         if oldLen == 0:
             raise RuntimeError("can't replace the null string")
         p1 = 0
-        p2 = self.indexOf(old)
+        p2 = self.indexOf(old).n
         while p2 != -1:
             left = self.slice(Integer(p1), Integer(p2))
             chunk = self.slice(Integer(p2), Integer(p2 + oldLen))
             result = result.add(left).add(chunk.infect(new, false))
             p1 = p2 + oldLen
+            p2 = self.indexOf(old, Integer(p1)).n
         result = result.add(self.slice(Integer(p1), self.size()))
         return result
 
@@ -845,10 +846,14 @@ class AtomicTwine(Twine):
         from monte.runtime.tables import ConstList
         return ConstList([self])
 
-    def indexOf(self, target):
+    def indexOf(self, target, start=None):
         if not isinstance(target, Twine):
             raise RuntimeError("%r is not a string" % (target,))
-        return Integer(self.s.find(unicodeFromTwine(target)))
+        if start is not None:
+            if not isinstance(start, Integer):
+                raise RuntimeError("%r is not an integer" % (start,))
+            start = start.n
+        return Integer(self.s.find(unicodeFromTwine(target), start))
 
     def size(self):
         return Integer(len(self.s))
