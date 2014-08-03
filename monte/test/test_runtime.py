@@ -1357,6 +1357,103 @@ class LocatedTwineTests(_TwineTests, unittest.TestCase):
                                     Integer(1), Integer(1),
                                     Integer(1), Integer(3)))
 
+class CompositeTwineTests(_TwineTests, unittest.TestCase):
+
+    def makeString(self, s):
+        left = String(s[:-1]).asFrom(String(u'test string'),
+                                     Integer(1), Integer(0))
+        right = String(s[-1:]).asFrom(String(u'test string'),
+                                      Integer(2), Integer(0))
+        return left.add(right)
+
+    def makeString2(self, s):
+        left = String(s[:-1]).asFrom(String(u'test string 2'),
+                                     Integer(1), Integer(0))
+        right = String(s[-1:]).asFrom(String(u'test string 2'),
+                                      Integer(2), Integer(0))
+        return left.add(right)
+
+    def test_getPartAt(self):
+        s = self.makeString(u'foo')
+        self.assertEqual(s.getPartAt(Integer(0)),
+                         ConstList([Integer(0), Integer(0)]))
+        self.assertEqual(s.getPartAt(Integer(1)),
+                         ConstList([Integer(0), Integer(1)]))
+        self.assertEqual(s.getPartAt(Integer(2)),
+                         ConstList([Integer(1), Integer(0)]))
+
+    def test_getSourceMap(self):
+        s = self.makeString(u'foo baz')
+        k1 = ConstList([Integer(0), Integer(6)])
+        k2 = ConstList([Integer(6), Integer(7)])
+        self.assertEqual(
+            s.getSourceMap(),
+            ConstMap(
+                {k1:
+                 SourceSpan(String(u'test string'), true,
+                            Integer(1), Integer(0),
+                            Integer(1), Integer(5)),
+                 k2:
+                 SourceSpan(String(u'test string'), true,
+                            Integer(2), Integer(0),
+                            Integer(2), Integer(1)),
+                 }, [k1, k2]))
+
+    def test_add_merge(self):
+        s = String(u'baz\nfoo').asFrom(String(u'test.txt'),
+                                       Integer(1), Integer(0))
+        s2 = String(u'bar\nblee').asFrom(String(u'test.txt'),
+                                         Integer(2), Integer(3))
+        parts = s.add(s2).getParts()
+        self.assertEqual(len(parts.l), 3)
+        self.assertEqual(parts.l[0].s, u'baz\n')
+        self.assertEqual(parts.l[1].s, u'foobar\n')
+        self.assertEqual(parts.l[1].getSpan(),
+                         SourceSpan(String(u'test.txt'), true,
+                                    Integer(2), Integer(0),
+                                    Integer(2), Integer(6)))
+        self.assertEqual(parts.l[2].s, u'blee')
+
+    def test_add_half_bare(self):
+        s = String(u'baz\nfoo').asFrom(String(u'test.txt'),
+                                       Integer(1), Integer(0))
+        s2 = String(u'bar\nblee')
+        parts = s.add(s2).getParts()
+        print "<<", parts.l
+        self.assertEqual(len(parts.l), 3)
+        self.assertEqual(parts.l[0].s, u'baz\n')
+        self.assertEqual(parts.l[1].s, u'foo')
+        self.assertEqual(parts.l[2].s, u'bar\nblee')
+
+
+
+    def test_infect(self):
+        s = self.makeString(u'foo\nblee')
+        t = self.makeString2(u'baz\nboz')
+        u = s.infect(t)
+        self.assertEqual(t.bare().s, u.bare().s)
+        self.assertEqual(s.getSpan().notOneToOne(), u.getSpan())
+
+    def test_replace(self):
+        s = String(u'foo\nblee boz').asFrom("test string")
+        s2 = String(u'foo\nbaz b')
+        t = s.replace(String(u'foo\nb'), s2)
+        self.assertEqual(t.bare().s, u'foo\nbaz blee boz')
+        self.assertEqual(t.slice(Integer(0), Integer(9)).getSpan(),
+                         s.slice(Integer(0), Integer(5)).getSpan())
+        self.assertEqual(t.slice(Integer(9), Integer(16)).getSpan(),
+                         s.slice(Integer(5), Integer(12)).getSpan())
+
+    def test_slice(self):
+        s = self.makeString(u'abcd')
+        t = s.slice(Integer(1))
+        self.assertEqual(t.bare().s, s.bare().s[1:])
+        self.assertEqual(t.getSpan(),
+                         SourceSpan(String(u'test string'),
+                                    false,
+                                    Integer(1), Integer(1),
+                                    Integer(2), Integer(0)))
+
 class RefTests(unittest.TestCase):
     def test_print(self):
         self.assertEqual(repr(monte_eval("Ref.promise()[0]")), "<m: <Promise>>")
