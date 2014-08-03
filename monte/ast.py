@@ -180,5 +180,7 @@ def dumpTerm(term, out):
     elif name == '.char.':
         out.write(o.encode('utf-8'))
     else:
+        assert name in arities
+        assert len(term.args) == arities[name], "Bad arity of term: %r" % term
         for t in term.args:
             dumpTerm(t, out)
