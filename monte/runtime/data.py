@@ -990,7 +990,7 @@ class CompositeTwine(Twine):
         if not isinstance(idx, Integer):
             raise RuntimeError("%r is not an integer" % (idx,))
         part, offset = self.getPartAt(idx).l
-        return self.parts.l[part].get(offset)
+        return self.parts.l[part.n].get(offset)
 
     def getParts(self):
         from monte.runtime.tables import ConstList
@@ -1006,6 +1006,9 @@ class CompositeTwine(Twine):
             result = spanCover(result, p.getSpan())
         return result
 
+    def indexOf(self, target, start=None):
+        return self.bare().indexOf(target, start)
+
     def isBare(self):
         return false
 
@@ -1018,6 +1021,8 @@ class CompositeTwine(Twine):
             raise RuntimeError("%r is not an integer" % (end,))
         elif end is not None:
             endn = end.n
+        else:
+            endn = self.size().n
         if startn < 0:
             raise RuntimeError("Slice indices must be positive")
         if end is not None and endn < 0:
@@ -1041,7 +1046,7 @@ class CompositeTwine(Twine):
     def size(self):
         if self.sizeCache is None:
             self.sizeCache = Integer(sum(p.size().n for p in self.parts))
-        return seif.sizeCache
+        return self.sizeCache
 
     def _printOn(self, out):
         for p in self.parts:
@@ -1163,9 +1168,9 @@ def spanCover(a, b):
         return null
     if (a._isOneToOne is true and b._isOneToOne is true
         and a.endLine == b.startLine
-        and a.endCol == b.startCol):
+        and a.endCol.add(Integer(1)) == b.startCol):
         # These spans are adjacent.
-        return SourceSpan(a.uri, True,
+        return SourceSpan(a.uri, true,
                           a.startLine, a.startCol,
                           b.endLine, b.endCol)
 
