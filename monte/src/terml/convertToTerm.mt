@@ -37,28 +37,28 @@ def convertToTerm(val, ej) as DeepFrozen:
 
 def test_convert(assert):
     def t1 := convertToTerm([1, null, 2.5, "yes", 'c', true, [1 => 2]], null)
-    assert.equal(t1.getTag().getTagName(), ".tuple.")
+    assert.equal(t1.getTag().getName(), ".tuple.")
     def a := t1.getArgs()
     def one := a[0]
-    assert.equal(one.getTag().getTagName(), ".int.")
+    assert.equal(one.getTag().getName(), ".int.")
     assert.equal(one.getData(), 1)
     def nul := a[1]
-    assert.equal(nul.getTag().getTagName(), "null")
+    assert.equal(nul.getTag().getName(), "null")
     def flo := a[2]
-    assert.equal(flo.getTag().getTagName(), ".float.")
+    assert.equal(flo.getTag().getName(), ".float.")
     assert.equal(flo.getData(), 2.5)
     def s := a[3]
-    assert.equal(s.getTag().getTagName(), ".String.")
+    assert.equal(s.getTag().getName(), ".String.")
     assert.equal(s.getData(), "yes")
     def c := a[4]
-    assert.equal(c.getTag().getTagName(), ".char.")
+    assert.equal(c.getTag().getName(), ".char.")
     assert.equal(c.getData(), 'c')
     def b := a[5]
-    assert.equal(b.getTag().getTagName(), "true")
+    assert.equal(b.getTag().getName(), "true")
     def m := a[6]
-    assert.equal(m.getTag().getTagName(), ".bag.")
+    assert.equal(m.getTag().getName(), ".bag.")
     def ma := m.getArgs()
-    assert.equal(ma[0].getTag().getTagName(), ".attr.")
+    assert.equal(ma[0].getTag().getName(), ".attr.")
     def k := ma[0].getArgs()[0]
     assert.equal(k.getData(), 1)
     def v := ma[0].getArgs()[1]
