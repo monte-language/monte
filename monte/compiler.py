@@ -99,7 +99,7 @@ class OuterScopeLayout(object):
         else:
             if default is _absent:
                 raise CompileError("No global named %r; possibilities are %s"
-                        % (n, self.outers))
+                                   % (n, self.bindings.keys()))
             else:
                 return default
 
