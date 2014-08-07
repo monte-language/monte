@@ -131,6 +131,11 @@ class Character(MonteObject):
             raise RuntimeError("%r is not an integer" % (other,))
         return Character(unichr(ord(self._c) - other.n))
 
+    def op__cmp(self, other):
+        if not isinstance(other, Character):
+            raise RuntimeError("%r is not a character" % (other,))
+        return Integer(cmp(self._c, other._c))
+
     def next(self):
         if ord(self._c) == 0x10FFFF:
             return self
@@ -425,6 +430,14 @@ class Integer(MonteObject):
         out.raw_print(unicode(self.n))
 
 
+def makeInteger(s, radix=Integer(10)):
+    if not isinstance(s, Twine):
+        raise RuntimeError("%r is not a string" % (s,))
+    if not isinstance(radix, Integer):
+        raise RuntimeError("%r is not an integer" % (radix,))
+    return Integer(int(s.bare().s, radix.n))
+
+
 class Float(MonteObject):
     _m_fqn = "__makeFloat$float"
     #_m_auditorStamps = (deepFrozenGuard,)
@@ -562,6 +575,12 @@ class Float(MonteObject):
         if not isinstance(other, (Float, Integer)):
             raise RuntimeError("%r is not an integer" % (other,))
         return numWrap(min(self.n, other.n))
+
+
+def makeFloat(s):
+    if not isinstance(s, Twine):
+        raise RuntimeError("%r is not a string" % (s,))
+    return Float(s.bare().s)
 
 
 def numWrap(n):

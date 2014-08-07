@@ -1,8 +1,8 @@
 from monte.runtime.audit import auditedBy
 from monte.runtime.base import throw
 from monte.runtime.bindings import reifyBinding, FinalSlot, VarSlot
-from monte.runtime.data import (Integer, String, true, false, nan, infinity,
-                                null, theTwineMaker, unicodeFromTwine)
+from monte.runtime.data import (makeFloat, makeInteger, String, true, false, nan, infinity,
+                                null, theTwineMaker, unicodeFromTwine, makeSourceSpan)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import monteLooper
 from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, nullOkGuard,
@@ -55,7 +55,8 @@ bootScope = {
     ## Data constructors
     '__makeList': makeMonteList,
     '__makeMap': mapMaker,
-    '__makeInt': Integer,
+    '__makeInt': makeInteger,
+    '__makeFloat': makeFloat,
     '__makeFinalSlot': FinalSlot,
     '__makeVarSlot': VarSlot,
     # '__makeCoercedSlot': makeCoercedSlot,
@@ -144,6 +145,10 @@ bootScope = {
     # '__identityFunc': identityFunc,
 
     'help': help,
+
+    # move this into something importable
+    'makeSourceSpan': makeSourceSpan,
+
 }
 
 def createSafeScope(scope):
