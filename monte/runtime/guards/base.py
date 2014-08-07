@@ -147,7 +147,7 @@ class PythonTypeGuard(PrintFQN, Guard):
         if isinstance(specimen, self.typ):
             return specimen
         else:
-            throw.eject(ej, "is not a %s" % (self.typ,))
+            throw.eject(ej, "%r is not a %s" % (specimen, self.typ,))
 
 
 class AnyGuard(PrintFQN, MonteObject):

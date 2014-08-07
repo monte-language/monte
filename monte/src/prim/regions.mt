@@ -378,8 +378,9 @@ object OrderedRegionMaker as DeepFrozen:
                         if (minout != null):
                             flex.push(minout)
                     # XXX compiler bug workaround
-                    def bluh := (out1 != null && out1 < out2)
-                    if (out2 == null || bluh):
+                    if (out2 == null):
+                        i += 2
+                    else if (out1 != null && out1 < out2):
                         i += 2
                     else:
                         j += 2

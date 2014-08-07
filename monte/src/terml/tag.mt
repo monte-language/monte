@@ -23,10 +23,10 @@ object makeTag as DeepFrozen:
                     out.print(dataGuard)
                 out.print(">")
 
-            to getTagCode():
+            to getCode():
                 return code
 
-            to getTagName():
+            to getName():
                 return name
 
             to getDataGuard():

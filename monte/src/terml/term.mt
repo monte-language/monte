@@ -76,7 +76,7 @@ object makeTerm as DeepFrozen:
                 def x := args != null && args.size() == 0
                 if (x && [str, float, int, char].contains(guard)):
                     if (data == null):
-                        return tag.getTagName()
+                        return tag.getName()
                     return data
                 else:
                     return term
@@ -90,7 +90,7 @@ object makeTerm as DeepFrozen:
                 var delims := null
                 switch (data):
                     match ==null:
-                        label := tag.getTagName()
+                        label := tag.getName()
                     match f :float:
                         if (f.isNaN()):
                             label := "%NaN"
@@ -126,7 +126,7 @@ object makeTerm as DeepFrozen:
                 else if (args == null):
                     out.print(label)
                     return
-                else if (args.size() == 1 && (args[0].getTag().getTagName() != null)):
+                else if (args.size() == 1 && (args[0].getTag().getName() != null)):
                     out.print(label)
                     out.print("(")
                     args[0].prettyPrintOn(out, isQuasi)
