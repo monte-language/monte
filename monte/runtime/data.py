@@ -1,6 +1,6 @@
 import struct, math
 from sys import float_info
-from monte.runtime.base import MonteObject, ejector
+from monte.runtime.base import MonteObject, ejector, typecheck
 from monte.runtime.flow import MonteIterator
 
 class MonteNull(MonteObject):
@@ -35,31 +35,29 @@ class Bool(MonteObject):
         return self._b
 
     def __eq__(self, other):
-        if not isinstance(other, Bool):
+        try:
+            other = typecheck(other, Bool)
+        except RuntimeError:
             return false
         return bwrap(self._b == other._b)
 
     def _m_and(self, other):
-        if not isinstance(other, Bool):
-            raise RuntimeError("Bools can't be compared with non-bools")
+        other = typecheck(other, Bool)
         return bwrap(self._b and other._b)
 
     def _m_or(self, other):
-        if not isinstance(other, Bool):
-            raise RuntimeError("Bools can't be compared with non-bools")
+        other = typecheck(other, Bool)
         return bwrap(self._b or other._b)
 
     def _m_not(self):
         return bwrap(not self._b)
 
     def xor(self, other):
-        if not isinstance(other, Bool):
-            raise RuntimeError("Bools can't be compared with non-bools")
+        other = typecheck(other, Bool)
         return bwrap(self._b != other._b)
 
     def  op__cmp(self, other):
-        if not isinstance(other, Bool):
-            raise RuntimeError("%r is not a boolean" % (other,))
+        other = typecheck(other, Bool)
         return Integer(cmp(self._b, other._b))
 
     def _printOn(self, out):
@@ -117,23 +115,22 @@ class Character(MonteObject):
         return hash(self._c)
 
     def __eq__(self, other):
-        if not isinstance(other, Character):
+        try:
+            other = typecheck(other, Character)
+        except RuntimeError:
             return false
         return bwrap(self._c == other._c)
 
     def add(self, other):
-        if not isinstance(other, Integer):
-            raise RuntimeError("%r is not an integer" % (other,))
+        other = typecheck(other, Integer)
         return Character(unichr(ord(self._c) + other.n))
 
     def subtract(self, other):
-        if not isinstance(other, Integer):
-            raise RuntimeError("%r is not an integer" % (other,))
+        other = typecheck(other, Integer)
         return Character(unichr(ord(self._c) - other.n))
 
     def op__cmp(self, other):
-        if not isinstance(other, Character):
-            raise RuntimeError("%r is not a character" % (other,))
+        other = typecheck(other, Character)
         return Integer(cmp(self._c, other._c))
 
     def next(self):
@@ -147,13 +144,11 @@ class Character(MonteObject):
         return Character(unichr(ord(self._c) - 1))
 
     def max(self, other):
-        if not isinstance(other, Character):
-            raise RuntimeError("%r is not a character" % (other,))
+        other = typecheck(other, Character)
         return Character(max(self._c, other._c))
 
     def min(self, other):
-        if not isinstance(other, Character):
-            raise RuntimeError("%r is not a character" % (other,))
+        other = typecheck(other, Character)
         return Character(min(self._c, other._c))
 
     def quote(self):
@@ -163,10 +158,14 @@ class Character(MonteObject):
         out.raw_print(self._c)
 
 
+def makeCharacter(i):
+    i = typecheck(i, Integer)
+    return Character(unichr(i.n))
+
+
 class Bytestring(MonteObject):
     def __init__(self, b):
-        if not isinstance(b, str):
-            raise RuntimeError("%r is not a byte string" % (b,))
+        b = typecheck(b, str)
         self.b = b
 
     def quote(self):
@@ -176,26 +175,22 @@ class Bytestring(MonteObject):
         out._m_print(self.quote())
 
     def __eq__(self, other):
-        if not isinstance(other, Bytestring):
-            return false
+        other = typecheck(other, Bytestring)
         return bwrap(self.b == other.b)
 
     def _makeIterator(self):
         return MonteIterator(enumerate(Integer(ord(b)) for b in self.b))
 
     def op__cmp(self, other):
-        if not isinstance(other, Bytestring):
-            raise RuntimeError("%r is not a bytestring" % (other,))
+        other = typecheck(other, Bytestring)
         return Integer(cmp(self.b, other.b))
 
     def get(self, idx):
-        if not isinstance(idx, Integer):
-            raise RuntimeError("%r is not an integer" % (idx,))
+        idx = typecheck(idx, Integer)
         return Integer(ord(self.b[idx.n]))
 
     def slice(self, start, end=None):
-        if not isinstance(start, Integer):
-            raise RuntimeError("%r is not an integer" % (start,))
+        start = typecheck(start, Integer)
         start = start.n
         if end is not None and not isinstance(end, Integer):
             raise RuntimeError("%r is not an integer" % (end,))
@@ -211,32 +206,26 @@ class Bytestring(MonteObject):
         return Integer(len(self.b))
 
     def add(self, other):
-        if not isinstance(other, Bytestring):
-            raise RuntimeError("%r is not a bytestring" % (other,))
-
+        other = typecheck(other, Bytestring)
         return Bytestring(self.b + other.b)
 
     def multiply(self, n):
-        if not isinstance(n, Integer):
-            raise RuntimeError("%r is not an integer" % (n,))
+        n = typecheck(n, Integer)
         return Bytestring(self.b * n.n)
 
     def startsWith(self, other):
-        if not isinstance(other, Bytestring):
-            raise RuntimeError("%r is not a bytestring" % (other,))
+        other = typecheck(other, Bytestring)
 
         return bwrap(self.b.startswith(other.b))
 
     def endsWith(self, other):
-        if not isinstance(other, Bytestring):
-            raise RuntimeError("%r is not a string" % (other,))
+        other = typecheck(other, Bytestring)
 
         return bwrap(self.b.endswith(other.b))
 
     def split(self, other):
         from monte.runtime.tables import ConstList
-        if not isinstance(other, Bytestring):
-            raise RuntimeError("%r is not a bytestring" % (other,))
+        other = typecheck(other, Bytestring)
         return ConstList(Bytestring(x) for x in self.b.split(other.b))
 
     def join(self, items):
@@ -255,10 +244,8 @@ class Bytestring(MonteObject):
 
     # E calls this 'replaceAll'.
     def replace(self, old, new):
-        if not isinstance(old, Bytestring):
-            raise RuntimeError("%r is not a bytestring" % (old,))
-        if not isinstance(new, Bytestring):
-            raise RuntimeError("%r is not a bytestring" % (new,))
+        old = typecheck(old, Bytestring)
+        new = typecheck(new, Bytestring)
         return Bytestring(self.b.replace(old.b, new.b))
 
     def toUpperCase(self):
@@ -279,7 +266,9 @@ class Integer(MonteObject):
         return hash(self.n)
 
     def __eq__(self, other):
-        if not isinstance(other, Integer):
+        try:
+            other = typecheck(other, Integer)
+        except RuntimeError:
             return false
         return bwrap(self.n == other.n)
 
@@ -295,8 +284,7 @@ class Integer(MonteObject):
         return Float(float(self.n))
 
     def toString(self, radix):
-        if not isinstance(radix, Integer):
-            raise RuntimeError("%r is not a integer" % (radix,))
+        radix = typecheck(radix, Integer)
         radix = radix.n
         if radix == 16:
             return String(hex(self.n)[2:].decode('ascii'))
@@ -362,8 +350,7 @@ class Integer(MonteObject):
     # Comparator.
 
     def op__cmp(self, other):
-        if not isinstance(other, (Integer, Float)):
-            raise RuntimeError("%r is not a number" % (other,))
+        other = typecheck(other, (Integer, Float))
         return Integer(cmp(self.n, other.n))
 
     # Comparison protocol.
@@ -417,13 +404,11 @@ class Integer(MonteObject):
         return Integer(self.n.bit_length())
 
     def max(self, other):
-        if not isinstance(other, Integer):
-            raise RuntimeError("%r is not an integer" % (other,))
+        other = typecheck(other, Integer)
         return numWrap(max(self.n, other.n))
 
     def min(self, other):
-        if not isinstance(other, Integer):
-            raise RuntimeError("%r is not an integer" % (other,))
+        other = typecheck(other, Integer)
         return numWrap(min(self.n, other.n))
 
     def _printOn(self, out):
@@ -431,10 +416,8 @@ class Integer(MonteObject):
 
 
 def makeInteger(s, radix=Integer(10)):
-    if not isinstance(s, Twine):
-        raise RuntimeError("%r is not a string" % (s,))
-    if not isinstance(radix, Integer):
-        raise RuntimeError("%r is not an integer" % (radix,))
+    s = typecheck(s, Twine)
+    radix = typecheck(radix, Integer)
     return Integer(int(s.bare().s, radix.n))
 
 
@@ -449,7 +432,9 @@ class Float(MonteObject):
         return hash(self.n)
 
     def __eq__(self, other):
-        if not isinstance(other, (Integer, Float)):
+        try:
+            other = typecheck(other, (Integer, Float))
+        except RuntimeError:
             return false
         return bwrap(self.n == other.n)
 
@@ -481,8 +466,7 @@ class Float(MonteObject):
     # Comparator.
 
     def op__cmp(self, other):
-        if not isinstance(other, (Integer, Float)):
-            raise RuntimeError("%r is not a number" % (other,))
+        other = typecheck(other, (Integer, Float))
         #cmp doesn't do NaNs, so
         if self.n < other.n:
             return Float(-1.0)
@@ -567,19 +551,16 @@ class Float(MonteObject):
     # Misc.
 
     def max(self, other):
-        if not isinstance(other, (Float, Integer)):
-            raise RuntimeError("%r is not a number" % (other,))
+        other = typecheck(other, (Float, Integer))
         return numWrap(max(self.n, other.n))
 
     def min(self, other):
-        if not isinstance(other, (Float, Integer)):
-            raise RuntimeError("%r is not an integer" % (other,))
+        other = typecheck(other, (Float, Integer))
         return numWrap(min(self.n, other.n))
 
 
 def makeFloat(s):
-    if not isinstance(s, Twine):
-        raise RuntimeError("%r is not a string" % (s,))
+    s = typecheck(s, Twine)
     return Float(s.bare().s)
 
 
@@ -596,16 +577,12 @@ nan = Float(float('nan'))
 infinity = Float(float('inf'))
 
 
-def unicodeFromTwine(t):
-    return t.bare().s
-
 class TwineMaker(MonteObject):
     _m_fqn = "__makeString"
 
     def fromParts(self, parts):
         from monte.runtime.tables import ConstList, FlexList
-        if not isinstance(parts, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (parts,))
+        parts = typecheck(parts, (ConstList, FlexList))
         if len(parts.l) == 0:
             return theEmptyTwine
         elif len(parts.l) == 1:
@@ -616,17 +593,15 @@ class TwineMaker(MonteObject):
             return CompositeTwine(parts)
 
     def fromString(self, s, span=null):
-        if not isinstance(s, Twine):
-            raise RuntimeError("%r is not a string" % (s,))
+        s = typecheck(s, Twine).bare()
         if span is null:
-            return s.bare()
+            return s
         else:
-            return LocatedTwine(unicodeFromTwine(s), span)
+            return LocatedTwine(s.s, span)
 
     def fromChars(self, chars):
         from monte.runtime.tables import ConstList, FlexList
-        if not isinstance(chars, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (chars,))
+        chars = typecheck(chars, (ConstList, FlexList))
         if not all(isinstance(c, Character) for c in chars.l):
             raise RuntimeError("%r is not a list of characters" % (chars,))
         return String(u''.join(c._c for c in chars.l))
@@ -637,8 +612,7 @@ theTwineMaker = TwineMaker()
 class Twine(MonteObject):
     def add(self, other):
         from monte.runtime.tables import ConstList
-        if not isinstance(other, Twine):
-            raise RuntimeError("%r is not a string" % (other,))
+        other = typecheck(other, Twine)
         mine = self.getParts().l
         his = other.getParts().l
         if len(mine) > 1 and len(his) > 1:
@@ -649,10 +623,8 @@ class Twine(MonteObject):
 
     def asFrom(self, origin, startLine=Integer(1), startCol=Integer(0)):
         from monte.runtime.tables import ConstList
-        if not isinstance(startLine, Integer):
-            raise RuntimeError("%r is not an integer" % (startLine,))
-        if not isinstance(startCol, Integer):
-            raise RuntimeError("%r is not an integer" % (startCol,))
+        startLine = typecheck(startLine, Integer)
+        startCol = typecheck(startCol, Integer)
         parts = []
         s = self.bare().s
         end = len(s)
@@ -676,8 +648,7 @@ class Twine(MonteObject):
 
     def getPartAt(self, pos):
         from monte.runtime.tables import ConstList
-        if not isinstance(pos, Integer):
-            raise RuntimeError("%r is not an integer" % (pos,))
+        pos = typecheck(pos, Integer)
         if pos.n < 0:
             raise RuntimeError("Index out of bounds")
         parts = self.getParts().l
@@ -704,8 +675,7 @@ class Twine(MonteObject):
         return ConstMap(dict(result), [x[0] for x in result])
 
     def infect(self, other, oneToOne=false):
-        if not isinstance(other, Twine):
-            raise RuntimeError("%r is not a string" % (other,))
+        other = typecheck(other, Twine)
         if oneToOne is true:
             if self.size() == other.size():
                 return self._m_infectOneToOne(other)
@@ -722,8 +692,7 @@ class Twine(MonteObject):
         return Integer(cmp(self.bare().s, other.bare().s))
 
     def multiply(self, n):
-        if not isinstance(n, Integer):
-            raise RuntimeError("%r is not an integer" % (n,))
+        n = typecheck(n, Integer)
         result = theEmptyTwine
         for _ in range(n.n):
             result = result.add(self)
@@ -746,8 +715,7 @@ class Twine(MonteObject):
 
     def split(self, other):
         from monte.runtime.tables import ConstList
-        if not isinstance(other, Twine):
-            raise RuntimeError("%r is not a string" % (other,))
+        other = typecheck(other, Twine)
         sepLen = other.size().n
         if sepLen == Integer(0):
             raise RuntimeError("separator must not empty")
@@ -766,10 +734,8 @@ class Twine(MonteObject):
 
      # E calls this 'replaceAll'.
     def replace(self, old, new):
-        if not isinstance(old, Twine):
-            raise RuntimeError("%r is not a string" % (old,))
-        if not isinstance(new, Twine):
-            raise RuntimeError("%r is not a string" % (new,))
+        old = typecheck(old, Twine)
+        new = typecheck(new, Twine)
         result = theEmptyTwine
         oldLen = old.size().n
         if oldLen == 0:
@@ -830,8 +796,7 @@ theEmptyTwine = EmptyTwine()
 
 
 def _slice(self, start, end=None):
-    if not isinstance(start, Integer):
-        raise RuntimeError("%r is not an integer" % (start,))
+    start = typecheck(start, Integer)
     start = start.n
     if end is not None and not isinstance(end, Integer):
         raise RuntimeError("%r is not an integer" % (end,))
@@ -846,14 +811,11 @@ def _slice(self, start, end=None):
 
 class AtomicTwine(Twine):
     def endsWith(self, other):
-        if not isinstance(other, Twine):
-            raise RuntimeError("%r is not a string" % (other,))
-        suffix = unicodeFromTwine(other)
+        suffix = typecheck(other, Twine).bare().s
         return bwrap(self.s.endswith(suffix))
 
     def get(self, idx):
-        if not isinstance(idx, Integer):
-            raise RuntimeError("%r is not an integer" % (idx,))
+        idx = typecheck(idx, Integer)
         return Character(self.s[idx.n])
 
     def getParts(self):
@@ -861,22 +823,17 @@ class AtomicTwine(Twine):
         return ConstList([self])
 
     def indexOf(self, target, start=None):
-        if not isinstance(target, Twine):
-            raise RuntimeError("%r is not a string" % (target,))
+        target = typecheck(target, Twine).bare().s
         if start is not None:
-            if not isinstance(start, Integer):
-                raise RuntimeError("%r is not an integer" % (start,))
-            start = start.n
-        return Integer(self.s.find(unicodeFromTwine(target), start))
+            start = typecheck(start, Integer).n
+        return Integer(self.s.find(target, start))
 
     def size(self):
         return Integer(len(self.s))
 
     def startsWith(self, other):
-        if not isinstance(other, Twine):
-            raise RuntimeError("%r is not a string" % (other,))
-
-        return bwrap(self.s.startswith(unicodeFromTwine(other)))
+        other = typecheck(other, Twine).bare().s
+        return bwrap(self.s.startswith(other))
 
     def _makeIterator(self):
         return MonteIterator(enumerate(Character(c) for c in self.s))
@@ -898,9 +855,11 @@ class String(AtomicTwine):
         return hash(self.s)
 
     def __eq__(self, other):
-        if not isinstance(other, Twine):
+        try:
+            other = typecheck(other, Twine).bare().s
+        except RuntimeError:
             return false
-        return bwrap(self.s == unicodeFromTwine(other))
+        return bwrap(self.s == other)
 
     def bare(self):
         return self
@@ -925,8 +884,7 @@ class String(AtomicTwine):
 
     # def split(self, other):
     #     from monte.runtime.tables import ConstList
-    #     if not isinstance(other, String):
-    #         raise RuntimeError("%r is not a string" % (other,))
+    #     other = typecheck(other, String)
     #     return ConstList(String(x) for x in self.s.split(other.s))
 
     def _m_infectOneToOne(self, other):
@@ -939,8 +897,7 @@ class LocatedTwine(AtomicTwine):
     def __init__(self, s, span):
         if not isinstance(s, unicode):
             raise RuntimeError("%r is not a unicode string" % (s,))
-        if not isinstance(span, SourceSpan):
-            raise RuntimeError("%r is not a source span" % (span,))
+        span = typecheck(span, SourceSpan)
         self.s = s
         self.span = span
 
@@ -997,8 +954,7 @@ class CompositeTwine(Twine):
 
     def __init__(self, parts):
         from monte.runtime.tables import FlexList, ConstList
-        if not isinstance(parts, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (parts,))
+        parts = typecheck(parts, (ConstList, FlexList))
         self.parts = parts
         self.sizeCache = None
 
@@ -1006,8 +962,7 @@ class CompositeTwine(Twine):
         return String(u''.join(p.bare().s for p in self.parts.l))
 
     def get(self, idx):
-        if not isinstance(idx, Integer):
-            raise RuntimeError("%r is not an integer" % (idx,))
+        idx = typecheck(idx, Integer)
         part, offset = self.getPartAt(idx).l
         return self.parts.l[part.n].get(offset)
 
@@ -1033,8 +988,7 @@ class CompositeTwine(Twine):
 
     def slice(self, start, end=None):
         from monte.runtime.tables import ConstList
-        if not isinstance(start, Integer):
-            raise RuntimeError("%r is not an integer" % (start,))
+        start = typecheck(start, Integer)
         startn = start.n
         if end is not None and not isinstance(end, Integer):
             raise RuntimeError("%r is not an integer" % (end,))
@@ -1086,6 +1040,7 @@ class CompositeTwine(Twine):
             pos += siz
         return result
 
+
 def makeSourceSpan(*a):
     return SourceSpan(*a)
 
@@ -1116,18 +1071,10 @@ class SourceSpan(MonteObject):
             raise RuntimeError("one-to-one spans must be on a line")
         self.uri = uri
         self._isOneToOne = isOneToOne
-        if not isinstance(startLine, Integer):
-            raise RuntimeError("%r is not an integer" % (startLine,))
-        self.startLine = startLine
-        if not isinstance(startCol, Integer):
-            raise RuntimeError("%r is not an integer" % (startCol,))
-        self.startCol = startCol
-        if not isinstance(endLine, Integer):
-            raise RuntimeError("%r is not an integer" % (endLine,))
-        self.endLine = endLine
-        if not isinstance(endCol, Integer):
-            raise RuntimeError("%r is not an integer" % (endCol,))
-        self.endCol = endCol
+        self.startLine = typecheck(startLine, Integer)
+        self.startCol = typecheck(startCol, Integer)
+        self.endLine = typecheck(endLine, Integer)
+        self.endCol = typecheck(endCol, Integer)
 
     def notOneToOne(self):
         """
@@ -1179,10 +1126,8 @@ def spanCover(a, b):
 
     if a is null or b is null:
         return null
-    if not isinstance(a, SourceSpan):
-        raise RuntimeError("%r is not a source span" % (a,))
-    if not isinstance(b, SourceSpan):
-        raise RuntimeError("%r is not a source span" % (b,))
+    a = typecheck(a, SourceSpan)
+    b = typecheck(b, SourceSpan)
     if a.uri != b.uri:
         return null
     if (a._isOneToOne is true and b._isOneToOne is true

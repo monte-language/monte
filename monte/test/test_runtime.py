@@ -1419,7 +1419,6 @@ class CompositeTwineTests(_TwineTests, unittest.TestCase):
                                        Integer(1), Integer(0))
         s2 = String(u'bar\nblee')
         parts = s.add(s2).getParts()
-        print "<<", parts.l
         self.assertEqual(len(parts.l), 3)
         self.assertEqual(parts.l[0].s, u'baz\n')
         self.assertEqual(parts.l[1].s, u'foo')

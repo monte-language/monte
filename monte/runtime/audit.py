@@ -1,10 +1,12 @@
-from monte.runtime.base import MonteObject, throw
-from monte.runtime.data import Twine, bwrap, true, unicodeFromTwine
+from monte.runtime.base import MonteObject, typecheck, throw
+from monte.runtime.data import Twine, bwrap, true
 from monte.runtime.guards.base import deepFrozenGuard
 from monte.runtime.guards.data import booleanGuard
 
+
 class Audition(MonteObject):
     _m_fqn = "Audition"
+
     def __init__(self, fqn, expr, bindings, obj, outerNames):
         self.expr = expr
         self.bindings = bindings
@@ -26,9 +28,7 @@ class Audition(MonteObject):
         return self.expr
 
     def getGuard(self, name):
-        if not isinstance(name, Twine):
-            raise RuntimeError("%r is not a string" % (name,))
-        n = unicodeFromTwine(name)
+        n = typecheck(name, Twine).bare().s
         if n not in self.bindings:
             raise RuntimeError('"%s" is not a free variable in %s' %
                                (name, str(self.obj)))
@@ -44,6 +44,7 @@ class Audition(MonteObject):
 class AuditChecker(MonteObject):
     _m_fqn = "__auditedBy"
     _m_auditorStamps = (deepFrozenGuard,)
+
     def run(self, auditor, specimen):
         return bwrap(auditor in getattr(specimen, "_m_auditorStamps", ()))
 

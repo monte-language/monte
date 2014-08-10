@@ -4,8 +4,8 @@ from types import ModuleType as module
 from monte.compiler import ecompile
 from monte.expander import expand, scope
 from monte.parser import parse
-from monte.runtime.base import MonteObject
-from monte.runtime.data import String, Twine, null, unicodeFromTwine
+from monte.runtime.base import MonteObject, typecheck
+from monte.runtime.data import String, Twine, null
 from monte.runtime.tables import ConstList, ConstMap, FlexList, FlexMap
 
 
@@ -104,8 +104,7 @@ class FileModuleConfiguration(MonteObject):
         self._contents = None
 
     def load(self, mapping):
-        if not isinstance(mapping, (ConstMap, FlexMap)):
-            raise RuntimeError("must be a mapping")
+        mapping = typecheck(mapping, (ConstMap, FlexMap))
         # XXX reorganize to be less side-effect-y
         if self._contents is not None:
             if self._inputs is not mapping:
@@ -159,9 +158,8 @@ class ConfigurationExport(MonteObject):
 def extractArglist(mapping, argnames):
         argnames = set()
         for k in mapping._keys:
-            if not isinstance(k, Twine):
-                raise RuntimeError("keys must be strings")
-            argnames.add(unicodeFromTwine(k))
+            k = typecheck(k, Twine).bare().s
+            argnames.add(k)
 
 
 def compareArglists(loadname, provided, required):
@@ -186,8 +184,7 @@ class SyntheticModuleConfiguration(MonteObject):
         self._inputs = None
 
     def load(self, mapping):
-        if not isinstance(mapping, (ConstMap, FlexMap)):
-            raise RuntimeError("must be a mapping")
+        mapping = typecheck(mapping, (ConstMap, FlexMap))
         # XXX reorganize to be less side-effect-y
         if self._contents is not None:
             if self._inputs is not mapping:
@@ -214,8 +211,7 @@ class RequireConfiguration(MonteObject):
         self.requires = [name]
 
     def load(self, mapping):
-        if not isinstance(mapping, (ConstMap, FlexMap)):
-            raise RuntimeError("must be a mapping")
+        mapping = typecheck(mapping, (ConstMap, FlexMap))
         return mapping.d[String(self.name)]
 
 
@@ -271,8 +267,7 @@ class TestCollector(MonteObject):
         self.tests = FlexMap({})
 
     def run(self, prefix, tests):
-        if not isinstance(tests, (ConstList, FlexList)):
-            raise RuntimeError("must be a list of test functions")
+        tests = typecheck(tests, (ConstList, FlexList))
         for item in tests.l:
             if prefix:
                 prefix += '.'
@@ -319,9 +314,7 @@ class PackageMangler(MonteObject):
         self._testCollector = testCollector
 
     def readFiles(self, pathstr):
-        if not isinstance(pathstr, Twine):
-            raise RuntimeError("path must be a string")
-        path = unicodeFromTwine(pathstr)
+        path = typecheck(pathstr, Twine).bare().s
 
         def collectModules():
             root = os.path.join(self.root, path)
@@ -341,17 +334,13 @@ class PackageMangler(MonteObject):
         return ConstMap(structures)
 
     def readFile(self, pathstr):
-        if not isinstance(pathstr, Twine):
-            raise RuntimeError("path must be a string")
-        path = unicodeFromTwine(pathstr)
+        path = typecheck(pathstr, Twine).bare().s
         fullpath = os.path.join(self.root, path)
         imports, exports = readModuleFile(fullpath)
         return FileModuleStructure(fullpath, imports, exports, self.scope)
 
     def readPackage(self, subpkgName):
-        if not isinstance(subpkgName, Twine):
-            raise RuntimeError("expected a string")
-        subpkgPath = unicodeFromTwine(subpkgName)
+        subpkgPath = typecheck(subpkgName, Twine).bare().s
         subpkgName = os.path.normpath(subpkgPath)
         if self.name:
             name = u'.'.join([self.name, subpkgName])
@@ -365,9 +354,8 @@ class PackageMangler(MonteObject):
         return subpkg
 
     def require(self, name):
-        if not isinstance(name, Twine):
-            raise RuntimeError("name must be a string")
-        return RequireConfiguration(unicodeFromTwine(name))
+        name = typecheck(name, Twine).bare().s
+        return RequireConfiguration(name)
 
     def testCollector(self):
         if self._testCollector is None:
@@ -375,14 +363,12 @@ class PackageMangler(MonteObject):
         return TestStructureFacet(self.name, self._testCollector)
 
     def makeModule(self, mapping):
-        if not isinstance(mapping, (ConstMap, FlexMap)):
-            raise RuntimeError("must be a mapping")
+        mapping = typecheck(mapping, (ConstMap, FlexMap))
         requires = []
         exports = []
         for k in mapping._keys:
-            if not isinstance(k, Twine):
-                raise RuntimeError("keys must be strings")
-            exports.append(unicodeFromTwine(k))
+            k = typecheck(k, Twine)
+            exports.append(k.bare().s)
             requires.extend(mapping.d[k].requires)
         return SyntheticModuleStructure(mapping, requires, exports)
 
@@ -394,7 +380,7 @@ def monteImport(scope):
             mapping = ConstMap({})
         path = os.path.join(os.path.dirname(__file__), '..', 'src')
         s = getModuleStructure(name, os.path.abspath(path), scope, None)
-        requires = ConstMap(dict((k, RequireConfiguration(unicodeFromTwine(k)))
+        requires = ConstMap(dict((k, RequireConfiguration(k.bare().s))
                                  for k in mapping.d))
         conf = s.configure(requires)
         conf.load(mapping)

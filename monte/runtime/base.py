@@ -182,9 +182,11 @@ class Throw(MonteObject):
     ## This is patched later to avoid import circularity
     #_m_auditorStamps = (deepFrozenGuard,)
     def __call__(self, val):
-        from monte.runtime.data import Twine, unicodeFromTwine
+        from monte.runtime.data import Twine
+        from monte.runtime.ref import _resolution
+        val = _resolution(val)
         if isinstance(val, Twine):
-            val = unicodeFromTwine(val)
+            val = val.bare().s
         raise RuntimeError(val)
     def eject(self, ej, val):
         from monte.runtime.data import null
@@ -195,3 +197,13 @@ class Throw(MonteObject):
 
 throw = Throw()
 
+
+def typecheck(specimen, cls):
+    from monte.runtime.ref import Promise, _resolution
+    if not isinstance(specimen, cls):
+        if isinstance(specimen, Promise):
+            specimen = _resolution(specimen)
+            if isinstance(specimen, cls):
+                return specimen
+        raise RuntimeError("%r is not a %r" % (specimen, cls))
+    return specimen
