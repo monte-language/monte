@@ -1,5 +1,6 @@
-from monte.runtime.base import MonteObject, throw, toString
-from monte.runtime.data import String, Twine, Character, unicodeFromTwine
+from monte.runtime.base import MonteObject, throw, toString, typecheck
+from monte.runtime.data import String, Twine, Character
+from monte.runtime.ref import _resolution
 from monte.runtime.guards.base import deepFrozenGuard
 from monte.runtime.tables import ConstList, FlexList
 
@@ -17,14 +18,14 @@ class Substituter(MonteObject):
     def __init__(self, template):
         self.segments = segs = []
         for seg in template:
+            seg = _resolution(seg)
             if isinstance(seg, Twine):
-                segs.append((LITERAL, unicodeFromTwine(seg)))
+                segs.append((LITERAL, seg.bare().s))
             else:
                 segs.append(seg)
 
     def substitute(self, values):
-        if not isinstance(values, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (values,))
+        values = typecheck(values, (ConstList, FlexList))
         return String(u"".join(self._sub(values.l)))
 
     def _sub(self, values):
@@ -38,11 +39,8 @@ class Substituter(MonteObject):
 
     def matchBind(self, values, specimen, ej):
         #XXX maybe put this on a different object?
-        if not isinstance(specimen, Twine):
-            raise RuntimeError("%r is not a string" % (specimen,))
-        if not isinstance(values, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (values,))
-        specimen = unicodeFromTwine(specimen)
+        specimen = typecheck(specimen, Twine).bare().s
+        values = typecheck(values, (ConstList, FlexList))
         values = values.l
         i = 0
         bindings = []
@@ -55,9 +53,7 @@ class Substituter(MonteObject):
                         val, specimen[i:j]))
             elif typ is VALUE_HOLE:
                 s = values[val]
-                if not isinstance(s, String):
-                        raise RuntimeError("%r is not a string" % (s,))
-                s = unicodeFromTwine(s)
+                s = typecheck(s, String).bare().s
                 j = i + len(s)
                 if specimen[i:j] != s:
                     throw.eject(ej, "expected %r... ($-hole %s), found %r" % (
@@ -69,17 +65,14 @@ class Substituter(MonteObject):
                     continue
                 nextType, nextVal = self.segments[n + 1]
                 if nextType is VALUE_HOLE:
-                    nextVal = values[nextVal]
-                    if not isinstance(nextVal, String):
-                        raise RuntimeError("%r is not a string" % (nextVal,))
-                    nextVal = unicodeFromTwine(nextVal)
+                    nextVal = typecheck(values[nextVal], Twine).bare().s
                 elif nextType is PATTERN_HOLE:
                     bindings.append(String(u""))
                     continue
                 j = specimen.find(nextVal, i)
                 if j == -1:
                     throw.eject(ej, "expected %r..., found %r" % (
-                        unicodeFromTwine(nextVal),
+                        nextVal,
                         specimen[i:]))
                 bindings.append(String(specimen[i:j]))
             i = j
@@ -118,6 +111,7 @@ class TextWriter(MonteObject):
         return TextWriter(self.out, self.newline + u' ' * 4, self.context)
 
     def quote(self, obj):
+        obj = _resolution(obj)
         if isinstance(obj, (String, Character)):
             self._m_print(obj.quote())
         else:

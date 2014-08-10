@@ -1,9 +1,8 @@
 """
 Objects used by Monte syntax expansions.
 """
-from monte.runtime.base import MonteObject, ejector, throw
-from monte.runtime.data import (true, false, null, Twine, Integer,
-                                unicodeFromTwine)
+from monte.runtime.base import MonteObject, ejector, throw, typecheck
+from monte.runtime.data import (true, false, null, Twine, Integer)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import MonteIterator
 from monte.runtime.guards.base import deepFrozenGuard, deepFrozenFunc
@@ -71,9 +70,7 @@ class MakeVerbFacet(MonteObject):
     _m_fqn = "__makeVerbFacet$verbFacet"
     _m_auditorStamps = (deepFrozenGuard,)
     def curryCall(self, obj, verb):
-        if not isinstance(verb, Twine):
-            raise RuntimeError("%r is not a string" % (verb,))
-        verb = unicodeFromTwine(verb)
+        verb = typecheck(verb, Twine).bare().s
         def facet(*a):
             return getattr(obj, verb)(*a)
         return facet
@@ -118,8 +115,7 @@ def extract(x, instead=_absent):
         return extractor
     else:
         def extractor(specimen, ejector):
-            if not isinstance(specimen, (ConstMap, FlexMap)):
-                raise RuntimeError("%r is not a map" % (specimen,))
+            specimen = typecheck(specimen, (ConstMap, FlexMap))
             value = specimen.d.get(x, _absent)
             if value is _absent:
                 value = ConstList([instead(), specimen])
@@ -138,12 +134,9 @@ class Empty:
 
 @deepFrozenFunc
 def splitList(cut):
-    if not isinstance(cut, Integer):
-        raise RuntimeError("%r is not an integer" % (cut,))
-    cut = cut.n
+    cut = typecheck(cut, Integer).n
     def listSplitter(specimen, ej):
-        if not isinstance(specimen, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (specimen,))
+        specimen = typecheck(specimen, (ConstList, FlexList))
         if len(specimen.l) < cut:
             throw.eject(
                 ej, "A %s size list doesn't match a >= %s size list pattern"
@@ -164,8 +157,7 @@ class BooleanFlow(MonteObject):
         return UnconnectedRef("boolean flow expression failed", self.vat)
 
     def failureList(self, size):
-        if not isinstance(size, Integer):
-            raise RuntimeError("%r is not an integer" % (size,))
+        size = typecheck(size, Integer)
         return ConstList([false] + [self.broken()] * size.n)
 
 @deepFrozenFunc

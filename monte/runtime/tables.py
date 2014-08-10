@@ -1,4 +1,4 @@
-from monte.runtime.base import MonteObject
+from monte.runtime.base import MonteObject, typecheck
 from monte.runtime.data import String, Integer, bwrap, null, true, false
 from monte.runtime.flow import MonteIterator
 from monte.runtime.guards.base import (deepFrozenFunc, deepFrozenGuard,
@@ -31,8 +31,7 @@ class EListMixin(object):
         return bwrap(item in self.l)
 
     def add(self, other):
-        if not isinstance(other, EListMixin):
-            raise RuntimeError("%r is not a list" % (other,))
+        other = typecheck(other, EListMixin)
         return ConstList(self.l + other.l)
 
     def diverge(self, guard=None):
@@ -51,36 +50,28 @@ class EListMixin(object):
         return self.l[-1]
 
     def get(self, idx):
-        if not isinstance(idx, Integer):
-            raise RuntimeError("%r is not a integer" % (idx,))
+        idx = typecheck(idx, Integer)
         if not 0 <= idx.n < len(self.l):
             raise IndexError(idx.n)
         return self.l[idx.n]
 
     def slice(self, start, stop=None):
-        if not isinstance(start, Integer):
-            raise RuntimeError("%r is not a integer" % (start,))
-        start = start.n
+        start = typecheck(start, Integer).n
         if stop is not None:
-            if not isinstance(stop, Integer):
-                raise RuntimeError("%r is not a integer" % (stop,))
-            stop = stop.n
+            stop = typecheck(stop, Integer).n
         return ConstList(self.l[start:stop])
 
     def _m_with(self, *a):
         if len(a) == 1:
             return ConstList(tuple(self.l) + (a[0],))
         elif len(a) == 2:
-            if not isinstance(a[0], Integer):
-                raise RuntimeError("%r is not a integer" % (a[0],))
-            i = a[0].n
+            i = typecheck(a[0], Integer).n
             return ConstList(tuple(self.l[:i]) + (a[1],) + tuple(self.l[i:]))
         else:
             raise RuntimeError("with() takes 1 or 2 arguments")
 
     def multiply(self, n):
-        if not isinstance(n, Integer):
-            raise RuntimeError("%r is not a integer" % (n,))
+        n = typecheck(n, Integer)
         return ConstList(self.l * n.n)
 
     def asMap(self):
@@ -104,8 +95,7 @@ class ConstList(EListMixin, MonteObject):
         self.l = tuple(l)
 
     def op__cmp(self, other):
-        if not isinstance(other, ConstList):
-            raise RuntimeError("%r is not a ConstList" % (other,))
+        other = typecheck(other, ConstList)
         return Integer(cmp(self.l, other.l))
 
     def snapshot(self):
@@ -137,8 +127,7 @@ class FlexList(EListMixin, MonteObject):
         return ROList(self.l)
 
     def put(self, idx, value):
-        if not isinstance(idx, Integer):
-            raise RuntimeError("%r is not a integer" % (idx,))
+        idx = typecheck(idx, Integer)
         if not 0 <= idx.n < len(self.l):
             raise IndexError(idx)
         if self.valueGuard is not None:
@@ -157,8 +146,7 @@ class FlexList(EListMixin, MonteObject):
         return null
 
     def extend(self, other):
-        if not isinstance(other, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (other,))
+        contents = typecheck(other, (ConstList, FlexList)).l
         contents = other.l
         if self.valueGuard is not None:
             contents = [self.valueGuard.coerce(x, null) for x in contents]
@@ -169,17 +157,13 @@ class FlexList(EListMixin, MonteObject):
         return self.l.pop()
 
     def get(self, index):
-        if not isinstance(index, Integer):
-            raise RuntimeError("Expected Integer, got %r" % index)
+        index = typecheck(index, Integer)
         return self.l[index.n]
 
     def setSlice(self, start, bound, other):
-        if not isinstance(other, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (other,))
-        if not isinstance(start, Integer):
-            raise RuntimeError("%r is not a integer" % (start,))
-        if not isinstance(bound, Integer):
-            raise RuntimeError("%r is not a integer" % (bound,))
+        other = typecheck(other, (ConstList, FlexList))
+        start = typecheck(start, Integer)
+        bound = typecheck(bound, Integer)
         if not 0 <= start.n < len(self.l):
             raise IndexError(start)
         if not 0 <= bound.n <= len(self.l):
@@ -191,8 +175,7 @@ class FlexList(EListMixin, MonteObject):
         return null
 
     def insert(self, idx, value):
-        if not isinstance(idx, Integer):
-            raise RuntimeError("%r is not a integer" % (idx,))
+        idx = typecheck(idx, Integer)
         if not 0 <= idx.n < len(self.l):
             raise IndexError(idx)
         if self.valueGuard is not None:
@@ -201,10 +184,8 @@ class FlexList(EListMixin, MonteObject):
         return null
 
     def removeSlice(self, start, bound):
-        if not isinstance(start, Integer):
-            raise RuntimeError("%r is not a integer" % (start,))
-        if not isinstance(bound, Integer):
-            raise RuntimeError("%r is not a integer" % (bound,))
+        start = typecheck(start, Integer)
+        bound = typecheck(bound, Integer)
         if not 0 <= start.n < len(self.l):
             raise IndexError(start)
         if not 0 <= bound.n <= len(self.l):
@@ -285,8 +266,7 @@ class EMapMixin(object):
         return MonteIterator((k, self.d[k]) for k in self._keys)
 
     def _m_or(self, behind):
-        if not isinstance(behind, (ConstMap, FlexMap)):
-            raise RuntimeError("%r is not a map" % (behind,))
+        behind = typecheck(behind, (ConstMap, FlexMap))
         if len(self.d) == 0:
             return behind.snapshot()
         elif len(behind.d) == 0:
@@ -296,8 +276,7 @@ class EMapMixin(object):
         return flex.snapshot()
 
     def _m_and(self, mask):
-        if not isinstance(mask, (ConstMap, FlexMap)):
-            raise RuntimeError("%r is not a map" % (mask,))
+        mask = typecheck(mask, (ConstMap, FlexMap))
         if len(self.d) > len(mask.d):
             bigger = self
             smaller = mask
@@ -314,8 +293,7 @@ class EMapMixin(object):
         return flex.snapshot()
 
     def butNot(self, mask):
-        if not isinstance(mask, (ConstMap, FlexMap)):
-            raise RuntimeError("%r is not a map" % (mask,))
+        mask = typecheck(mask, (ConstMap, FlexMap))
         if len(self.d) == 0:
             return ConstMap({})
         elif len(mask.d) == 0:
@@ -408,8 +386,7 @@ class FlexMap(EMapMixin, MonteObject):
         raise NotImplementedError()
 
     def removeKeys(self, mask):
-        if not isinstance(mask, (ConstMap, FlexMap)):
-            raise RuntimeError("%r is not a map" % (mask,))
+        mask = typecheck(mask, (ConstMap, FlexMap))
         for k in mask._keys:
             self.removeKey(k)
 
@@ -435,8 +412,7 @@ class FlexMap(EMapMixin, MonteObject):
             self._keys.append(k)
 
     def putAll(self, other):
-        if not isinstance(other, (ConstMap, FlexMap)):
-            raise RuntimeError("%r is not a map" % (other,))
+        other = typecheck(other, (ConstMap, FlexMap))
         for k in other._keys:
             self.put(k, other.d[k])
 
@@ -453,8 +429,6 @@ class mapMaker(object):
 
     @staticmethod
     def fromColumns(keys, vals):
-        if not isinstance(keys, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (keys,))
-        if not isinstance(vals, (ConstList, FlexList)):
-            raise RuntimeError("%r is not a list" % (vals,))
+        keys = typecheck(keys, (ConstList, FlexList))
+        vals = typecheck(vals, (ConstList, FlexList))
         return ConstMap(dict(zip(keys.l, vals.l)), keys)
