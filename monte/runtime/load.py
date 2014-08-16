@@ -269,7 +269,7 @@ class TestCollector(MonteObject):
     def run(self, prefix, tests):
         tests = typecheck(tests, (ConstList, FlexList))
         for item in tests.l:
-            if prefix:
+            if prefix and not prefix.endswith('.'):
                 prefix += '.'
             self.tests.put(String(prefix + item._m_fqn.replace('$', '.')), item)
         return null

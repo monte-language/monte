@@ -688,6 +688,25 @@ class Twine(MonteObject):
                 span = span.notOneToOne()
             return theTwineMaker.fromString(other, span)
 
+    def join(self, items):
+        from monte.runtime.tables import ConstList
+        it = items._makeIterator()
+        ej = ejector("iteration")
+        segments = []
+        try:
+            while True:
+                key, item = it.next(ej)
+                item = typecheck(item, Twine)
+                segments.append(item)
+                segments.append(self)
+        except ej._m_type:
+            pass
+        finally:
+            ej.disable()
+        if segments:
+            segments.pop()
+        return theTwineMaker.fromParts(ConstList(segments))
+
     def op__cmp(self, other):
         return Integer(cmp(self.bare().s, other.bare().s))
 
@@ -707,7 +726,8 @@ class Twine(MonteObject):
                 ech = escapedChar(ch._c)
                 if len(ech) > 1:
                     result = result.add(self.slice(Integer(p1), Integer(p2)))
-                    result = result.add(self.slice(Integer(p2), Integer(p2 + 1))
+                    result = result.add(self.slice(Integer(p2),
+                                                   Integer(p2 + 1))
                                         .infect(String(ech)))
                     p1 = p2 + 1
         result = result.add(self.slice(Integer(p1), self.size()))
@@ -882,10 +902,10 @@ class String(AtomicTwine):
     def slice(self, start, end=None):
         return String(_slice(self, start, end))
 
-    # def split(self, other):
-    #     from monte.runtime.tables import ConstList
-    #     other = typecheck(other, String)
-    #     return ConstList(String(x) for x in self.s.split(other.s))
+    def split(self, other):
+        from monte.runtime.tables import ConstList
+        other = typecheck(other, Twine).bare().s
+        return ConstList(String(x) for x in self.s.split(other))
 
     def _m_infectOneToOne(self, other):
         return other.bare()

@@ -1,4 +1,4 @@
-from monte.runtime.base import MonteObject, typecheck
+from monte.runtime.base import MonteObject, ejector, typecheck
 from monte.runtime.data import String, Integer, bwrap, null, true, false
 from monte.runtime.flow import MonteIterator
 from monte.runtime.guards.base import (deepFrozenFunc, deepFrozenGuard,
@@ -200,11 +200,30 @@ class FlexList(EListMixin, MonteObject):
         return ConstList([ConstList([self.l]), String(u"diverge"), ConstList([])])
 
     def _makeIterator(self):
-        return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self.l), self.l)))
+        return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self.l)), self.l))
 
-@deepFrozenFunc
-def makeMonteList(*items):
-    return ConstList(items)
+class ListMaker(MonteObject):
+    _m_fqn = "__makeList"
+    _m_auditorStamps = (deepFrozenGuard,)
+
+    def run(self, *items):
+        return ConstList(items)
+
+    def fromIterable(self, coll):
+        items = []
+        it = coll._makeIterator()
+        ej = ejector("iteration")
+        try:
+            while True:
+                key, item = it.next(ej)
+                items.append(item)
+        except ej._m_type:
+            pass
+        finally:
+            ej.disable()
+        return ConstList(items)
+
+makeMonteList = ListMaker()
 
 _absent = object()
 
