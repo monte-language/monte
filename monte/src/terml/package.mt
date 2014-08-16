@@ -11,5 +11,6 @@ def [=> makeTermLexer] := files["termLexer"]([=> makeTag, => makeTerm, => unitte
 def [=> parseTerm, => term__quasiParser] := files["termParser"]([
     => makeTag, => makeTerm, => makeTermLexer, => unittest])
 def terml := pkg.makeModule([=> Tag, => Term, => makeTag,
-                             => makeTerm, => termFactory, => makeTermLexer])
+                             => makeTerm, => termFactory, => makeTermLexer,
+                             => parseTerm])
 terml

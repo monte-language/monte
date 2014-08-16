@@ -5,6 +5,11 @@ object EOF {}
 def decimalDigits := '0'..'9'
 def hexDigits := decimalDigits | 'a'..'f' | 'A'..'F'
 
+# huh, maybe regions are dumb for this? guess we need sets
+def segStart := 'a'..'z' | 'A'..'Z' | '_'..'_' | '$'..'$' | '.'..'.'
+def segPart := segStart | '0'..'9' | '-'..'-'
+def closers := ['(' => ')', '[' => ']', '{' => '}']
+
 def makeTermLexer(input):
 
     # Does the input string contain a complete expression, such that we can
@@ -28,8 +33,11 @@ def makeTermLexer(input):
 
     var count := -1
 
+    def leafTag(tagname, span):
+        return makeTerm(makeTag(null, tagname, any), null, [], span)
+
     def composite(name, data, span):
-        return makeTerm(makeTag(null, name, any), data, null, span)
+        return makeTerm(makeTag(null, name, any), data, [], span)
 
     def atEnd():
         return position == input.size()
@@ -156,7 +164,7 @@ def makeTermLexer(input):
                 '"' => '"',
                 '\'' => '\'',
                 '\\' => '\\',
-                "\n" => null,
+                '\n' => null,
                 ].fetch(nex, fn{-1})
             if (c == -1):
                 throw.eject(fail, `Unrecognized escape character ${nex.quote()}`)
@@ -172,7 +180,7 @@ def makeTermLexer(input):
             advance()
             return c
 
-    def stringLiteral(fail):
+    def stringLike(fail):
         def opener := currentChar
         advance()
         pushBrace(opener, '"', 0, false)
@@ -184,9 +192,7 @@ def makeTermLexer(input):
             if (cc != null):
                buf.push(cc)
         advance()
-        def closer := endToken(fail)
-        popBrace('"', fail)
-        return composite(".String.", __makeString.fromChars(buf), closer.getSpan())
+        return __makeString.fromChars(buf)
 
     def charLiteral(fail):
         advance()
@@ -198,6 +204,31 @@ def makeTermLexer(input):
         advance()
         return composite(".char.", c, endToken(fail).getSpan())
 
+    def tag(fail, initial):
+        var done := false
+        def segs := [].diverge()
+        if (initial != null):
+            segs.push(initial)
+        while (currentChar == ':' && peekChar() == ':'):
+            advance()
+            advance()
+            if (currentChar == '"'):
+                def s := stringLike(fail)
+                segs.push("::\"")
+                segs.push(s)
+                segs.push("\"")
+            else:
+                segs.push("::")
+                def segStartPos := position
+                if (currentChar != EOF && segStart(currentChar)):
+                    advance()
+                else:
+                    throw.eject(fail, "Invalid character starting tag name segment")
+                while (currentChar != EOF && segPart(currentChar)):
+                    advance()
+                segs.push(input.slice(segStartPos, position))
+        return leafTag("".join(segs), endToken(fail).getSpan())
+
     def getNextToken(fail):
         skipWhitespace()
         startToken()
@@ -205,11 +236,40 @@ def makeTermLexer(input):
         if (cur == EOF):
             throw.eject(fail, null)
         if (cur == '"'):
-            return stringLiteral(fail)
+            def s := stringLike(fail)
+            def closer := endToken(fail)
+            popBrace('"', fail)
+
+            return composite(".String.", s, closer.getSpan())
         if (cur == '\''):
             return charLiteral(fail)
+        if (cur == '-'):
+            advance()
+            return numberLiteral(fail)
         if (decimalDigits(cur)):
             return numberLiteral(fail)
+        if (segStart(cur)):
+            def segStartPos := position
+            advance()
+            while (currentChar != EOF && segPart(currentChar)):
+                advance()
+            return tag(fail, input.slice(segStartPos, position))
+        if (cur == ':' && peekChar() == ':'):
+            return tag(fail, null)
+        if (['(', '[','{'].contains(cur)):
+            pushBrace(cur, closers[cur], 1, true)
+            def t := leafTag(cur, input.slice(position, position + 1).getSpan())
+            advance()
+            return t
+        if ([')', ']', '}'].contains(cur)):
+            popBrace(cur, fail)
+            def t := leafTag(cur, input.slice(position, position + 1).getSpan())
+            advance()
+            return t
+        if ([':', '-', ','].contains(cur)):
+            def t := leafTag(cur, input.slice(position, position + 1).getSpan())
+            advance()
+            return t
         fail(`Unrecognized character ${cur.quote()}`)
 
     advance()
@@ -249,36 +309,52 @@ def lex(s):
 
 def test_integer(assert):
     def mkint(n):
-        return makeTerm(makeTag(null, ".int.", any), n, null, null)
+        return makeTerm(makeTag(null, ".int.", any), n, [], null)
     assert.equal(lex("0"), [mkint(0)])
+    assert.equal(lex("-1"), [mkint(-1)])
     assert.equal(lex("7"), [mkint(7)])
     assert.equal(lex("3_000"), [mkint(3000)])
     assert.equal(lex("0xABad1dea"), [mkint(0xabad1dea)])
 
 def test_float(assert):
     def mkfloat(n):
-        return makeTerm(makeTag(null, ".float64.", any), n, null, null)
+        return makeTerm(makeTag(null, ".float64.", any), n, [], null)
     assert.equal(lex("1e9"), [mkfloat(1e9)])
     assert.equal(lex("3.1415E17"), [mkfloat(3.1415E17)])
     assert.equal(lex("0.91"), [mkfloat(0.91)])
+    assert.equal(lex("-0.91"), [mkfloat(-0.91)])
     assert.equal(lex("3e-2"), [mkfloat(3e-2)])
 
 def test_string(assert):
     def mkstr(s):
-        return makeTerm(makeTag(null, ".String.", any), s, null, null)
+        return makeTerm(makeTag(null, ".String.", any), s, [], null)
     assert.equal(lex("\"foo bar\""), [mkstr("foo bar")])
-    # assert.equal(lex("\"foo\\nbar\""), [mkstr("foo\nbar")])
-    # assert.equal(lex("\"foo\\\\nbar\""), [mkstr("foobar")])
-    # assert.equal(lex("\"z\\u0061p\""), [mkstr("zap")])
-    # assert.equal(lex("\"z\\x61p\""), [mkstr("zap")])
+    assert.equal(lex("\"foo\\nbar\""), [mkstr("foo\nbar")])
+    assert.equal(lex("\"foo\\\nbar\""), [mkstr("foobar")])
+    assert.equal(lex("\"z\\u0061p\""), [mkstr("zap")])
+    assert.equal(lex("\"z\\x61p\""), [mkstr("zap")])
 
 def test_char(assert):
     def mkchar(c):
-        return makeTerm(makeTag(null, ".char.", any), c, null, null)
+        return makeTerm(makeTag(null, ".char.", any), c, [], null)
     assert.equal(lex("'z'"), [mkchar('z')])
     assert.equal(lex("'\\n'"), [mkchar('\n')])
     assert.equal(lex("'\\u0061'"), [mkchar('a')])
     assert.equal(lex("'\\x61'"), [mkchar('a')])
 
+def test_tag(assert):
+    def mkTag(n):
+        return makeTerm(makeTag(null, n, any), null, [], null)
+    assert.equal(lex("foo"), [mkTag("foo")])
+    assert.equal(lex("::\"foo\""), [mkTag("::\"foo\"")])
+    assert.equal(lex("::foo"), [mkTag("::foo")])
+    assert.equal(lex("foo::baz"), [mkTag("foo::baz")])
+    assert.equal(lex("foo::\"baz\""), [mkTag("foo::\"baz\"")])
+    assert.equal(lex("biz::baz::foo"), [mkTag("biz::baz::foo")])
+    assert.equal(lex("foo_yay"), [mkTag("foo_yay")])
+    assert.equal(lex("foo$baz32"), [mkTag("foo$baz32")])
+    assert.equal(lex("foo-baz.19"), [mkTag("foo-baz.19")])
 
-unittest([test_integer, test_float, test_string, test_char])
+
+
+unittest([test_integer, test_float, test_string, test_char, test_tag])
