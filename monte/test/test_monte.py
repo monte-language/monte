@@ -37,7 +37,7 @@ class MonteTestCase(object):
         try:
             self.obj.run(self.asserts)
         except RuntimeError as e:
-            result.addFailure(self, failure.Failure(e))
+            result.addFailure(self, failure.Failure())
         else:
             result.addSuccess(self)
         result.stopTest(self)
