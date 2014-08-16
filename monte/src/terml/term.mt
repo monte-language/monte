@@ -20,8 +20,8 @@ object makeTerm as DeepFrozen:
     to asType():
         return Term
 
-    to run(tag :Tag, data :TermData, args :nullOk[List], span):
-        if (data != null && args != null):
+    to run(tag :Tag, data :TermData, args :List, span):
+        if (data != null && args != []):
             throw(`Term $tag can't have both data and children`)
 
         return object term implements TermStamp, Transparent, Selfless:

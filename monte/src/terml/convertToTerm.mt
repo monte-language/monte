@@ -9,19 +9,19 @@ def convertToTerm(val, ej) as DeepFrozen:
         match _ :Term:
             return val
         match ==null:
-            return mkt("null", null, null)
+            return mkt("null", null, [])
         match ==true:
-            return mkt("true", null, null)
+            return mkt("true", null, [])
         match ==false:
-            return mkt("false", null, null)
+            return mkt("false", null, [])
         match v :int:
-            return mkt(".int.", v, null)
+            return mkt(".int.", v, [])
         match v :float:
-            return mkt(".float.", v, null)
+            return mkt(".float.", v, [])
         match v :str:
-            return mkt(".String.", v, null)
+            return mkt(".String.", v, [])
         match v :char:
-            return mkt(".char.", v, null)
+            return mkt(".char.", v, [])
         match v :List:
             def l := [convertToTerm(item, ej) for item in v]
             return mkt(".tuple.", null, l)

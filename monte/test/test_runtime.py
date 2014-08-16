@@ -1157,6 +1157,16 @@ class _TwineTests(object):
         self.assertEqual(st.slice(Integer(4), Integer(8)).getSpan(),
                          t.getSpan())
 
+    def test_join(self):
+        s = self.makeString(u'foo ')
+        t = self.makeString2(u'blee')
+        st = String(u", ").join(ConstList([s, t]))
+        self.assertEqual(st.bare().s, u'foo , blee')
+        self.assertEqual(st.slice(Integer(0), Integer(4)).getSpan(),
+                         s.getSpan())
+        self.assertEqual(st.slice(Integer(6), Integer(10)).getSpan(),
+                         t.getSpan())
+
     def test_singleLineAsFrom(self):
         s = self.makeString(u'foo blee').asFrom(
             String(u'test'), Integer(3), Integer(4))
@@ -1423,8 +1433,6 @@ class CompositeTwineTests(_TwineTests, unittest.TestCase):
         self.assertEqual(parts.l[0].s, u'baz\n')
         self.assertEqual(parts.l[1].s, u'foo')
         self.assertEqual(parts.l[2].s, u'bar\nblee')
-
-
 
     def test_infect(self):
         s = self.makeString(u'foo\nblee')

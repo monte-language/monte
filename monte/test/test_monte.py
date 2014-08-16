@@ -51,6 +51,7 @@ def testSuite():
     c = TestCollector()
     pkg = buildPackage(srcdir, u"", safeScope, c)
     pkg.configure(None).load(ConstMap({}))
-    for (name, obj) in sorted(c.tests.d.items()):
+    testlist = sorted(c.tests.d.items())
+    for (name, obj) in testlist:
         tests.append(MonteTestCase(name.bare().s, obj, asserts))
     return unittest.TestSuite(tests)
