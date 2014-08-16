@@ -26,8 +26,8 @@ def eval(source, scope=None, origin="__main"):
     mod._m_outerScope = scope
     pysrc, _, lastline = ecompile(source, scope, origin).rpartition('\n')
     pysrc = '\n'.join(["from monte.runtime import compiler_helpers as _monte",
-                       pysrc,
-                       "_m_evalResult = " + lastline])
+                       pysrc.encode('utf-8'),
+                       "_m_evalResult = " + lastline.encode('utf-8')])
     mod.__loader__ = GeneratedCodeLoader(pysrc)
     code = compile(pysrc, name, "exec")
     import __builtin__
