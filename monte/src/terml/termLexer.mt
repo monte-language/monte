@@ -258,16 +258,19 @@ def makeTermLexer(input):
             return tag(fail, null)
         if (['(', '[','{'].contains(cur)):
             pushBrace(cur, closers[cur], 1, true)
-            def t := leafTag(cur, input.slice(position, position + 1).getSpan())
+            def s := input.slice(position, position + 1)
+            def t := leafTag(s, s.getSpan())
             advance()
             return t
         if ([')', ']', '}'].contains(cur)):
             popBrace(cur, fail)
-            def t := leafTag(cur, input.slice(position, position + 1).getSpan())
+            def s := input.slice(position, position + 1)
+            def t := leafTag(s, s.getSpan())
             advance()
             return t
         if ([':', '-', ','].contains(cur)):
-            def t := leafTag(cur, input.slice(position, position + 1).getSpan())
+            def s := input.slice(position, position + 1)
+            def t := leafTag(s, s.getSpan())
             advance()
             return t
         fail(`Unrecognized character ${cur.quote()}`)
