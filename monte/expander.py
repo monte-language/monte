@@ -491,7 +491,7 @@ Lambda(@doco @patterns @block) -> t.Object(doco, t.IgnorePattern(None), [None],
                                                []))
 
 Object(:doco BindPattern(:name :guard):bp :auditors :script):o transform(bp):exName
-     transform(t.Object(doco, t.FinalPattern(t.NounExpr(name), None), auditors, script)):exObj
+     transform(t.Object(doco, t.FinalPattern(name, None), auditors, script)):exObj
  -> t.Def(exName, None, t.HideExpr(exObj))
 
 Object(@doco @name @auditors Function(@params @guard @block))
