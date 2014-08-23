@@ -147,7 +147,7 @@ class PythonTypeGuard(PrintFQN, Guard):
         if isinstance(specimen, self.typ):
             return specimen
         else:
-            throw.eject(ej, "%r is not a %s" % (specimen, self.typ,))
+            throw.eject(ej, "%r is not a %s" % (toQuote(specimen), self.typ,))
 
 
 class AnyGuard(PrintFQN, MonteObject):
@@ -188,7 +188,7 @@ class UnionGuard(MonteObject):
             val = tryCoerce(guard, specimen)
             if val is not None:
                 return val
-        throw.eject(ej, "doesn't match any of %s" % (self.guards,))
+        throw.eject(ej, "%s doesn't match any of %s" % (toQuote(specimen), self.guards))
 
     def supersetOf(self, other):
         for g in self.guards:
@@ -204,7 +204,7 @@ class SelflessGuard(Guard):
 
     def _subCoerce(self, specimen, ej):
         if not selflessGuard in specimen._m_auditorStamps:
-            throw.eject(ej, "is not Selfless")
+            throw.eject(ej, "%s is not Selfless" % (toQuote(specimen),))
 
     def __eq__(self, other):
         # to avoid MonteObject.__eq__'s invocation of equalizer
@@ -235,7 +235,7 @@ class TransparentGuard(Guard):
 
     def _subCoerce(self, specimen, ej):
         if not transparentStamp in specimen._m_auditorStamps:
-            throw.eject(ej, "is not Transparent")
+            throw.eject(ej, "%s is not Transparent" % (toQuote(self.specimen),))
 
     def audit(self, audition):
         from monte.expander import scope
@@ -415,7 +415,7 @@ class NullOkGuard(Guard):
     _m_auditorStamps = (deepFrozenGuard,)
     def coerce(self, specimen, ej):
         if specimen is not null:
-            throw.eject(ej, "must be null")
+            throw.eject(ej, "%s must be null" % (toQuote(specimen),))
         return null
 
     def _printOn(self, out):
@@ -487,7 +487,7 @@ class ProtocolDesc(MonteObject):
             if auditedBy.run(self, conformed):
                 return conformed
             else:
-                throw.eject(ej, "Not stamped by %s" % (self,))
+                throw.eject(ej, "%s not stamped by %s" % (toQuote(specimen), self))
 
     @classmethod
     def makePair(cls, doc, fqn, supers, auditors, msgs):
@@ -526,4 +526,4 @@ class InterfaceGuard(MonteObject):
             if auditedBy.run(self, conformed):
                 return conformed
             else:
-                throw.eject(ej, "Not stamped by %s" % (self,))
+                throw.eject(ej, "%s not stamped by %s" % (toQuote(specimen), self))
