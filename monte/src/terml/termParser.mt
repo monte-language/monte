@@ -126,9 +126,9 @@ def test_simpleTerm(assert):
     assert.equal(parseTerm("x(y, z,)"), mk("x", [mk("y", []), mk("z", [])]))
 
 def test_fullTerm(assert):
-    # assert.equal(parseTerm("[x, y, 1]"), parseTerm(".tuple.(x, y, 1)"))
-    # assert.equal(parseTerm("{x, y, 1}"), parseTerm(".bag.(x, y, 1)"))
-    # assert.equal(parseTerm("f {x, y, 1}"), parseTerm("f(.bag.(x, y, 1))"))
+    assert.equal(parseTerm("[x, y, 1]"), parseTerm(".tuple.(x, y, 1)"))
+    assert.equal(parseTerm("{x, y, 1}"), parseTerm(".bag.(x, y, 1)"))
+    assert.equal(parseTerm("f {x, y, 1}"), parseTerm("f(.bag.(x, y, 1))"))
     assert.equal(parseTerm("a: b"), parseTerm(".attr.(a, b)"))
 
 
