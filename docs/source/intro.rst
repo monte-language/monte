@@ -123,7 +123,7 @@ Char
 ~~~~
 
 Monte's character type is distinct from the string type. Characters are always
-surrounded by apostrophes (`'`) and are always unicode.
+surrounded by apostrophes (``'``) and are always unicode.
 
 .. warning:: In Python, you may be accustomed to 'single' and "double" quotes
     functioning interchangeably. In Monte, double quotes can contain any number
