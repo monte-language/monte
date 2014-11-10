@@ -20,6 +20,7 @@ class _SlotDescriptor(object):
 class MonteObject(object):
     _m_matcherNames = ()
     _m_auditorStamps = ()
+    _m_auditorCache = None
     _m_fqn = "<no name>"
     def __init__(self):
         self._m_slots = {}
@@ -28,6 +29,8 @@ class MonteObject(object):
         return self
 
     def _m_audit(self, auditors, scope):
+        if self.__class__._m_auditorCache is None:
+            self.__class__._m_auditorCache = {}
         from monte.runtime.audit import Audition
         expr = ast.load(self._m_objectExpr)
         bindingGuards = dict([(k, v[1]) for k, v in self._m_slots.iteritems()])
@@ -37,7 +40,8 @@ class MonteObject(object):
             expr,
             bindingGuards,
             self,
-            scope.keys())
+            scope.keys(),
+            self.__class__._m_auditorCache)
         for auditor in auditors:
             audition.ask(auditor)
         audition._active = False
