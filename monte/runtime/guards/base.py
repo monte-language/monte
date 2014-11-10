@@ -74,6 +74,17 @@ def requireDeepFrozen(specimen, sofar, ej, root):
         else:
             throw.eject(ej, "%s is not DeepFrozen because %s is not" % (toQuote(root), toQuote(specimen)))
 
+def isDeepFrozen(specimen):
+    ej = ejector("ok")
+    try:
+        requireDeepFrozen(specimen, set(), ej, specimen)
+    except ej._m_type:
+        return false
+    finally:
+        ej.disable()
+    return true
+
+
 def auditForDeepFrozen(audition, ej):
     from monte.expander import scope
     expr = audition.getObjectExpr()
