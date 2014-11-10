@@ -4,11 +4,16 @@ from encodings.utf_8 import IncrementalDecoder
 
 from terml.nodes import Tag, Term
 
+shiftTable = ''.join(chr((x + 32) % 256) for x in range(256))
+unshiftTable = ''.join(chr((x - 32) % 256) for x in range(256))
+
+
 def asciiShift(bs):
-    return ''.join(chr((ord(b) + 32) % 256) for b in bs)
+    return bs.translate(shiftTable)
+
 
 def asciiUnshift(bs):
-    return ''.join(chr((ord(b) - 32) % 256) for b in bs)
+    return bs.translate(unshiftTable)
 
 kernelNodeInfo = [
     ('null', 0),
@@ -77,7 +82,7 @@ def dumpVarint(value):
             target.append(chr(chunk | 0x80))
         else:
             target.append(chr(chunk))
-    return asciiShift(target)
+    return asciiShift(''.join(target))
 
 
 def loadVarint(data, i):
