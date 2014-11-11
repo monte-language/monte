@@ -1,8 +1,11 @@
-module makeTag, makeTerm, makeTermLexer, unittest
+module makeTag, makeTerm, makeTermLexer, convertToTerm, unittest
 export (parseTerm, term__quasiParser)
 def tokenStart := 'a'..'z' | 'A'..'Z' | '_'..'_' | '$'..'$' | '.'..'.'
-def parseTerm(input):
-    def tokens := __makeList.fromIterable(makeTermLexer(input))
+
+def _parseTerm(lex, holeValues, err):
+    def [VALUE_HOLE, PATTERN_HOLE] := [lex.valueHole(), lex.patternHole()]
+    def tokens := __makeList.fromIterable(lex)
+    var holeValueIndex := 0
     var position := -1
 
     def onError(e, msg):
@@ -26,7 +29,8 @@ def parseTerm(input):
 
     def accept(termName, fail):
         def t := advance(fail)
-        if (t.getTag().getName() == termName):
+        def isHole := t == VALUE_HOLE || t == PATTERN_HOLE
+        if (!isHole && t.getTag().getName() == termName):
             return t
         else:
             rewind()
@@ -35,7 +39,8 @@ def parseTerm(input):
     def maybeAccept(termName):
         escape e:
             def t := advance(e)
-            if (t.getTag().getName() == termName):
+            def isHole := t == VALUE_HOLE || t == PATTERN_HOLE
+            if (!isHole && t.getTag().getName() == termName):
                 return t
         rewind()
         return null
@@ -43,12 +48,15 @@ def parseTerm(input):
     def functor(fail):
         # XXX maybe tokens shouldn't be represented as terms? not sure
         def token := advance(fail)
-
+        if (token == VALUE_HOLE):
+            def f := convertToTerm(holeValues[holeValueIndex], fail)
+            holeValueIndex += 1
+            return [f, true]
         if (token.getData() != null):
-            return token
+            return [token, false]
         def name := token.getTag().getName()
         if (name.size() > 0 && tokenStart(name[0])):
-            return token
+            return [token, false]
         rewind()
         fail(null)
 
@@ -68,18 +76,21 @@ def parseTerm(input):
         return args.snapshot()
 
     def extraTerm(fail):
-        # tuple
-        # labelled bag
-        # bag
         if (maybeAccept("[") != null):
             return makeTerm(makeTag(null, ".tuple.", any), null, arglist("]", fail), null)
         else if (maybeAccept("{") != null):
             return makeTerm(makeTag(null, ".bag.", any), null, arglist("}", fail), null)
-        def rootTerm := functor(fail)
-        if (maybeAccept("{") != null):
-            return makeTerm(rootTerm.getTag(), rootTerm.getData(), [makeTerm(makeTag(null, ".bag.", any), null, arglist("}", fail), null)], rootTerm.getSpan())
+        def [rootTerm, filledHole] := functor(fail)
         var args := []
+        if (filledHole):
+            args := rootTerm.getArgs()
+        if (maybeAccept("{") != null):
+            if (filledHole && args != []):
+                fail(`Can't fill a functor hole with term $rootTerm`)
+            return makeTerm(rootTerm.getTag(), rootTerm.getData(), [makeTerm(makeTag(null, ".bag.", any), null, arglist("}", fail), null)], rootTerm.getSpan())
         if (maybeAccept("(") != null):
+            if (filledHole && args != []):
+                fail(`Can't fill a functor hole with term $rootTerm`)
             args := arglist(")", fail)
         return makeTerm(rootTerm.getTag(), rootTerm.getData(), args, rootTerm.getSpan())
 
@@ -92,7 +103,67 @@ def parseTerm(input):
         else:
             return k
     term # deleting this line breaks tests. is there some compiler BS going on?
-    return term(throw)
+    return term(err)
+
+def parseTerm(input):
+    def lex := makeTermLexer(input)
+    return _parseTerm(lex, [], throw)
+
+def makeQuasiTokenChain(makeLexer, template):
+    var i := -1
+    var current := makeLexer("")
+    var lex := current
+    def [VALUE_HOLE, PATTERN_HOLE] := makeLexer.holes()
+    var j := 0
+    return object chainer:
+        to _makeIterator():
+            return chainer
+
+        to valueHole():
+           return VALUE_HOLE
+
+        to patternHole():
+           return PATTERN_HOLE
+
+        to next(ej):
+            if (i >= template.size()):
+                throw.eject(ej, null)
+            j += 1
+            if (current == null):
+                if (template[i] == VALUE_HOLE || template[i] == PATTERN_HOLE):
+                    def hol := template[i]
+                    i += 1
+                    return [j, hol]
+                else:
+                    current := lex.lexerForNextChunk(template[i])._makeIterator()
+                    lex := current
+            escape e:
+                def t := current.next(e)[1]
+                return [j, t]
+            catch z:
+                i += 1
+                current := null
+                return chainer.next(ej)
+
+
+def [VALUE_HOLE, PATTERN_HOLE] := makeTermLexer.holes()
+
+object quasitermParser:
+    to valueHole(n):
+        return VALUE_HOLE
+    to patternHole(n):
+        return PATTERN_HOLE
+    to valueMaker(template):
+        return object valueQTerm:
+            to substitute(values):
+                def chain := makeQuasiTokenChain(makeTermLexer, template)
+                return _parseTerm(chain, values, throw)
+
+    to matchMaker(template):
+        return object patternQTerm:
+            to matchBind(values, specimen, ej):
+                def chain := makeQuasiTokenChain(makeTermLexer, template)
+                def qpatt := _parseTerm(chain, values, ej)
 
 def term__quasiParser := null
 
@@ -131,5 +202,23 @@ def test_fullTerm(assert):
     assert.equal(parseTerm("f {x, y, 1}"), parseTerm("f(.bag.(x, y, 1))"))
     assert.equal(parseTerm("a: b"), parseTerm(".attr.(a, b)"))
 
+def test_qtermSubstitute(assert):
+    def qt__quasiParser := quasitermParser
+    {
+         def x := 1
+         def y := parseTerm("baz")
+         assert.equal(qt`foo($x, $y)`, parseTerm("foo(1, baz)"))
 
-unittest([test_literal, test_simpleTerm, test_fullTerm])
+    }
+    {
+        def x := parseTerm("foo")
+        assert.equal(qt`$x(3)`, parseTerm("foo(3)"))
+        def y := parseTerm("baz(3)")
+        assert.equal(qt`foo($y)`._uncall(), parseTerm("foo(baz(3))")._uncall())
+    }
+    {
+        def x := parseTerm("foo(3)")
+        assert.raises(fn { qt`$x(3)` })
+    }
+
+unittest([test_literal, test_simpleTerm, test_fullTerm, test_qtermSubstitute])

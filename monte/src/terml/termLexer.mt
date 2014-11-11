@@ -1,6 +1,8 @@
 module makeTag, makeTerm, unittest
 export (makeTermLexer)
 
+object VALUE_HOLE {}
+object PATTERN_HOLE {}
 object EOF {}
 def decimalDigits := '0'..'9'
 def hexDigits := decimalDigits | 'a'..'f' | 'A'..'F'
@@ -10,7 +12,8 @@ def segStart := 'a'..'z' | 'A'..'Z' | '_'..'_' | '$'..'$' | '.'..'.'
 def segPart := segStart | '0'..'9' | '-'..'-'
 def closers := ['(' => ')', '[' => ']', '{' => '}']
 
-def makeTermLexer(input):
+
+def _makeTermLexer(input, braceStack, var nestLevel):
 
     # Does the input string contain a complete expression, such that we can
     # execute it without further user input?
@@ -23,10 +26,6 @@ def makeTermLexer(input):
 
     # Start offset of the text for the token being created.
     var startPos := -1
-
-    # State for paired delimiters like "", {}, (), []
-    def braceStack := [[null, null, 0, true]].diverge()
-    var nestLevel := 0
 
     # Syntax error produced from most recent tokenization attempt.
     var errorMessage := null
@@ -287,19 +286,37 @@ def makeTermLexer(input):
         to needsMore():
             return inputIsComplete
 
+        to valueHole():
+            return VALUE_HOLE
+
+        to patternHole():
+            return PATTERN_HOLE
+
         to next(ej):
             try:
                 if (currentChar == EOF):
                     throw.eject(ej, null)
                 def errorStartPos := position
                 escape e:
-                    return [count += 1, getNextToken(e)]
+                    def t := getNextToken(e)
+                    return [count += 1, t]
                 catch msg:
                     errorMessage := msg
                     throw.eject(ej, msg)
             finally:
                 startPos := -1
 
+        to lexerForNextChunk(chunk):
+            return _makeTermLexer(chunk, braceStack, nestLevel)
+
+object makeTermLexer:
+    to run(input):
+        # State for paired delimiters like "", {}, (), []
+        def braceStack := [[null, null, 0, true]].diverge()
+        return _makeTermLexer(input, braceStack, 0)
+
+    to holes():
+        return [VALUE_HOLE, PATTERN_HOLE]
 
 def lex(s):
     def l := makeTermLexer(s)
