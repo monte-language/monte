@@ -2,7 +2,7 @@ module makeTerm :DeepFrozen, Term :DeepFrozen, makeTag :DeepFrozen, unittest
 export (convertToTerm)
 
 def mkt(name, data, args) as DeepFrozen:
-    return makeTerm(makeTag(null, name, null), data, args, null)
+    return makeTerm(makeTag(null, name, any), data, args, null)
 
 def convertToTerm(val, ej) as DeepFrozen:
     switch (val):

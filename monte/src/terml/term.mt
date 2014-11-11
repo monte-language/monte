@@ -82,7 +82,9 @@ object makeTerm as DeepFrozen:
                     return term
 
             to _printOn(out):
-                return term.prettyPrintOn(out, false)
+                out.print("term`")
+                term.prettyPrintOn(out, false)
+                out.print("`")
 
             to prettyPrintOn(out, isQuasi :boolean):
                 var label := null # should be def w/ later bind
