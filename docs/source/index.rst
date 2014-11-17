@@ -18,6 +18,7 @@ For users:
     monte-for-wizards
     modules
     design
+    iteration
 
 For Developers: 
 
