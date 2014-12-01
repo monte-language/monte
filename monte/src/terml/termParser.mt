@@ -220,5 +220,71 @@ def test_qtermSubstitute(assert):
         def x := parseTerm("foo(3)")
         assert.raises(fn { qt`$x(3)` })
     }
+    {
+        def args := [qt`foo`, qt`bar(3)`]
+        assert.equal(qt`zip($args*)`, qt`zip(foo, bar(3))`)
+        assert.equal(qt`zip($args+)`, qt`zip(foo, bar(3))`)
+        assert.equal(qt`zip(${[]})*`, qt`zip`)
+        assert.raises(fn {qt`zip($args?)`})
+        assert.raises(fn {qt`zip(${[]}+)`})
+    }
 
+
+def test_qtermMatch(assert):
+    def qt__quasiParser := quasitermParser
+    {
+        def qt`@foo` := "hello"
+        assert.equal(foo, "hello")
+    }
+    {
+        def qt`@bar()` := "hello"
+        assert.equal(bar, "hello")
+    }
+    {
+        assert.raises(fn {def qt`hello@foo` := "hello"})
+    }
+    {
+        def qt`hello@foo` := qt`hello(3, 4)`
+        assert.equal(foo, qt`hello(3, 4)`)
+    }
+    {
+        def qt`.String.@foo` := "hello"
+        assert.equal(foo, qt`"hello"`)
+    }
+    {
+        # XXX WTF does this mean?
+        def qt`hello@bar()` := "hello"
+        assert.equal(bar, term`hello`)
+    }
+    {
+        assert.raises(fn {
+            def qt`hello@bar()` := "hello world"
+        })
+    }
+    {
+        def qt`${qt`foo`}(@args*)` := term`foo(2, 3)`
+        assert.equal(args, [qt`2`, qt`3`])
+    }
+    {
+        def t := qt`foo(bar, bar(3), zip(zap)`
+        def qt`foo(bar@bars*, zip@z)` := t
+        assert.equal(bars, [qt`bar`, qt`bar(3)`])
+        assert.equal(z, qt`zip(zap)`)
+    }
+    {
+        def qt`[@x*, @y, @z]` := qt`[4, 5, 6, 7, 8]`
+        assert.equal([x, y, z], [[qt`4`, qt`5`, qt`6`], qt`7`, qt`8`])
+    }
+    {
+        def qt`[@x*, @y?, @z]` := qt`[4, 5, 6, 7, 8]`
+        assert.equal([x, y, z], [[qt`4`, qt`5`, qt`6`, qt`7`], [], qt`8`])
+    }
+    {
+        def qt`[@x*, @y+, @z]` := qt`[4, 5, 6, 7, 8]`
+        assert.equal([x, y, z], [[qt`4`, qt`5`, qt`6`], [qt`7`], qt`8`])
+    }
+    {
+        def qt`[@x*, (@y, @z)+]` := qt`[4, 5, 6, 7, 8]`
+        assert.equal([x, y, z], [[qt`4`, qt`5`, qt`6`], [qt`7`], [qt`8`]])
+    }
 unittest([test_literal, test_simpleTerm, test_fullTerm, test_qtermSubstitute])
