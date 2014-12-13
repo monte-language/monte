@@ -32,7 +32,7 @@ class EListMixin(object):
 
     def add(self, other):
         other = typecheck(other, EListMixin)
-        return ConstList(self.l + other.l)
+        return ConstList(tuple(self.l) + tuple(other.l))
 
     def diverge(self, guard=None):
         return FlexList(self.l[:], guard)

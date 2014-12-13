@@ -261,7 +261,7 @@ def _makeTermLexer(input, builder, braceStack, var nestLevel):
             def t := leafTag(s, s.getSpan())
             advance()
             return t
-        if ([':', '-', ','].contains(cur)):
+        if ([':', '-', ',', '*', '+', '?'].contains(cur)):
             def s := input.slice(position, position + 1)
             def t := leafTag(s, s.getSpan())
             advance()
@@ -366,6 +366,12 @@ def test_tag(assert):
     assert.equal(lex("foo$baz32"), [mkTag("foo$baz32")])
     assert.equal(lex("foo-baz.19"), [mkTag("foo-baz.19")])
 
+def test_quant(assert):
+    def mkTag(n):
+        return makeTerm(makeTag(null, n, any), null, [], null)
+    assert.equal(lex("*"), [mkTag("*")])
+    assert.equal(lex("+"), [mkTag("+")])
+    assert.equal(lex("?"), [mkTag("?")])
 
 
-unittest([test_integer, test_float, test_string, test_char, test_tag])
+unittest([test_integer, test_float, test_string, test_char, test_tag, test_quant])
