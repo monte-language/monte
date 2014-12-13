@@ -119,15 +119,30 @@ def _parseTerm(lex, builder, err):
             return builder.term(f, arglist(")", fail))
         return builder.term(rootTerm, builder.empty())
 
-    bind term(fail):
+    def prim(fail):
         def k := extraTerm(fail)
         if (maybeAccept(":") != null):
             def v := extraTerm(onError(fail, "Expected term after ':'"))
             return namedTerm(".attr.", builder.addArg(builder.addArg(builder.empty(), k), v))
         else:
             return k
+
+    def some(t):
+        if (maybeAccept("*") != null):
+            return builder.some(t, "*")
+        if (maybeAccept("+") != null):
+            return builder.some(t, "+")
+        if (maybeAccept("?") != null):
+            return builder.some(t, "?")
+        return t
+
+    bind term(fail):
+        if (maybeAccept("(") != null):
+            return some(arglist(")", fail))
+        return some(prim(fail))
+
     term # deleting this line breaks tests. is there some compiler BS going on?
-    return term(err)
+    return prim(err)
 
 def parseTerm(input):
     def lex := makeTermLexer(input, termBuilder)
@@ -183,7 +198,7 @@ object quasitermParser:
         def q := _parseTerm(chain, qBuilder, throw)
         return object qterm extends q:
            to substitute(values):
-               def vals := q.substSlice(values, [])
+               def vals := q.substSlice(values, [].diverge())
                if (vals.size() != 1):
                   throw(`Must be a single match: ${vals}`)
                return vals[0]
@@ -255,14 +270,14 @@ def test_qtermSubstitute(assert):
         def x := parseTerm("foo(3)")
         assert.raises(fn { qt`$x(3)` })
     }
-    # {
-    #     def args := [qt`foo`, qt`bar(3)`]
-    #     assert.equal(qt`zip($args*)`, qt`zip(foo, bar(3))`)
-    #     assert.equal(qt`zip($args+)`, qt`zip(foo, bar(3))`)
-    #     assert.equal(qt`zip(${[]})*`, qt`zip`)
-    #     assert.raises(fn {qt`zip($args?)`})
-    #     assert.raises(fn {qt`zip(${[]}+)`})
-    # }
+    {
+        def args := [qt`foo`, qt`bar(3)`]
+        assert.equal(qt`zip($args*)`, qt`zip(foo, bar(3))`)
+        assert.equal(qt`zip($args+)`, qt`zip(foo, bar(3))`)
+        assert.equal(qt`zip(${[]}*)`, qt`zip`)
+        assert.raises(fn {qt`zip($args?)`})
+        assert.raises(fn {qt`zip(${[]}+)`})
+    }
 
 
 def test_qtermMatch(assert):
