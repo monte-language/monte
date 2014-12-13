@@ -1,4 +1,4 @@
-module makeTag, makeTerm, unittest
+module makeTag, makeTerm, termBuilder, unittest
 export (makeTermLexer)
 
 object VALUE_HOLE {}
@@ -13,11 +13,7 @@ def segPart := segStart | '0'..'9' | '-'..'-'
 def closers := ['(' => ')', '[' => ']', '{' => '}']
 
 
-def _makeTermLexer(input, braceStack, var nestLevel):
-
-    # Does the input string contain a complete expression, such that we can
-    # execute it without further user input?
-    var inputIsComplete := true
+def _makeTermLexer(input, builder, braceStack, var nestLevel):
 
     # The character under the cursor.
     var currentChar := null
@@ -33,10 +29,8 @@ def _makeTermLexer(input, braceStack, var nestLevel):
     var count := -1
 
     def leafTag(tagname, span):
-        return makeTerm(makeTag(null, tagname, any), null, [], span)
+        return builder.leafInternal(makeTag(null, tagname, any), null, span)
 
-    def composite(name, data, span):
-        return makeTerm(makeTag(null, name, any), data, [], span)
 
     def atEnd():
         return position == input.size()
@@ -125,12 +119,12 @@ def _makeTermLexer(input, braceStack, var nestLevel):
         def tok := endToken(fail)
         def s := tok.replace("_", "")
         if (floating):
-            return composite(".float64.", __makeFloat(s), tok.getSpan())
+            return builder.leafInternal(makeTag(null, ".float64.", any), __makeFloat(s), tok.getSpan())
         else:
             if (radix == 16):
-                return composite(".int.", __makeInt(s.slice(2), 16), tok.getSpan())
+                return builder.leafInternal(makeTag(null, ".int.", any), __makeInt(s.slice(2), 16), tok.getSpan())
             else:
-                return composite(".int.", __makeInt(s), tok.getSpan())
+                return builder.leafInternal(makeTag(null, ".int.", any), __makeInt(s), tok.getSpan())
 
     def charConstant(fail):
         if (currentChar == '\\'):
@@ -201,7 +195,7 @@ def _makeTermLexer(input, braceStack, var nestLevel):
         if (currentChar != '\''):
             throw.eject(fail, "Character constant must end in \"'\"")
         advance()
-        return composite(".char.", c, endToken(fail).getSpan())
+        return builder.leafInternal(makeTag(null, ".char.", any), c, endToken(fail).getSpan())
 
     def tag(fail, initial):
         var done := false
@@ -239,7 +233,7 @@ def _makeTermLexer(input, braceStack, var nestLevel):
             def closer := endToken(fail)
             popBrace('"', fail)
 
-            return composite(".String.", s, closer.getSpan())
+            return builder.leafInternal(makeTag(null, ".String.", any), s, closer.getSpan())
         if (cur == '\''):
             return charLiteral(fail)
         if (cur == '-'):
@@ -283,9 +277,6 @@ def _makeTermLexer(input, braceStack, var nestLevel):
         to getSyntaxError():
             return errorMessage
 
-        to needsMore():
-            return inputIsComplete
-
         to valueHole():
             return VALUE_HOLE
 
@@ -307,19 +298,19 @@ def _makeTermLexer(input, braceStack, var nestLevel):
                 startPos := -1
 
         to lexerForNextChunk(chunk):
-            return _makeTermLexer(chunk, braceStack, nestLevel)
+            return _makeTermLexer(chunk, builder, braceStack, nestLevel)
 
 object makeTermLexer:
-    to run(input):
+    to run(input, builder):
         # State for paired delimiters like "", {}, (), []
         def braceStack := [[null, null, 0, true]].diverge()
-        return _makeTermLexer(input, braceStack, 0)
+        return _makeTermLexer(input, builder, braceStack, 0)
 
     to holes():
         return [VALUE_HOLE, PATTERN_HOLE]
 
 def lex(s):
-    def l := makeTermLexer(s)
+    def l := makeTermLexer(s, termBuilder)
     def toks := [t for t in l]
     if ((def err := l.getSyntaxError()) != null):
         throw(err)

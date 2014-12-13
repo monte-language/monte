@@ -1,37 +1,46 @@
 module makeTerm :DeepFrozen, Term :DeepFrozen, makeTag :DeepFrozen, unittest
 export (convertToTerm)
 
-def mkt(name, data, args) as DeepFrozen:
-    return makeTerm(makeTag(null, name, any), data, args, null)
+# copypasted here since I am too lazy to DF-annotate everything that needs
+# it. remove ASAP
+def optMakeTagFromData(val, mkt) as DeepFrozen:
+    switch (val):
+        match ==null:
+            return mkt("null", null)
+        match ==true:
+            return mkt("true", null)
+        match ==false:
+            return mkt("false", null)
+        match v :int:
+            return mkt(".int.", v)
+        match v :float:
+            return mkt(".float.", v)
+        match v :str:
+            return mkt(".String.", v)
+        match v :char:
+            return mkt(".char.", v)
+        match _:
+            return null
+
+def mkt(name, data) as DeepFrozen:
+    return makeTerm(makeTag(null, name, any), data, [], null)
 
 def convertToTerm(val, ej) as DeepFrozen:
+    if (val =~ _ :Term):
+        return val
+    if ((def t := optMakeTagFromData(val, mkt)) != null):
+        return t
     switch (val):
-        match _ :Term:
-            return val
-        match ==null:
-            return mkt("null", null, [])
-        match ==true:
-            return mkt("true", null, [])
-        match ==false:
-            return mkt("false", null, [])
-        match v :int:
-            return mkt(".int.", v, [])
-        match v :float:
-            return mkt(".float.", v, [])
-        match v :str:
-            return mkt(".String.", v, [])
-        match v :char:
-            return mkt(".char.", v, [])
         match v :List:
             def l := [convertToTerm(item, ej) for item in v]
-            return mkt(".tuple.", null, l)
+            return makeTerm(makeTag(null, ".tuple.", any), null, l, null)
         # match v :set:
         #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
         match m :Map:
-            return mkt(".bag.", null,
-                       [mkt(".attr.", null, [convertToTerm(k, ej),
-                       convertToTerm(v, ej)])
-                        for k => v in m])
+            return makeTerm(makeTag(null, ".bag.", any), null,
+                       [makeTerm(makeTag(null, ".attr.", any), null, [convertToTerm(k, ej),
+                       convertToTerm(v, ej)], null)
+                        for k => v in m], null)
         match _:
             throw.eject(ej, `Could not coerce $val to term`)
 
