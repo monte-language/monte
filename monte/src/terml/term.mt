@@ -1,5 +1,5 @@
-module Tag :DeepFrozen
-export (Term, makeTerm)
+module Tag :DeepFrozen, makeTag :DeepFrozen, optMakeTagFromData
+export (Term, makeTerm, termBuilder)
 
 object TermStamp as DeepFrozen:
     to audit(_):
@@ -42,6 +42,9 @@ object makeTerm as DeepFrozen:
 
             to getArgs():
                 return args
+
+            to asFunctor():
+                return term
 
             to withoutArgs():
                return makeTerm(tag, data, [], span)
@@ -162,3 +165,29 @@ object makeTerm as DeepFrozen:
                         sub.println(sep)
                         a.prettyPrintOn(sub, isQuasi)
                     sub.print(close)
+
+
+def mkt(name, data) as DeepFrozen:
+    return makeTerm(makeTag(null, name, any), data, [], null)
+
+object termBuilder:
+    to leafInternal(tag, data, span):
+        return makeTerm(tag, data, [], span)
+
+    to leafData(data, span):
+        return optMakeTagFromData(data, mkt)
+
+    to composite(tag, data, span):
+        return termBuilder.term(termBuilder.leafInternal(tag, null, span))
+
+    to term(functor, args):
+        if (functor.getArgs().size() > 0):
+            throw(`To use as a functor, a Term must not have args: $functor`)
+        return makeTerm(functor.getTag(), functor.getData(), args.snapshot(), functor.getSpan())
+
+    to empty():
+        return [].diverge()
+
+    to addArg(arglist, arg):
+        arglist.push(arg)
+        return arglist

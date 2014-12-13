@@ -1,5 +1,5 @@
 module unittest
-export (Tag, makeTag)
+export (Tag, makeTag, optMakeTagFromData)
 
 interface Tag :DeepFrozen guards TagStamp :DeepFrozen:
     pass
@@ -39,6 +39,25 @@ object makeTag as DeepFrozen:
                     return false
 
                 return data =~ _ :dataGuard
+
+def optMakeTagFromData(val, mkt):
+    switch (val):
+        match ==null:
+            return mkt("null", null)
+        match ==true:
+            return mkt("true", null)
+        match ==false:
+            return mkt("false", null)
+        match v :int:
+            return mkt(".int.", v)
+        match v :float:
+            return mkt(".float.", v)
+        match v :str:
+            return mkt(".String.", v)
+        match v :char:
+            return mkt(".char.", v)
+        match _:
+            return null
 
 def testPrint(assert):
     def t1 := makeTag(1, "foo", int)
