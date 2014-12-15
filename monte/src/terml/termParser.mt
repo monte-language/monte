@@ -35,6 +35,7 @@ def _parseTerm(lex, builder, err):
     def [VALUE_HOLE, PATTERN_HOLE] := [lex.valueHole(), lex.patternHole()]
     def tokens := __makeList.fromIterable(lex)
     var dollarHoleValueIndex := -1
+    var atHoleValueIndex := -1
     var position := -1
 
     def onError(e, msg):
@@ -78,6 +79,8 @@ def _parseTerm(lex, builder, err):
         def token := advance(fail)
         if (token == VALUE_HOLE):
             return makeQDollarHole(null, dollarHoleValueIndex += 1, false)
+        if (token == PATTERN_HOLE):
+            return makeQAtHole(null, atHoleValueIndex += 1, false)
         if (token.getData() != null):
             return token
         def name := token.getTag().getName()
@@ -85,6 +88,9 @@ def _parseTerm(lex, builder, err):
             if (peek() == VALUE_HOLE):
                 advance(fail)
                 return makeQDollarHole(token, dollarHoleValueIndex += 1, false)
+            if (peek() == PATTERN_HOLE):
+                advance(fail)
+                return makeQAtHole(token.getTag(), atHoleValueIndex += 1, false)
             return token
         rewind()
         fail(null)
@@ -96,7 +102,7 @@ def _parseTerm(lex, builder, err):
             args := builder.addArg(args, term(e))
         catch err:
             accept(closer, fail)
-            return []
+            return args
         escape outOfArgs:
             while (true):
                 accept(",", outOfArgs)
@@ -209,10 +215,11 @@ object quasitermParser:
         return object qterm extends q:
             to matchBind(values, specimen, ej):
                 def bindings := [].diverge()
-                if (q.matchBindSlice(values, [specimen], bindings, [], 1, ej) == 1):
+                def blee := q.matchBindSlice(values, [specimen], bindings, [], 1)
+                if (blee == 1):
                     return bindings
                 else:
-                    ej(`$q doesn't match $specimen`)
+                    ej(`$q doesn't match $specimen: $blee`)
 
 
 def term__quasiParser := null
@@ -284,18 +291,18 @@ def test_qtermMatch(assert):
     def qt__quasiParser := quasitermParser
     {
         def qt`@foo` := "hello"
-        assert.equal(foo, "hello")
+        assert.equal(foo, parseTerm("\"hello\""))
     }
     {
         def qt`@bar()` := "hello"
-        assert.equal(bar, "hello")
+        assert.equal(bar, parseTerm("hello"))
     }
     {
         assert.raises(fn {def qt`hello@foo` := "hello"})
     }
     {
-        def qt`hello@foo` := qt`hello(3, 4)`
-        assert.equal(foo, qt`hello(3, 4)`)
+        def qt`hello@foo` := parseTerm("hello(3, 4)")
+        assert.equal(foo, parseTerm("hello(3, 4)"))
     }
     {
         def qt`.String.@foo` := "hello"
@@ -304,7 +311,7 @@ def test_qtermMatch(assert):
     {
         # XXX WTF does this mean?
         def qt`hello@bar()` := "hello"
-        assert.equal(bar, term`hello`)
+        assert.equal(bar, parseTerm("hello"))
     }
     {
         assert.raises(fn {
@@ -312,11 +319,11 @@ def test_qtermMatch(assert):
         })
     }
     {
-        def qt`${qt`foo`}(@args*)` := term`foo(2, 3)`
+        def qt`${qt`foo`}(@args*)` := parseTerm("foo(2, 3)")
         assert.equal(args, [qt`2`, qt`3`])
     }
     {
-        def t := qt`foo(bar, bar(3), zip(zap)`
+        def t := qt`foo(bar, bar(3), zip(zap))`
         def qt`foo(bar@bars*, zip@z)` := t
         assert.equal(bars, [qt`bar`, qt`bar(3)`])
         assert.equal(z, qt`zip(zap)`)
@@ -337,4 +344,5 @@ def test_qtermMatch(assert):
         def qt`[@x*, (@y, @z)+]` := qt`[4, 5, 6, 7, 8]`
         assert.equal([x, y, z], [[qt`4`, qt`5`, qt`6`], [qt`7`], [qt`8`]])
     }
-unittest([test_literal, test_simpleTerm, test_fullTerm, test_qtermSubstitute])
+unittest([test_literal, test_simpleTerm, test_fullTerm, test_qtermSubstitute,
+          test_qtermMatch])

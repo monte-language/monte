@@ -40,6 +40,9 @@ object makeTag as DeepFrozen:
 
                 return data =~ _ :dataGuard
 
+            to op__cmp(other):
+                return name.op__cmp(other.getName())
+
 def optMakeTagFromData(val, mkt):
     switch (val):
         match ==null:
