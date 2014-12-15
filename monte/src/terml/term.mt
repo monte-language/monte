@@ -53,7 +53,7 @@ object makeTerm as DeepFrozen:
                var tagCmp := tag.op__cmp(other.getTag())
                if (tagCmp != 0):
                    return tagCmp
-               if (data != null):
+               if (data == null):
                    if (other.getData() != null):
                        return -1
                else:

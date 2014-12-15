@@ -22,7 +22,7 @@ class _ConstListGuard(Guard):
                         return ConstList(specimen.l[:i] + remainder)
                 return specimen
         else:
-            throw.eject(ej, "is not a ConstList")
+            throw.eject(ej, repr(specimen) + " is not a ConstList")
 
 class ConstListGuard(_ConstListGuard):
     def __init__(self):
