@@ -13,4 +13,4 @@ if you have a problem with the docs, telling us what question you had and
 where you expected to find the answer. Or come say hi on IRC, in #monte on
 irc.freenode.net! 
 
-![Travis Status](https://api.travis-ci.org/monte-language/monte.svg)
+[![Travis Status](https://api.travis-ci.org/monte-language/monte.svg)](https://travis-ci.org/monte-language/monte/)
