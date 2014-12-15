@@ -1,0 +1,9 @@
+<simpson> I mean, to be frank, at some point this is all Prolog reinvention.
+<simpson> But whatever.
+<dash> sure
+<dash> the problem is that the good parts of prolog are all locked away in... prolog implementations
+*time passes*
+<dash> simpson: i guess we have about half a prolog now
+<simpson> dash: Which is appropriate. That's what's supposed to happen, right? We are now complex enough to have an ill-specified and slightly buggy reimplementation of Prolog in our system.
+<dash> yeah! we're ahead of all those other suckers who got common lisp instead
+%
