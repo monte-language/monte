@@ -97,9 +97,9 @@ class FileModuleConfiguration(MonteObject):
         self.structure = structure
         self.args = args
         self.scope = scope
-        self.requires = []
+        self.requires = set()
         for c in args:
-            self.requires.extend(c.requires)
+            self.requires.update(c.requires)
         self._inputs = None
         self._contents = None
 
@@ -208,7 +208,7 @@ class RequireConfiguration(MonteObject):
     _m_fqn = "Require"
     def __init__(self, name):
         self.name = name
-        self.requires = [name]
+        self.requires = set([name])
 
     def load(self, mapping):
         mapping = typecheck(mapping, (ConstMap, FlexMap))
@@ -262,7 +262,7 @@ def buildPackage(packageDirectory, name, scope, testCollector):
 
 class TestCollector(MonteObject):
     _m_fqn = "TestCollector"
-    requires = ()
+    requires = set(())
     def __init__(self):
         self.tests = FlexMap({})
 
@@ -277,7 +277,7 @@ class TestCollector(MonteObject):
 
 class TestStructureFacet(MonteObject):
     _m_fqn = "TestStructureFacet"
-    requires = ()
+    requires = set(())
     def __init__(self, prefix, collector):
         self.prefix = prefix
         self.collector = collector
@@ -287,7 +287,7 @@ class TestStructureFacet(MonteObject):
 
 class TestConfigFacet(MonteObject):
     _m_fqn = "TestConfigFacet"
-    requires = ()
+    requires = set(())
     def __init__(self, prefix, collector):
         self.prefix = prefix
         self.collector = collector
@@ -298,7 +298,7 @@ class TestConfigFacet(MonteObject):
 
 class NullTestCollector(MonteObject):
     _m_fqn = "NullTestCollector"
-    requires = ()
+    requires = set(())
     def load(self, tests):
         return self
     def run(self, tests):
@@ -364,12 +364,12 @@ class PackageMangler(MonteObject):
 
     def makeModule(self, mapping):
         mapping = typecheck(mapping, (ConstMap, FlexMap))
-        requires = []
+        requires = set([])
         exports = []
         for k in mapping._keys:
             k = typecheck(k, Twine)
             exports.append(k.bare().s)
-            requires.extend(mapping.d[k].requires)
+            requires.update(mapping.d[k].requires)
         return SyntheticModuleStructure(mapping, requires, exports)
 
 

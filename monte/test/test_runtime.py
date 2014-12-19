@@ -1511,7 +1511,7 @@ class PackageManglerTests(unittest.TestCase):
     def test_require(self):
         pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         m = pkg.require(String(u'b'))
-        self.assertEqual(m.requires, ['b'])
+        self.assertEqual(m.requires, set(['b']))
 
     def test_makeModuleEmpty(self):
         pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)

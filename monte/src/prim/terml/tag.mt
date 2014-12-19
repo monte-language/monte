@@ -7,7 +7,7 @@ interface Tag :DeepFrozen guards TagStamp :DeepFrozen:
 object makeTag as DeepFrozen:
     to asType():
         return Tag
-    to run(code :nullOk[int >= 0], name :str, dataGuard :DeepFrozen):
+    to run(code :nullOk[int], name :str, dataGuard :DeepFrozen):
         return object tag implements Selfless, Transparent, TagStamp:
             to _uncall():
                 return [makeTag, "run", [code, name, dataGuard]]

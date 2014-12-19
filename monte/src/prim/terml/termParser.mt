@@ -1,5 +1,5 @@
-module makeTag, optMakeTagFromData, makeTerm, makeTermLexer, convertToTerm, makeQFunctor, makeQTerm, makeQSome, makeQDollarHole, makeQAtHole, qEmptySeq, makeQPairSeq, termBuilder, unittest
-export (parseTerm, term__quasiParser)
+module __makeOrderedSpace, makeTag, optMakeTagFromData, makeTerm, makeTermLexer, convertToTerm, makeQFunctor, makeQTerm, makeQSome, makeQDollarHole, makeQAtHole, qEmptySeq, makeQPairSeq, termBuilder, unittest
+export (parseTerm, quasitermParser)
 def tokenStart := 'a'..'z' | 'A'..'Z' | '_'..'_' | '$'..'$' | '.'..'.'
 
 
@@ -221,8 +221,6 @@ object quasitermParser:
                 else:
                     ej(`$q doesn't match $specimen: $blee`)
 
-
-def term__quasiParser := null
 
 def test_literal(assert):
     def mk(tag, val):
