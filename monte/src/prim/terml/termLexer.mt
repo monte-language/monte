@@ -1,4 +1,4 @@
-module makeTag, makeTerm, termBuilder, unittest
+module __makeOrderedSpace, makeTag, makeTerm, termBuilder, unittest
 export (makeTermLexer)
 
 object VALUE_HOLE {}
@@ -84,7 +84,7 @@ def _makeTermLexer(input, builder, braceStack, var nestLevel):
     def collectDigits(var digitset):
         if (atEnd() || !digitset(currentChar)):
             return false
-        digitset |= (char <=> '_')
+        digitset |= ('_'..'_')
         while (!atEnd() && digitset(currentChar)):
             advance()
         return true
