@@ -221,6 +221,13 @@ object quasitermParser:
                 else:
                     ej(`$q doesn't match $specimen: $blee`)
 
+    to makeTag(code, name, guard):
+        return makeTag(code, name, guard)
+
+    to makeTerm(tag, data, arglist, span):
+        return makeTerm(tag, data, arglist, span)
+
+
 
 def test_literal(assert):
     def mk(tag, val):
