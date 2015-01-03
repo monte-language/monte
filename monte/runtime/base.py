@@ -162,6 +162,7 @@ def wrapEjector(e):
 
 
 def ejector(_name):
+    from monte.runtime.data import null
     class ejtype(MonteEjection):
         name = _name
         pass
@@ -170,7 +171,7 @@ def ejector(_name):
         _m_type = ejtype
         _m_active = True
 
-        def __call__(self, val=None):
+        def __call__(self, val=null):
             if not self._m_active:
                 throw("Ejector is not active")
             raise ejtype(val)
