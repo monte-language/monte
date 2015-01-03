@@ -41,6 +41,9 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
 
     var count := -1
 
+    var canStartIndentedBlock := false
+    def queuedTokens := [].diverge()
+    def indentPositionStack := [0].diverge()
 
     def atEnd():
         return position == input.size()
@@ -74,19 +77,25 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
         if (item[3]):
             nestLevel -= 1
 
-    def skipWhitespace():
+    def inStatementPosition():
+        return ["{", "INDENT", null].contains(braceStack.last()[0])
+
+    def skipSpaces():
         if (atEnd()):
-            return
+            return 0
+        def oldPos := position
         while (currentChar == ' '):
             advance()
+        return position - oldPos
 
     def atLogicalEndOfLine():
         if (atEnd()):
             return true
-        var i := position + 1
+        var i := position
         while ((i < input.size()) && input[i] == ' '):
             i += 1
-        return (i == input.size() || [' ', '\n', '#'].contains(input[i]))
+        def endish := i == input.size() || ['\n', '#'].contains(input[i])
+        return endish
 
     def offsetInLine():
         var i := 0
@@ -292,20 +301,76 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
         popBrace(closer, fail)
         return composite(closer, null, closer.getSpan())
 
+    def consumeComment():
+        while (!['\n', EOF].contains(currentChar)):
+            advance()
+        def comment := endToken()
+        return composite("#", comment.slice(1), comment.getSpan())
+
+    def consumeWhitespaceAndComments():
+        var spaces := skipSpaces()
+        while (currentChar == '\n'):
+            queuedTokens.insert(0, leaf("EOL"))
+            startToken()
+            advance()
+            spaces := skipSpaces()
+            if (currentChar == '#'):
+                queuedTokens.insert(0, consumeComment())
+                spaces := null
+        return spaces
+
+
     def getNextToken(fail):
+        if (queuedTokens.size() > 0):
+            return queuedTokens.pop()
+
         if (braceStack.last()[1] == '`'):
             startToken()
             return quasiPart()
 
-        skipWhitespace()
+        skipSpaces()
         startToken()
 
         def cur := currentChar
         if (cur == EOF):
-            throw.eject(fail, "End of input")
+            throw.eject(fail, null)
         if (cur == '\n'):
-            advance()
-            return leaf("EOL")
+            def c := advance()
+            if (canStartIndentedBlock):
+                def spaces := consumeWhitespaceAndComments()
+                if (!inStatementPosition()):
+                    throw.eject(fail,
+                        "Indented blocks only allowed in statement position")
+                if (spaces > indentPositionStack.last()):
+                    indentPositionStack.push(spaces)
+                    openBracket("DEDENT", "INDENT", fail)
+                    canStartIndentedBlock := false
+                    queuedTokens.insert(0, composite("INDENT", null, null))
+                    return leaf("EOL")
+                else:
+                    throw.eject(fail, "Expected an indented block")
+            if (!inStatementPosition()):
+                return leaf("EOL")
+            else:
+                queuedTokens.insert(0, leaf("EOL"))
+                startToken()
+                def spaces := consumeWhitespaceAndComments()
+                if (spaces > indentPositionStack.last()):
+                    throw.eject(fail, "Unexpected indent")
+                if (atEnd()):
+                    while (indentPositionStack.size() > 1):
+                        indentPositionStack.pop()
+                        popBrace("DEDENT", fail)
+                        queuedTokens.push(composite("DEDENT", null, null))
+                    return queuedTokens.pop()
+                while (spaces < indentPositionStack.last()):
+                    if (!indentPositionStack.contains(spaces)):
+                        throw.eject(fail, "unindent does not match any outer indentation level")
+                    indentPositionStack.pop()
+                    popBrace("DEDENT", fail)
+                    queuedTokens.push(composite("DEDENT", null, null))
+                return queuedTokens.pop()
+
 
         if ([';', ',', '~', '?'].contains(cur)):
             advance()
@@ -414,7 +479,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
                 if (atLogicalEndOfLine()):
                     # this is an arrow ending a line, and should be
                     # followed by an indent
-                    pass
+                    canStartIndentedBlock := true
                 return leaf("->")
             return leaf("-")
         if (cur == ':'):
@@ -428,7 +493,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
             if (atLogicalEndOfLine()):
                 # this is a colon ending a line, and should be
                 # followed by an indent
-                pass
+                canStartIndentedBlock := true
             return leaf(":")
 
         if (cur == '<'):
@@ -491,10 +556,8 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
             return leaf("/")
 
         if (cur == '#'):
-            while (!['\n', EOF].contains(currentChar)):
-                advance()
-            def comment := endToken()
-            return composite("#", comment.slice(1), comment.getSpan())
+            return consumeComment()
+
         if (cur == '%'):
             def nex := advance()
             if (nex == '='):
@@ -600,8 +663,6 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
 
         to next(ej):
             try:
-                if (currentChar == EOF):
-                    throw.eject(ej, null)
                 def errorStartPos := position
                 escape e:
                     def t := getNextToken(e)
@@ -767,7 +828,143 @@ def test_or(assert):
     assert.equal(lex("|="), [tt("|=", null)])
 
 
+def SIMPLE_INDENT := "
+foo:
+  baz
+
+
+"
+
+def ARROW_INDENT := "
+foo ->
+  baz
+
+
+"
+
+def SIMPLE_DEDENT := "
+foo:
+  baz
+blee
+"
+
+def VERTICAL_SPACE := "
+foo:
+
+  baz
+
+
+blee
+"
+
+def HORIZ_SPACE := "
+foo:    
+  baz
+blee
+"
+
+def MULTI_INDENT := "
+foo:
+  baz:
+     biz
+blee
+"
+
+def UNBALANCED := "
+foo:
+  baz:
+     biz
+ blee
+"
+
+def UNBALANCED2 := "
+foo:
+  baz
+   blee
+"
+
+def PARENS := "
+(foo,
+ baz:
+  blee
+ )
+"
+
+#TODO decide whether to follow python's "no indent tokens inside
+#parens" strategy or have ways to jump in/out of indentation-awareness
+def CONTINUATION := "
+foo (
+  baz
+    biz
+ )
+blee
+"
+def test_indent_simple(assert):
+    assert.equal(
+        lex(SIMPLE_INDENT),
+        [tt("EOL", null), tt("IDENTIFIER", "foo"), tt(":", null), tt("EOL", null),
+         tt("INDENT", null), tt("IDENTIFIER", "baz"), tt("DEDENT", null),
+         tt("EOL", null), tt("EOL", null)])
+
+def test_indent_arrow(assert):
+    assert.equal(
+        lex(ARROW_INDENT),
+        [tt("EOL", null), tt("IDENTIFIER", "foo"), tt("->", null), tt("EOL", null),
+         tt("INDENT", null), tt("IDENTIFIER", "baz"), tt("DEDENT", null),
+         tt("EOL", null), tt("EOL", null)])
+
+def test_indent_dedent(assert):
+    assert.equal(
+        lex(SIMPLE_DEDENT),
+        [tt("EOL", null), tt("IDENTIFIER", "foo"), tt(":", null), tt("EOL", null),
+         tt("INDENT", null), tt("IDENTIFIER", "baz"), tt("DEDENT", null),
+         tt("EOL", null), tt("IDENTIFIER", "blee")])
+
+def test_indent_vertical(assert):
+    assert.equal(
+        lex(VERTICAL_SPACE),
+        [tt("EOL", null), tt("IDENTIFIER", "foo"), tt(":", null), tt("EOL", null),
+         tt("EOL", null), tt("INDENT", null), tt("IDENTIFIER", "baz"),
+         tt("DEDENT", null), tt("EOL", null), tt("EOL", null), tt("EOL", null),
+         tt("IDENTIFIER", "blee")])
+
+def test_indent_horiz(assert):
+    assert.equal(
+        lex(HORIZ_SPACE),
+        [tt("EOL", null), tt("IDENTIFIER", "foo"), tt(":", null), tt("EOL", null),
+         tt("INDENT", null), tt("IDENTIFIER", "baz"), tt("DEDENT", null),
+         tt("EOL", null), tt("IDENTIFIER", "blee")])
+
+
+def test_indent_multi(assert):
+    assert.equal(
+        lex(MULTI_INDENT),
+        [tt("EOL", null), tt("IDENTIFIER", "foo"), tt(":", null),
+         tt("EOL", null), tt("INDENT", null), tt("IDENTIFIER", "baz"),
+         tt(":", null), tt("EOL", null), tt("INDENT", null),
+         tt("IDENTIFIER", "biz"), tt("DEDENT", null), tt("DEDENT", null),
+         tt("EOL", null), tt("IDENTIFIER", "blee")])
+
+def test_indent_unbalanced(assert):
+    assert.raises(fn {lex(UNBALANCED)})
+    assert.raises(fn {lex(UNBALANCED2)})
+
+def test_indent_inexpr(assert):
+    assert.raises(fn {lex(PARENS)})
+
+def test_indent_continuation(assert):
+    assert.equal(
+        lex(CONTINUATION),
+        [tt("EOL", null), tt("IDENTIFIER", "foo"), tt("(", null),
+         tt("EOL", null), tt("IDENTIFIER", "baz"), tt("EOL", null),
+         tt("IDENTIFIER", "biz"), tt("EOL", null), tt(")", null),
+         tt("IDENTIFIER", "blee"), tt("EOL", null)])
+
 unittest([test_ident, test_char, test_string, test_integer, test_float,
           test_holes, test_braces, test_dot, test_caret, test_plus, test_minus,
           test_colon, test_crunch, test_zap, test_star, test_slash, test_mod,
-          test_comment, test_bang, test_eq, test_and, test_or])
+          test_comment, test_bang, test_eq, test_and, test_or,
+
+          test_indent_simple, test_indent_arrow, test_indent_dedent,
+           test_indent_vertical, test_indent_horiz, test_indent_multi,
+           test_indent_unbalanced, test_indent_inexpr, test_indent_continuation])
