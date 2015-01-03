@@ -176,7 +176,7 @@ class FlexList(EListMixin, MonteObject):
 
     def insert(self, idx, value):
         idx = typecheck(idx, Integer)
-        if not 0 <= idx.n < len(self.l):
+        if not 0 <= idx.n <= len(self.l):
             raise IndexError(idx)
         if self.valueGuard is not None:
             value = self.valueGuard.coerce(value, null)
