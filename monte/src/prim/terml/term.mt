@@ -118,7 +118,7 @@ object makeTerm as DeepFrozen:
 
                 if (label == ".tuple."):
                     if (term.getHeight() <= 1):
-                        out.raw_print("[]")
+                        out.print("[]")
                         return
                     reps := 1
                     delims := ["[", ",", "]"]
