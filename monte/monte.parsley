@@ -21,13 +21,13 @@ justNoun = ((identifier:id -> self.keywordCheck(id)
 sourceHole = ('${' integer:i '}' -> t.QuasiLiteralExpr(i)
              |'@{' integer:i '}' -> t.QuasiPatternExpr(i))
 
-quasiString = subquasi*:qs 'QUASI_CLOSE':qc -> qs + ([t.QuasiText(qc)] if len(qc) else [])
-subquasi = ('QUASI_OPEN':q -> t.QuasiText(q)
+quasiString :inPatt = subquasi(inPatt)*:qs 'QUASI_CLOSE':qc -> qs + ([t.QuasiText(qc)] if len(qc) else [])
+subquasi :inPatt = ('QUASI_OPEN':q -> t.QuasiText(q)
            |'${' seq:e '}' -> t.QuasiExprHole(e)
            |'_' !(noIgnoreExpressionHole())
            |'DOLLAR_IDENT':id -> t.QuasiExprHole(t.NounExpr(id))
-           |'@{' br pattern:s '}' -> t.QuasiPatternHole(s)
-           |"AT_IDENT":id -> t.QuasiPatternHole(t.FinalPattern(t.NounExpr(id), None)))
+           |?(inPatt) '@{' br pattern:s '}' -> t.QuasiPatternHole(s)
+           |?(inPatt) "AT_IDENT":id -> t.QuasiPatternHole(t.FinalPattern(t.NounExpr(id), None)))
 
 reifyExpr = ("&&" noun:v -> t.BindingExpr(v)
             |"&" noun:v -> t.SlotExpr(v))
@@ -48,10 +48,10 @@ assoc = (expr:k "=>" expr:v -> t.MapExprAssoc(k, v)
 
 prim = ( literal
        | basic
-       | identifier?:n quasiString:qs -> t.QuasiExpr(n, qs)
+       | identifier?:n quasiString(0):qs -> t.QuasiExpr(n, qs)
        | noun
        | uri
-       | parenExpr:p (quasiString:qs -> t.QuasiExpr(p, qs)
+       | parenExpr:p (quasiString(0):qs -> t.QuasiExpr(p, qs)
                        | -> p)
        | block:b -> t.HideExpr(b)
        | listAndMap
@@ -123,7 +123,7 @@ ejector = ('break' -> t.Break
 guard = (noun | parenExpr):e ("[" args:x ']' -> x)*:xs -> t.Guard(e, xs)
 optGuard = (':' guard)?
 eqPattern = ('_' optGuard:e -> t.IgnorePattern(e)
-              |identifier?:n quasiString:q -> t.QuasiPattern(n, q)
+              |identifier?:n quasiString(1):q -> t.QuasiPattern(n, q)
               |namePattern
               |"==" prim:p -> t.SamePattern(p)
               |"!=" prim:p -> t.NotSamePattern(p)
