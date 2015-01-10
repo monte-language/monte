@@ -154,7 +154,8 @@ class EvalTest(unittest.TestCase):
 
     def test_binding(self):
         self.assertEqual(monte_eval("def x := 1; (&&x).get().get()"), Integer(1))
-
+        self.assertEqual(monte_eval("var x := 1; object foo {method baz(){ &&x }}; def &&a := foo.baz(); a"), Integer(1))
+        
     def test_interface(self):
         self.assertEqual(monte_eval(
             "interface Foo { to doStuff(x)} ; object blee implements Foo {}; blee =~ _ :Foo"),

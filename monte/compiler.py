@@ -265,7 +265,7 @@ class Binding(object):
             bn = "_monte.FinalSlot(%s)" % (self.pyname,)
         else:
             bn = self.pyname
-        return "_monte.Binding(%s, %s)" % (self.bindingGuardExpr, bn)
+        return "_monte.Binding(%s, %s)" % (bn, self.bindingGuardExpr)
 
     def getBindingGuardExpr(self):
         return self.bindingGuardExpr
