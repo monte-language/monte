@@ -149,9 +149,9 @@ class VarSlotGuard(Guard):
 
 class Binding(MonteObject):
     _m_fqn = "Binding"
-    def __init__(self, guard, slot):
-        self.guard = guard
+    def __init__(self, slot, guard):
         self.slot = slot
+        self.guard = guard
 
     def get(self):
         return self.slot
@@ -186,10 +186,10 @@ def reifyBinding(arg, ej=_absent):
     """
     if ej is _absent:
         def guardedSlotToBinding(specimen, ejector):
-            return Binding(arg, arg.coerce(specimen, ejector))
+            return Binding(arg.coerce(specimen, ejector), arg)
         return guardedSlotToBinding
     else:
-        return Binding(anyGuard, arg)
+        return Binding(arg, anyGuard)
 
 @deepFrozenFunc
 def slotFromBinding(b):
