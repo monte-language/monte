@@ -21,7 +21,7 @@ class EListMixin(object):
         out.raw_print(u']')
 
     def _makeIterator(self):
-        return MonteIterator((Integer(i), o) for (i, o)
+        return MonteIterator(ConstList((Integer(i), o)) for (i, o)
                              in zip(range(len(self.l)), self.l))
 
     def size(self):
@@ -200,7 +200,7 @@ class FlexList(EListMixin, MonteObject):
         return ConstList([ConstList([self.l]), String(u"diverge"), ConstList([])])
 
     def _makeIterator(self):
-        return MonteIterator((Integer(i), o) for (i, o) in zip(range(len(self.l)), self.l))
+        return MonteIterator(ConstList((Integer(i), o)) for (i, o) in zip(range(len(self.l)), self.l))
 
 class ListMaker(MonteObject):
     _m_fqn = "__makeList"
@@ -282,7 +282,7 @@ class EMapMixin(object):
         return Integer(len(self.d))
 
     def _makeIterator(self):
-        return MonteIterator((k, self.d[k]) for k in self._keys)
+        return MonteIterator(ConstList((k, self.d[k])) for k in self._keys)
 
     def _m_or(self, behind):
         behind = typecheck(behind, (ConstMap, FlexMap))
@@ -444,7 +444,10 @@ class mapMaker(object):
     _m_auditorStamps = (deepFrozenGuard,)
     @staticmethod
     def fromPairs(pairs):
-        return ConstMap(dict(p for (i, p) in pairs._makeIterator()), [p.get(Integer(0)) for p in pairs])
+        from monte.runtime.guards.tables import listGuard
+        return ConstMap(dict(listGuard.coerce(p.get(Integer(1)), null).l
+                             for p in pairs._makeIterator()),
+                        [p.get(Integer(1)).get(Integer(0)) for p in pairs._makeIterator()])
 
     @staticmethod
     def fromColumns(keys, vals):
