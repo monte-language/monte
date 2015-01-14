@@ -182,7 +182,8 @@ class Bytestring(MonteObject):
         return bwrap(self.b == other.b)
 
     def _makeIterator(self):
-        return MonteIterator(enumerate(Integer(ord(b)) for b in self.b))
+        from monte.runtime.tables import ConstList
+        return MonteIterator(ConstList((Integer(i), x) for i, x in enumerate(Integer(ord(b)) for b in self.b)))
 
     def op__cmp(self, other):
         other = typecheck(other, Bytestring)
@@ -859,7 +860,8 @@ class AtomicTwine(Twine):
         return bwrap(self.s.startswith(other))
 
     def _makeIterator(self):
-        return MonteIterator(enumerate(Character(c) for c in self.s))
+        from monte.runtime.tables import ConstList
+        return MonteIterator(ConstList((Integer(i), x) for i, x in enumerate(Character(c) for c in self.s))
 
     def _printOn(self, out):
         out.raw_print(self.s)

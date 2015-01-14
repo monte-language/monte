@@ -110,8 +110,9 @@ class MonteObject(object):
         return toString(self)
 
     def __iter__(self):
-        for (k, v) in self._makeIterator():
-            yield v
+        for pair in self._makeIterator():
+            from monte.runtime.data import Integer
+            yield pair.get(Integer(1))
 
 
 def toString(obj):
