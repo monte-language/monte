@@ -1517,7 +1517,7 @@ class PackageManglerTests(unittest.TestCase):
     def test_makeModuleEmpty(self):
         pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         mod = pkg.makeModule(ConstMap({}))
-        self.assertEqual(mod.imports, [])
+        self.assertEqual(mod.imports, set([]))
         self.assertEqual(mod.exports, [])
 
     def test_makeModuleTree(self):
@@ -1526,13 +1526,13 @@ class PackageManglerTests(unittest.TestCase):
         modB = pkg.makeModule(ConstMap({}))
         modC = pkg.makeModule(ConstMap({String(u'a'): modA, String(u'b'): modB},
                                        [String(u'a'), String(u'b')]))
-        self.assertEqual(modC.imports, [])
+        self.assertEqual(modC.imports, set([]))
         self.assertEqual(modC.exports, ['a', 'b'])
 
     def test_makeModuleRequire(self):
         pkg = PackageMangler("test", MODULE_TEST_DIR, bootScope, None)
         mod = pkg.makeModule(ConstMap({String(u'a'): pkg.require(String(u'b'))}))
-        self.assertEqual(mod.imports, ['b'])
+        self.assertEqual(mod.imports, set(['b']))
         self.assertEqual(mod.exports, ['a'])
 
     def test_testCollectorCollects(self):
