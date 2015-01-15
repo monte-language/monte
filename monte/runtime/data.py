@@ -861,7 +861,7 @@ class AtomicTwine(Twine):
 
     def _makeIterator(self):
         from monte.runtime.tables import ConstList
-        return MonteIterator(ConstList((Integer(i), x) for i, x in enumerate(Character(c) for c in self.s))
+        return MonteIterator(ConstList((Integer(i), x)) for i, x in enumerate(Character(c) for c in self.s))
 
     def _printOn(self, out):
         out.raw_print(self.s)
