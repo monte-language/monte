@@ -1009,7 +1009,7 @@ class CompilerTest(unittest.TestCase):
             """
             _g_x1 = _monte.wrap(1)
             x = _monte.VarSlot(_monte.null, _g_x1, _monte.throw)
-            _monte.Binding(_monte.VarSlot.asType().get(_monte.null), x)
+            _monte.Binding(x, _monte.VarSlot.asType().get(_monte.null))
             """)
 
     def test_bindingexpr_frame(self):
@@ -1051,7 +1051,7 @@ class CompilerTest(unittest.TestCase):
             """
             _g_guard1 = _m_outerScope["int"]
             a = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
-            x = _monte.Binding(_monte.FinalSlot.asType().get(_g_guard1), _monte.FinalSlot(a))
+            x = _monte.Binding(_monte.FinalSlot(a), _monte.FinalSlot.asType().get(_g_guard1))
             x.slot.get()
             """)
 
