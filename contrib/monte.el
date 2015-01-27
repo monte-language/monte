@@ -48,8 +48,10 @@
 
 (defvar monte-mode-syntax-table
   (let ((table (make-syntax-table)))
-    (mapc (lambda (c) (modify-syntax-entry c "." table)) "$%*+-./:;<=>?@^|")
+    (mapc (lambda (c) (modify-syntax-entry c "." table)) "$%+-.:;<=>?@^|")
     (modify-syntax-entry ?+ "." table)
+    (modify-syntax-entry ?* ". 23b" monte-mode-syntax-table)
+    (modify-syntax-entry ?/ ". 14b" monte-mode-syntax-table)
     (modify-syntax-entry ?# "<" table)
     (modify-syntax-entry ?\n ">" table)
     (modify-syntax-entry ?' "\"" table)
