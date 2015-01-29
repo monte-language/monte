@@ -146,6 +146,9 @@ def makeQTerm(functor, args):
 
 def makeQFunctor(tag, data, span):
     return object qfunctor:
+        to _printOn(out):
+            out.print(tag.getName())
+
         to isHole():
             return false
 
