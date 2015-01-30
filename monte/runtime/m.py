@@ -1,8 +1,8 @@
-from monte.runtime.base import MonteObject, toString, toQuote, typecheck
-from monte.runtime.data import String, Twine
-from monte.runtime.tables import ConstList, FlexList
+from monte.runtime.base import MonteObject, toString, toQuote, throw
+from monte.runtime.data import String
 from monte.runtime.guards.base import deepFrozenGuard
-
+from monte.runtime.guards.data import twineGuard
+from monte.runtime.guards.tables import listGuard
 
 class M(MonteObject):
     _m_fqn = "M"
@@ -12,8 +12,8 @@ class M(MonteObject):
         return getattr(obj, verb)(*arglist)
 
     def callWithPair(self, obj, (verb, arglist)):
-        verb = typecheck(verb, Twine)
-        arglist = typecheck(arglist, (FlexList, ConstList))
+        verb = twineGuard.coerce(verb, throw)
+        arglist = listGuard.coerce(arglist, throw)
         return getattr(obj, verb.bare().s)(*arglist.l)
 
     def send(self, obj, verb, arglist):

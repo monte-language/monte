@@ -222,7 +222,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
             if (cc != null):
                buf.push(cc)
         advance()
-        return __makeString.fromChars(buf)
+        return __makeString.fromChars(buf.snapshot())
 
     def charLiteral(fail):
         advance()
