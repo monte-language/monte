@@ -193,12 +193,13 @@ class ScopeLayout(object):
         return ScopeLayout(self, self.frame, self.outer)
 
 class CustomBinding(object):
-    def __init__(self, node, pyname, kind, descriptorName):
+    def __init__(self, node, pyname, kind, descriptorName, frameName=None):
         self.node = node
         self.pyname = pyname
         self.name = node.args[0].args[0].data
         self.kind = kind
         self.descriptorName = descriptorName
+        self.frameName = frameName
 
     def getDescriptorName(self):
         return self.descriptorName
@@ -219,7 +220,9 @@ class CustomBinding(object):
         return mangleIdent(self.name) + "_slotPair"
 
     def getBindingPair(self):
-        return (self.pyname + '.slot', self.getBindingGuardExpr())
+        if self.kind == FRAME:
+            return '%s._m_slots["%s"]' % (self.frameName, self.name)
+        return "(%s, %s)" % (self.pyname + '.slot', self.getBindingGuardExpr())
 
     def bindInFrame(self, frame):
         if self.name not in frame.verbs:
@@ -230,7 +233,8 @@ class CustomBinding(object):
             pyname = frame.selfName + '.' + pyname.rpartition('.')[2]
         else:
             pyname = frame.selfName + '.' + pyname
-        return CustomBinding(self.node, pyname, FRAME, self.descriptorName)
+        return CustomBinding(self.node, pyname, FRAME, self.descriptorName,
+                             frame.selfName)
 
 
 class Binding(object):
@@ -277,7 +281,7 @@ class Binding(object):
                     self.bindingGuardExpr)
         else:
             pair = (self.slotname, self.bindingGuardExpr)
-        return pair
+        return "(%s, %s)" % pair
 
     def getSlotPairName(self):
         return mangleIdent(self.name) + "_slotPair"
@@ -659,8 +663,7 @@ class PythonWriter(object):
     def _collectSlots(self, fields):
         makeSlots = []
         for f in sorted(fields, key=lambda f: f.name):
-            pair = f.getBindingPair()
-            makeSlots.append("(%s, %s)" % pair)
+            makeSlots.append(f.getBindingPair())
         return makeSlots
 
     def generate_Assign(self, out, ctx, node):
