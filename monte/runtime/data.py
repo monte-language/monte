@@ -528,10 +528,10 @@ class Float(MonteObject):
         return bwrap(0 == self.n)
 
     def isNaN(self):
-        return math.isnan(self.n)
+        return bwrap(math.isnan(self.n))
 
     def isInfinite(self):
-        return math.isinf(self.n)
+        return bwrap(math.isinf(self.n))
 
     # Floatish methods.
 

@@ -26,6 +26,7 @@ class BooleanGuard(PrintFQN, Guard):
         if specimen is true or specimen is false:
             return specimen
         elif specimen in [True, False]:
+            import pdb; pdb.set_trace()
             raise ValueError("yer doin it wrong")
         else:
             throw.eject(ej, "%r is not a boolean" % (specimen,))

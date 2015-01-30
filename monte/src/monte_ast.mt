@@ -124,7 +124,7 @@ def isIdentifier(name):
 
 def printListOn(left, nodes, sep, right, out, priority):
     out.print(left)
-    if (nodes.size() > 1):
+    if (nodes.size() >= 1):
         for n in nodes.slice(0, nodes.size() - 1):
             n.subPrintOn(out, priority)
             out.print(sep)
@@ -293,7 +293,7 @@ def test_methodCallExpr(assert):
          args, null)
     assert.equal(expr._uncall(), [makeMethodCallExpr, "run", [receiver, "doStuff", args, null]])
     assert.equal(M.toString(expr), "foo.doStuff(1, \"two\")")
-    assert.equal(expr.asTerm(), term`MethodCallExpr(LiteralExpr(1), LiteralExpr("two"))`)
+    assert.equal(expr.asTerm(), term`MethodCallExpr(NounExpr("foo"), "doStuff", [LiteralExpr(1), LiteralExpr("two")])`)
     def fcall := makeMethodCallExpr(makeNounExpr("foo", null), "run",
          [makeNounExpr("a", null)], null)
     assert.equal(M.toString(fcall), "foo(a)")
