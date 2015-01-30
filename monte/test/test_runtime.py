@@ -564,10 +564,6 @@ class FlexListTest(unittest.TestCase):
         self.assertEqual(monte_eval("def x := [1, 2, 3].diverge(); x.size()"),
                          Integer(3))
 
-    def test_add(self):
-        self.assertEqual(monte_eval("([1, 2].diverge() + [3, 4].diverge()).snapshot() == [1, 2, 3, 4]"),
-                         true)
-
     def test_contains(self):
         self.assertEqual(monte_eval("[1, 2, 3].diverge().contains(2)"),
                          true)
@@ -773,11 +769,6 @@ class FlexMapTests(unittest.TestCase):
     def test_size(self):
         self.assertEqual(monte_eval(
             "def x := [1 => 3, 4 => 7].diverge(); x.size()"), Integer(2))
-
-    def test_or(self):
-        self.assertEqual(monte_eval(
-            "def x := [1 => 3, 4 => 7].diverge() | [4 => 6, 2 => 'b']; x == [4 => 7, 2 => 'b', 1 => 3]"),
-                         true)
 
     def test_and(self):
         self.assertEqual(monte_eval(

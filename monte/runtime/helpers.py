@@ -1,11 +1,13 @@
 """
 Objects used by Monte syntax expansions.
 """
-from monte.runtime.base import MonteObject, ejector, throw, typecheck
+from monte.runtime.base import MonteObject, ejector, throw
 from monte.runtime.data import (true, false, null, Twine, Integer)
 from monte.runtime.equalizer import equalizer
 from monte.runtime.flow import MonteIterator
 from monte.runtime.guards.base import deepFrozenGuard, deepFrozenFunc
+from monte.runtime.guards.data import intGuard, twineGuard
+from monte.runtime.guards.tables import listGuard, mapGuard
 from monte.runtime.ref import UnconnectedRef
 from monte.runtime.tables import (ConstList, FlexList, ConstMap, FlexMap,
                                   mapMaker)
@@ -70,7 +72,7 @@ class MakeVerbFacet(MonteObject):
     _m_fqn = "__makeVerbFacet$verbFacet"
     _m_auditorStamps = (deepFrozenGuard,)
     def curryCall(self, obj, verb):
-        verb = typecheck(verb, Twine).bare().s
+        verb = twineGuard.coerce(verb, throw).bare().s
         def facet(*a):
             return getattr(obj, verb)(*a)
         return facet
@@ -115,7 +117,7 @@ def extract(x, instead=_absent):
         return extractor
     else:
         def extractor(specimen, ejector):
-            specimen = typecheck(specimen, (ConstMap, FlexMap))
+            specimen = mapGuard.coerce(specimen, throw)
             value = specimen.d.get(x, _absent)
             if value is _absent:
                 value = ConstList([instead(), specimen])
@@ -134,9 +136,9 @@ class Empty:
 
 @deepFrozenFunc
 def splitList(cut):
-    cut = typecheck(cut, Integer).n
+    cut = intGuard.coerce(cut, throw).n
     def listSplitter(specimen, ej):
-        specimen = typecheck(specimen, (ConstList, FlexList))
+        specimen = listGuard.coerce(specimen, throw)
         if len(specimen.l) < cut:
             throw.eject(
                 ej, "A %s size list doesn't match a >= %s size list pattern"
@@ -157,7 +159,7 @@ class BooleanFlow(MonteObject):
         return UnconnectedRef("boolean flow expression failed", self.vat)
 
     def failureList(self, size):
-        size = typecheck(size, Integer)
+        size = intGuard.coerce(size, throw)
         return ConstList([false] + [self.broken()] * size.n)
 
 @deepFrozenFunc

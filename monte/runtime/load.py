@@ -4,10 +4,18 @@ from types import ModuleType as module
 from monte.compiler import ecompile
 from monte.expander import expand, scope
 from monte.parser import parse
-from monte.runtime.base import MonteObject, typecheck
+from monte.runtime.base import MonteObject
 from monte.runtime.data import String, Twine, null
 from monte.runtime.tables import ConstList, ConstMap, FlexList, FlexMap
 
+
+# XXX really should be guards -- but all this code is gonna go away, anyhow.
+def typecheck(specimen, classes):
+    from monte.runtime.ref import _resolution
+    specimen = _resolution(specimen)
+    if not isinstance(specimen, classes):
+        raise RuntimeError("%r is not a %r" % (specimen, classes))
+    return specimen
 
 class GeneratedCodeLoader(object):
     """

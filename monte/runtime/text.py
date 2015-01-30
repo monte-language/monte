@@ -1,7 +1,9 @@
-from monte.runtime.base import MonteObject, throw, toString, typecheck
+from monte.runtime.base import MonteObject, throw, toString
 from monte.runtime.data import String, Twine, Character
 from monte.runtime.ref import _resolution
 from monte.runtime.guards.base import deepFrozenGuard
+from monte.runtime.guards.data import twineGuard
+from monte.runtime.guards.tables import listGuard
 from monte.runtime.tables import ConstList, FlexList
 
 def findOneOf(elts, specimen, start):
@@ -25,7 +27,7 @@ class Substituter(MonteObject):
                 segs.append(seg)
 
     def substitute(self, values):
-        values = typecheck(values, (ConstList, FlexList))
+        values = listGuard.coerce(values, throw)
         return String(u"".join(self._sub(values.l)))
 
     def _sub(self, values):
@@ -39,8 +41,8 @@ class Substituter(MonteObject):
 
     def matchBind(self, values, specimen, ej):
         #XXX maybe put this on a different object?
-        specimen = typecheck(specimen, Twine).bare().s
-        values = typecheck(values, (ConstList, FlexList))
+        specimen = twineGuard.coerce(specimen, throw).bare().s
+        values = listGuard.coerce(values, throw)
         values = values.l
         i = 0
         bindings = []
@@ -53,7 +55,7 @@ class Substituter(MonteObject):
                         val, specimen[i:j]))
             elif typ is VALUE_HOLE:
                 s = values[val]
-                s = typecheck(s, String).bare().s
+                s = twineGuard.coerce(s, throw).bare().s
                 j = i + len(s)
                 if specimen[i:j] != s:
                     throw.eject(ej, "expected %r... ($-hole %s), found %r" % (
@@ -65,7 +67,7 @@ class Substituter(MonteObject):
                     continue
                 nextType, nextVal = self.segments[n + 1]
                 if nextType is VALUE_HOLE:
-                    nextVal = typecheck(values[nextVal], Twine).bare().s
+                    nextVal = twineGuard.coerce(values[nextVal], throw).bare().s
                 elif nextType is PATTERN_HOLE:
                     bindings.append(String(u""))
                     continue

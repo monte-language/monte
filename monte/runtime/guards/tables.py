@@ -1,4 +1,4 @@
-from monte.runtime.base import throw
+from monte.runtime.base import throw, toQuote
 from monte.runtime.data import true
 from monte.runtime.guards.base import Guard, anyGuard, deepFrozenGuard
 from monte.runtime.tables import ConstList, ConstMap
@@ -59,7 +59,7 @@ class _ConstMapGuard(Guard):
                     d[coercedK] = coercedV
                 return ConstMap(d, ks)
         else:
-            throw.eject(ej, "is not a ConstMap")
+            throw.eject(ej, toQuote(specimen) + " is not a ConstMap")
 
 class ConstMapGuard(_ConstMapGuard):
     def __init__(self):

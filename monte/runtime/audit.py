@@ -1,7 +1,7 @@
-from monte.runtime.base import MonteObject, typecheck, throw
+from monte.runtime.base import MonteObject, throw
 from monte.runtime.data import Twine, bwrap, true
 from monte.runtime.guards.base import deepFrozenGuard
-from monte.runtime.guards.data import booleanGuard
+from monte.runtime.guards.data import booleanGuard, twineGuard
 
 
 class Audition(MonteObject):
@@ -30,7 +30,8 @@ class Audition(MonteObject):
                 answer, asked, guards = self.auditorCache[id(auditor)]
 
                 for name, value in guards:
-                    if not (self.bindings.get(typecheck(name, Twine).bare().s) == value):
+                    namestr = twineGuard.coerce(name, throw).bare()
+                    if not (self.bindings.get(namestr.s) == value):
                         break
                 else:
                     cached = True
@@ -62,7 +63,7 @@ class Audition(MonteObject):
         return self.expr
 
     def getGuard(self, name):
-        n = typecheck(name, Twine).bare().s
+        n = twineGuard.coerce(name, throw).bare().s
         if n not in self.bindings:
             self.guardLog = None
             raise RuntimeError('"%s" is not a free variable in %s' %

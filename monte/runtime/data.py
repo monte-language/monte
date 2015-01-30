@@ -1,6 +1,6 @@
 import struct, math
 from sys import float_info
-from monte.runtime.base import MonteObject, ejector, typecheck
+from monte.runtime.base import MonteObject, ejector, throw
 from monte.runtime.flow import MonteIterator
 
 class MonteNull(MonteObject):
@@ -35,29 +35,34 @@ class Bool(MonteObject):
         return self._b
 
     def __eq__(self, other):
+        from monte.runtime.guards.data import booleanGuard
         try:
-            other = typecheck(other, Bool)
+            other = booleanGuard.coerce(other, throw)
         except RuntimeError:
             return false
         return bwrap(self._b == other._b)
 
     def _m_and(self, other):
-        other = typecheck(other, Bool)
+        from monte.runtime.guards.data import booleanGuard
+        other = booleanGuard.coerce(other, throw)
         return bwrap(self._b and other._b)
 
     def _m_or(self, other):
-        other = typecheck(other, Bool)
+        from monte.runtime.guards.data import booleanGuard
+        other = booleanGuard.coerce(other, throw)
         return bwrap(self._b or other._b)
 
     def _m_not(self):
         return bwrap(not self._b)
 
     def xor(self, other):
-        other = typecheck(other, Bool)
+        from monte.runtime.guards.data import booleanGuard
+        other = booleanGuard.coerce(other, throw)
         return bwrap(self._b != other._b)
 
     def  op__cmp(self, other):
-        other = typecheck(other, Bool)
+        from monte.runtime.guards.data import booleanGuard
+        other = booleanGuard.coerce(other, throw)
         return Integer(cmp(self._b, other._b))
 
     def _printOn(self, out):
@@ -115,8 +120,9 @@ class Character(MonteObject):
         return hash(self._c)
 
     def __eq__(self, other):
+        from monte.runtime.guards.data import charGuard
         try:
-            other = typecheck(other, Character)
+            other = charGuard.coerce(other, throw)
         except RuntimeError:
             return false
         return bwrap(self._c == other._c)
@@ -125,15 +131,18 @@ class Character(MonteObject):
         return Integer(ord(self._c))
 
     def add(self, other):
-        other = typecheck(other, Integer)
+        from monte.runtime.guards.data import intGuard
+        other = intGuard.coerce(other, throw)
         return Character(unichr(ord(self._c) + other.n))
 
     def subtract(self, other):
-        other = typecheck(other, Integer)
+        from monte.runtime.guards.data import intGuard
+        other = intGuard.coerce(other, throw)
         return Character(unichr(ord(self._c) - other.n))
 
     def op__cmp(self, other):
-        other = typecheck(other, Character)
+        from monte.runtime.guards.data import charGuard
+        other = charGuard.coerce(other, throw)
         return Integer(cmp(self._c, other._c))
 
     def next(self):
@@ -147,11 +156,13 @@ class Character(MonteObject):
         return Character(unichr(ord(self._c) - 1))
 
     def max(self, other):
-        other = typecheck(other, Character)
+        from monte.runtime.guards.data import charGuard
+        other = charGuard.coerce(other, throw)
         return Character(max(self._c, other._c))
 
     def min(self, other):
-        other = typecheck(other, Character)
+        from monte.runtime.guards.data import charGuard
+        other = charGuard.coerce(other, throw)
         return Character(min(self._c, other._c))
 
     def quote(self):
@@ -162,13 +173,14 @@ class Character(MonteObject):
 
 
 def makeCharacter(i):
-    i = typecheck(i, Integer)
+    from monte.runtime.guards.data import intGuard
+    i = intGuard.coerce(i, throw)
     return Character(unichr(i.n))
 
 
 class Bytestring(MonteObject):
     def __init__(self, b):
-        b = typecheck(b, str)
+        assert isinstance(b, str)
         self.b = b
 
     def quote(self):
@@ -178,7 +190,8 @@ class Bytestring(MonteObject):
         out._m_print(self.quote())
 
     def __eq__(self, other):
-        other = typecheck(other, Bytestring)
+        from monte.runtime.guards.data import bytesGuard
+        other = bytesGuard.coerce(other, throw)
         return bwrap(self.b == other.b)
 
     def _makeIterator(self):
@@ -186,15 +199,18 @@ class Bytestring(MonteObject):
         return MonteIterator(ConstList((Integer(i), x) for i, x in enumerate(Integer(ord(b)) for b in self.b)))
 
     def op__cmp(self, other):
-        other = typecheck(other, Bytestring)
+        from monte.runtime.guards.data import bytesGuard
+        other = bytesGuard.coerce(other, throw)
         return Integer(cmp(self.b, other.b))
 
     def get(self, idx):
-        idx = typecheck(idx, Integer)
+        from monte.runtime.guards.data import intGuard
+        idx = intGuard.coerce(idx, throw)
         return Integer(ord(self.b[idx.n]))
 
     def slice(self, start, end=None):
-        start = typecheck(start, Integer)
+        from monte.runtime.guards.data import intGuard
+        start = intGuard.coerce(start, throw)
         start = start.n
         if end is not None and not isinstance(end, Integer):
             raise RuntimeError("%r is not an integer" % (end,))
@@ -210,26 +226,31 @@ class Bytestring(MonteObject):
         return Integer(len(self.b))
 
     def add(self, other):
-        other = typecheck(other, Bytestring)
+        from monte.runtime.guards.data import bytesGuard
+        other = bytesGuard.coerce(other, throw)
         return Bytestring(self.b + other.b)
 
     def multiply(self, n):
-        n = typecheck(n, Integer)
+        from monte.runtime.guards.data import intGuard
+        n = intGuard.coerce(n, throw)
         return Bytestring(self.b * n.n)
 
     def startsWith(self, other):
-        other = typecheck(other, Bytestring)
+        from monte.runtime.guards.data import bytesGuard
+        other = bytesGuard.coerce(other, throw)
 
         return bwrap(self.b.startswith(other.b))
 
     def endsWith(self, other):
-        other = typecheck(other, Bytestring)
+        from monte.runtime.guards.data import bytesGuard
+        other = bytesGuard.coerce(other, throw)
 
         return bwrap(self.b.endswith(other.b))
 
     def split(self, other):
         from monte.runtime.tables import ConstList
-        other = typecheck(other, Bytestring)
+        from monte.runtime.guards.data import bytesGuard
+        other = bytesGuard.coerce(other, throw)
         return ConstList(Bytestring(x) for x in self.b.split(other.b))
 
     def join(self, items):
@@ -248,8 +269,9 @@ class Bytestring(MonteObject):
 
     # E calls this 'replaceAll'.
     def replace(self, old, new):
-        old = typecheck(old, Bytestring)
-        new = typecheck(new, Bytestring)
+        from monte.runtime.guards.data import bytesGuard
+        old = bytesGuard.coerce(old, throw)
+        new = bytesGuard.coerce(new, throw)
         return Bytestring(self.b.replace(old.b, new.b))
 
     def toUpperCase(self):
@@ -270,8 +292,9 @@ class Integer(MonteObject):
         return hash(self.n)
 
     def __eq__(self, other):
+        from monte.runtime.guards.data import intGuard
         try:
-            other = typecheck(other, Integer)
+            other = intGuard.coerce(other, throw)
         except RuntimeError:
             return false
         return bwrap(self.n == other.n)
@@ -288,8 +311,8 @@ class Integer(MonteObject):
         return Float(float(self.n))
 
     def toString(self, radix):
-        radix = typecheck(radix, Integer)
-        radix = radix.n
+        from monte.runtime.guards.data import intGuard
+        radix = intGuard.coerce(radix, throw).n
         if radix == 16:
             return String(hex(self.n)[2:].decode('ascii'))
         elif radix == 10:
@@ -354,7 +377,8 @@ class Integer(MonteObject):
     # Comparator.
 
     def op__cmp(self, other):
-        other = typecheck(other, (Integer, Float))
+        from monte.runtime.guards.data import floatGuard
+        other = floatGuard.coerce(other, throw)
         return Integer(cmp(self.n, other.n))
 
     # Comparison protocol.
@@ -408,11 +432,13 @@ class Integer(MonteObject):
         return Integer(self.n.bit_length())
 
     def max(self, other):
-        other = typecheck(other, Integer)
+        from monte.runtime.guards.data import intGuard
+        other = intGuard.coerce(other, throw)
         return numWrap(max(self.n, other.n))
 
     def min(self, other):
-        other = typecheck(other, Integer)
+        from monte.runtime.guards.data import intGuard
+        other = intGuard.coerce(other, throw)
         return numWrap(min(self.n, other.n))
 
     def _printOn(self, out):
@@ -420,8 +446,9 @@ class Integer(MonteObject):
 
 
 def makeInteger(s, radix=Integer(10)):
-    s = typecheck(s, Twine)
-    radix = typecheck(radix, Integer)
+    from monte.runtime.guards.data import intGuard, twineGuard
+    s = twineGuard.coerce(s, throw)
+    radix = intGuard.coerce(radix, throw)
     return Integer(int(s.bare().s, radix.n))
 
 
@@ -436,8 +463,9 @@ class Float(MonteObject):
         return hash(self.n)
 
     def __eq__(self, other):
+        from monte.runtime.guards.data import floatGuard
         try:
-            other = typecheck(other, (Integer, Float))
+            other = floatGuard.coerce(other, throw)
         except RuntimeError:
             return false
         return bwrap(self.n == other.n)
@@ -470,7 +498,8 @@ class Float(MonteObject):
     # Comparator.
 
     def op__cmp(self, other):
-        other = typecheck(other, (Integer, Float))
+        from monte.runtime.guards.data import floatGuard
+        other = floatGuard.coerce(other, throw)
         #cmp doesn't do NaNs, so
         if self.n < other.n:
             return Float(-1.0)
@@ -555,16 +584,19 @@ class Float(MonteObject):
     # Misc.
 
     def max(self, other):
-        other = typecheck(other, (Float, Integer))
+        from monte.runtime.guards.data import floatGuard
+        other = floatGuard.coerce(other, throw)
         return numWrap(max(self.n, other.n))
 
     def min(self, other):
-        other = typecheck(other, (Float, Integer))
+        from monte.runtime.guards.data import floatGuard
+        other = floatGuard.coerce(other, throw)
         return numWrap(min(self.n, other.n))
 
 
 def makeFloat(s):
-    s = typecheck(s, Twine)
+    from monte.runtime.guards.data import twineGuard
+    s = twineGuard.coerce(s, throw)
     return Float(s.bare().s)
 
 
@@ -585,8 +617,8 @@ class TwineMaker(MonteObject):
     _m_fqn = "__makeString"
 
     def fromParts(self, parts):
-        from monte.runtime.tables import ConstList, FlexList
-        parts = typecheck(parts, (ConstList, FlexList))
+        from monte.runtime.guards.tables import listGuard
+        parts = listGuard.coerce(parts, throw)
         if len(parts.l) == 0:
             return theEmptyTwine
         elif len(parts.l) == 1:
@@ -597,26 +629,27 @@ class TwineMaker(MonteObject):
             return CompositeTwine(parts)
 
     def fromString(self, s, span=null):
-        s = typecheck(s, Twine).bare()
+        from monte.runtime.guards.data import twineGuard
+        s = twineGuard.coerce(s, throw).bare()
         if span is null:
             return s
         else:
             return LocatedTwine(s.s, span)
 
     def fromChars(self, chars):
-        from monte.runtime.tables import ConstList, FlexList
-        chars = typecheck(chars, (ConstList, FlexList))
-        if not all(isinstance(c, Character) for c in chars.l):
-            raise RuntimeError("%r is not a list of characters" % (chars,))
-        return String(u''.join(c._c for c in chars.l))
+        from monte.runtime.guards.tables import listGuard
+        from monte.runtime.guards.data import charGuard
+        chars = listGuard.coerce(chars, throw)
+        return String(u''.join(charGuard.coerce(c, throw)._c for c in chars.l))
 
 theTwineMaker = TwineMaker()
 
 
 class Twine(MonteObject):
     def add(self, other):
+        from monte.runtime.guards.data import twineGuard
         from monte.runtime.tables import ConstList
-        other = typecheck(other, Twine)
+        other = twineGuard.coerce(other, throw)
         mine = self.getParts().l
         his = other.getParts().l
         if len(mine) > 1 and len(his) > 1:
@@ -627,8 +660,9 @@ class Twine(MonteObject):
 
     def asFrom(self, origin, startLine=Integer(1), startCol=Integer(0)):
         from monte.runtime.tables import ConstList
-        startLine = typecheck(startLine, Integer)
-        startCol = typecheck(startCol, Integer)
+        from monte.runtime.guards.data import intGuard
+        startLine = intGuard.coerce(startLine, throw)
+        startCol = intGuard.coerce(startCol, throw)
         parts = []
         s = self.bare().s
         end = len(s)
@@ -652,7 +686,8 @@ class Twine(MonteObject):
 
     def getPartAt(self, pos):
         from monte.runtime.tables import ConstList
-        pos = typecheck(pos, Integer)
+        from monte.runtime.guards.data import intGuard
+        pos = intGuard.coerce(pos, throw)
         if pos.n < 0:
             raise RuntimeError("Index out of bounds")
         parts = self.getParts().l
@@ -679,7 +714,8 @@ class Twine(MonteObject):
         return ConstMap(dict(result), [x[0] for x in result])
 
     def infect(self, other, oneToOne=false):
-        other = typecheck(other, Twine)
+        from monte.runtime.guards.data import twineGuard
+        other = twineGuard.coerce(other, throw)
         if oneToOne is true:
             if self.size() == other.size():
                 return self._m_infectOneToOne(other)
@@ -693,6 +729,7 @@ class Twine(MonteObject):
             return theTwineMaker.fromString(other, span)
 
     def join(self, items):
+        from monte.runtime.guards.data import twineGuard
         from monte.runtime.tables import ConstList
         it = items._makeIterator()
         ej = ejector("iteration")
@@ -700,7 +737,7 @@ class Twine(MonteObject):
         try:
             while True:
                 key, item = it.next(ej)
-                item = typecheck(item, Twine)
+                item = twineGuard.coerce(item, throw)
                 segments.append(item)
                 segments.append(self)
         except ej._m_type:
@@ -715,7 +752,8 @@ class Twine(MonteObject):
         return Integer(cmp(self.bare().s, other.bare().s))
 
     def multiply(self, n):
-        n = typecheck(n, Integer)
+        from monte.runtime.guards.data import intGuard
+        n = intGuard.coerce(n, throw)
         result = theEmptyTwine
         for _ in range(n.n):
             result = result.add(self)
@@ -739,7 +777,8 @@ class Twine(MonteObject):
 
     def split(self, other):
         from monte.runtime.tables import ConstList
-        other = typecheck(other, Twine)
+        from monte.runtime.guards.data import twineGuard
+        other = twineGuard.coerce(other, throw)
         sepLen = other.size().n
         if sepLen == Integer(0):
             raise RuntimeError("separator must not empty")
@@ -758,8 +797,9 @@ class Twine(MonteObject):
 
      # E calls this 'replaceAll'.
     def replace(self, old, new):
-        old = typecheck(old, Twine)
-        new = typecheck(new, Twine)
+        from monte.runtime.guards.data import twineGuard
+        old = twineGuard.coerce(old, throw)
+        new = twineGuard.coerce(new, throw)
         result = theEmptyTwine
         oldLen = old.size().n
         if oldLen == 0:
@@ -820,12 +860,10 @@ theEmptyTwine = EmptyTwine()
 
 
 def _slice(self, start, end=None):
-    start = typecheck(start, Integer)
-    start = start.n
-    if end is not None and not isinstance(end, Integer):
-        raise RuntimeError("%r is not an integer" % (end,))
-    elif end is not None:
-        end = end.n
+    from monte.runtime.guards.data import intGuard
+    start = intGuard.coerce(start, throw).n
+    if end is not None:
+        end = intGuard.coerce(end, throw).n
     if start < 0:
         raise RuntimeError("Slice indices must be positive")
     if end is not None and end < 0:
@@ -835,11 +873,13 @@ def _slice(self, start, end=None):
 
 class AtomicTwine(Twine):
     def endsWith(self, other):
-        suffix = typecheck(other, Twine).bare().s
+        from monte.runtime.guards.data import twineGuard
+        suffix = twineGuard.coerce(other, throw).bare().s
         return bwrap(self.s.endswith(suffix))
 
     def get(self, idx):
-        idx = typecheck(idx, Integer)
+        from monte.runtime.guards.data import intGuard
+        idx = intGuard.coerce(idx, throw)
         return Character(self.s[idx.n])
 
     def getParts(self):
@@ -847,16 +887,18 @@ class AtomicTwine(Twine):
         return ConstList([self])
 
     def indexOf(self, target, start=None):
-        target = typecheck(target, Twine).bare().s
+        from monte.runtime.guards.data import intGuard, twineGuard
+        target = twineGuard.coerce(target, throw).bare().s
         if start is not None:
-            start = typecheck(start, Integer).n
+            start = intGuard.coerce(start, throw).n
         return Integer(self.s.find(target, start))
 
     def size(self):
         return Integer(len(self.s))
 
     def startsWith(self, other):
-        other = typecheck(other, Twine).bare().s
+        from monte.runtime.guards.data import twineGuard
+        other = twineGuard.coerce(other, throw).bare().s
         return bwrap(self.s.startswith(other))
 
     def _makeIterator(self):
@@ -880,8 +922,9 @@ class String(AtomicTwine):
         return hash(self.s)
 
     def __eq__(self, other):
+        from monte.runtime.guards.data import twineGuard
         try:
-            other = typecheck(other, Twine).bare().s
+            other = twineGuard.coerce(other, throw).bare().s
         except RuntimeError:
             return false
         return bwrap(self.s == other)
@@ -909,7 +952,8 @@ class String(AtomicTwine):
 
     def split(self, other):
         from monte.runtime.tables import ConstList
-        other = typecheck(other, Twine).bare().s
+        from monte.runtime.guards.data import twineGuard
+        other = twineGuard.coerce(other, throw).bare().s
         return ConstList(String(x) for x in self.s.split(other))
 
     def _m_infectOneToOne(self, other):
@@ -922,7 +966,7 @@ class LocatedTwine(AtomicTwine):
     def __init__(self, s, span):
         if not isinstance(s, unicode):
             raise RuntimeError("%r is not a unicode string" % (s,))
-        span = typecheck(span, SourceSpan)
+        assert isinstance(span, SourceSpan) # XXX get a guard in here
         self.s = s
         self.span = span
 
@@ -978,8 +1022,8 @@ class CompositeTwine(Twine):
     _m_fqn = "__makeString$CompositeTwine"
 
     def __init__(self, parts):
-        from monte.runtime.tables import FlexList, ConstList
-        parts = typecheck(parts, (ConstList, FlexList))
+        from monte.runtime.guards.tables import listGuard
+        parts = listGuard.coerce(parts, throw)
         self.parts = parts
         self.sizeCache = None
 
@@ -987,7 +1031,8 @@ class CompositeTwine(Twine):
         return String(u''.join(p.bare().s for p in self.parts.l))
 
     def get(self, idx):
-        idx = typecheck(idx, Integer)
+        from monte.runtime.guards.data import intGuard
+        idx = intGuard.coerce(idx, throw)
         part, offset = self.getPartAt(idx).l
         return self.parts.l[part.n].get(offset)
 
@@ -1012,8 +1057,9 @@ class CompositeTwine(Twine):
         return false
 
     def slice(self, start, end=None):
+        from monte.runtime.guards.data import intGuard
         from monte.runtime.tables import ConstList
-        start = typecheck(start, Integer)
+        start = intGuard.coerce(start, throw)
         startn = start.n
         if end is not None and not isinstance(end, Integer):
             raise RuntimeError("%r is not an integer" % (end,))
@@ -1092,14 +1138,15 @@ class SourceSpan(MonteObject):
 
     def __init__(self, uri, isOneToOne, startLine, startCol,
                  endLine, endCol):
+        from monte.runtime.guards.data import intGuard
         if (startLine != endLine and isOneToOne):
             raise RuntimeError("one-to-one spans must be on a line")
         self.uri = uri
         self._isOneToOne = isOneToOne
-        self.startLine = typecheck(startLine, Integer)
-        self.startCol = typecheck(startCol, Integer)
-        self.endLine = typecheck(endLine, Integer)
-        self.endCol = typecheck(endCol, Integer)
+        self.startLine = intGuard.coerce(startLine, throw)
+        self.startCol = intGuard.coerce(startCol, throw)
+        self.endLine = intGuard.coerce(endLine, throw)
+        self.endCol = intGuard.coerce(endCol, throw)
 
     def notOneToOne(self):
         """
@@ -1151,8 +1198,9 @@ def spanCover(a, b):
 
     if a is null or b is null:
         return null
-    a = typecheck(a, SourceSpan)
-    b = typecheck(b, SourceSpan)
+    # XXX need a guard here
+    assert isinstance(a, SourceSpan)
+    assert isinstance(b, SourceSpan)
     if a.uri != b.uri:
         return null
     if (a._isOneToOne is true and b._isOneToOne is true

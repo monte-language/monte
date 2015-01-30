@@ -1,8 +1,9 @@
-from monte.runtime.base import MonteObject, ejector, typecheck
+from monte.runtime.base import MonteObject, ejector, throw
 from monte.runtime.data import String, Integer, bwrap, null, true, false
 from monte.runtime.flow import MonteIterator
 from monte.runtime.guards.base import (deepFrozenFunc, deepFrozenGuard,
                                        selflessGuard, transparentStamp)
+from monte.runtime.guards.data import intGuard
 
 
 class EListMixin(object):
@@ -31,7 +32,8 @@ class EListMixin(object):
         return bwrap(item in self.l)
 
     def add(self, other):
-        other = typecheck(other, EListMixin)
+        from monte.runtime.guards.tables import listGuard
+        other = listGuard.coerce(other, throw)
         return ConstList(tuple(self.l) + tuple(other.l))
 
     def diverge(self, guard=None):
@@ -50,28 +52,28 @@ class EListMixin(object):
         return self.l[-1]
 
     def get(self, idx):
-        idx = typecheck(idx, Integer)
+        idx = intGuard.coerce(idx, throw)
         if not 0 <= idx.n < len(self.l):
             raise IndexError(idx.n)
         return self.l[idx.n]
 
     def slice(self, start, stop=None):
-        start = typecheck(start, Integer).n
+        start = intGuard.coerce(start, throw).n
         if stop is not None:
-            stop = typecheck(stop, Integer).n
+            stop = intGuard.coerce(stop, throw).n
         return ConstList(self.l[start:stop])
 
     def _m_with(self, *a):
         if len(a) == 1:
             return ConstList(tuple(self.l) + (a[0],))
         elif len(a) == 2:
-            i = typecheck(a[0], Integer).n
+            i = intGuard.coerce(a[0], throw).n
             return ConstList(tuple(self.l[:i]) + (a[1],) + tuple(self.l[i:]))
         else:
             raise RuntimeError("with() takes 1 or 2 arguments")
 
     def multiply(self, n):
-        n = typecheck(n, Integer)
+        n = intGuard.coerce(n, throw)
         return ConstList(self.l * n.n)
 
     def asMap(self):
@@ -95,7 +97,8 @@ class ConstList(EListMixin, MonteObject):
         self.l = tuple(l)
 
     def op__cmp(self, other):
-        other = typecheck(other, ConstList)
+        from monte.runtime.guards.tables import listGuard
+        other = listGuard.coerce(other, throw)
         return Integer(cmp(self.l, other.l))
 
     def snapshot(self):
@@ -127,7 +130,7 @@ class FlexList(EListMixin, MonteObject):
         return ROList(self.l)
 
     def put(self, idx, value):
-        idx = typecheck(idx, Integer)
+        idx = intGuard.coerce(idx, throw)
         if not 0 <= idx.n < len(self.l):
             raise IndexError(idx)
         if self.valueGuard is not None:
@@ -146,7 +149,8 @@ class FlexList(EListMixin, MonteObject):
         return null
 
     def extend(self, other):
-        contents = typecheck(other, (ConstList, FlexList)).l
+        from monte.runtime.guards.tables import listGuard
+        contents = listGuard.coerce(other, throw)
         contents = other.l
         if self.valueGuard is not None:
             contents = [self.valueGuard.coerce(x, null) for x in contents]
@@ -157,13 +161,14 @@ class FlexList(EListMixin, MonteObject):
         return self.l.pop()
 
     def get(self, index):
-        index = typecheck(index, Integer)
+        index = intGuard.coerce(index, throw)
         return self.l[index.n]
 
     def setSlice(self, start, bound, other):
-        other = typecheck(other, (ConstList, FlexList))
-        start = typecheck(start, Integer)
-        bound = typecheck(bound, Integer)
+        from monte.runtime.guards.tables import listGuard
+        other = listGuard.coerce(other, throw)
+        start = intGuard.coerce(start, throw)
+        bound = intGuard.coerce(bound, throw)
         if not 0 <= start.n < len(self.l):
             raise IndexError(start)
         if not 0 <= bound.n <= len(self.l):
@@ -175,7 +180,7 @@ class FlexList(EListMixin, MonteObject):
         return null
 
     def insert(self, idx, value):
-        idx = typecheck(idx, Integer)
+        idx = intGuard.coerce(idx, throw)
         if not 0 <= idx.n <= len(self.l):
             raise IndexError(idx)
         if self.valueGuard is not None:
@@ -184,8 +189,8 @@ class FlexList(EListMixin, MonteObject):
         return null
 
     def removeSlice(self, start, bound):
-        start = typecheck(start, Integer)
-        bound = typecheck(bound, Integer)
+        start = intGuard.coerce(start, throw)
+        bound = intGuard.coerce(bound, throw)
         if not 0 <= start.n < len(self.l):
             raise IndexError(start)
         if not 0 <= bound.n <= len(self.l):
@@ -285,7 +290,8 @@ class EMapMixin(object):
         return MonteIterator(ConstList((k, self.d[k])) for k in self._keys)
 
     def _m_or(self, behind):
-        behind = typecheck(behind, (ConstMap, FlexMap))
+        from monte.runtime.guards.tables import mapGuard
+        behind = mapGuard.coerce(behind, throw)
         if len(self.d) == 0:
             return behind.snapshot()
         elif len(behind.d) == 0:
@@ -295,7 +301,8 @@ class EMapMixin(object):
         return flex.snapshot()
 
     def _m_and(self, mask):
-        mask = typecheck(mask, (ConstMap, FlexMap))
+        from monte.runtime.guards.tables import mapGuard
+        mask = mapGuard.coerce(mask, throw)
         if len(self.d) > len(mask.d):
             bigger = self
             smaller = mask
@@ -312,7 +319,8 @@ class EMapMixin(object):
         return flex.snapshot()
 
     def butNot(self, mask):
-        mask = typecheck(mask, (ConstMap, FlexMap))
+        from monte.runtime.guards.tables import mapGuard
+        mask = mapGuard.coerce(mask, throw)
         if len(self.d) == 0:
             return ConstMap({})
         elif len(mask.d) == 0:
@@ -405,7 +413,8 @@ class FlexMap(EMapMixin, MonteObject):
         raise NotImplementedError()
 
     def removeKeys(self, mask):
-        mask = typecheck(mask, (ConstMap, FlexMap))
+        from monte.runtime.guards.tables import mapGuard
+        mask = mapGuard.coerce(mask, throw)
         for k in mask._keys:
             self.removeKey(k)
 
@@ -431,7 +440,8 @@ class FlexMap(EMapMixin, MonteObject):
             self._keys.append(k)
 
     def putAll(self, other):
-        other = typecheck(other, (ConstMap, FlexMap))
+        from monte.runtime.guards.tables import mapGuard
+        other = mapGuard.coerce(other, throw)
         for k in other._keys:
             self.put(k, other.d[k])
 
@@ -451,6 +461,7 @@ class mapMaker(object):
 
     @staticmethod
     def fromColumns(keys, vals):
-        keys = typecheck(keys, (ConstList, FlexList))
-        vals = typecheck(vals, (ConstList, FlexList))
+        from monte.runtime.guards.tables import listGuard
+        keys = listGuard.coerce(keys, throw)
+        vals = listGuard.coerce(vals, throw)
         return ConstMap(dict(zip(keys.l, vals.l)), keys)

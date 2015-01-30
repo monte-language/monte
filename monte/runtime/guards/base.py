@@ -223,7 +223,7 @@ class SelflessGuard(Guard):
 
     def audit(self, auditor):
         #XXX Fixme
-        return True
+        return true
 
 selflessGuard = SelflessGuard()
 

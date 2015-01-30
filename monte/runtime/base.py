@@ -202,14 +202,3 @@ class Throw(MonteObject):
             wrapEjector(ej)(val)
 
 throw = Throw()
-
-
-def typecheck(specimen, cls):
-    from monte.runtime.ref import Promise, _resolution
-    if not isinstance(specimen, cls):
-        if isinstance(specimen, Promise):
-            specimen = _resolution(specimen)
-            if isinstance(specimen, cls):
-                return specimen
-        raise RuntimeError("%r is not a %r" % (specimen, cls))
-    return specimen

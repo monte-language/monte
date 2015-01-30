@@ -12,7 +12,8 @@ from monte.runtime.guards.base import (anyGuard, deepFrozenGuard, nullOkGuard,
                                        transparentGuard, ParamDesc,
                                        MessageDesc, ProtocolDesc)
 from monte.runtime.guards.data import (booleanGuard, charGuard, intGuard,
-                                       floatGuard, stringGuard, voidGuard)
+                                       floatGuard, stringGuard, twineGuard,
+                                       voidGuard)
 from monte.runtime.guards.tables import listGuard, mapGuard
 from monte.runtime.helpers import (accumulateList, accumulateMap, BooleanFlow,
                                    comparer, extract, Empty, iterWhile,
@@ -73,7 +74,7 @@ bootScope = {
     ## Primitive: atomic data guards
     'boolean': booleanGuard,
     'str': stringGuard,
-    # 'Twine': twineGuard,
+    'Twine': twineGuard,
     # 'TextWriter': textWriterGuard,
     ## XXX wrap as ordered spaces
     'char': charGuard,
