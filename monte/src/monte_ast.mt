@@ -23,7 +23,10 @@ def priorities := [
      "send" => 13,
      "coerce" => 14,
      "call" => 15,
-     "prim" => 16]
+     "prim" => 16,
+
+     "pattern" => 0,
+     "listpattern" => 1]
 
 object makeScopeSet:
     to run(items):
@@ -233,7 +236,7 @@ def makeSeqExpr(exprs, span):
         scope, term`SeqExpr`, fn f {[[e.transform(f) for e in exprs]]})
 
 def makeModule(imports, exports, body, span):
-    def scope := union(imports, emptyScope) + union(exports, emptyScope)
+    def scope := union([e.getStaticScope() for e in imports], emptyScope) + union([x.getStaticScope() for x in exports], emptyScope)
     object ::"module":
         to getImports():
             return imports
@@ -246,9 +249,11 @@ def makeModule(imports, exports, body, span):
             if (imports.size() > 0):
                 out.print(" ")
                 printListOn("", imports, ", ", "", out, priorities["braceExpr"])
+            out.print("\n")
             if (exports.size() > 0):
                 out.print("export ")
                 printListOn("(", exports, ", ", ")", out, priorities["braceExpr"])
+                out.print("\n")
             body.subPrintOn(out, priorities["indentExpr"])
     return astWrapper(::"module", makeModule, [imports, exports, body], span,
         scope, term`Module`, fn f {[
@@ -283,6 +288,33 @@ def makeMethodCallExpr(rcvr, verb, arglist, span):
         [rcvr, verb, arglist], span, scope, term`MethodCallExpr`,
         fn f {[rcvr.transform(f), verb, [a.transform(f) for a in arglist]]})
 
+def makeDefExpr(pattern, exit_, expr, span):
+    def scope := if (exit_ == null) {
+        pattern.getStaticScope() + expr.getStaticScope()
+    } else {
+        pattern.getStaticScope() + exit_.getStaticScope() + expr.getStaticScope()
+    }
+    object defExpr:
+        to getPattern():
+            return pattern
+        to getExit():
+            return exit_
+        to getExpr():
+            return expr
+        to subPrintOn(out, priority):
+            if (priorities["assign"] < priority):
+                out.print("(")
+            out.print("def ")
+            pattern.subPrintOn(out, priorities["pattern"])
+            if (exit_ != null):
+                out.print(" exit ")
+                exit_.subPrintOn(out, priorities["call"])
+            out.print(" := ")
+            expr.subPrintOn(out, priorities["assign"])
+            if (priorities["assign"] < priority):
+                out.print(")")
+    return astWrapper(defExpr, makeDefExpr, [pattern, exit_, expr], span,
+        scope, term`DefExpr`, fn f {[pattern.transform(f), if (exit_ == null) {null} else {exit_.transform(f)}, expr.transform(f)]})
 
 def makeFinalPattern(noun, guard, span):
     def scope := makeStaticScope([], [], [noun.getName()], [], false)
@@ -298,7 +330,7 @@ def makeFinalPattern(noun, guard, span):
                 guard.subPrintOn(out, priorities["order"])
     return astWrapper(finalPattern, makeFinalPattern, [noun, guard], span,
         scope, term`FinalPattern`,
-        fn f {[noun.transform(f), guard.transform(f)]})
+        fn f {[noun.transform(f), if (guard == null) {null} else {guard.transform(f)}]})
 
 def makeIgnorePattern(guard, span):
     def scope := if (guard != null) {guard.getStaticScope()} else {emptyScope}
@@ -366,10 +398,10 @@ def test_module(assert):
     def body := makeLiteralExpr(3, null)
     def imports := [makeFinalPattern(makeNounExpr("a", null), null, null), makeFinalPattern(makeNounExpr("b", null), null, null)]
     def exports := [makeNounExpr("c", null)]
-    def expr := makeModule(imports, exports, body)
-    assert.equal(expr._uncall(), [makeFinalPattern, "run", [imports, exports, body, null]])
+    def expr := makeModule(imports, exports, body, null)
+    assert.equal(expr._uncall(), [makeModule, "run", [imports, exports, body, null]])
     assert.equal(M.toString(expr), "module a, b\nexport (c)\n3")
-    assert.equal(expr.asTerm(), term`Module([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], [NounExpr("c")], LiteralExpr(3)`)
+    assert.equal(expr.asTerm(), term`Module([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], [NounExpr("c")], LiteralExpr(3))`)
 
 def test_methodCallExpr(assert):
     def args := [makeLiteralExpr(1, null), makeLiteralExpr("two", null)]
@@ -386,6 +418,17 @@ def test_methodCallExpr(assert):
          [makeNounExpr("b", null)], null)),
              "a.\"+\"(b)")
 
+def test_defExpr(assert):
+    def patt := makeFinalPattern(makeNounExpr("a", null), null, null)
+    def ej :=  makeNounExpr("ej", null)
+    def body := makeLiteralExpr(1, null)
+    def expr := makeDefExpr(patt, ej, body, null)
+    assert.equal(expr._uncall(), [makeDefExpr, "run", [patt, ej, body, null]])
+    assert.equal(M.toString(expr), "def a exit ej := 1")
+    assert.equal(M.toString(makeDefExpr(patt, null, body, null)), "def a := 1")
+    assert.equal(expr.asTerm(), term`DefExpr(FinalPattern(NounExpr("a"), null), NounExpr("ej"), LiteralExpr(1))`)
+
+
 def test_finalPattern(assert):
     def [name, guard] := [makeNounExpr("blee", null), makeNounExpr("Int", null)]
     def patt := makeFinalPattern(name, guard, null)
@@ -401,4 +444,4 @@ def test_ignorePattern(assert):
     assert.equal(patt.asTerm(), term`IgnorePattern(NounExpr("List"))`)
     assert.equal(M.toString(makeIgnorePattern(null, null)), "_")
 
-unittest([test_literalExpr, test_nounExpr, test_bindingExpr, test_slotExpr, test_metaContextExpr, test_metaStateExpr, test_seqExpr, test_methodCallExpr, test_finalPattern, test_ignorePattern])
+unittest([test_literalExpr, test_nounExpr, test_bindingExpr, test_slotExpr, test_metaContextExpr, test_metaStateExpr, test_seqExpr, test_module, test_defExpr, test_methodCallExpr, test_finalPattern, test_ignorePattern])
