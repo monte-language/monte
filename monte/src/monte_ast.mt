@@ -184,6 +184,22 @@ def makeSlotExpr(name, span):
     return astWrapper(slotExpr, makeSlotExpr, [name], span,
         scope, term`SlotExpr`, fn f {[name]})
 
+def makeMetaContextExpr(span):
+    def scope := emptyScope
+    object metaContextExpr:
+        to subPrintOn(out, priority):
+            out.print("meta.getContext()")
+    return astWrapper(metaContextExpr, makeMetaContextExpr, [], span,
+        scope, term`MetaContextExpr`, fn f {[]})
+
+def makeMetaStateExpr(span):
+    def scope := makeStaticScope([], [], [], [], true)
+    object metaStateExpr:
+        to subPrintOn(out, priority):
+            out.print("meta.getState()")
+    return astWrapper(metaStateExpr, makeMetaStateExpr, [], span,
+        scope, term`MetaStateExpr`, fn f {[]})
+
 def makeBindingExpr(name, span):
     def scope := makeStaticScope([name], [], [], [], false)
     object bindingExpr:
@@ -198,6 +214,47 @@ def makeBindingExpr(name, span):
                 out.quote(name)
     return astWrapper(bindingExpr, makeBindingExpr, [name], span,
         scope, term`BindingExpr`, fn f {[name]})
+
+def makeSeqExpr(exprs, span):
+    def scope := union([e.getStaticScope() for e in exprs], emptyScope)
+    object seqExpr:
+        to getExprs():
+            return exprs
+        to subPrintOn(out, priority):
+            if (priority > priorities["braceExpr"]):
+                out.print("(")
+            var first := true
+            for e in exprs:
+                if (!first):
+                    out.println("")
+                first := false
+                e.subPrintOn(out, priority.min(priorities["braceExpr"]))
+    return astWrapper(seqExpr, makeSeqExpr, [exprs], span,
+        scope, term`SeqExpr`, fn f {[[e.transform(f) for e in exprs]]})
+
+def makeModule(imports, exports, body, span):
+    def scope := union(imports, emptyScope) + union(exports, emptyScope)
+    object ::"module":
+        to getImports():
+            return imports
+        to getExports():
+            return exports
+        to getBody():
+            return body
+        to subPrintOn(out, priority):
+            out.print("module")
+            if (imports.size() > 0):
+                out.print(" ")
+                printListOn("", imports, ", ", "", out, priorities["braceExpr"])
+            if (exports.size() > 0):
+                out.print("export ")
+                printListOn("(", exports, ", ", ")", out, priorities["braceExpr"])
+            body.subPrintOn(out, priorities["indentExpr"])
+    return astWrapper(::"module", makeModule, [imports, exports, body], span,
+        scope, term`Module`, fn f {[
+            [e.transform(f) for e in imports],
+            [e.transform(f) for e in exports],
+            body.transform(f)]})
 
 def makeMethodCallExpr(rcvr, verb, arglist, span):
     def scope := union([a.getStaticScope() for a in arglist],
@@ -286,6 +343,34 @@ def test_bindingExpr(assert):
     assert.equal(M.toString(makeBindingExpr("unwind-protect", null)),
                  "&&::\"unwind-protect\"")
 
+def test_metaContextExpr(assert):
+    def expr := makeMetaContextExpr(null)
+    assert.equal(expr._uncall(), [makeMetaContextExpr, "run", [null]])
+    assert.equal(M.toString(expr), "meta.getContext()")
+    assert.equal(expr.asTerm(), term`MetaContextExpr()`)
+
+def test_metaStateExpr(assert):
+    def expr := makeMetaStateExpr(null)
+    assert.equal(expr._uncall(), [makeMetaStateExpr, "run", [null]])
+    assert.equal(M.toString(expr), "meta.getState()")
+    assert.equal(expr.asTerm(), term`MetaStateExpr()`)
+
+def test_seqExpr(assert):
+    def exprs := [makeLiteralExpr(3, null), makeLiteralExpr("four", null)]
+    def expr := makeSeqExpr(exprs, null)
+    assert.equal(expr._uncall(), [makeSeqExpr, "run", [exprs, null]])
+    assert.equal(M.toString(expr), "3\n\"four\"")
+    assert.equal(expr.asTerm(), term`SeqExpr([LiteralExpr(3), LiteralExpr("four")])`)
+
+def test_module(assert):
+    def body := makeLiteralExpr(3, null)
+    def imports := [makeFinalPattern(makeNounExpr("a", null), null, null), makeFinalPattern(makeNounExpr("b", null), null, null)]
+    def exports := [makeNounExpr("c", null)]
+    def expr := makeModule(imports, exports, body)
+    assert.equal(expr._uncall(), [makeFinalPattern, "run", [imports, exports, body, null]])
+    assert.equal(M.toString(expr), "module a, b\nexport (c)\n3")
+    assert.equal(expr.asTerm(), term`Module([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], [NounExpr("c")], LiteralExpr(3)`)
+
 def test_methodCallExpr(assert):
     def args := [makeLiteralExpr(1, null), makeLiteralExpr("two", null)]
     def receiver := makeNounExpr("foo", null)
@@ -316,4 +401,4 @@ def test_ignorePattern(assert):
     assert.equal(patt.asTerm(), term`IgnorePattern(NounExpr("List"))`)
     assert.equal(M.toString(makeIgnorePattern(null, null)), "_")
 
-unittest([test_literalExpr, test_nounExpr, test_bindingExpr, test_slotExpr, test_methodCallExpr, test_finalPattern, test_ignorePattern])
+unittest([test_literalExpr, test_nounExpr, test_bindingExpr, test_slotExpr, test_metaContextExpr, test_metaStateExpr, test_seqExpr, test_methodCallExpr, test_finalPattern, test_ignorePattern])
