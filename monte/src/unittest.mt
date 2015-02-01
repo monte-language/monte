@@ -2,6 +2,10 @@ object _failure:
     pass
 
 object unitTestAssertions:
+    to notEqual(left, right):
+        if (left == right):
+            throw(`Equal: $left == $right`)
+
     to equal(left, right):
         if (left != right):
             throw(`Not equal: $left != $right`)
