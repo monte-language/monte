@@ -25,8 +25,7 @@ def priorities := [
      "call" => 15,
      "prim" => 16,
 
-     "pattern" => 0,
-     "listpattern" => 1]
+     "pattern" => 0]
 
 object makeScopeSet:
     to run(items):
@@ -306,6 +305,23 @@ def makeMethodCallExpr(rcvr, verb, arglist, span):
         [rcvr, verb, arglist], span, scope, term`MethodCallExpr`,
         fn f {[rcvr.transform(f), verb, [a.transform(f) for a in arglist]]})
 
+def makeVarPattern(noun, guard, span):
+    def scope := makeStaticScope([], [], [], [noun.getName()], false)
+    object varPattern:
+        to getNoun():
+            return noun
+        to getGuard():
+            return guard
+        to subPrintOn(out, priority):
+            out.print("var ")
+            noun.subPrintOn(out, priority)
+            if (guard != null):
+                out.print(" :")
+                guard.subPrintOn(out, priorities["order"])
+    return astWrapper(varPattern, makeVarPattern, [noun, guard], span,
+        scope, term`VarPattern`,
+        fn f {[noun.transform(f), if (guard == null) {null} else {guard.transform(f)}]})
+
 def makeDefExpr(pattern, exit_, expr, span):
     def scope := if (exit_ == null) {
         pattern.getStaticScope() + expr.getStaticScope()
@@ -322,7 +338,8 @@ def makeDefExpr(pattern, exit_, expr, span):
         to subPrintOn(out, priority):
             if (priorities["assign"] < priority):
                 out.print("(")
-            out.print("def ")
+            if (pattern._uncall()[0] != makeVarPattern):
+                out.print("def ")
             pattern.subPrintOn(out, priorities["pattern"])
             if (exit_ != null):
                 out.print(" exit ")
@@ -458,6 +475,23 @@ def makeIgnorePattern(guard, span):
     return astWrapper(ignorePattern, makeIgnorePattern, [guard], span,
         scope, term`IgnorePattern`, fn f {[guard.transform(f)]})
 
+def makeListPattern(patterns, tail, span):
+    def scope := union([p.getStaticScope() for p in patterns] +
+            if (tail == null) {[]} else {[tail.getStaticScope()]},
+        emptyScope)
+    object listPattern:
+        to getPatterns():
+            return patterns
+        to getTail():
+            return tail
+        to subPrintOn(out, priority):
+            printListOn("[", patterns, ", ", "]", out, priorities["pattern"])
+            if (tail != null):
+                out.print(" + ")
+                tail.subPrintOn(out, priorities["pattern"])
+    return astWrapper(listPattern, makeListPattern, [patterns, tail], span,
+        scope, term`ListPattern`, fn f {[[p.transform(f) for p in patterns], if (tail == null) {null} else {tail.transform(f)}]})
+
 def test_literalExpr(assert):
     def expr := makeLiteralExpr("one", null)
     assert.equal(expr._uncall(), [makeLiteralExpr, "run", ["one", null]])
@@ -547,6 +581,7 @@ def test_defExpr(assert):
     assert.equal(expr._uncall(), [makeDefExpr, "run", [patt, ej, body, null]])
     assert.equal(M.toString(expr), "def a exit ej := 1")
     assert.equal(M.toString(makeDefExpr(patt, null, body, null)), "def a := 1")
+    assert.equal(M.toString(makeDefExpr(makeVarPattern(makeNounExpr("a", null), null, null), null, body, null)), "var a := 1")
     assert.equal(expr.asTerm(), term`DefExpr(FinalPattern(NounExpr("a"), null), NounExpr("ej"), LiteralExpr(1))`)
 
 def test_assignExpr(assert):
@@ -592,7 +627,24 @@ def test_ignorePattern(assert):
     assert.equal(patt.asTerm(), term`IgnorePattern(NounExpr("List"))`)
     assert.equal(M.toString(makeIgnorePattern(null, null)), "_")
 
+def test_varPattern(assert):
+    def [name, guard] := [makeNounExpr("blee", null), makeNounExpr("Int", null)]
+    def patt := makeVarPattern(name, guard, null)
+    assert.equal(patt._uncall(), [makeVarPattern, "run", [name, guard, null]])
+    assert.equal(M.toString(patt), "var blee :Int")
+    assert.equal(patt.asTerm(), term`VarPattern(NounExpr("blee"), NounExpr("Int"))`)
+
+def test_listPattern(assert):
+    def patts := [makeFinalPattern(makeNounExpr("a", null), null, null), makeVarPattern(makeNounExpr("b", null), null, null)]
+    def tail := makeFinalPattern(makeNounExpr("tail", null), null, null)
+    def patt := makeListPattern(patts, tail, null)
+    assert.equal(patt._uncall(), [makeListPattern, "run", [patts, tail, null]])
+    assert.equal(M.toString(patt), "[a, var b] + tail")
+    assert.equal(M.toString(makeListPattern(patts, null, null)), "[a, var b]")
+    assert.equal(patt.asTerm(), term`ListPattern([FinalPattern(NounExpr("a"), null), VarPattern(NounExpr("b"), null)], tail)`)
+
 unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr, test_slotExpr,
           test_metaContextExpr, test_metaStateExpr, test_seqExpr, test_module,
           test_defExpr, test_methodCallExpr, test_assignExpr, test_verbAssignExpr,
-          test_augAssignExpr, test_finalPattern, test_ignorePattern])
+          test_augAssignExpr, test_finalPattern, test_ignorePattern, test_varPattern,
+          test_listPattern])
