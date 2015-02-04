@@ -462,6 +462,17 @@ def makeFinalPattern(noun, guard, span):
         scope, term`FinalPattern`,
         fn f {[noun.transform(f), if (guard == null) {null} else {guard.transform(f)}]})
 
+def makeBindingPattern(noun, span):
+    def scope := makeStaticScope([], [], [noun.getName()], [], false)
+    object bindingPattern:
+        to getNoun():
+            return noun
+        to subPrintOn(out, priority):
+            out.print("&&")
+            noun.subPrintOn(out, priority)
+    return astWrapper(bindingPattern, makeBindingPattern, [noun], span,
+        scope, term`BindingPattern`, fn f {[noun.transform(f)]})
+
 def makeIgnorePattern(guard, span):
     def scope := if (guard != null) {guard.getStaticScope()} else {emptyScope}
     object ignorePattern:
@@ -491,6 +502,21 @@ def makeListPattern(patterns, tail, span):
                 tail.subPrintOn(out, priorities["pattern"])
     return astWrapper(listPattern, makeListPattern, [patterns, tail], span,
         scope, term`ListPattern`, fn f {[[p.transform(f) for p in patterns], if (tail == null) {null} else {tail.transform(f)}]})
+
+def makeViaPattern(expr, subpattern, span):
+    def scope := expr.getStaticScope() + subpattern.getStaticScope()
+    object viaPattern:
+        to getExpr():
+            return expr
+        to getPattern():
+            return subpattern
+        to subPrintOn(out, priority):
+            out.print("via (")
+            expr.subPrintOn(out, priorities["order"])
+            out.print(") ")
+            subpattern.subPrintOn(out, priority)
+    return astWrapper(viaPattern, makeViaPattern, [expr, subpattern], span,
+        scope, term`ViaPattern`, fn f {[expr.transform(f), subpattern.transform(f)]})
 
 def test_literalExpr(assert):
     def expr := makeLiteralExpr("one", null)
@@ -619,6 +645,13 @@ def test_finalPattern(assert):
     assert.equal(M.toString(patt), "blee :Int")
     assert.equal(patt.asTerm(), term`FinalPattern(NounExpr("blee"), NounExpr("Int"))`)
 
+def test_bindingPattern(assert):
+    def name := makeNounExpr("blee", null)
+    def patt := makeBindingPattern(name, null)
+    assert.equal(patt._uncall(), [makeBindingPattern, "run", [name, null]])
+    assert.equal(M.toString(patt), "&&blee")
+    assert.equal(patt.asTerm(), term`BindingPattern(NounExpr("blee"))`)
+
 def test_ignorePattern(assert):
     def guard := makeNounExpr("List", null)
     def patt := makeIgnorePattern(guard, null)
@@ -641,10 +674,18 @@ def test_listPattern(assert):
     assert.equal(patt._uncall(), [makeListPattern, "run", [patts, tail, null]])
     assert.equal(M.toString(patt), "[a, var b] + tail")
     assert.equal(M.toString(makeListPattern(patts, null, null)), "[a, var b]")
-    assert.equal(patt.asTerm(), term`ListPattern([FinalPattern(NounExpr("a"), null), VarPattern(NounExpr("b"), null)], tail)`)
+    assert.equal(patt.asTerm(), term`ListPattern([FinalPattern(NounExpr("a"), null), VarPattern(NounExpr("b"), null)], FinalPattern(NounExpr("tail"), null))`)
+
+def test_viaPattern(assert):
+    def subpatt := makeFinalPattern(makeNounExpr("a", null), null, null)
+    def expr := makeNounExpr("b", null)
+    def patt := makeViaPattern(expr, subpatt, null)
+    assert.equal(patt._uncall(), [makeViaPattern, "run", [expr, subpatt, null]])
+    assert.equal(M.toString(patt), "via (b) a")
+    assert.equal(patt.asTerm(), term`ViaPattern(NounExpr("b"), FinalPattern(NounExpr("a"), null))`)
 
 unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr, test_slotExpr,
           test_metaContextExpr, test_metaStateExpr, test_seqExpr, test_module,
           test_defExpr, test_methodCallExpr, test_assignExpr, test_verbAssignExpr,
           test_augAssignExpr, test_finalPattern, test_ignorePattern, test_varPattern,
-          test_listPattern])
+          test_listPattern, test_bindingPattern, test_viaPattern])
