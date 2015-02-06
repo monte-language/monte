@@ -104,13 +104,13 @@ def quasiMatcher(matchMaker, values):
 
 
 class TextWriter(MonteObject):
-    def __init__(self, out, newline=u'\n', context=None):
+    def __init__(self, out, newline=String(u'\n'), context=None):
         self.out = out
         self.context = context or set()
         self.newline = newline
 
     def indent(self, morePrefix):
-        return TextWriter(self.out, self.newline + u' ' * 4, self.context)
+        return TextWriter(self.out, self.newline.add(morePrefix), self.context)
 
     def quote(self, obj):
         obj = _resolution(obj)
@@ -146,4 +146,4 @@ class TextWriter(MonteObject):
 
     def println(self, obj):
         self._m_print(obj)
-        self.raw_print(self.newline)
+        self._m_print(self.newline)
