@@ -3,7 +3,7 @@ export (makeLiteralExpr, makeNounExpr, makeFinalPattern)
 
 def idStart := 'a'..'z' | 'A'..'Z' | '_'..'_'
 def idPart := idStart | '0'..'9'
-
+def INDENT := "    "
 # note to future drunk self: lower precedence number means add parens when
 # inside a higher-precedence-number expression
 def priorities := [
@@ -73,7 +73,7 @@ def makeStaticScope(read, set, defs, vars, metaStateExpr):
             return metaStateExpr
 
         to hide():
-            return makeStaticScope(namesRead, namesSet, null, null,
+            return makeStaticScope(namesRead, namesSet, [], [],
                                    metaStateExpr)
 
         to add(right):
@@ -132,6 +132,24 @@ def printListOn(left, nodes, sep, right, out, priority):
             out.print(sep)
         nodes.last().subPrintOn(out, priority)
     out.print(right)
+
+def printSuiteOn(leaderFn, suite, cuddle, out, priority):
+    def indentOut := out.indent(INDENT)
+    if (priority >= priorities["braceExpr"]):
+        if (cuddle):
+            out.print(" ")
+        leaderFn()
+        indentOut.println(" {")
+        suite.subPrintOn(indentOut, priorities["braceExpr"])
+        out.println("")
+        out.print("}")
+    else:
+        if (cuddle):
+            out.println("")
+        leaderFn()
+        indentOut.println(":")
+        suite.subPrintOn(indentOut, priorities["indentExpr"])
+
 
 def astWrapper(node, maker, args, span, scope, termFunctor, transformArgs):
     return object astNode extends node:
@@ -263,11 +281,11 @@ def makeModule(imports, exports, body, span):
             if (imports.size() > 0):
                 out.print(" ")
                 printListOn("", imports, ", ", "", out, priorities["braceExpr"])
-            out.print("\n")
+            out.println("")
             if (exports.size() > 0):
                 out.print("export ")
                 printListOn("(", exports, ", ", ")", out, priorities["braceExpr"])
-                out.print("\n")
+                out.println("")
             body.subPrintOn(out, priorities["indentExpr"])
     return astWrapper(::"module", makeModule, [imports, exports, body], span,
         scope, term`Module`, fn f {[
@@ -445,6 +463,32 @@ def makeAugAssignExpr(verb, lvalue, rvalue, span):
                 out.print(")")
     return astWrapper(augAssignExpr, makeAugAssignExpr, [verb, lvalue, rvalue], span,
         scope, term`AugAssignExpr`, fn f {[verb, lvalue.transform(f), rvalue.transform(f)]})
+
+def makeIfExpr(test, consq, alt, span):
+    def baseScope := test.getStaticScope() + consq.getStaticScope().hide()
+    def scope := if (alt == null) {
+        baseScope
+    } else {
+        baseScope + alt.getStaticScope().hide()
+    }
+    object ifExpr:
+        to getTest():
+            return test
+        to getThen():
+            return consq
+        to getElse():
+            return alt
+        to subPrintOn(out, priority):
+            printSuiteOn(fn {
+                out.print("if (")
+                test.subPrintOn(out, priorities["braceExpr"])
+                out.print(")")
+                }, consq, false, out, priority)
+            if (alt != null):
+                printSuiteOn(fn {out.print("else")}, alt, true, out, priority)
+
+    return astWrapper(ifExpr, makeIfExpr, [test, consq, alt], span,
+        scope, term`IfExpr`, fn f {[test.transform(f), consq.transform(f), alt.transform(f)]})
 
 def makeFinalPattern(noun, guard, span):
     def scope := makeStaticScope([], [], [noun.getName()], [], false)
@@ -637,6 +681,15 @@ def test_augAssignExpr(assert):
     assert.equal(M.toString(expr), "a += 1")
     assert.equal(expr.asTerm(), term`AugAssignExpr("add", NounExpr("a"), LiteralExpr(1))`)
     assert.equal(M.toString(makeAugAssignExpr("shiftRight", makeMethodCallExpr(lval, "get", [makeLiteralExpr(0, null)], null), body, null)), "a[0] >>= 1")
+
+def test_ifExpr(assert):
+    def [test, consq, alt] := [makeNounExpr(n, null) for n in ["a", "b", "c"]]
+    def expr := makeIfExpr(test, consq, alt, null)
+    assert.equal(expr._uncall(), [makeIfExpr, "run", [test, consq, alt, null]])
+    assert.equal(M.toString(expr), "if (a):\n    b\nelse:\n    c")
+    assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
+         "def _ := if (a) {\n    b\n} else {\n    c\n}")
+    assert.equal(expr.asTerm(), term`IfExpr(NounExpr("a"), NounExpr("b"), NounExpr("c"))`)
 
 def test_finalPattern(assert):
     def [name, guard] := [makeNounExpr("blee", null), makeNounExpr("Int", null)]

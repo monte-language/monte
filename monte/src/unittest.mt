@@ -4,11 +4,11 @@ object _failure:
 object unitTestAssertions:
     to notEqual(left, right):
         if (left == right):
-            throw(`Equal: $left == $right`)
+            throw(`Equal: ${M.toQuote(left)} == ${M.toQuote(right)}`)
 
     to equal(left, right):
         if (left != right):
-            throw(`Not equal: $left != $right`)
+            throw(`Not equal: ${M.toQuote(left)} != ${M.toQuote(right)}`)
 
     to ejects(f):
         var reason := null
