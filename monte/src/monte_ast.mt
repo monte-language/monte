@@ -464,6 +464,84 @@ def makeAugAssignExpr(verb, lvalue, rvalue, span):
     return astWrapper(augAssignExpr, makeAugAssignExpr, [verb, lvalue, rvalue], span,
         scope, term`AugAssignExpr`, fn f {[verb, lvalue.transform(f), rvalue.transform(f)]})
 
+def makeMatcher(pattern, body, span):
+    def scope := pattern.getStaticScope() + body.getStaticScope().hide()
+    object matcher:
+        to getPattern():
+            return pattern
+        to getBody():
+            return body
+        to subPrintOn(out, priority):
+            printSuiteOn(fn {
+                out.print("match ");
+                pattern.subPrintOn(out, priorities["pattern"]);
+            }, body, false, out, priority)
+    return astWrapper(matcher, makeMatcher, [pattern, body], span,
+        scope, term`Matcher`, fn f {[pattern.transform(f), body.transform(f)]})
+
+def makeCatchExpr(body, pattern, catcher, span):
+    def scope := body.getStaticScope().hide() + (pattern.getStaticScope() + catcher.getStaticScope()).hide()
+    object catchExpr:
+        to getBody():
+            return body
+        to getPattern():
+            return pattern
+        to getCatcher():
+            return catcher
+        to subPrintOn(out, priority):
+            printSuiteOn(fn {out.print("try")}, body, false, out, priority)
+            printSuiteOn(fn {
+                out.print("catch ")
+                pattern.subPrintOn(out, priorities["pattern"])
+            }, catcher, true, out, priority)
+    return astWrapper(catchExpr, makeCatchExpr, [body, pattern, catcher], span,
+        scope, term`CatchExpr`, fn f {[body.transform(f), pattern.transform(f),
+                                       catcher.transform(f)]})
+
+def makeFinallyExpr(body, unwinder, span):
+    def scope := body.getStaticScope().hide() + unwinder.getStaticScope().hide()
+    object finallyExpr:
+        to getBody():
+            return body
+        to getUnwinder():
+            return unwinder
+        to subPrintOn(out, priority):
+            printSuiteOn(fn {out.print("try")}, body, false, out, priority)
+            printSuiteOn(fn {out.print("finally")}, unwinder, true, out,
+                         priority)
+    return astWrapper(finallyExpr, makeFinallyExpr, [body, unwinder], span,
+        scope, term`FinallyExpr`, fn f {[body.transform(f), unwinder.transform(f)]})
+
+def makeTryExpr(body, catchers, finallyBlock, span):
+    def baseScope := union([
+        (m.getPattern().getStaticScope() + m.getBody().getStaticScope()).hide()
+             for m in catchers],
+        body.getStaticScope().hide())
+    def scope := if (finallyBlock != null) {
+        baseScope
+    } else {
+        baseScope + finallyBlock.getStaticScope().hide()
+    }
+    object tryExpr:
+        to getBody():
+            return body
+        to getCatchers():
+            return catchers
+        to getFinally():
+            return finallyBlock
+        to subPrintOn(out, priority):
+            printSuiteOn(fn {out.print("try")}, body, false, out, priority)
+            for m in catchers:
+                printSuiteOn(fn {
+                    out.print("catch ")
+                    m.getPattern().subPrintOn(out, priorities["pattern"])
+                }, m.getBody(), true, out, priority)
+            if (finallyBlock != null):
+                printSuiteOn(fn {out.print("finally")},
+                    finallyBlock, true, out, priority)
+    return astWrapper(tryExpr, makeTryExpr, [body, catchers, finallyBlock], span,
+        scope, term`TryExpr`, fn f {[body.transform(f), [m.transform(f) for m in catchers],if (finallyBlock == null) {null} else {finallyBlock.transform(f)}]})
+
 def makeIfExpr(test, consq, alt, span):
     def baseScope := test.getStaticScope() + consq.getStaticScope().hide()
     def scope := if (alt == null) {
@@ -690,6 +768,38 @@ def test_ifExpr(assert):
     assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
          "def _ := if (a) {\n    b\n} else {\n    c\n}")
     assert.equal(expr.asTerm(), term`IfExpr(NounExpr("a"), NounExpr("b"), NounExpr("c"))`)
+
+def test_catchExpr(assert):
+    def [attempt, pattern, catcher] := [makeNounExpr("a", null), makeFinalPattern(makeNounExpr("b", null), null, null), makeNounExpr("c", null)]
+    def expr := makeCatchExpr(attempt, pattern, catcher, null)
+    assert.equal(expr._uncall(), [makeCatchExpr, "run", [attempt, pattern, catcher, null]])
+    assert.equal(M.toString(expr), "try:\n    a\ncatch b:\n    c")
+    assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
+        "def _ := try {\n    a\n} catch b {\n    c\n}")
+    assert.equal(expr.asTerm(), term`CatchExpr(NounExpr("a"), FinalPattern(NounExpr("b"), null), NounExpr("c"))`)
+
+def test_finallyExpr(assert):
+    def [attempt, catcher] := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeFinallyExpr(attempt, catcher, null)
+    assert.equal(expr._uncall(), [makeFinallyExpr, "run", [attempt, catcher, null]])
+    assert.equal(M.toString(expr), "try:\n    a\nfinally:\n    b")
+    assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
+        "def _ := try {\n    a\n} finally {\n    b\n}")
+    assert.equal(expr.asTerm(), term`FinallyExpr(NounExpr("a"), NounExpr("b"))`)
+
+def test_tryExpr(assert):
+    def [body, catchers, fin] := [makeNounExpr("a", null),
+        [makeMatcher(makeFinalPattern(makeNounExpr("b", null), null, null),
+                     makeNounExpr("c", null), null),
+         makeMatcher(makeFinalPattern(makeNounExpr("d", null), null, null),
+                      makeNounExpr("e", null), null)],
+        makeNounExpr("f", null)]
+    def expr := makeTryExpr(body, catchers, fin, null)
+    assert.equal(expr._uncall(), [makeTryExpr, "run", [body, catchers, fin, null]])
+    assert.equal(M.toString(expr), "try:\n    a\ncatch b:\n    c\ncatch d:\n    e\nfinally:\n    f")
+    assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
+        "def _ := try {\n    a\n} catch b {\n    c\n} catch d {\n    e\n} finally {\n    f\n}")
+    assert.equal(expr.asTerm(), term`TryExpr(NounExpr("a"), [Matcher(FinalPattern(NounExpr("b"), null), NounExpr("c")), Matcher(FinalPattern(NounExpr("d"), null), NounExpr("e"))], NounExpr("f"))`)
 
 def test_finalPattern(assert):
     def [name, guard] := [makeNounExpr("blee", null), makeNounExpr("Int", null)]
