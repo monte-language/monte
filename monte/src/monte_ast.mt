@@ -1,6 +1,13 @@
 module unittest
 export (makeLiteralExpr, makeNounExpr, makeFinalPattern)
 
+def MONTE_KEYWORDS := [
+"as", "bind", "break", "catch", "continue", "def", "else", "escape",
+"exit", "extends", "export", "finally", "fn", "for", "guards", "if",
+"implements", "in", "interface", "match", "meta", "method", "module",
+"object", "pass", "pragma", "return", "switch", "to", "try", "var",
+"via", "when", "while"]
+
 def idStart := 'a'..'z' | 'A'..'Z' | '_'..'_'
 def idPart := idStart | '0'..'9'
 def INDENT := "    "
@@ -122,6 +129,8 @@ def all(iterable, pred):
     return true
 
 def isIdentifier(name):
+    if (MONTE_KEYWORDS.contains(name)):
+        return false
     return idStart(name[0]) && all(name.slice(1), idPart)
 
 def printListOn(left, nodes, sep, right, out, priority):
@@ -150,6 +159,15 @@ def printSuiteOn(leaderFn, suite, cuddle, out, priority):
         indentOut.println(":")
         suite.subPrintOn(indentOut, priorities["indentExpr"])
 
+def printDocstringOn(docstring, out):
+    def indentOut := out.indent(INDENT)
+    indentOut.println("/**")
+    def lines := docstring.split("\n")
+    for line in lines.slice(0, 0.max(lines.size() - 2)):
+        indentOut.println(line)
+    if (lines.size() > 0):
+        out.println(lines.last())
+    out.println("*/")
 
 def astWrapper(node, maker, args, span, scope, termFunctor, transformArgs):
     return object astNode extends node:
@@ -464,6 +482,42 @@ def makeAugAssignExpr(verb, lvalue, rvalue, span):
     return astWrapper(augAssignExpr, makeAugAssignExpr, [verb, lvalue, rvalue], span,
         scope, term`AugAssignExpr`, fn f {[verb, lvalue.transform(f), rvalue.transform(f)]})
 
+def makeMethod(docstring, verb, patterns, resultGuard, body, span):
+    def scope := (union([p.getStaticScope() for p in patterns], emptyScope) +
+                  if (resultGuard == null) {emptyScope} else {resultGuard.getStaticScope()} +
+                  body.getStaticScope()).hide()
+    object ::"method":
+        to getDocstring():
+            return docstring
+        to getVerb():
+            return verb
+        to getPatterns():
+            return patterns
+        to getResultGuard():
+            return resultGuard
+        to getBody():
+            return body
+        to subPrintOn(out, priority):
+            if (docstring != null):
+                printDocstringOn(docstring, out)
+            else:
+                out.println("")
+            printSuiteOn(fn {
+                out.print("to ")
+                if (isIdentifier(verb)) {
+                    out.print(verb)
+                } else {
+                    out.quote(verb)
+                }
+                printListOn("(", patterns, ", ", ")", out, priorities["pattern"])
+                if (resultGuard != null) {
+                    out.print(" :")
+                    resultGuard.subPrintOn(out, priorities["call"])
+                }
+            }, body, false, out, priority)
+    return astWrapper(::"method", makeMethod, [docstring, verb, patterns, resultGuard, body], span,
+        scope, term`Method`, fn f {[docstring, verb, [p.transform(f) for p in patterns], if (resultGuard == null) {null} else {resultGuard.transform(f)}, body.transform(f)]})
+
 def makeMatcher(pattern, body, span):
     def scope := pattern.getStaticScope() + body.getStaticScope().hide()
     object matcher:
@@ -472,12 +526,61 @@ def makeMatcher(pattern, body, span):
         to getBody():
             return body
         to subPrintOn(out, priority):
+            out.println("")
             printSuiteOn(fn {
                 out.print("match ");
                 pattern.subPrintOn(out, priorities["pattern"]);
             }, body, false, out, priority)
     return astWrapper(matcher, makeMatcher, [pattern, body], span,
         scope, term`Matcher`, fn f {[pattern.transform(f), body.transform(f)]})
+
+def makeScript(extend, methods, matchers, span):
+    def scope := union([m.getStaticScope() for m in methods + matchers], emptyScope)
+    object script:
+        to getExtends():
+            return extend
+        to getMethods():
+            return methods
+        to getMatchers():
+            return matchers
+        to printObjectHeadOn(name, asExpr, auditors, out, priority):
+            out.print("object ")
+            name.subPrintOn(out, priorities["pattern"])
+            if (asExpr != null):
+                out.print(" as ")
+                asExpr.subPrintOn(out, priorities["call"])
+            if (auditors.size() > 0):
+                printListOn(" implements ", auditors, ", ", "", out, priorities["call"])
+            if (extend != null):
+                out.print(" extends ")
+                extend.subPrintOn(out, priorities["order"])
+        to subPrintOn(out, priority):
+            for m in methods + matchers:
+                m.subPrintOn(out, priority)
+                out.print("\n")
+    return astWrapper(script, makeScript, [extend, methods, matchers], span,
+        scope, term`Script`, fn f {[if (extend == null) {null} else {extend.transform(f)}, [m.transform(f) for m in methods], [m.transform(f) for m in matchers]]})
+
+def makeObjectExpr(docstring, name, asExpr, auditors, script, span):
+    def scope := name.getStaticScope() + union([a.getStaticScope() for a in auditors], if (asExpr == null) {emptyScope} else {asExpr.getStaticScope()}).hide() + script.getStaticScope()
+    object ObjectExpr:
+        to getDocstring():
+            return docstring
+        to getName():
+            return name
+        to getAsExpr():
+            return asExpr
+        to getAuditors():
+            return auditors
+        to getScript():
+            return script
+        to subPrintOn(out, priority):
+            printDocstringOn(docstring, out)
+            printSuiteOn(fn {
+                script.printObjectHeadOn(name, asExpr, auditors, out, priority)
+            }, script, false, out, priority)
+    return astWrapper(ObjectExpr, makeObjectExpr, [docstring, name, asExpr, auditors, script], span,
+        scope, term`ObjectExpr`, fn f {[docstring, name.transform(f), if (asExpr == null) {null} else {asExpr.transform(f)}, [a.transform(f) for a in auditors], script.transform(f)]})
 
 def makeCatchExpr(body, pattern, catcher, span):
     def scope := body.getStaticScope().hide() + (pattern.getStaticScope() + catcher.getStaticScope()).hide()
@@ -614,6 +717,54 @@ def makeHideExpr(body, span):
 
     return astWrapper(hideExpr, makeHideExpr, [body], span,
         scope, term`HideExpr`, fn f {[body.transform(f)]})
+
+def makeValueHoleExpr(index, span):
+    def scope := null
+    object valueHoleExpr:
+        to getIndex():
+            return index
+        to subPrintOn(out, priority):
+            out.print("${value-hole ")
+            out.print(index)
+            out.print("}")
+    return astWrapper(valueHoleExpr, makeValueHoleExpr, [index], span,
+        scope, term`ValueHoleExpr`, fn f {[index]})
+
+def makePatternHoleExpr(index, span):
+    def scope := null
+    object patternHoleExpr:
+        to getIndex():
+            return index
+        to subPrintOn(out, priority):
+            out.print("${pattern-hole ")
+            out.print(index)
+            out.print("}")
+    return astWrapper(patternHoleExpr, makePatternHoleExpr, [index], span,
+        scope, term`PatternHoleExpr`, fn f {[index]})
+
+def makeValueHolePattern(index, span):
+    def scope := null
+    object valueHolePattern:
+        to getIndex():
+            return index
+        to subPrintOn(out, priority):
+            out.print("@{value-hole ")
+            out.print(index)
+            out.print("}")
+    return astWrapper(valueHolePattern, makeValueHolePattern, [index], span,
+        scope, term`ValueHolePattern`, fn f {[index]})
+
+def makePatternHolePattern(index, span):
+    def scope := null
+    object patternHolePattern:
+        to getIndex():
+            return index
+        to subPrintOn(out, priority):
+            out.print("@{pattern-hole ")
+            out.print(index)
+            out.print("}")
+    return astWrapper(patternHolePattern, makePatternHolePattern, [index], span,
+        scope, term`PatternHolePattern`, fn f {[index]})
 
 def makeFinalPattern(noun, guard, span):
     def scope := makeStaticScope([], [], [noun.getName()], [], false)
@@ -866,6 +1017,56 @@ def test_hideExpr(assert):
     assert.equal(M.toString(expr), "{\n    a\n}")
     assert.equal(expr.asTerm(), term`HideExpr(NounExpr("a"))`)
 
+def test_objectExpr(assert):
+    def objName := makeFinalPattern(makeNounExpr("a", null), null, null)
+    def asExpr := makeNounExpr("x", null)
+    def auditors := [makeNounExpr("b", null), makeNounExpr("c", null)]
+    def methodParams := [makeFinalPattern(makeNounExpr("e", null), null, null),
+                         makeFinalPattern(makeNounExpr("f", null), null, null)]
+    def methGuard := makeNounExpr("g", null)
+    def methBody := makeNounExpr("h", null)
+    def method1 := makeMethod("method d", "d", methodParams, methGuard, methBody, null)
+    def method2 := makeMethod(null, "i", [], null, makeNounExpr("j", null), null)
+    def matchPatt := makeFinalPattern(makeNounExpr("k", null), null, null)
+    def matchBody := makeNounExpr("l", null)
+    def matcher := makeMatcher(matchPatt, matchBody, null)
+    def script :=  makeScript(null, [method1, method2], [matcher], null)
+    def expr := makeObjectExpr("blee", objName, asExpr, auditors, script, null)
+    assert.equal(expr._uncall(),
+        [makeObjectExpr, "run", ["blee", objName, asExpr, auditors, script, null]])
+    assert.equal(script._uncall(),
+        [makeScript, "run", [null, [method1, method2], [matcher], null]])
+    assert.equal(method1._uncall(),
+        [makeMethod, "run", ["method d", "d", methodParams, methGuard, methBody, null]])
+    assert.equal(matcher._uncall(),
+        [makeMatcher, "run", [matchPatt, matchBody, null]])
+    assert.equal(M.toString(expr), "/**\n    blee\n*/\nobject a as x implements b, c:\n    /**\n        method d\n    */\n    to d(e, f) :g:\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
+    assert.equal(expr.asTerm(), term`ObjectExpr("blee", FinalPattern(NounExpr("a"), null), NounExpr("x"), [NounExpr("b"), NounExpr("c")], Script(null, [Method("method d", "d", [FinalPattern(NounExpr("e")), FinalPattern(NounExpr("f"))], NounExpr("g"), NounExpr("h")), Method(null, "i", [], null, NounExpr("j"))], [Matcher(FinalPattern(NounExpr("k")), NounExpr("l"))]))`)
+
+def test_valueHoleExpr(assert):
+    def expr := makeValueHoleExpr(2, null)
+    assert.equal(expr._uncall(), [makeValueHoleExpr, "run", [2, null]])
+    assert.equal(M.toString(expr), "${value-hole 2}")
+    assert.equal(expr.asTerm(), term`ValueHoleExpr(2)`)
+
+def test_patternHoleExpr(assert):
+    def expr := makePatternHoleExpr(2, null)
+    assert.equal(expr._uncall(), [makePatternHoleExpr, "run", [2, null]])
+    assert.equal(M.toString(expr), "${pattern-hole 2}")
+    assert.equal(expr.asTerm(), term`PatternHoleExpr(2)`)
+
+def test_patternHolePattern(assert):
+    def expr := makePatternHolePattern(2, null)
+    assert.equal(expr._uncall(), [makePatternHolePattern, "run", [2, null]])
+    assert.equal(M.toString(expr), "@{pattern-hole 2}")
+    assert.equal(expr.asTerm(), term`PatternHolePattern(2)`)
+
+def test_valueHolePattern(assert):
+    def expr := makeValueHolePattern(2, null)
+    assert.equal(expr._uncall(), [makeValueHolePattern, "run", [2, null]])
+    assert.equal(M.toString(expr), "@{value-hole 2}")
+    assert.equal(expr.asTerm(), term`ValueHolePattern(2)`)
+
 def test_finalPattern(assert):
     def [name, guard] := [makeNounExpr("blee", null), makeNounExpr("Int", null)]
     def patt := makeFinalPattern(name, guard, null)
@@ -916,6 +1117,8 @@ unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr, 
           test_metaContextExpr, test_metaStateExpr, test_seqExpr, test_module,
           test_defExpr, test_methodCallExpr, test_assignExpr, test_verbAssignExpr,
           test_augAssignExpr, test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
-          test_escapeExpr, test_hideExpr,
+          test_escapeExpr, test_hideExpr, test_objectExpr,
+          test_valueHoleExpr, test_patternHoleExpr,
           test_finalPattern, test_ignorePattern, test_varPattern,
-          test_listPattern, test_bindingPattern, test_viaPattern])
+          test_listPattern, test_bindingPattern, test_viaPattern,
+          test_valueHolePattern, test_patternHolePattern])
