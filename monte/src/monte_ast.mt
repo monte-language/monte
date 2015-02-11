@@ -25,7 +25,7 @@ def priorities := [
      "shift" => 8,
      "addsub" => 9,
      "divmul" => 10,
-     "exp" => 11,
+     "pow" => 11,
      "prefix" => 12,
      "send" => 13,
      "coerce" => 14,
@@ -144,7 +144,7 @@ def printListOn(left, nodes, sep, right, out, priority):
 
 def printSuiteOn(leaderFn, suite, cuddle, out, priority):
     def indentOut := out.indent(INDENT)
-    if (priority >= priorities["braceExpr"]):
+    if (priorities["braceExpr"] < priority):
         if (cuddle):
             out.print(" ")
         leaderFn()
@@ -325,21 +325,219 @@ def makeMethodCallExpr(rcvr, verb, arglist, span):
             if (priorities["call"] < priority):
                 out.print("(")
             rcvr.subPrintOn(out, priorities["call"])
-            if (verb != "run" && verb != "get"):
-                out.print(".")
-                if (isIdentifier(verb)):
-                    out.print(verb)
-                else:
-                    out.quote(verb)
-            if (verb == "get"):
-                printListOn("[", arglist, ", ", "]", out, priorities["braceExpr"])
+            out.print(".")
+            if (isIdentifier(verb)):
+                out.print(verb)
             else:
-                printListOn("(", arglist, ", ", ")", out, priorities["braceExpr"])
+                out.quote(verb)
+            printListOn("(", arglist, ", ", ")", out, priorities["braceExpr"])
             if (priorities["call"] < priority):
                 out.print(")")
     return astWrapper(methodCallExpr, makeMethodCallExpr,
         [rcvr, verb, arglist], span, scope, term`MethodCallExpr`,
         fn f {[rcvr.transform(f), verb, [a.transform(f) for a in arglist]]})
+
+def makeGetExpr(receiver, indices, span):
+    def scope := union([i.getStaticScope() for i in indices], receiver.getStaticScope())
+    object getExpr:
+        to getReceiver():
+            return receiver
+        to getIndices():
+            return indices
+        to subPrintOn(out, priority):
+            receiver.subPrintOn(out, priorities["call"])
+            printListOn("[", indices, ", ", "]", out, priorities["braceExpr"])
+
+    return astWrapper(getExpr, makeGetExpr, [receiver, indices], span,
+        scope, term`GetExpr`, fn f {[receiver.transform(f), [i.transform(f) for i in indices]]})
+
+def makeAndExpr(left, right, span):
+    def scope := left.getStaticScope() + right.getStaticScope()
+    object andExpr:
+        to getLeft():
+            return left
+        to getRight():
+            return right
+        to subPrintOn(out, priority):
+            if (priorities["logicalAnd"] < priority):
+                out.print("(")
+            left.subPrintOn(out, priorities["logicalAnd"])
+            out.print(" && ")
+            right.subPrintOn(out, priorities["logicalAnd"])
+            if (priorities["logicalAnd"] < priority):
+                out.print(")")
+    return astWrapper(andExpr, makeAndExpr, [left, right], span,
+        scope, term`AndExpr`, fn f {[left.transform(f), right.transform(f)]})
+
+def makeOrExpr(left, right, span):
+    def scope := left.getStaticScope() + right.getStaticScope()
+    object orExpr:
+        to getLeft():
+            return left
+        to getRight():
+            return right
+        to subPrintOn(out, priority):
+            if (priorities["logicalOr"] < priority):
+                out.print("(")
+            left.subPrintOn(out, priorities["logicalOr"])
+            out.print(" || ")
+            right.subPrintOn(out, priorities["logicalOr"])
+            if (priorities["logicalOr"] < priority):
+                out.print(")")
+    return astWrapper(orExpr, makeOrExpr, [left, right], span,
+        scope, term`OrExpr`, fn f {[left.transform(f), right.transform(f)]})
+
+def operatorsToNamePrio := [
+    "+" => ["add", "addsub"],
+    "-" => ["subtract", "addsub"],
+    "*" => ["multiply", "divmul"],
+    "//" => ["floorDivide", "divmul"],
+    "/" => ["approxDivide", "divmul"],
+    "%" => ["mod", "divmul"],
+    "**" => ["pow", "pow"],
+    "&" => ["and", "comp"],
+    "|" => ["or", "comp"],
+    "^" => ["xor", "comp"],
+    "&!" => ["butNot", "comp"],
+    "<<" => ["shiftLeft", "comp"],
+    ">>" => ["shiftRight", "comp"]]
+
+def makeBinaryExpr(left, op, right, span):
+    def scope := left.getStaticScope() + right.getStaticScope()
+    object binaryExpr:
+        to getLeft():
+            return left
+        to getOp():
+            return op
+        to getOpName():
+            return operatorsToNamePrio[op][0]
+        to getRight():
+            return right
+        to subPrintOn(out, priority):
+            def opPrio := priorities[operatorsToNamePrio[op][1]]
+            if (opPrio < priority):
+                out.print("(")
+            left.subPrintOn(out, opPrio)
+            out.print(" ")
+            out.print(op)
+            out.print(" ")
+            right.subPrintOn(out, opPrio)
+            if (opPrio < priority):
+                out.print(")")
+    return astWrapper(binaryExpr, makeBinaryExpr, [left, op, right], span,
+        scope, term`BinaryExpr`, fn f {[left.transform(f), op, right.transform(f)]})
+
+def makeMatchBindExpr(specimen, pattern, span):
+    def scope := specimen.getStaticScope() + pattern.getStaticScope()
+    object matchBindExpr:
+        to getSpecimen():
+            return specimen
+        to getPattern():
+            return pattern
+        to subPrintOn(out, priority):
+            if (priorities["call"] < priority):
+                out.print("(")
+            specimen.subPrintOn(out, priorities["call"])
+            out.print(" =~ ")
+            pattern.subPrintOn(out, priorities["pattern"])
+            if (priorities["call"] < priority):
+                out.print(")")
+    return astWrapper(matchBindExpr, makeMatchBindExpr, [specimen, pattern], span,
+        scope, term`MatchBindExpr`, fn f {[specimen.transform(f), pattern.transform(f)]})
+
+def unaryOperatorsToName := ["~" => "complement", "!" => "not", "-" => "negate"]
+
+def makePrefixExpr(op, receiver, span):
+    def scope := receiver.getStaticScope()
+    object prefixExpr:
+        to getOp():
+            return op
+        to getOpName():
+            return unaryOperatorsToName[op]
+        to getReceiver():
+            return receiver
+        to subPrintOn(out, priority):
+            if (priorities["call"] < priority):
+                out.print("(")
+            out.print(op)
+            receiver.subPrintOn(out, priorities["call"])
+            if (priorities["call"] < priority):
+                out.print(")")
+    return astWrapper(prefixExpr, makePrefixExpr, [op, receiver], span,
+        scope, term`PrefixExpr`, fn f {[op, receiver.transform(f)]})
+
+def makeCoerceExpr(specimen, guard, span):
+    def scope := specimen.getStaticScope() + guard.getStaticScope()
+    object coerceExpr:
+        to getSpecimen():
+            return specimen
+        to getGuard():
+            return guard
+        to subPrintOn(out, priority):
+            if (priorities["coerce"] < priority):
+                out.print("(")
+            specimen.subPrintOn(out, priorities["coerce"])
+            out.print(" :")
+            guard.subPrintOn(out, priorities["prim"])
+            if (priorities["coerce"] < priority):
+                out.print(")")
+    return astWrapper(coerceExpr, makeCoerceExpr, [specimen, guard], span,
+        scope, term`CoerceExpr`, fn f {[specimen.transform(f), guard.transform(f)]})
+
+def makeCurryExpr(receiver, verb, span):
+    def scope := receiver.getStaticScope()
+    object curryExpr:
+        to getReceiver():
+            return receiver
+        to getVerb():
+            return verb
+        to subPrintOn(out, priority):
+            if (priorities["call"] < priority):
+                out.print("(")
+            receiver.subPrintOn(out, priorities["call"])
+            out.print(".")
+            if (isIdentifier(verb)):
+                out.print(verb)
+            else:
+                out.quote(verb)
+            if (priorities["call"] < priority):
+                out.print(")")
+    return astWrapper(curryExpr, makeCurryExpr, [receiver, verb], span,
+        scope, term`CurryExpr`, fn f {[receiver.transform(f), verb]})
+
+def makeExitExpr(name, value, span):
+    def scope := if (value == null) {emptyScope} else {value.getStaticScope()}
+    object exitExpr:
+        to getName():
+            return name
+        to getValue():
+            return value
+        to subPrintOn(out, priority):
+            if (priorities["call"] < priority):
+                out.print("(")
+            out.print(name)
+            if (value != null):
+                out.print(" ")
+                value.subPrintOn(out, priority)
+            if (priorities["call"] < priority):
+                out.print(")")
+    return astWrapper(exitExpr, makeExitExpr, [name, value], span,
+        scope, term`ExitExpr`, fn f {[name, if (value == null) {null} else {value.transform(f)}]})
+
+def makeForwardExpr(name, span):
+    def scope := makeStaticScope([], [], [name], [], false)
+    object forwardExpr:
+        to getName():
+            return name
+        to subPrintOn(out, priority):
+            if (priorities["assign"] < priority):
+                out.print("(")
+            out.print("def ")
+            name.subPrintOn(out, priorities["prim"])
+            if (priorities["assign"] < priority):
+                out.print(")")
+    return astWrapper(forwardExpr, makeForwardExpr, [name], span,
+        scope, term`ForwardExpr`, fn f {[name.transform(f)]})
 
 def makeVarPattern(noun, guard, span):
     def scope := makeStaticScope([], [], [], [noun.getName()], false)
@@ -440,23 +638,8 @@ def makeVerbAssignExpr(verb, lvalue, rvalues, span):
     return astWrapper(verbAssignExpr, makeVerbAssignExpr, [verb, lvalue, rvalues], span,
         scope, term`VerbAssignExpr`, fn f {[verb, lvalue.transform(f), [ar.transform(f) for ar in rvalues]]})
 
-def operatorsByName := [
-    "add" => "+",
-    "subtract" => "-",
-    "multiply" => "*",
-    "floorDivide" => "//",
-    "approxDivide" => "/",
-    "mod" => "%",
-    "pow" => "**",
-    "and" => "&",
-    "or" => "|",
-    "xor" => "^",
-    "butNot" => "&!",
-    "shiftLeft" => "<<",
-    "shiftRight" => ">>",
-]
 
-def makeAugAssignExpr(verb, lvalue, rvalue, span):
+def makeAugAssignExpr(op, lvalue, rvalue, span):
     def [lmaker, _, largs] := lvalue._uncall()
     def lscope := if (lmaker == makeNounExpr || lmaker == makeTempNounExpr) {
         makeStaticScope([], [lvalue.getName()], [], [], false)
@@ -465,6 +648,10 @@ def makeAugAssignExpr(verb, lvalue, rvalue, span):
     }
     def scope := lscope + rvalue.getStaticScope()
     object augAssignExpr:
+        to getOp():
+            return op
+        to getOpName():
+            return operatorsToNamePrio[op][0]
         to getLvalue():
             return lvalue
         to getRvalue():
@@ -474,13 +661,13 @@ def makeAugAssignExpr(verb, lvalue, rvalue, span):
                 out.print("(")
             lvalue.subPrintOn(out, priorities["call"])
             out.print(" ")
-            out.print(operatorsByName[verb])
+            out.print(op)
             out.print("= ")
             rvalue.subPrintOn(out, priorities["assign"])
             if (priorities["assign"] < priority):
                 out.print(")")
-    return astWrapper(augAssignExpr, makeAugAssignExpr, [verb, lvalue, rvalue], span,
-        scope, term`AugAssignExpr`, fn f {[verb, lvalue.transform(f), rvalue.transform(f)]})
+    return astWrapper(augAssignExpr, makeAugAssignExpr, [op, lvalue, rvalue], span,
+        scope, term`AugAssignExpr`, fn f {[op, lvalue.transform(f), rvalue.transform(f)]})
 
 def makeMethod(docstring, verb, patterns, resultGuard, body, span):
     def scope := (union([p.getStaticScope() for p in patterns], emptyScope) +
@@ -912,12 +1099,81 @@ def test_methodCallExpr(assert):
     assert.equal(expr.asTerm(), term`MethodCallExpr(NounExpr("foo"), "doStuff", [LiteralExpr(1), LiteralExpr("two")])`)
     def fcall := makeMethodCallExpr(makeNounExpr("foo", null), "run",
          [makeNounExpr("a", null)], null)
-    assert.equal(M.toString(fcall), "foo(a)")
+    assert.equal(M.toString(fcall), "foo.run(a)")
     assert.equal(M.toString(makeMethodCallExpr(makeNounExpr("a", null), "+",
          [makeNounExpr("b", null)], null)),
              "a.\"+\"(b)")
-    assert.equal(M.toString(makeMethodCallExpr(makeNounExpr("foo", null), "get",
-         [makeNounExpr("a", null), makeNounExpr("b", null)], null)), "foo[a, b]")
+
+def test_getExpr(assert):
+    def body := makeNounExpr("a", null)
+    def indices := [makeNounExpr("b", null), makeNounExpr("c", null)]
+    def expr := makeGetExpr(body, indices, null)
+    assert.equal(M.toString(expr), "a[b, c]")
+    assert.equal(expr.asTerm(), term`GetExpr(NounExpr("a"), [NounExpr("b"), NounExpr("c")])`)
+
+def test_andExpr(assert):
+    def [left, right] := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeAndExpr(left, right, null)
+    assert.equal(expr._uncall(), [makeAndExpr, "run", [left, right, null]])
+    assert.equal(M.toString(expr), "a && b")
+    assert.equal(expr.asTerm(), term`AndExpr(NounExpr("a"), NounExpr("b"))`)
+
+def test_orExpr(assert):
+    def [left, right] := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeOrExpr(left, right, null)
+    assert.equal(expr._uncall(), [makeOrExpr, "run", [left, right, null]])
+    assert.equal(M.toString(expr), "a || b")
+    assert.equal(expr.asTerm(), term`OrExpr(NounExpr("a"), NounExpr("b"))`)
+
+def test_matchBindExpr(assert):
+    def [spec, patt] := [makeNounExpr("a", null), makeFinalPattern(makeNounExpr("b", null), null, null)]
+    def expr := makeMatchBindExpr(spec, patt, null)
+    assert.equal(expr._uncall(), [makeMatchBindExpr, "run", [spec, patt, null]])
+    assert.equal(M.toString(expr), "a =~ b")
+    assert.equal(expr.asTerm(), term`MatchBindExpr(NounExpr("a"), FinalPattern(NounExpr("b")))`)
+
+def test_binaryExpr(assert):
+    def [left, right] := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeBinaryExpr(left, "+", right, null)
+    assert.equal(expr._uncall(), [makeBinaryExpr, "run", [left, "+", right, null]])
+    assert.equal(M.toString(expr), "a + b")
+    assert.equal(expr.asTerm(), term`BinaryExpr(NounExpr("a"), "+", NounExpr("b"))`)
+
+def test_prefixExpr(assert):
+    def val := makeNounExpr("a", null)
+    def expr := makePrefixExpr("!", val, null)
+    assert.equal(expr._uncall(), [makePrefixExpr, "run", ["!", val, null]])
+    assert.equal(M.toString(expr), "!a")
+    assert.equal(expr.asTerm(), term`PrefixExpr("!", NounExpr("a"))`)
+
+def test_coerceExpr(assert):
+    def [specimen, guard] := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeCoerceExpr(specimen, guard, null)
+    assert.equal(expr._uncall(), [makeCoerceExpr, "run", [specimen, guard, null]])
+    assert.equal(M.toString(expr), "a :b")
+    assert.equal(expr.asTerm(), term`CoerceExpr(NounExpr("a"), NounExpr("b"))`)
+
+def test_curryExpr(assert):
+    def receiver := makeNounExpr("a", null)
+    def expr := makeCurryExpr(receiver, "foo", null)
+    assert.equal(expr._uncall(), [makeCurryExpr, "run", [receiver, "foo", null]])
+    assert.equal(M.toString(expr), "a.foo")
+    assert.equal(expr.asTerm(), term`CurryExpr(NounExpr("a"), "foo")`)
+
+def test_exitExpr(assert):
+    def val := makeNounExpr("a", null)
+    def expr := makeExitExpr("continue", val, null)
+    assert.equal(expr._uncall(), [makeExitExpr, "run", ["continue", val, null]])
+    assert.equal(M.toString(expr), "continue a")
+    assert.equal(expr.asTerm(), term`ExitExpr("continue", NounExpr("a"))`)
+    assert.equal(M.toString(makeExitExpr("break", null, null)), "break")
+
+def test_forwardExpr(assert):
+    def val := makeNounExpr("a", null)
+    def expr := makeForwardExpr(val, null)
+    assert.equal(expr._uncall(), [makeForwardExpr, "run", [val, null]])
+    assert.equal(M.toString(expr), "def a")
+    assert.equal(expr.asTerm(), term`ForwardExpr(NounExpr("a"))`)
 
 def test_defExpr(assert):
     def patt := makeFinalPattern(makeNounExpr("a", null), null, null)
@@ -937,7 +1193,7 @@ def test_assignExpr(assert):
     assert.equal(expr._uncall(), [makeAssignExpr, "run", [lval, body, null]])
     assert.equal(M.toString(expr), "a := 1")
     assert.equal(expr.asTerm(), term`AssignExpr(NounExpr("a"), LiteralExpr(1))`)
-    assert.equal(M.toString(makeAssignExpr(makeMethodCallExpr(lval, "get", [makeLiteralExpr(0, null)], null), body, null)), "a[0] := 1")
+    assert.equal(M.toString(makeAssignExpr(makeGetExpr(lval, [makeLiteralExpr(0, null)], null), body, null)), "a[0] := 1")
 
 
 def test_verbAssignExpr(assert):
@@ -947,16 +1203,16 @@ def test_verbAssignExpr(assert):
     assert.equal(expr._uncall(), [makeVerbAssignExpr, "run", ["blee", lval, [body], null]])
     assert.equal(M.toString(expr), "a blee= (1)")
     assert.equal(expr.asTerm(), term`VerbAssignExpr("blee", NounExpr("a"), [LiteralExpr(1)])`)
-    assert.equal(M.toString(makeVerbAssignExpr("blee", makeMethodCallExpr(lval, "get", [makeLiteralExpr(0, null)], null), [body], null)), "a[0] blee= (1)")
+    assert.equal(M.toString(makeVerbAssignExpr("blee", makeGetExpr(lval, [makeLiteralExpr(0, null)], null), [body], null)), "a[0] blee= (1)")
 
 def test_augAssignExpr(assert):
     def lval := makeNounExpr("a", null)
     def body := makeLiteralExpr(1, null)
-    def expr := makeAugAssignExpr("add", lval, body, null)
-    assert.equal(expr._uncall(), [makeAugAssignExpr, "run", ["add", lval, body, null]])
+    def expr := makeAugAssignExpr("+", lval, body, null)
+    assert.equal(expr._uncall(), [makeAugAssignExpr, "run", ["+", lval, body, null]])
     assert.equal(M.toString(expr), "a += 1")
     assert.equal(expr.asTerm(), term`AugAssignExpr("add", NounExpr("a"), LiteralExpr(1))`)
-    assert.equal(M.toString(makeAugAssignExpr("shiftRight", makeMethodCallExpr(lval, "get", [makeLiteralExpr(0, null)], null), body, null)), "a[0] >>= 1")
+    assert.equal(M.toString(makeAugAssignExpr(">>", makeGetExpr(lval, [makeLiteralExpr(0, null)], null), body, null)), "a[0] >>= 1")
 
 def test_ifExpr(assert):
     def [test, consq, alt] := [makeNounExpr(n, null) for n in ["a", "b", "c"]]
@@ -1113,12 +1369,15 @@ def test_viaPattern(assert):
     assert.equal(M.toString(patt), "via (b) a")
     assert.equal(patt.asTerm(), term`ViaPattern(NounExpr("b"), FinalPattern(NounExpr("a"), null))`)
 
-unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr, test_slotExpr,
-          test_metaContextExpr, test_metaStateExpr, test_seqExpr, test_module,
-          test_defExpr, test_methodCallExpr, test_assignExpr, test_verbAssignExpr,
-          test_augAssignExpr, test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
-          test_escapeExpr, test_hideExpr, test_objectExpr,
-          test_valueHoleExpr, test_patternHoleExpr,
+unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
+          test_slotExpr, test_metaContextExpr, test_metaStateExpr,
+          test_seqExpr, test_module, test_defExpr, test_methodCallExpr,
+          test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
+          test_andExpr, test_orExpr, test_matchBindExpr, test_binaryExpr,
+          test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
+          test_escapeExpr, test_hideExpr, test_objectExpr, test_forwardExpr,
+          test_valueHoleExpr, test_patternHoleExpr, test_getExpr,
+          test_prefixExpr, test_coerceExpr, test_curryExpr, test_exitExpr,
           test_finalPattern, test_ignorePattern, test_varPattern,
           test_listPattern, test_bindingPattern, test_viaPattern,
           test_valueHolePattern, test_patternHolePattern])
