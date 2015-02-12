@@ -319,7 +319,7 @@ def makeMethodCallExpr(rcvr, verb, arglist, span):
             return rcvr
         to getVerb():
             return verb
-        to getArglist():
+        to getArgs():
             return arglist
         to subPrintOn(out, priority):
             if (priorities["call"] < priority):
@@ -336,6 +336,24 @@ def makeMethodCallExpr(rcvr, verb, arglist, span):
     return astWrapper(methodCallExpr, makeMethodCallExpr,
         [rcvr, verb, arglist], span, scope, term`MethodCallExpr`,
         fn f {[rcvr.transform(f), verb, [a.transform(f) for a in arglist]]})
+
+def makeFunCallExpr(receiver, args, span):
+    def scope := union([a.getStaticScope() for a in args],
+                       receiver.getStaticScope())
+    object funCallExpr:
+        to getReceiver():
+            return receiver
+        to getArgs():
+            return args
+        to subPrintOn(out, priority):
+            if (priorities["call"] < priority):
+                out.print("(")
+            receiver.subPrintOn(out, priorities["call"])
+            printListOn("(", args, ", ", ")", out, priorities["braceExpr"])
+            if (priorities["call"] < priority):
+                out.print(")")
+    return astWrapper(funCallExpr, makeFunCallExpr, [receiver, args], span,
+        scope, term`FunCallExpr`, fn f {[receiver.transform(f), [a.transform(f) for a in args]]})
 
 def makeGetExpr(receiver, indices, span):
     def scope := union([i.getStaticScope() for i in indices], receiver.getStaticScope())
@@ -426,6 +444,35 @@ def makeBinaryExpr(left, op, right, span):
                 out.print(")")
     return astWrapper(binaryExpr, makeBinaryExpr, [left, op, right], span,
         scope, term`BinaryExpr`, fn f {[left.transform(f), op, right.transform(f)]})
+
+def comparatorsToName := [
+    ">" => "greaterThan", "<" => "lessThan",
+    ">=" => "geq", "<=" => "leq",
+    "<=>" => "asBigAs"]
+
+def makeCompareExpr(left, op, right, span):
+    def scope := left.getStaticScope() + right.getStaticScope()
+    object compareExpr:
+        to getLeft():
+            return left
+        to getOp():
+            return op
+        to getOpName():
+            return comparatorsToName[op]
+        to getRight():
+            return right
+        to subPrintOn(out, priority):
+            if (priorities["comp"] < priority):
+                out.print("(")
+            left.subPrintOn(out, priorities["comp"])
+            out.print(" ")
+            out.print(op)
+            out.print(" ")
+            right.subPrintOn(out, priorities["comp"])
+            if (priorities["comp"] < priority):
+                out.print(")")
+    return astWrapper(compareExpr, makeCompareExpr, [left, op, right], span,
+        scope, term`CompareExpr`, fn f {[left.transform(f), op, right.transform(f)]})
 
 def makeMatchBindExpr(specimen, pattern, span):
     def scope := specimen.getStaticScope() + pattern.getStaticScope()
@@ -1104,6 +1151,22 @@ def test_methodCallExpr(assert):
          [makeNounExpr("b", null)], null)),
              "a.\"+\"(b)")
 
+def test_funCallExpr(assert):
+    def args := [makeLiteralExpr(1, null), makeLiteralExpr("two", null)]
+    def receiver := makeNounExpr("foo", null)
+    def expr := makeFunCallExpr(receiver, args, null)
+    assert.equal(expr._uncall(), [makeFunCallExpr, "run", [receiver, args, null]])
+    assert.equal(M.toString(expr), "foo(1, \"two\")")
+    assert.equal(expr.asTerm(), term`FunCallExpr(NounExpr("foo"), [LiteralExpr(1), LiteralExpr("two")])`)
+
+def test_compareExpr(assert):
+    def [left, right] := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeCompareExpr(left, ">=", right, null)
+    assert.equal(expr._uncall(), [makeCompareExpr, "run", [left, ">=", right, null]])
+    assert.equal(M.toString(expr), "a >= b")
+    assert.equal(expr.asTerm(), term`CompareExpr(NounExpr("a"), ">=", NounExpr("b"))`)
+
+
 def test_getExpr(assert):
     def body := makeNounExpr("a", null)
     def indices := [makeNounExpr("b", null), makeNounExpr("c", null)]
@@ -1372,6 +1435,7 @@ def test_viaPattern(assert):
 unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_slotExpr, test_metaContextExpr, test_metaStateExpr,
           test_seqExpr, test_module, test_defExpr, test_methodCallExpr,
+          test_funCallExpr, test_compareExpr,
           test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
           test_andExpr, test_orExpr, test_matchBindExpr, test_binaryExpr,
           test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
