@@ -795,6 +795,48 @@ def makeScript(extend, methods, matchers, span):
     return astWrapper(script, makeScript, [extend, methods, matchers], span,
         scope, term`Script`, fn f {[if (extend == null) {null} else {extend.transform(f)}, [m.transform(f) for m in methods], [m.transform(f) for m in matchers]]})
 
+def makeListExpr(items, span):
+    def scope := union([i.getStaticScope() for i in items], emptyScope)
+    object listExpr:
+        to getItems():
+            return items
+        to subPrintOn(out, priority):
+            printListOn("[", items, ", ", "]", out, priorities["braceExpr"])
+    return astWrapper(listExpr, makeListExpr, [items], span,
+        scope, term`ListExpr`, fn f {[[i.transform(f) for i in items]})
+
+def makeListComprehensionExpr(iterable, filter, key, value, body, span):
+    def scope := coll.getStaticScope() + (key.getStaticScope() + if (value == null) {emptyScope} else {value.getStaticScope()} + if (filter == null) {emptyScope} else {filter.getStaticScope()} + body.getStaticScope()).hide()
+    object listComprehensionExpr:
+        to getKey():
+            return key
+        to getValue():
+            return value
+        to getIterable():
+            return iterable
+        to getFilter():
+            return filter
+        to getBody():
+            return body
+        to subPrintOn(out, priority):
+            out.print("[for ")
+            key.subPrintOn(out, priorities["pattern"])
+            if (value != null):
+                out.print(" => ")
+                value.subPrintOn(out, priorities["pattern"])
+            out.print(" in ")
+            iterable.subPrintOn(out, priorities["call"])
+            out.print(" ")
+            if (filter != null):
+                out.print("if (")
+                filter.subPrintOn(out, priorities["braceExpr"])
+                out.print(")")
+            out.print(": ")
+            body.subPrintOn(out, priorities["braceExpr"])
+            out.print("]")
+    return astWrapper(listComprehensionExpr, makeListComprehensionExpr, [iterable, filter, key, value, body], span,
+        scope, term`ListComprehensionExpr`, fn f {[iterable.transform(f), if (filter == null) {null} else {filter.transform(f)}, key.transform(f), if (value == null) {null} else {value.transform(f)}, body.transform(f)]})
+
 def makeObjectExpr(docstring, name, asExpr, auditors, script, span):
     def scope := name.getStaticScope() + union([a.getStaticScope() for a in auditors], if (asExpr == null) {emptyScope} else {asExpr.getStaticScope()}).hide() + script.getStaticScope()
     object ObjectExpr:
@@ -1336,6 +1378,23 @@ def test_hideExpr(assert):
     assert.equal(M.toString(expr), "{\n    a\n}")
     assert.equal(expr.asTerm(), term`HideExpr(NounExpr("a"))`)
 
+def test_listExpr(assert):
+    def items := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeListExpr(items, null)
+    assert.equal(expr._uncall(), [makeListExpr, "run", [items, null]])
+    assert.equal(M.toString(expr), "[a, b]")
+    assert.equal(expr.asTerm(), term`ListExpr([NounExpr("a"), NounExpr("b")])`)
+
+def test_listComprehensionExpr(assert):
+    def iterable  := makeNounExpr("a", null)
+    def filter  := makeNounExpr("b", null)
+    def [k, v] := [makeFinalPattern(makeNounExpr("k", null)), makeFinalPattern(makeNounExpr("v", null))]
+    def body  := makeNounExpr("c", null)
+    def expr := makeListComprehensionExpr(iterable, k, v, filter, body, null)
+    assert.equal(expr._uncall(), [makeListComprehensionExpr, "run", [iterable, k, v, filter, body, null]])
+    assert.equal(M.toString(expr), "[for k => v in a if (b): c]")
+    assert.equal(expr.asTerm(), term`ListComprehensionExpr(NounExpr("a"), NounExpr("b"), FinalPattern(NounExpr("a")), FinalPattern(NounExpr("b")), NounExpr("c"))`)
+
 def test_objectExpr(assert):
     def objName := makeFinalPattern(makeNounExpr("a", null), null, null)
     def asExpr := makeNounExpr("x", null)
@@ -1435,7 +1494,7 @@ def test_viaPattern(assert):
 unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_slotExpr, test_metaContextExpr, test_metaStateExpr,
           test_seqExpr, test_module, test_defExpr, test_methodCallExpr,
-          test_funCallExpr, test_compareExpr,
+          test_funCallExpr, test_compareExpr, test_listExpr, test_listComprehensionExpr,
           test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
           test_andExpr, test_orExpr, test_matchBindExpr, test_binaryExpr,
           test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
