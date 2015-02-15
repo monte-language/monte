@@ -803,10 +803,10 @@ def makeListExpr(items, span):
         to subPrintOn(out, priority):
             printListOn("[", items, ", ", "]", out, priorities["braceExpr"])
     return astWrapper(listExpr, makeListExpr, [items], span,
-        scope, term`ListExpr`, fn f {[[i.transform(f) for i in items]})
+        scope, term`ListExpr`, fn f {[[i.transform(f) for i in items]]})
 
 def makeListComprehensionExpr(iterable, filter, key, value, body, span):
-    def scope := coll.getStaticScope() + (key.getStaticScope() + if (value == null) {emptyScope} else {value.getStaticScope()} + if (filter == null) {emptyScope} else {filter.getStaticScope()} + body.getStaticScope()).hide()
+    def scope := iterable.getStaticScope() + (key.getStaticScope() + if (value == null) {emptyScope} else {value.getStaticScope()} + if (filter == null) {emptyScope} else {filter.getStaticScope()} + body.getStaticScope()).hide()
     object listComprehensionExpr:
         to getKey():
             return key
@@ -824,18 +824,87 @@ def makeListComprehensionExpr(iterable, filter, key, value, body, span):
             if (value != null):
                 out.print(" => ")
                 value.subPrintOn(out, priorities["pattern"])
-            out.print(" in ")
-            iterable.subPrintOn(out, priorities["call"])
-            out.print(" ")
+            out.print(" in (")
+            iterable.subPrintOn(out, priorities["braceExpr"])
+            out.print(") ")
             if (filter != null):
                 out.print("if (")
                 filter.subPrintOn(out, priorities["braceExpr"])
-                out.print(")")
-            out.print(": ")
+                out.print(") ")
             body.subPrintOn(out, priorities["braceExpr"])
             out.print("]")
     return astWrapper(listComprehensionExpr, makeListComprehensionExpr, [iterable, filter, key, value, body], span,
         scope, term`ListComprehensionExpr`, fn f {[iterable.transform(f), if (filter == null) {null} else {filter.transform(f)}, key.transform(f), if (value == null) {null} else {value.transform(f)}, body.transform(f)]})
+
+def makeMapExprAssoc(key, value, span):
+    def scope := key.getStaticScope() + value.getStaticScope()
+    object mapExprAssoc:
+        to getKey():
+            return key
+        to getValue():
+            return value
+        to subPrintOn(out, priority):
+            key.subPrintOn(out, priorities["braceExpr"])
+            out.print(" => ")
+            value.subPrintOn(out, priorities["braceExpr"])
+    return astWrapper(mapExprAssoc, makeMapExprAssoc, [key, value], span,
+        scope, term`MapExprAssoc`, fn f {[key.transform(f), value.transform(f)]})
+
+def makeMapExprExport(value, span):
+    def scope := value.getStaticScope()
+    object mapExprExport:
+        to getValue():
+            return value
+        to subPrintOn(out, priority):
+            out.print("=> ")
+            value.subPrintOn(out, priorities["prim"])
+    return astWrapper(mapExprExport, makeMapExprExport, [value], span,
+        scope, term`MapExprExport`, fn f {[value.transform(f)]})
+
+def makeMapExpr(pairs ? (pairs.size() > 0), span):
+    def scope := union([p.getStaticScope() for p in pairs], emptyScope)
+    object mapExpr:
+        to getPairs():
+            return pairs
+        to subPrintOn(out, priority):
+            printListOn("[", pairs, ", ", "]", out, priorities["braceExpr"])
+    return astWrapper(mapExpr, makeMapExpr, [pairs], span,
+        scope, term`MapExpr`, fn f {[[p.transform(f) for p in pairs]]})
+
+def makeMapComprehensionExpr(iterable, filter, key, value, bodyk, bodyv, span):
+    def scope := iterable.getStaticScope() + (key.getStaticScope() + if (value == null) {emptyScope} else {value.getStaticScope()} + if (filter == null) {emptyScope} else {filter.getStaticScope()} + bodyk.getStaticScope() + bodyv.getStaticScope()).hide()
+    object mapComprehensionExpr:
+        to getIterable():
+            return iterable
+        to getFilter():
+            return filter
+        to getKey():
+            return key
+        to getValue():
+            return value
+        to getBodyKey():
+            return bodyk
+        to getBodyValue():
+            return bodyv
+        to subPrintOn(out, priority):
+            out.print("[for ")
+            key.subPrintOn(out, priorities["pattern"])
+            if (value != null):
+                out.print(" => ")
+                value.subPrintOn(out, priorities["pattern"])
+            out.print(" in (")
+            iterable.subPrintOn(out, priorities["braceExpr"])
+            out.print(") ")
+            if (filter != null):
+                out.print("if (")
+                filter.subPrintOn(out, priorities["braceExpr"])
+                out.print(") ")
+            bodyk.subPrintOn(out, priorities["braceExpr"])
+            out.print(" => ")
+            bodyv.subPrintOn(out, priorities["braceExpr"])
+            out.print("]")
+    return astWrapper(mapComprehensionExpr, makeMapComprehensionExpr, [iterable, filter, key, value, bodyk, bodyv], span,
+        scope, term`MapComprehensionExpr`, fn f {[iterable.transform(f), if (filter == null) {null} else {filter.transform(f)}, if (key == null) {null} else {key.transform(f)}, value.transform(f), bodyk.transform(f), bodyv.transform(f)]})
 
 def makeObjectExpr(docstring, name, asExpr, auditors, script, span):
     def scope := name.getStaticScope() + union([a.getStaticScope() for a in auditors], if (asExpr == null) {emptyScope} else {asExpr.getStaticScope()}).hide() + script.getStaticScope()
@@ -1388,12 +1457,38 @@ def test_listExpr(assert):
 def test_listComprehensionExpr(assert):
     def iterable  := makeNounExpr("a", null)
     def filter  := makeNounExpr("b", null)
-    def [k, v] := [makeFinalPattern(makeNounExpr("k", null)), makeFinalPattern(makeNounExpr("v", null))]
+    def [k, v] := [makeFinalPattern(makeNounExpr("k", null), null, null), makeFinalPattern(makeNounExpr("v", null), null, null)]
     def body  := makeNounExpr("c", null)
-    def expr := makeListComprehensionExpr(iterable, k, v, filter, body, null)
-    assert.equal(expr._uncall(), [makeListComprehensionExpr, "run", [iterable, k, v, filter, body, null]])
-    assert.equal(M.toString(expr), "[for k => v in a if (b): c]")
+    def expr := makeListComprehensionExpr(iterable, filter, k, v, body, null)
+    assert.equal(expr._uncall(), [makeListComprehensionExpr, "run", [iterable, filter, k, v, body, null]])
+    assert.equal(M.toString(expr), "[for k => v in (a) if (b) c]")
+    assert.equal(M.toString(makeListComprehensionExpr(iterable, null, v, null, body, null)),
+                 "[for v in (a) c]")
     assert.equal(expr.asTerm(), term`ListComprehensionExpr(NounExpr("a"), NounExpr("b"), FinalPattern(NounExpr("a")), FinalPattern(NounExpr("b")), NounExpr("c"))`)
+
+def test_mapExpr(assert):
+    def k := makeNounExpr("k", null)
+    def v := makeNounExpr("v", null)
+    def exprt := makeNounExpr("a", null)
+    def pair1 := makeMapExprAssoc(k, v, null)
+    def pair2 := makeMapExprExport(exprt, null)
+    def expr := makeMapExpr([pair1, pair2], null)
+    assert.equal(expr._uncall(), [makeMapExpr, "run", [[pair1, pair2], null]])
+    assert.equal(M.toString(expr), "[k => v, => a]")
+    assert.equal(expr.asTerm(), term`MapExpr([MapExprAssoc(NounExpr("k"), NounExpr("v")), MapExprExport(NounExpr("a"))])`)
+
+def test_mapComprehensionExpr(assert):
+    def iterable  := makeNounExpr("a", null)
+    def filter  := makeNounExpr("b", null)
+    def [k, v] := [makeFinalPattern(makeNounExpr("k", null), null, null), makeFinalPattern(makeNounExpr("v", null), null, null)]
+    def bodyk := makeNounExpr("k1", null)
+    def bodyv := makeNounExpr("v1", null)
+    def expr := makeMapComprehensionExpr(iterable, filter, k, v, bodyk, bodyv, null)
+    assert.equal(expr._uncall(), [makeMapComprehensionExpr, "run", [iterable, filter, k, v, bodyk,  bodyv, null]])
+    assert.equal(M.toString(expr), "[for k => v in (a) if (b) k1 => v1]")
+    assert.equal(expr.asTerm(), term`MapComprehensionExpr(NounExpr("a"), NounExpr("b"), FinalPattern(NounExpr("k")), FinalPattern(NounExpr("v")), NounExpr("k1"), NounExpr("v1"))`)
+    assert.equal(M.toString(makeMapComprehensionExpr(iterable, null, v, null, bodyk, bodyv, null)),
+                 "[for v in (a) k1 => v1]")
 
 def test_objectExpr(assert):
     def objName := makeFinalPattern(makeNounExpr("a", null), null, null)
@@ -1494,7 +1589,8 @@ def test_viaPattern(assert):
 unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_slotExpr, test_metaContextExpr, test_metaStateExpr,
           test_seqExpr, test_module, test_defExpr, test_methodCallExpr,
-          test_funCallExpr, test_compareExpr, test_listExpr, test_listComprehensionExpr,
+          test_funCallExpr, test_compareExpr, test_listExpr,
+          test_listComprehensionExpr, test_mapExpr, test_mapComprehensionExpr,
           test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
           test_andExpr, test_orExpr, test_matchBindExpr, test_binaryExpr,
           test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
@@ -1503,4 +1599,5 @@ unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_prefixExpr, test_coerceExpr, test_curryExpr, test_exitExpr,
           test_finalPattern, test_ignorePattern, test_varPattern,
           test_listPattern, test_bindingPattern, test_viaPattern,
-          test_valueHolePattern, test_patternHolePattern])
+          test_valueHolePattern, test_patternHolePattern
+              ])
