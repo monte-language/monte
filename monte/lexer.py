@@ -916,7 +916,7 @@ class MonteLexer(object):
                 '\n': None
                 }.get(nex, -1)
             if c == -1:
-                self.syntaxError("Unrecognized escaped character")
+                self.syntaxError("Unrecognized escaped character " + repr(nex))
             else:
                 self.nextChar()
                 return c

@@ -6,7 +6,7 @@ def MONTE_KEYWORDS := [
 "exit", "extends", "export", "finally", "fn", "for", "guards", "if",
 "implements", "in", "interface", "match", "meta", "method", "module",
 "object", "pass", "pragma", "return", "switch", "to", "try", "var",
-"via", "when", "while"]
+"via", "when", "while", "_"]
 
 def idStart := 'a'..'z' | 'A'..'Z' | '_'..'_'
 def idPart := idStart | '0'..'9'
@@ -160,6 +160,8 @@ def printSuiteOn(leaderFn, suite, cuddle, out, priority):
         suite.subPrintOn(indentOut, priorities["indentExpr"])
 
 def printDocstringOn(docstring, out):
+    if (docstring == null):
+        return
     def indentOut := out.indent(INDENT)
     indentOut.println("/**")
     def lines := docstring.split("\n")
@@ -355,6 +357,50 @@ def makeFunCallExpr(receiver, args, span):
     return astWrapper(funCallExpr, makeFunCallExpr, [receiver, args], span,
         scope, term`FunCallExpr`, fn f {[receiver.transform(f), [a.transform(f) for a in args]]})
 
+def makeSendExpr(rcvr, verb, arglist, span):
+    def scope := union([a.getStaticScope() for a in arglist],
+                       rcvr.getStaticScope())
+    object sendExpr:
+        to getReceiver():
+            return rcvr
+        to getVerb():
+            return verb
+        to getArgs():
+            return arglist
+        to subPrintOn(out, priority):
+            if (priorities["call"] < priority):
+                out.print("(")
+            rcvr.subPrintOn(out, priorities["call"])
+            out.print(" <- ")
+            if (isIdentifier(verb)):
+                out.print(verb)
+            else:
+                out.quote(verb)
+            printListOn("(", arglist, ", ", ")", out, priorities["braceExpr"])
+            if (priorities["call"] < priority):
+                out.print(")")
+    return astWrapper(sendExpr, makeSendExpr,
+        [rcvr, verb, arglist], span, scope, term`SendExpr`,
+        fn f {[rcvr.transform(f), verb, [a.transform(f) for a in arglist]]})
+
+def makeFunSendExpr(receiver, args, span):
+    def scope := union([a.getStaticScope() for a in args],
+                       receiver.getStaticScope())
+    object funSendExpr:
+        to getReceiver():
+            return receiver
+        to getArgs():
+            return args
+        to subPrintOn(out, priority):
+            if (priorities["call"] < priority):
+                out.print("(")
+            receiver.subPrintOn(out, priorities["call"])
+            printListOn(" <- (", args, ", ", ")", out, priorities["braceExpr"])
+            if (priorities["call"] < priority):
+                out.print(")")
+    return astWrapper(funSendExpr, makeFunSendExpr, [receiver, args], span,
+        scope, term`FunSendExpr`, fn f {[receiver.transform(f), [a.transform(f) for a in args]]})
+
 def makeGetExpr(receiver, indices, span):
     def scope := union([i.getStaticScope() for i in indices], receiver.getStaticScope())
     object getExpr:
@@ -491,6 +537,24 @@ def makeMatchBindExpr(specimen, pattern, span):
                 out.print(")")
     return astWrapper(matchBindExpr, makeMatchBindExpr, [specimen, pattern], span,
         scope, term`MatchBindExpr`, fn f {[specimen.transform(f), pattern.transform(f)]})
+
+def makeMismatchExpr(specimen, pattern, span):
+    def scope := specimen.getStaticScope() + pattern.getStaticScope()
+    object mismatchExpr:
+        to getSpecimen():
+            return specimen
+        to getPattern():
+            return pattern
+        to subPrintOn(out, priority):
+            if (priorities["call"] < priority):
+                out.print("(")
+            specimen.subPrintOn(out, priorities["call"])
+            out.print(" !~ ")
+            pattern.subPrintOn(out, priorities["pattern"])
+            if (priorities["call"] < priority):
+                out.print(")")
+    return astWrapper(mismatchExpr, makeMismatchExpr, [specimen, pattern], span,
+        scope, term`MismatchExpr`, fn f {[specimen.transform(f), pattern.transform(f)]})
 
 def unaryOperatorsToName := ["~" => "complement", "!" => "not", "-" => "negate"]
 
@@ -795,17 +859,22 @@ def makeScript(extend, methods, matchers, span):
     return astWrapper(script, makeScript, [extend, methods, matchers], span,
         scope, term`Script`, fn f {[if (extend == null) {null} else {extend.transform(f)}, [m.transform(f) for m in methods], [m.transform(f) for m in matchers]]})
 
-def makeFunctionScript(patterns, body, span):
-    def scope := (union([p.getStaticScope() for p in patterns], emptyScope) + body.getStaticScope()).hide()
+def makeFunctionScript(patterns, resultGuard, body, span):
+    def scope := (union([p.getStaticScope() for p in patterns], emptyScope) + if (resultGuard == null) {emptyScope} else {resultGuard.getStaticScope()} + body.getStaticScope()).hide()
     object functionScript:
         to getPatterns():
             return patterns
+        to getResultGuard():
+            return resultGuard
         to getBody():
             return body
         to printObjectHeadOn(name, asExpr, auditors, out, priority):
             out.print("def ")
             name.subPrintOn(out, priorities["pattern"])
             printListOn("(", patterns, ", ", ")", out, priorities["pattern"])
+            if (resultGuard != null):
+                out.print(" :")
+                resultGuard.subPrintOn(out, priorities["call"])
             if (asExpr != null):
                 out.print(" as ")
                 asExpr.subPrintOn(out, priorities["call"])
@@ -814,8 +883,22 @@ def makeFunctionScript(patterns, body, span):
         to subPrintOn(out, priority):
             body.subPrintOn(out, priority)
             out.print("\n")
-    return astWrapper(functionScript, makeFunctionScript, [patterns, body], span,
-        scope, term`FunctionScript`, fn f {[[p.transform(f) for p in patterns], body.transform(f)]})
+    return astWrapper(functionScript, makeFunctionScript, [patterns, resultGuard, body], span,
+        scope, term`FunctionScript`, fn f {[[p.transform(f) for p in patterns], if (resultGuard == null) {null} else {resultGuard.transform(f)}, body.transform(f)]})
+
+def makeFunctionExpr(patterns, body, span):
+    def scope := (union([p.getStaticScope() for p in patterns], emptyScope) + body.getStaticScope()).hide()
+    object functionExpr:
+        to getPatterns():
+            return patterns
+        to getBody():
+            return body
+        to subPrintOn(out, priority):
+            printSuiteOn(fn {
+                printListOn("fn ", patterns, ", ", "", out, priorities["pattern"])
+            }, body, false, out, priority)
+    return astWrapper(functionExpr, makeFunctionExpr, [patterns, body], span,
+        scope, term`FunctionExpr`, fn f {[[p.transform(f) for p in patterns], body]})
 
 def makeListExpr(items, span):
     def scope := union([i.getStaticScope() for i in items], emptyScope)
@@ -973,6 +1056,93 @@ def makeObjectExpr(docstring, name, asExpr, auditors, script, span):
             }, script, false, out, priority)
     return astWrapper(ObjectExpr, makeObjectExpr, [docstring, name, asExpr, auditors, script], span,
         scope, term`ObjectExpr`, fn f {[docstring, name.transform(f), if (asExpr == null) {null} else {asExpr.transform(f)}, [a.transform(f) for a in auditors], script.transform(f)]})
+
+def makeParamDesc(name, guard, span):
+    def scope := if (guard == null) {emptyScope} else {guard.getStaticScope()}
+    object paramDesc:
+        to getName():
+            return name
+        to getGuard():
+            return guard
+        to subPrintOn(out, priority):
+            if (name == null):
+                out.print("_")
+            else:
+                out.print(name)
+            if (guard != null):
+                out.print(" :")
+                guard.subPrintOn(out, priorities["call"])
+    return astWrapper(paramDesc, makeParamDesc, [name, guard], span,
+        scope, term`ParamDesc`, fn f {[name, if (guard == null) {null} else {guard.transform(f)}]})
+
+def makeMessageDesc(docstring, verb, params, resultGuard, span):
+    def scope := union([p.getStaticScope() for p in params], emptyScope) + if (resultGuard == null) {emptyScope} else {resultGuard.getStaticScope()}
+    object messageDesc:
+        to getDocstring():
+            return docstring
+        to getVerb():
+            return verb
+        to getParams():
+            return params
+        to getResultGuard():
+            return resultGuard
+        to subPrintOn(out, priority):
+            if (docstring != null):
+                printDocstringOn(docstring, out)
+            else:
+                out.println("")
+            out.print("to ")
+            if (isIdentifier(verb)):
+                out.print(verb)
+            else:
+                out.quote(verb)
+            printListOn("(", params, ", ", ")", out, priorities["pattern"])
+            if (resultGuard != null):
+                out.print(" :")
+                resultGuard.subPrintOn(out, priorities["call"])
+    return astWrapper(messageDesc, makeMessageDesc, [docstring, verb, params, resultGuard], span,
+        scope, term`MessageDesc`, fn f {[docstring, verb, [p.transform(f) for p in params], if (resultGuard == null) {null} else {resultGuard.transform(f)}]})
+
+
+def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span):
+    def scope := union([p.getStaticScope() for p in parents], makeStaticScope([], [], [name], [], false)) + if (stamp == null) {emptyScope} else {stamp.getStaticScope()} + union([a.getStaticScope() for a in auditors], emptyScope) + union([m.getStaticScope() for m in messages], emptyScope)
+    object interfaceExpr:
+        to getDocstring():
+            return docstring
+        to getName():
+            return name
+        to getStamp():
+            return stamp
+        to getParents():
+            return parents
+        to getAuditors():
+            return auditors
+        to getMessages():
+            return messages
+        to subPrintOn(out, priority):
+            printDocstringOn(docstring, out)
+            out.print("interface ")
+            out.print(name)
+            if (stamp != null):
+                out.print(" guards ")
+                stamp.subPrintOn(out, priorities["pattern"])
+            if (parents.size() > 0):
+                printListOn(" extends ", parents, ", ", "", out, priorities["call"])
+            if (auditors.size() > 0):
+                printListOn(" implements ", auditors, ", ", "", out, priorities["call"])
+            def indentOut := out.indent(INDENT)
+            if (priorities["braceExpr"] < priority):
+                indentOut.println(" {")
+            else:
+                indentOut.println(":")
+            for m in messages:
+                m.subPrintOn(indentOut, priority)
+                indentOut.print("\n")
+            if (priorities["braceExpr"] < priority):
+                out.print("}")
+
+    return astWrapper(interfaceExpr, makeInterfaceExpr, [docstring, name, stamp, parents, auditors, messages], span,
+        scope, term`InterfaceExpr`, fn f {[docstring, name, if (stamp == null) {null} else {stamp.transform(f)}, [p.transform(f) for p in parents], [a.transform(f) for a in auditors], [m.transform(f) for m in messages]]})
 
 def makeCatchExpr(body, pattern, catcher, span):
     def scope := body.getStaticScope().hide() + (pattern.getStaticScope() + catcher.getStaticScope()).hide()
@@ -1317,6 +1487,29 @@ def test_funCallExpr(assert):
     assert.equal(M.toString(expr), "foo(1, \"two\")")
     assert.equal(expr.asTerm(), term`FunCallExpr(NounExpr("foo"), [LiteralExpr(1), LiteralExpr("two")])`)
 
+def test_sendExpr(assert):
+    def args := [makeLiteralExpr(1, null), makeLiteralExpr("two", null)]
+    def receiver := makeNounExpr("foo", null)
+    def expr := makeSendExpr(receiver, "doStuff",
+         args, null)
+    assert.equal(expr._uncall(), [makeSendExpr, "run", [receiver, "doStuff", args, null]])
+    assert.equal(M.toString(expr), "foo <- doStuff(1, \"two\")")
+    assert.equal(expr.asTerm(), term`SendExpr(NounExpr("foo"), "doStuff", [LiteralExpr(1), LiteralExpr("two")])`)
+    def fcall := makeSendExpr(makeNounExpr("foo", null), "run",
+         [makeNounExpr("a", null)], null)
+    assert.equal(M.toString(fcall), "foo <- run(a)")
+    assert.equal(M.toString(makeSendExpr(makeNounExpr("a", null), "+",
+         [makeNounExpr("b", null)], null)),
+             "a <- \"+\"(b)")
+
+def test_funSendExpr(assert):
+    def args := [makeLiteralExpr(1, null), makeLiteralExpr("two", null)]
+    def receiver := makeNounExpr("foo", null)
+    def expr := makeFunSendExpr(receiver, args, null)
+    assert.equal(expr._uncall(), [makeFunSendExpr, "run", [receiver, args, null]])
+    assert.equal(M.toString(expr), "foo <- (1, \"two\")")
+    assert.equal(expr.asTerm(), term`FunSendExpr(NounExpr("foo"), [LiteralExpr(1), LiteralExpr("two")])`)
+
 def test_compareExpr(assert):
     def [left, right] := [makeNounExpr("a", null), makeNounExpr("b", null)]
     def expr := makeCompareExpr(left, ">=", right, null)
@@ -1352,6 +1545,13 @@ def test_matchBindExpr(assert):
     assert.equal(expr._uncall(), [makeMatchBindExpr, "run", [spec, patt, null]])
     assert.equal(M.toString(expr), "a =~ b")
     assert.equal(expr.asTerm(), term`MatchBindExpr(NounExpr("a"), FinalPattern(NounExpr("b"), null))`)
+
+def test_mismatchExpr(assert):
+    def [spec, patt] := [makeNounExpr("a", null), makeFinalPattern(makeNounExpr("b", null), null, null)]
+    def expr := makeMismatchExpr(spec, patt, null)
+    assert.equal(expr._uncall(), [makeMismatchExpr, "run", [spec, patt, null]])
+    assert.equal(M.toString(expr), "a !~ b")
+    assert.equal(expr.asTerm(), term`MismatchExpr(NounExpr("a"), FinalPattern(NounExpr("b"), null))`)
 
 def test_binaryExpr(assert):
     def [left, right] := [makeNounExpr("a", null), makeNounExpr("b", null)]
@@ -1511,7 +1711,7 @@ def test_listComprehensionExpr(assert):
     assert.equal(M.toString(expr), "[for k => v in (a) if (b) c]")
     assert.equal(M.toString(makeListComprehensionExpr(iterable, null, null, v, body, null)),
                  "[for v in (a) c]")
-    assert.equal(expr.asTerm(), term`ListComprehensionExpr(NounExpr("a"), NounExpr("b"), FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null), NounExpr("c"))`)
+    assert.equal(expr.asTerm(), term`ListComprehensionExpr(NounExpr("a"), NounExpr("b"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), NounExpr("c"))`)
 
 def test_mapExpr(assert):
     def k := makeNounExpr("k", null)
@@ -1580,12 +1780,40 @@ def test_functionScript(assert):
     def auditors := [makeNounExpr("b", null), makeNounExpr("c", null)]
     def patterns := [makeFinalPattern(makeNounExpr("d", null), null, null),
                      makeFinalPattern(makeNounExpr("e", null), null, null)]
+    def guard := makeNounExpr("g", null)
     def body := makeNounExpr("f", null)
-    def funBody := makeFunctionScript(patterns, body, null)
+    def funBody := makeFunctionScript(patterns, guard, body, null)
     def expr := makeObjectExpr("bloo", funName, asExpr, auditors, funBody, null)
-    assert.equal(funBody._uncall(), [makeFunctionScript, "run", [patterns, body, null]])
-    assert.equal(M.toString(expr), "/**\n    bloo\n*/\ndef a(d, e) as x implements b, c:\n    f\n")
+    assert.equal(funBody._uncall(), [makeFunctionScript, "run", [patterns, guard, body, null]])
+    assert.equal(M.toString(expr), "/**\n    bloo\n*/\ndef a(d, e) :g as x implements b, c:\n    f\n")
     assert.equal(expr.asTerm(), term`ObjectExpr("bloo", FinalPattern(NounExpr("a"), null), NounExpr("x"), [NounExpr("b"), NounExpr("c")], FunctionScript([FinalPattern(NounExpr("d"), null), FinalPattern(NounExpr("e"), null)], NounExpr("f")))`)
+
+def test_functionExpr(assert):
+    def patterns := [makeFinalPattern(makeNounExpr("a", null), null, null),
+                     makeFinalPattern(makeNounExpr("b", null), null, null)]
+    def body := makeNounExpr("c", null)
+    def expr := makeFunctionExpr(patterns, body, null)
+    assert.equal(expr._uncall(), [makeFunctionExpr, "run", [patterns, body, null]])
+    assert.equal(M.toString(expr), "fn a, b:\n    c")
+    assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
+                 "def _ := fn a, b {\n    c\n}")
+
+
+def test_interfaceExpr(assert):
+    def guard := makeNounExpr("B", null)
+    def paramA := makeParamDesc("a", guard, null)
+    def paramC := makeParamDesc("c", null, null)
+    def messageD := makeMessageDesc("foo", "d", [paramA, paramC], guard, null)
+    def messageJ := makeMessageDesc(null, "j", [], null, null)
+    def stamp := makeFinalPattern(makeNounExpr("h", null), null, null)
+    def [e, f] := [makeNounExpr("e", null), makeNounExpr("f", null)]
+    def [ib, ic] := [makeNounExpr("IB", null), makeNounExpr("IC", null)]
+    def expr := makeInterfaceExpr("blee", "IA", stamp, [ib, ic], [e, f], [messageD, messageJ], null)
+    assert.equal(paramA._uncall(), [makeParamDesc, "run", ["a", guard, null]])
+    assert.equal(messageD._uncall(), [makeMessageDesc, "run", ["foo", "d", [paramA, paramC], guard, null]])
+    assert.equal(expr._uncall(), [makeInterfaceExpr, "run", ["blee", "IA", stamp, [ib, ic], [e, f], [messageD, messageJ], null]])
+    assert.equal(M.toString(expr), "/**\n    blee\n*/\ninterface IA guards h extends IB, IC implements e, f:\n    /**\n        foo\n    */\n    to d(a :B, c) :B\n\n    to j()\n")
+    assert.equal(expr.asTerm(), term`InterfaceExpr("blee", "IA", FinalPattern(NounExpr("h"), null), [NounExpr("IB"), NounExpr("IC")], [NounExpr("e"), NounExpr("f")], [MessageDesc("foo", "d", [ParamDesc("a", NounExpr("B")), ParamDesc("c", null)], NounExpr("B")), MessageDesc(null, "j", [], null)])`)
 
 def test_valueHoleExpr(assert):
     def expr := makeValueHoleExpr(2, null)
@@ -1662,9 +1890,10 @@ unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_seqExpr, test_module, test_defExpr, test_methodCallExpr,
           test_funCallExpr, test_compareExpr, test_listExpr,
           test_listComprehensionExpr, test_mapExpr, test_mapComprehensionExpr,
-          test_forExpr, test_functionScript,
+          test_forExpr, test_functionScript, test_functionExpr,
+          test_sendExpr, test_funSendExpr, test_interfaceExpr,
           test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
-          test_andExpr, test_orExpr, test_matchBindExpr, test_binaryExpr,
+          test_andExpr, test_orExpr, test_matchBindExpr, test_mismatchExpr, test_binaryExpr,
           test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
           test_escapeExpr, test_hideExpr, test_objectExpr, test_forwardExpr,
           test_valueHoleExpr, test_patternHoleExpr, test_getExpr,
