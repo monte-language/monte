@@ -520,6 +520,54 @@ def makeCompareExpr(left, op, right, span):
     return astWrapper(compareExpr, makeCompareExpr, [left, op, right], span,
         scope, term`CompareExpr`, fn f {[left.transform(f), op, right.transform(f)]})
 
+def makeRangeExpr(left, op, right, span):
+    def scope := left.getStaticScope() + right.getStaticScope()
+    object rangeExpr:
+        to getLeft():
+            return left
+        to getOp():
+            return op
+        to getOpName():
+            if (op == ".."):
+                return "thru"
+            else if (op == "..!"):
+                return "till"
+        to getRight():
+            return right
+        to subPrintOn(out, priority):
+            if (priorities["interval"] < priority):
+                out.print("(")
+            left.subPrintOn(out, priorities["interval"])
+            out.print(op)
+            right.subPrintOn(out, priorities["interval"])
+            if (priorities["interval"] < priority):
+                out.print(")")
+    return astWrapper(rangeExpr, makeRangeExpr, [left, op, right], span,
+        scope, term`RangeExpr`, fn f {[left.transform(f), op, right.transform(f)]})
+
+def makeSameExpr(left, right, direction, span):
+    def scope := left.getStaticScope() + right.getStaticScope()
+    object sameExpr:
+        to getLeft():
+            return left
+        to getDirection():
+            return direction
+        to getRight():
+            return right
+        to subPrintOn(out, priority):
+            if (priorities["comp"] < priority):
+                out.print("(")
+            left.subPrintOn(out, priorities["comp"])
+            if (direction):
+                out.print(" == ")
+            else:
+                out.print(" != ")
+            right.subPrintOn(out, priorities["comp"])
+            if (priorities["comp"] < priority):
+                out.print(")")
+    return astWrapper(sameExpr, makeSameExpr, [left, right, direction], span,
+        scope, term`SameExpr`, fn f {[left.transform(f), right.transform(f), direction]})
+
 def makeMatchBindExpr(specimen, pattern, span):
     def scope := specimen.getStaticScope() + pattern.getStaticScope()
     object matchBindExpr:
@@ -1400,6 +1448,74 @@ def makeViaPattern(expr, subpattern, span):
     return astWrapper(viaPattern, makeViaPattern, [expr, subpattern], span,
         scope, term`ViaPattern`, fn f {[expr.transform(f), subpattern.transform(f)]})
 
+def makeQuasiText(text, span):
+    def scope := emptyScope
+    object quasiText:
+        to getText():
+            return text
+        to subPrintOn(out, priority):
+            out.print(text)
+    return astWrapper(quasiText, makeQuasiText, [text], span,
+        scope, term`QuasiText`, fn f {[text]})
+
+def makeQuasiExprHole(expr, span):
+    def scope := expr.getStaticScope()
+    object quasiExprHole:
+        to getExpr():
+            return expr
+        to subPrintOn(out, priority):
+            out.print("$")
+            if (priorities["braceExpr"] < priority):
+                if (expr._uncall()[0] == makeNounExpr && isIdentifier(expr.getName())):
+                    expr.subPrintOn(out, priority)
+                    return
+            out.print("{")
+            expr.subPrintOn(out, priorities["braceExpr"])
+            out.print("}")
+    return astWrapper(quasiExprHole, makeQuasiExprHole, [expr], span,
+        scope, term`QuasiExprHole`, fn f {[expr.transform(f)]})
+
+
+def makeQuasiPatternHole(pattern, span):
+    def scope := pattern.getStaticScope()
+    object quasiPatternHole:
+        to getPattern():
+            return pattern
+        to subPrintOn(out, priority):
+            out.print("@")
+            if (priorities["braceExpr"] < priority):
+                if (pattern._uncall()[0] == makeFinalPattern):
+                    if (pattern.getGuard() == null && isIdentifier(pattern.getNoun().getName())):
+                        pattern.subPrintOn(out, priority)
+                        return
+            out.print("{")
+            pattern.subPrintOn(out, priority)
+            out.print("}")
+    return astWrapper(quasiPatternHole, makeQuasiPatternHole, [pattern], span,
+        scope, term`QuasiPatternHole`, fn f {[pattern.transform(f)]})
+
+def makeQuasiParserExpr(name, quasis, span):
+    def scope := union([q.getStaticScope() for q in quasis], emptyScope)
+    object quasiParserExpr:
+        to getQuasis():
+            return quasis
+        to subPrintOn(out, priority):
+            if (name != null):
+                out.print(name)
+            out.print("`")
+            for i => q in quasis:
+                var p := priorities["prim"]
+                if (i + 1 < quasis.size()):
+                    traceln("Non-final quasi")
+                    def next := quasis[i + 1]
+                    traceln(`next._uncall(): ${M.toQuote(next._uncall())}`)
+                    if (next._uncall()[0] == makeQuasiText && idPart(next.getText()[0])):
+                        p := priorities["braceExpr"]
+                q.subPrintOn(out, p)
+            out.print("`")
+    return astWrapper(quasiParserExpr, makeQuasiParserExpr, [name, quasis], span,
+        scope, term`QuasiParserExpr`, fn f {[name, [q.transform(f) for q in quasis]]})
+
 def test_literalExpr(assert):
     def expr := makeLiteralExpr("one", null)
     assert.equal(expr._uncall(), [makeLiteralExpr, "run", ["one", null]])
@@ -1517,6 +1633,20 @@ def test_compareExpr(assert):
     assert.equal(M.toString(expr), "a >= b")
     assert.equal(expr.asTerm(), term`CompareExpr(NounExpr("a"), ">=", NounExpr("b"))`)
 
+def test_rangeExpr(assert):
+    def [left, right] := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeRangeExpr(left, "..!", right, null)
+    assert.equal(expr._uncall(), [makeRangeExpr, "run", [left, "..!", right, null]])
+    assert.equal(M.toString(expr), "a..!b")
+    assert.equal(expr.asTerm(), term`RangeExpr(NounExpr("a"), "..!", NounExpr("b"))`)
+
+def test_sameExpr(assert):
+    def [left, right] := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def expr := makeSameExpr(left, right, true, null)
+    assert.equal(expr._uncall(), [makeSameExpr, "run", [left, right, true, null]])
+    assert.equal(M.toString(expr), "a == b")
+    assert.equal(M.toString(makeSameExpr(left, right, false, null)), "a != b")
+    assert.equal(expr.asTerm(), term`SameExpr(NounExpr("a"), NounExpr("b"), true)`)
 
 def test_getExpr(assert):
     def body := makeNounExpr("a", null)
@@ -1786,7 +1916,7 @@ def test_functionScript(assert):
     def expr := makeObjectExpr("bloo", funName, asExpr, auditors, funBody, null)
     assert.equal(funBody._uncall(), [makeFunctionScript, "run", [patterns, guard, body, null]])
     assert.equal(M.toString(expr), "/**\n    bloo\n*/\ndef a(d, e) :g as x implements b, c:\n    f\n")
-    assert.equal(expr.asTerm(), term`ObjectExpr("bloo", FinalPattern(NounExpr("a"), null), NounExpr("x"), [NounExpr("b"), NounExpr("c")], FunctionScript([FinalPattern(NounExpr("d"), null), FinalPattern(NounExpr("e"), null)], NounExpr("f")))`)
+    assert.equal(expr.asTerm(), term`ObjectExpr("bloo", FinalPattern(NounExpr("a"), null), NounExpr("x"), [NounExpr("b"), NounExpr("c")], FunctionScript([FinalPattern(NounExpr("d"), null), FinalPattern(NounExpr("e"), null)], NounExpr("g"), NounExpr("f")))`)
 
 def test_functionExpr(assert):
     def patterns := [makeFinalPattern(makeNounExpr("a", null), null, null),
@@ -1814,6 +1944,19 @@ def test_interfaceExpr(assert):
     assert.equal(expr._uncall(), [makeInterfaceExpr, "run", ["blee", "IA", stamp, [ib, ic], [e, f], [messageD, messageJ], null]])
     assert.equal(M.toString(expr), "/**\n    blee\n*/\ninterface IA guards h extends IB, IC implements e, f:\n    /**\n        foo\n    */\n    to d(a :B, c) :B\n\n    to j()\n")
     assert.equal(expr.asTerm(), term`InterfaceExpr("blee", "IA", FinalPattern(NounExpr("h"), null), [NounExpr("IB"), NounExpr("IC")], [NounExpr("e"), NounExpr("f")], [MessageDesc("foo", "d", [ParamDesc("a", NounExpr("B")), ParamDesc("c", null)], NounExpr("B")), MessageDesc(null, "j", [], null)])`)
+
+def test_quasiParserExpr(assert):
+    def hole1 := makeQuasiExprHole(makeNounExpr("a", null), null)
+    def hole2 := makeQuasiExprHole(makeBinaryExpr(makeLiteralExpr(3, null), "+", makeLiteralExpr(4, null), null), null)
+    def hole3 := makeQuasiPatternHole(makeFinalPattern(makeNounExpr("b", null), null, null), null)
+    def text1 := makeQuasiText("hello ", null)
+    def text2 := makeQuasiText(", your number is ", null)
+    def text3 := makeQuasiText(". Also, ", null)
+    def expr := makeQuasiParserExpr("blee", [text1, hole1, text2, hole2, text3, hole3], null)
+    assert.equal(expr._uncall(), [makeQuasiParserExpr, "run", ["blee", [text1, hole1, text2, hole2, text3, hole3], null]])
+    assert.equal(M.toString(expr), "blee`hello $a, your number is ${3 + 4}. Also, @b`")
+    assert.equal(M.toString(makeQuasiParserExpr("blee", [makeQuasiExprHole(makeNounExpr("a", null), null), makeQuasiText("b", null)], null)), "blee`${a}b`")
+    assert.equal(expr.asTerm(), term`QuasiParserExpr("blee", [QuasiText("hello "), QuasiExprHole(NounExpr("a")), QuasiText(", your number is "), QuasiExprHole(BinaryExpr(LiteralExpr(3), "+", LiteralExpr(4))), QuasiText(". Also, "), QuasiPatternHole(FinalPattern(NounExpr("b"), null))])`)
 
 def test_valueHoleExpr(assert):
     def expr := makeValueHoleExpr(2, null)
@@ -1893,11 +2036,13 @@ unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_forExpr, test_functionScript, test_functionExpr,
           test_sendExpr, test_funSendExpr, test_interfaceExpr,
           test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
-          test_andExpr, test_orExpr, test_matchBindExpr, test_mismatchExpr, test_binaryExpr,
+          test_andExpr, test_orExpr, test_matchBindExpr, test_mismatchExpr,
+          test_binaryExpr, test_quasiParserExpr, test_rangeExpr, test_sameExpr,
           test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
           test_escapeExpr, test_hideExpr, test_objectExpr, test_forwardExpr,
           test_valueHoleExpr, test_patternHoleExpr, test_getExpr,
           test_prefixExpr, test_coerceExpr, test_curryExpr, test_exitExpr,
           test_finalPattern, test_ignorePattern, test_varPattern,
           test_listPattern, test_bindingPattern, test_viaPattern,
-          test_valueHolePattern, test_patternHolePattern])
+          test_valueHolePattern, test_patternHolePattern
+              ])
