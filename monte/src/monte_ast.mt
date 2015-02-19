@@ -865,7 +865,7 @@ def makeMethod(docstring, verb, patterns, resultGuard, body, span):
         scope, term`Method`, fn f {[docstring, verb, [p.transform(f) for p in patterns], if (resultGuard == null) {null} else {resultGuard.transform(f)}, body.transform(f)]})
 
 def makeMatcher(pattern, body, span):
-    def scope := pattern.getStaticScope() + body.getStaticScope().hide()
+    def scope := (pattern.getStaticScope() + body.getStaticScope()).hide()
     object matcher:
         to getPattern():
             return pattern
@@ -879,6 +879,21 @@ def makeMatcher(pattern, body, span):
             }, body, false, out, priority)
     return astWrapper(matcher, makeMatcher, [pattern, body], span,
         scope, term`Matcher`, fn f {[pattern.transform(f), body.transform(f)]})
+
+def makeCatcher(pattern, body, span):
+    def scope := (pattern.getStaticScope() + body.getStaticScope()).hide()
+    object catcher:
+        to getPattern():
+            return pattern
+        to getBody():
+            return body
+        to subPrintOn(out, priority):
+            printSuiteOn(fn {
+                out.print("catch ");
+                pattern.subPrintOn(out, priorities["pattern"]);
+            }, body, true, out, priority)
+    return astWrapper(catcher, makeCatcher, [pattern, body], span,
+        scope, term`Catcher`, fn f {[pattern.transform(f), body.transform(f)]})
 
 def makeScript(extend, methods, matchers, span):
     def scope := union([m.getStaticScope() for m in methods + matchers], emptyScope)
@@ -1245,10 +1260,7 @@ def makeTryExpr(body, catchers, finallyBlock, span):
         to subPrintOn(out, priority):
             printSuiteOn(fn {out.print("try")}, body, false, out, priority)
             for m in catchers:
-                printSuiteOn(fn {
-                    out.print("catch ")
-                    m.getPattern().subPrintOn(out, priorities["pattern"])
-                }, m.getBody(), true, out, priority)
+                m.subPrintOn(out, priority)
             if (finallyBlock != null):
                 printSuiteOn(fn {out.print("finally")},
                     finallyBlock, true, out, priority)
@@ -1286,6 +1298,60 @@ def makeEscapeExpr(ejectorPattern, body, catchPattern, catchBody, span):
         scope, term`EscapeExpr`,
          fn f {[ejectorPattern.transform(f), body.transform(f),
                 catchPattern.transform(f), catchBody.transform(f)]})
+def makeSwitchExpr(specimen, matchers, span):
+    def scope := specimen.getStaticScope() + union([m.getStaticScope() for m in matchers], emptyScope)
+    object switchExpr:
+        to getSpecimen():
+            return specimen
+        to getMatchers():
+            return matchers
+        to subPrintOn(out, priority):
+            out.print("switch (")
+            specimen.subPrintOn(out, priorities["braceExpr"])
+            out.print(")")
+            def indentOut := out.indent(INDENT)
+            if (priorities["braceExpr"] < priority):
+                indentOut.print(" {")
+            else:
+                indentOut.print(":")
+            for m in matchers:
+                m.subPrintOn(indentOut, priority)
+                indentOut.print("\n")
+            if (priorities["braceExpr"] < priority):
+                out.print("}")
+    return astWrapper(switchExpr, makeSwitchExpr, [specimen, matchers], span,
+        scope, term`SwitchExpr`, fn f {[specimen.transfomr(f), [m.transform(f) for m in matchers]]})
+
+def makeWhenExpr(args, body, catchers, finallyBlock, span):
+    def scope := (union([a.getStaticScope() for a in args], emptyScope) + body.getStaticScope()).hide() + union([c.getStaticScope() for c in catchers], emptyScope) + if (finallyBlock == null) {emptyScope} else {finallyBlock.getStaticScope().hide()}
+    object whenExpr:
+        to getArgs():
+            return args
+        to getBody():
+            return body
+        to getCatchers():
+            return catchers
+        to getFinally():
+            return finallyBlock
+        to subPrintOn(out, priority):
+            printListOn("when (", args, ", ", ") ->", out, priorities["braceExpr"])
+            def indentOut := out.indent(INDENT)
+            if (priorities["braceExpr"] < priority):
+                indentOut.println(" {")
+            else:
+                indentOut.println("")
+            body.subPrintOn(indentOut, priority)
+            if (priorities["braceExpr"] < priority):
+                out.println("")
+                out.print("}")
+            for c in catchers:
+                c.subPrintOn(out, priority)
+            if (finallyBlock != null):
+                printSuiteOn(fn {
+                    out.print("finally")
+                }, finallyBlock, true, out, priority)
+    return astWrapper(whenExpr, makeWhenExpr, [args, body, catchers, finallyBlock], span,
+        scope, term`WhenExpr`, fn f {[[a.transform(f) for a in args], body.transform(f), [c.transform(f) for c in catchers], if (finallyBlock == null) {null} else {finallyBlock.transform(f)}]})
 
 def makeIfExpr(test, consq, alt, span):
     def baseScope := test.getStaticScope() + consq.getStaticScope().hide()
@@ -1312,6 +1378,26 @@ def makeIfExpr(test, consq, alt, span):
 
     return astWrapper(ifExpr, makeIfExpr, [test, consq, alt], span,
         scope, term`IfExpr`, fn f {[test.transform(f), consq.transform(f), alt.transform(f)]})
+
+def makeWhileExpr(test, body, catcher, span):
+    def scope := test.getStaticScope() + body.getStaticScope().hide() + if (catcher == null) {emptyScope} else {catcher.getStaticScope()}
+    object whileExpr:
+        to getTest():
+            return test
+        to getBody():
+            return body
+        to getCatcher():
+            return catcher
+        to subPrintOn(out, priority):
+            printSuiteOn(fn {
+                out.print("while (")
+                test.subPrintOn(out, priorities["braceExpr"])
+                out.print(")")
+                }, body, false, out, priority)
+            if (catcher != null):
+                catcher.subPrintOn(out, priority)
+    return astWrapper(whileExpr, makeWhileExpr, [test, body, catcher], span,
+        scope, term`WhileExpr`, fn f {[test.transform(f), body.transform(f), if (catcher == null) {null} else {catcher.transform(f)}]})
 
 def makeHideExpr(body, span):
     def scope := body.getStaticScope().hide()
@@ -1506,9 +1592,7 @@ def makeQuasiParserExpr(name, quasis, span):
             for i => q in quasis:
                 var p := priorities["prim"]
                 if (i + 1 < quasis.size()):
-                    traceln("Non-final quasi")
                     def next := quasis[i + 1]
-                    traceln(`next._uncall(): ${M.toQuote(next._uncall())}`)
                     if (next._uncall()[0] == makeQuasiText && idPart(next.getText()[0])):
                         p := priorities["braceExpr"]
                 q.subPrintOn(out, p)
@@ -1794,9 +1878,9 @@ def test_finallyExpr(assert):
 
 def test_tryExpr(assert):
     def [body, catchers, fin] := [makeNounExpr("a", null),
-        [makeMatcher(makeFinalPattern(makeNounExpr("b", null), null, null),
+        [makeCatcher(makeFinalPattern(makeNounExpr("b", null), null, null),
                      makeNounExpr("c", null), null),
-         makeMatcher(makeFinalPattern(makeNounExpr("d", null), null, null),
+         makeCatcher(makeFinalPattern(makeNounExpr("d", null), null, null),
                       makeNounExpr("e", null), null)],
         makeNounExpr("f", null)]
     def expr := makeTryExpr(body, catchers, fin, null)
@@ -1805,7 +1889,7 @@ def test_tryExpr(assert):
     assert.equal(M.toString(makeTryExpr(body, catchers, null, null)), "try:\n    a\ncatch b:\n    c\ncatch d:\n    e")
     assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
         "def _ := try {\n    a\n} catch b {\n    c\n} catch d {\n    e\n} finally {\n    f\n}")
-    assert.equal(expr.asTerm(), term`TryExpr(NounExpr("a"), [Matcher(FinalPattern(NounExpr("b"), null), NounExpr("c")), Matcher(FinalPattern(NounExpr("d"), null), NounExpr("e"))], NounExpr("f"))`)
+    assert.equal(expr.asTerm(), term`TryExpr(NounExpr("a"), [Catcher(FinalPattern(NounExpr("b"), null), NounExpr("c")), Catcher(FinalPattern(NounExpr("d"), null), NounExpr("e"))], NounExpr("f"))`)
 
 def test_escapeExpr(assert):
     def [ejPatt, body, catchPattern, catchBlock] := [makeFinalPattern(makeNounExpr("a", null), null, null), makeNounExpr("b", null), makeFinalPattern(makeNounExpr("c", null), null, null), makeNounExpr("d", null)]
@@ -1816,6 +1900,47 @@ def test_escapeExpr(assert):
         "def _ := escape a {\n    b\n} catch c {\n    d\n}")
     assert.equal(M.toString(makeEscapeExpr(ejPatt, body, null, null, null)), "escape a:\n    b")
     assert.equal(expr.asTerm(), term`EscapeExpr(FinalPattern(NounExpr("a"), null), NounExpr("b"), FinalPattern(NounExpr("c"), null), NounExpr("d"))`)
+
+def test_switchExpr(assert):
+    def matchers := [
+        makeMatcher(makeFinalPattern(makeNounExpr("b", null), makeNounExpr("c", null), null),
+                    makeLiteralExpr(1, null), null),
+        makeMatcher(makeFinalPattern(makeNounExpr("d", null), null, null),
+                    makeLiteralExpr(2, null), null)]
+    def specimen := makeNounExpr("a", null)
+    def expr := makeSwitchExpr(specimen, matchers, null)
+    assert.equal(expr._uncall(), [makeSwitchExpr, "run", [specimen, matchers, null]])
+    assert.equal(M.toString(expr), "switch (a):\n    match b :c:\n        1\n\n    match d:\n        2\n")
+    assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
+        "def _ := switch (a) {\n    match b :c {\n        1\n    }\n\n    match d {\n        2\n    }\n}")
+    assert.e
+
+def test_whenExpr(assert):
+    def args := [makeNounExpr("a", null), makeNounExpr("b", null)]
+    def body := makeNounExpr("c", null)
+    def catchers := [makeCatcher(makeFinalPattern(makeNounExpr("d", null), null, null),
+                     makeNounExpr("e", null), null),
+         makeCatcher(makeFinalPattern(makeNounExpr("f", null), null, null),
+                      makeNounExpr("g", null), null)]
+    def finallyBlock := makeNounExpr("h", null)
+
+    def expr := makeWhenExpr(args, body, catchers, finallyBlock, null)
+    assert.equal(expr._uncall(), [makeWhenExpr, "run", [args, body, catchers, finallyBlock, null]])
+    assert.equal(M.toString(expr), "when (a, b) ->\n    c\ncatch d:\n    e\ncatch f:\n    g\nfinally:\n    h")
+    assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
+                 "def _ := when (a, b) -> {\n    c\n} catch d {\n    e\n} catch f {\n    g\n} finally {\n    h\n}")
+    assert.equal(expr.asTerm(), term`WhenExpr([NounExpr("a"), NounExpr("b")], NounExpr("c"), [Matcher(FinalPattern(NounExpr("d"), null), NounExpr("e")), Matcher(FinalPattern(NounExpr("f"), null), NounExpr("g"))], NounExpr("h"))`)
+
+def test_whileExpr(assert):
+    def a := makeNounExpr("a", null)
+    def b := makeNounExpr("b", null)
+    def catcher := makeCatcher(makeFinalPattern(makeNounExpr("c", null), null, null),  makeNounExpr("d", null), null)
+    def expr := makeWhileExpr(a, b, catcher, null)
+    assert.equal(expr._uncall(), [makeWhileExpr, "run", [a, b, catcher, null]])
+    assert.equal(M.toString(expr), "while (a):\n    b\ncatch c:\n    d")
+    assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
+        "def _ := while (a) {\n    b\n} catch c {\n    d\n}")
+    assert.equal(expr.asTerm(), term`WhileExpr(NounExpr("a"), NounExpr("b"), Catcher(FinalPattern(NounExpr("c"), null), NounExpr("d")))`)
 
 def test_hideExpr(assert):
     def body := makeNounExpr("a", null)
@@ -2037,6 +2162,7 @@ unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_sendExpr, test_funSendExpr, test_interfaceExpr,
           test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
           test_andExpr, test_orExpr, test_matchBindExpr, test_mismatchExpr,
+          test_switchExpr, test_whenExpr, test_whileExpr,
           test_binaryExpr, test_quasiParserExpr, test_rangeExpr, test_sameExpr,
           test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
           test_escapeExpr, test_hideExpr, test_objectExpr, test_forwardExpr,
@@ -2044,5 +2170,7 @@ unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_prefixExpr, test_coerceExpr, test_curryExpr, test_exitExpr,
           test_finalPattern, test_ignorePattern, test_varPattern,
           test_listPattern, test_bindingPattern, test_viaPattern,
-          test_valueHolePattern, test_patternHolePattern
-              ])
+          test_valueHolePattern, test_patternHolePattern])
+
+
+
