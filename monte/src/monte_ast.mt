@@ -36,7 +36,10 @@ def priorities := [
 
 object makeScopeSet:
     to run(items):
-        return makeScopeSet.fromKeys([k => null for k in items])
+        def map := [].asMap().diverge()
+        for k in items:
+            map[k] := null
+        return makeScopeSet.fromKeys(map.snapshot())
     to fromKeys(map):
         return object scopeset extends map:
             to _makeIterator():
@@ -117,16 +120,34 @@ def makeStaticScope(read, set, defs, vars, metaStateExpr):
 
 def emptyScope := makeStaticScope([], [], [], [], false)
 
-def union(additionalScopes, var scope):
-    for sc in additionalScopes:
-        scope += sc
-    return scope
+def sumScopes(nodes):
+    var result := emptyScope
+    for node in nodes:
+        if (node != null):
+            result += node.getStaticScope()
+    return result
+
+def scopeMaybe(optNode):
+    if (optNode == null):
+        return emptyScope
+    return optNode.getStaticScope()
 
 def all(iterable, pred):
     for item in iterable:
         if (!pred(item)):
             return false
     return true
+
+def maybeTransform(node, f):
+    if (node == null):
+        return null
+    return node.transform(f)
+
+def transformAll(nodes, f):
+    def results := [].diverge()
+    for n in nodes:
+        results.push(n.transform(f))
+    return results.snapshot()
 
 def isIdentifier(name):
     if (MONTE_KEYWORDS.contains(name)):
@@ -271,7 +292,7 @@ def makeBindingExpr(name, span):
         scope, term`BindingExpr`, fn f {[name]})
 
 def makeSeqExpr(exprs, span):
-    def scope := union([e.getStaticScope() for e in exprs], emptyScope)
+    def scope := sumScopes(exprs)
     object seqExpr:
         to getExprs():
             return exprs
@@ -285,10 +306,10 @@ def makeSeqExpr(exprs, span):
                 first := false
                 e.subPrintOn(out, priority.min(priorities["braceExpr"]))
     return astWrapper(seqExpr, makeSeqExpr, [exprs], span,
-        scope, term`SeqExpr`, fn f {[[e.transform(f) for e in exprs]]})
+        scope, term`SeqExpr`, fn f {[transformAll(exprs, f)]})
 
 def makeModule(imports, exports, body, span):
-    def scope := union([e.getStaticScope() for e in imports], emptyScope) + union([x.getStaticScope() for x in exports], emptyScope)
+    def scope := sumScopes(imports + exports)
     object ::"module":
         to getImports():
             return imports
@@ -309,13 +330,12 @@ def makeModule(imports, exports, body, span):
             body.subPrintOn(out, priorities["indentExpr"])
     return astWrapper(::"module", makeModule, [imports, exports, body], span,
         scope, term`Module`, fn f {[
-            [e.transform(f) for e in imports],
-            [e.transform(f) for e in exports],
+            transformAll(imports, f),
+            transformAll(exports, f),
             body.transform(f)]})
 
 def makeMethodCallExpr(rcvr, verb, arglist, span):
-    def scope := union([a.getStaticScope() for a in arglist],
-                       rcvr.getStaticScope())
+    def scope := sumScopes(arglist + [rcvr])
     object methodCallExpr:
         to getReceiver():
             return rcvr
@@ -337,11 +357,10 @@ def makeMethodCallExpr(rcvr, verb, arglist, span):
                 out.print(")")
     return astWrapper(methodCallExpr, makeMethodCallExpr,
         [rcvr, verb, arglist], span, scope, term`MethodCallExpr`,
-        fn f {[rcvr.transform(f), verb, [a.transform(f) for a in arglist]]})
+        fn f {[rcvr.transform(f), verb, transformAll(arglist, f)]})
 
 def makeFunCallExpr(receiver, args, span):
-    def scope := union([a.getStaticScope() for a in args],
-                       receiver.getStaticScope())
+    def scope := sumScopes(args + [receiver])
     object funCallExpr:
         to getReceiver():
             return receiver
@@ -355,11 +374,10 @@ def makeFunCallExpr(receiver, args, span):
             if (priorities["call"] < priority):
                 out.print(")")
     return astWrapper(funCallExpr, makeFunCallExpr, [receiver, args], span,
-        scope, term`FunCallExpr`, fn f {[receiver.transform(f), [a.transform(f) for a in args]]})
+        scope, term`FunCallExpr`, fn f {[receiver.transform(f), transformAll(args, f)]})
 
 def makeSendExpr(rcvr, verb, arglist, span):
-    def scope := union([a.getStaticScope() for a in arglist],
-                       rcvr.getStaticScope())
+    def scope := sumScopes(arglist + [rcvr])
     object sendExpr:
         to getReceiver():
             return rcvr
@@ -381,11 +399,10 @@ def makeSendExpr(rcvr, verb, arglist, span):
                 out.print(")")
     return astWrapper(sendExpr, makeSendExpr,
         [rcvr, verb, arglist], span, scope, term`SendExpr`,
-        fn f {[rcvr.transform(f), verb, [a.transform(f) for a in arglist]]})
+        fn f {[rcvr.transform(f), verb, transformAll(arglist, f)]})
 
 def makeFunSendExpr(receiver, args, span):
-    def scope := union([a.getStaticScope() for a in args],
-                       receiver.getStaticScope())
+    def scope := sumScopes(args + [receiver])
     object funSendExpr:
         to getReceiver():
             return receiver
@@ -399,10 +416,10 @@ def makeFunSendExpr(receiver, args, span):
             if (priorities["call"] < priority):
                 out.print(")")
     return astWrapper(funSendExpr, makeFunSendExpr, [receiver, args], span,
-        scope, term`FunSendExpr`, fn f {[receiver.transform(f), [a.transform(f) for a in args]]})
+        scope, term`FunSendExpr`, fn f {[receiver.transform(f), transformAll(args, f)]})
 
 def makeGetExpr(receiver, indices, span):
-    def scope := union([i.getStaticScope() for i in indices], receiver.getStaticScope())
+    def scope := sumScopes(indices + [receiver])
     object getExpr:
         to getReceiver():
             return receiver
@@ -413,7 +430,7 @@ def makeGetExpr(receiver, indices, span):
             printListOn("[", indices, ", ", "]", out, priorities["braceExpr"])
 
     return astWrapper(getExpr, makeGetExpr, [receiver, indices], span,
-        scope, term`GetExpr`, fn f {[receiver.transform(f), [i.transform(f) for i in indices]]})
+        scope, term`GetExpr`, fn f {[receiver.transform(f), transformAll(indices, f)]})
 
 def makeAndExpr(left, right, span):
     def scope := left.getStaticScope() + right.getStaticScope()
@@ -670,7 +687,7 @@ def makeCurryExpr(receiver, verb, isSend, span):
         scope, term`CurryExpr`, fn f {[receiver.transform(f), verb, isSend]})
 
 def makeExitExpr(name, value, span):
-    def scope := if (value == null) {emptyScope} else {value.getStaticScope()}
+    def scope := scopeMaybe(value)
     object exitExpr:
         to getName():
             return name
@@ -686,7 +703,7 @@ def makeExitExpr(name, value, span):
             if (priorities["call"] < priority):
                 out.print(")")
     return astWrapper(exitExpr, makeExitExpr, [name, value], span,
-        scope, term`ExitExpr`, fn f {[name, if (value == null) {null} else {value.transform(f)}]})
+        scope, term`ExitExpr`, fn f {[name, maybeTransform(value, f)]})
 
 def makeForwardExpr(name, span):
     def scope := makeStaticScope([], [], [name], [], false)
@@ -718,7 +735,7 @@ def makeVarPattern(noun, guard, span):
                 guard.subPrintOn(out, priorities["order"])
     return astWrapper(varPattern, makeVarPattern, [noun, guard], span,
         scope, term`VarPattern`,
-        fn f {[noun.transform(f), if (guard == null) {null} else {guard.transform(f)}]})
+        fn f {[noun.transform(f), maybeTransform(guard, f)]})
 
 def makeDefExpr(pattern, exit_, expr, span):
     def scope := if (exit_ == null) {
@@ -780,7 +797,7 @@ def makeVerbAssignExpr(verb, lvalue, rvalues, span):
     } else {
         lvalue.getStaticScope()
     }
-    def scope := lscope + union([r.getStaticScope() for r in rvalues], emptyScope)
+    def scope := lscope + sumScopes(rvalues)
     object verbAssignExpr:
         to getLvalue():
             return lvalue
@@ -800,7 +817,7 @@ def makeVerbAssignExpr(verb, lvalue, rvalues, span):
             if (priorities["assign"] < priority):
                 out.print(")")
     return astWrapper(verbAssignExpr, makeVerbAssignExpr, [verb, lvalue, rvalues], span,
-        scope, term`VerbAssignExpr`, fn f {[verb, lvalue.transform(f), [ar.transform(f) for ar in rvalues]]})
+        scope, term`VerbAssignExpr`, fn f {[verb, lvalue.transform(f), transformAll(rvalues, f)]})
 
 
 def makeAugAssignExpr(op, lvalue, rvalue, span):
@@ -834,9 +851,7 @@ def makeAugAssignExpr(op, lvalue, rvalue, span):
         scope, term`AugAssignExpr`, fn f {[op, lvalue.transform(f), rvalue.transform(f)]})
 
 def makeMethod(docstring, verb, patterns, resultGuard, body, span):
-    def scope := (union([p.getStaticScope() for p in patterns], emptyScope) +
-                  if (resultGuard == null) {emptyScope} else {resultGuard.getStaticScope()} +
-                  body.getStaticScope()).hide()
+    def scope := sumScopes(patterns + [resultGuard, body]).hide()
     object ::"method":
         to getDocstring():
             return docstring
@@ -867,12 +882,10 @@ def makeMethod(docstring, verb, patterns, resultGuard, body, span):
                 }
             }, body, false, out, priority)
     return astWrapper(::"method", makeMethod, [docstring, verb, patterns, resultGuard, body], span,
-        scope, term`Method`, fn f {[docstring, verb, [p.transform(f) for p in patterns], if (resultGuard == null) {null} else {resultGuard.transform(f)}, body.transform(f)]})
+        scope, term`Method`, fn f {[docstring, verb, transformAll(patterns, f), maybeTransform(resultGuard, f), body.transform(f)]})
 
 def makeTo(docstring, verb, patterns, resultGuard, body, span):
-    def scope := (union([p.getStaticScope() for p in patterns], emptyScope) +
-                  if (resultGuard == null) {emptyScope} else {resultGuard.getStaticScope()} +
-                  body.getStaticScope()).hide()
+    def scope := sumScopes(patterns + [resultGuard, body]).hide()
     object ::"to":
         to getDocstring():
             return docstring
@@ -903,7 +916,7 @@ def makeTo(docstring, verb, patterns, resultGuard, body, span):
                 }
             }, body, false, out, priority)
     return astWrapper(::"to", makeTo, [docstring, verb, patterns, resultGuard, body], span,
-        scope, term`To`, fn f {[docstring, verb, [p.transform(f) for p in patterns], if (resultGuard == null) {null} else {resultGuard.transform(f)}, body.transform(f)]})
+        scope, term`To`, fn f {[docstring, verb, transformAll(patterns, f), maybeTransform(resultGuard, f), body.transform(f)]})
 
 def makeMatcher(pattern, body, span):
     def scope := (pattern.getStaticScope() + body.getStaticScope()).hide()
@@ -937,7 +950,7 @@ def makeCatcher(pattern, body, span):
         scope, term`Catcher`, fn f {[pattern.transform(f), body.transform(f)]})
 
 def makeScript(extend, methods, matchers, span):
-    def scope := union([m.getStaticScope() for m in methods + matchers], emptyScope)
+    def scope := sumScopes(methods + matchers)
     object script:
         to getExtends():
             return extend
@@ -961,10 +974,10 @@ def makeScript(extend, methods, matchers, span):
                 m.subPrintOn(out, priority)
                 out.print("\n")
     return astWrapper(script, makeScript, [extend, methods, matchers], span,
-        scope, term`Script`, fn f {[if (extend == null) {null} else {extend.transform(f)}, [m.transform(f) for m in methods], [m.transform(f) for m in matchers]]})
+        scope, term`Script`, fn f {[maybeTransform(extend, f), transformAll(methods, f), transformAll(matchers, f)]})
 
 def makeFunctionScript(patterns, resultGuard, body, span):
-    def scope := (union([p.getStaticScope() for p in patterns], emptyScope) + if (resultGuard == null) {emptyScope} else {resultGuard.getStaticScope()} + body.getStaticScope()).hide()
+    def scope := sumScopes(patterns + [resultGuard, body]).hide()
     object functionScript:
         to getPatterns():
             return patterns
@@ -988,10 +1001,10 @@ def makeFunctionScript(patterns, resultGuard, body, span):
             body.subPrintOn(out, priority)
             out.print("\n")
     return astWrapper(functionScript, makeFunctionScript, [patterns, resultGuard, body], span,
-        scope, term`FunctionScript`, fn f {[[p.transform(f) for p in patterns], if (resultGuard == null) {null} else {resultGuard.transform(f)}, body.transform(f)]})
+        scope, term`FunctionScript`, fn f {[transformAll(patterns, f), maybeTransform(resultGuard, f), body.transform(f)]})
 
 def makeFunctionExpr(patterns, body, span):
-    def scope := (union([p.getStaticScope() for p in patterns], emptyScope) + body.getStaticScope()).hide()
+    def scope := (sumScopes(patterns) + body.getStaticScope()).hide()
     object functionExpr:
         to getPatterns():
             return patterns
@@ -1002,20 +1015,20 @@ def makeFunctionExpr(patterns, body, span):
                 printListOn("fn ", patterns, ", ", "", out, priorities["pattern"])
             }, body, false, out, priority)
     return astWrapper(functionExpr, makeFunctionExpr, [patterns, body], span,
-        scope, term`FunctionExpr`, fn f {[[p.transform(f) for p in patterns], body]})
+        scope, term`FunctionExpr`, fn f {[transformAll(patterns, f), body]})
 
 def makeListExpr(items, span):
-    def scope := union([i.getStaticScope() for i in items], emptyScope)
+    def scope := sumScopes(items)
     object listExpr:
         to getItems():
             return items
         to subPrintOn(out, priority):
             printListOn("[", items, ", ", "]", out, priorities["braceExpr"])
     return astWrapper(listExpr, makeListExpr, [items], span,
-        scope, term`ListExpr`, fn f {[[i.transform(f) for i in items]]})
+        scope, term`ListExpr`, fn f {[transformAll(items, f)]})
 
 def makeListComprehensionExpr(iterable, filter, key, value, body, span):
-    def scope := iterable.getStaticScope() + (if (key == null) {emptyScope} else {key.getStaticScope()} + value.getStaticScope() + if (filter == null) {emptyScope} else {filter.getStaticScope()} + body.getStaticScope()).hide()
+    def scope := sumScopes([iterable, key, value, filter, body]).hide()
     object listComprehensionExpr:
         to getKey():
             return key
@@ -1043,7 +1056,7 @@ def makeListComprehensionExpr(iterable, filter, key, value, body, span):
             body.subPrintOn(out, priorities["braceExpr"])
             out.print("]")
     return astWrapper(listComprehensionExpr, makeListComprehensionExpr, [iterable, filter, key, value, body], span,
-        scope, term`ListComprehensionExpr`, fn f {[iterable.transform(f), if (filter == null) {null} else {filter.transform(f)}, if (key == null) {null} else {key.transform(f)}, value.transform(f), body.transform(f)]})
+        scope, term`ListComprehensionExpr`, fn f {[iterable.transform(f), maybeTransform(filter, f), maybeTransform(key, f), value.transform(f), body.transform(f)]})
 
 def makeMapExprAssoc(key, value, span):
     def scope := key.getStaticScope() + value.getStaticScope()
@@ -1071,17 +1084,17 @@ def makeMapExprExport(value, span):
         scope, term`MapExprExport`, fn f {[value.transform(f)]})
 
 def makeMapExpr(pairs ? (pairs.size() > 0), span):
-    def scope := union([p.getStaticScope() for p in pairs], emptyScope)
+    def scope := sumScopes(pairs)
     object mapExpr:
         to getPairs():
             return pairs
         to subPrintOn(out, priority):
             printListOn("[", pairs, ", ", "]", out, priorities["braceExpr"])
     return astWrapper(mapExpr, makeMapExpr, [pairs], span,
-        scope, term`MapExpr`, fn f {[[p.transform(f) for p in pairs]]})
+        scope, term`MapExpr`, fn f {[transformAll(pairs, f)]})
 
 def makeMapComprehensionExpr(iterable, filter, key, value, bodyk, bodyv, span):
-    def scope := iterable.getStaticScope() + (if (key == null) {emptyScope} else {key.getStaticScope()} + value.getStaticScope() + if (filter == null) {emptyScope} else {filter.getStaticScope()} + bodyk.getStaticScope() + bodyv.getStaticScope()).hide()
+    def scope := sumScopes([iterable, key, value, filter, bodyk, bodyv]).hide()
     object mapComprehensionExpr:
         to getIterable():
             return iterable
@@ -1113,10 +1126,10 @@ def makeMapComprehensionExpr(iterable, filter, key, value, bodyk, bodyv, span):
             bodyv.subPrintOn(out, priorities["braceExpr"])
             out.print("]")
     return astWrapper(mapComprehensionExpr, makeMapComprehensionExpr, [iterable, filter, key, value, bodyk, bodyv], span,
-        scope, term`MapComprehensionExpr`, fn f {[iterable.transform(f), if (filter == null) {null} else {filter.transform(f)}, if (key == null) {null} else {key.transform(f)}, value.transform(f), bodyk.transform(f), bodyv.transform(f)]})
+        scope, term`MapComprehensionExpr`, fn f {[iterable.transform(f), maybeTransform(filter, f), maybeTransform(key, f), value.transform(f), bodyk.transform(f), bodyv.transform(f)]})
 
 def makeForExpr(iterable, key, value, body, span):
-    def scope := iterable.getStaticScope() + (if (key == null) {emptyScope} else {key.getStaticScope()} + value.getStaticScope() + body.getStaticScope()).hide()
+    def scope := sumScopes([iterable, key, value, body]).hide()
     object forExpr:
         to getKey():
             return key
@@ -1138,10 +1151,10 @@ def makeForExpr(iterable, key, value, body, span):
                 iterable.subPrintOn(out, priorities["braceExpr"])
             }, body, false, out, priority)
     return astWrapper(forExpr, makeForExpr, [iterable, key, value, body], span,
-        scope, term`ForExpr`, fn f {[iterable.transform(f), if (key == null) {null} else {key.transform(f)}, value.transform(f), body.transform(f)]})
+        scope, term`ForExpr`, fn f {[iterable.transform(f), maybeTransform(key, f), value.transform(f), body.transform(f)]})
 
 def makeObjectExpr(docstring, name, asExpr, auditors, script, span):
-    def scope := name.getStaticScope() + union([a.getStaticScope() for a in auditors], if (asExpr == null) {emptyScope} else {asExpr.getStaticScope()}).hide() + script.getStaticScope()
+    def scope := name.getStaticScope() + sumScopes([asExpr] + auditors).hide() + script.getStaticScope()
     object ObjectExpr:
         to getDocstring():
             return docstring
@@ -1159,10 +1172,10 @@ def makeObjectExpr(docstring, name, asExpr, auditors, script, span):
                 script.printObjectHeadOn(name, asExpr, auditors, out, priority)
             }, script, false, out, priority)
     return astWrapper(ObjectExpr, makeObjectExpr, [docstring, name, asExpr, auditors, script], span,
-        scope, term`ObjectExpr`, fn f {[docstring, name.transform(f), if (asExpr == null) {null} else {asExpr.transform(f)}, [a.transform(f) for a in auditors], script.transform(f)]})
+        scope, term`ObjectExpr`, fn f {[docstring, name.transform(f), maybeTransform(asExpr, f), transformAll(auditors, f), script.transform(f)]})
 
 def makeParamDesc(name, guard, span):
-    def scope := if (guard == null) {emptyScope} else {guard.getStaticScope()}
+    def scope := scopeMaybe(guard)
     object paramDesc:
         to getName():
             return name
@@ -1177,10 +1190,10 @@ def makeParamDesc(name, guard, span):
                 out.print(" :")
                 guard.subPrintOn(out, priorities["call"])
     return astWrapper(paramDesc, makeParamDesc, [name, guard], span,
-        scope, term`ParamDesc`, fn f {[name, if (guard == null) {null} else {guard.transform(f)}]})
+        scope, term`ParamDesc`, fn f {[name, maybeTransform(guard, f)]})
 
 def makeMessageDesc(docstring, verb, params, resultGuard, span):
-    def scope := union([p.getStaticScope() for p in params], emptyScope) + if (resultGuard == null) {emptyScope} else {resultGuard.getStaticScope()}
+    def scope := sumScopes(params + [resultGuard])
     object messageDesc:
         to getDocstring():
             return docstring
@@ -1208,11 +1221,12 @@ def makeMessageDesc(docstring, verb, params, resultGuard, span):
                 out.print(" :")
                 resultGuard.subPrintOn(out, priorities["call"])
     return astWrapper(messageDesc, makeMessageDesc, [docstring, verb, params, resultGuard], span,
-        scope, term`MessageDesc`, fn f {[docstring, verb, [p.transform(f) for p in params], if (resultGuard == null) {null} else {resultGuard.transform(f)}]})
+        scope, term`MessageDesc`, fn f {[docstring, verb, transformAll(params, f), maybeTransform(resultGuard, f)]})
 
 
 def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span):
-    def scope := union([p.getStaticScope() for p in parents], makeStaticScope([], [], [name], [], false)) + if (stamp == null) {emptyScope} else {stamp.getStaticScope()} + union([a.getStaticScope() for a in auditors], emptyScope) + union([m.getStaticScope() for m in messages], emptyScope)
+    def nameScope := makeStaticScope([], [], [name], [], false)
+    def scope := nameScope + sumScopes(parents + [stamp] + auditors + messages)
     object interfaceExpr:
         to getDocstring():
             return docstring
@@ -1248,7 +1262,7 @@ def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
             if (priorities["braceExpr"] < priority):
                 out.print("}")
     return astWrapper(interfaceExpr, makeInterfaceExpr, [docstring, name, stamp, parents, auditors, messages], span,
-        scope, term`InterfaceExpr`, fn f {[docstring, name, if (stamp == null) {null} else {stamp.transform(f)}, [p.transform(f) for p in parents], [a.transform(f) for a in auditors], [m.transform(f) for m in messages]]})
+        scope, term`InterfaceExpr`, fn f {[docstring, name, maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), transformAll(messages, f)]})
 
 def makeFunctionInterfaceExpr(docstring, messageDesc, span):
     def scope := messageDesc.getStaticScope()
@@ -1297,10 +1311,7 @@ def makeFinallyExpr(body, unwinder, span):
         scope, term`FinallyExpr`, fn f {[body.transform(f), unwinder.transform(f)]})
 
 def makeTryExpr(body, catchers, finallyBlock, span):
-    def baseScope := union([
-        (m.getPattern().getStaticScope() + m.getBody().getStaticScope()).hide()
-             for m in catchers],
-        body.getStaticScope().hide())
+    def baseScope := (body.getStaticScope() + sumScopes(catchers)).hide()
     def scope := if (finallyBlock == null) {
         baseScope
     } else {
@@ -1321,7 +1332,7 @@ def makeTryExpr(body, catchers, finallyBlock, span):
                 printSuiteOn(fn {out.print("finally")},
                     finallyBlock, true, out, priority)
     return astWrapper(tryExpr, makeTryExpr, [body, catchers, finallyBlock], span,
-        scope, term`TryExpr`, fn f {[body.transform(f), [m.transform(f) for m in catchers],if (finallyBlock == null) {null} else {finallyBlock.transform(f)}]})
+        scope, term`TryExpr`, fn f {[body.transform(f), transformAll(catchers, f),maybeTransform(finallyBlock, f)]})
 
 def makeEscapeExpr(ejectorPattern, body, catchPattern, catchBody, span):
     def baseScope := (ejectorPattern.getStaticScope() + body.getStaticScope()).hide()
@@ -1355,7 +1366,7 @@ def makeEscapeExpr(ejectorPattern, body, catchPattern, catchBody, span):
          fn f {[ejectorPattern.transform(f), body.transform(f),
                 catchPattern.transform(f), catchBody.transform(f)]})
 def makeSwitchExpr(specimen, matchers, span):
-    def scope := specimen.getStaticScope() + union([m.getStaticScope() for m in matchers], emptyScope)
+    def scope := specimen.getStaticScope() + sumScopes(matchers)
     object switchExpr:
         to getSpecimen():
             return specimen
@@ -1376,10 +1387,10 @@ def makeSwitchExpr(specimen, matchers, span):
             if (priorities["braceExpr"] < priority):
                 out.print("}")
     return astWrapper(switchExpr, makeSwitchExpr, [specimen, matchers], span,
-        scope, term`SwitchExpr`, fn f {[specimen.transfomr(f), [m.transform(f) for m in matchers]]})
+        scope, term`SwitchExpr`, fn f {[specimen.transfomr(f), transformAll(matchers, f)]})
 
 def makeWhenExpr(args, body, catchers, finallyBlock, span):
-    def scope := (union([a.getStaticScope() for a in args], emptyScope) + body.getStaticScope()).hide() + union([c.getStaticScope() for c in catchers], emptyScope) + if (finallyBlock == null) {emptyScope} else {finallyBlock.getStaticScope().hide()}
+    def scope := sumScopes(args + [body]).hide() + sumScopes(catchers) + scopeMaybe(finallyBlock).hide()
     object whenExpr:
         to getArgs():
             return args
@@ -1407,7 +1418,7 @@ def makeWhenExpr(args, body, catchers, finallyBlock, span):
                     out.print("finally")
                 }, finallyBlock, true, out, priority)
     return astWrapper(whenExpr, makeWhenExpr, [args, body, catchers, finallyBlock], span,
-        scope, term`WhenExpr`, fn f {[[a.transform(f) for a in args], body.transform(f), [c.transform(f) for c in catchers], if (finallyBlock == null) {null} else {finallyBlock.transform(f)}]})
+        scope, term`WhenExpr`, fn f {[transformAll(args, f), body.transform(f), transformAll(catchers, f), maybeTransform(finallyBlock, f)]})
 
 def makeIfExpr(test, consq, alt, span):
     def baseScope := test.getStaticScope() + consq.getStaticScope().hide()
@@ -1436,7 +1447,7 @@ def makeIfExpr(test, consq, alt, span):
         scope, term`IfExpr`, fn f {[test.transform(f), consq.transform(f), alt.transform(f)]})
 
 def makeWhileExpr(test, body, catcher, span):
-    def scope := test.getStaticScope() + body.getStaticScope().hide() + if (catcher == null) {emptyScope} else {catcher.getStaticScope()}
+    def scope := sumScopes([test, body, catcher])
     object whileExpr:
         to getTest():
             return test
@@ -1453,7 +1464,7 @@ def makeWhileExpr(test, body, catcher, span):
             if (catcher != null):
                 catcher.subPrintOn(out, priority)
     return astWrapper(whileExpr, makeWhileExpr, [test, body, catcher], span,
-        scope, term`WhileExpr`, fn f {[test.transform(f), body.transform(f), if (catcher == null) {null} else {catcher.transform(f)}]})
+        scope, term`WhileExpr`, fn f {[test.transform(f), body.transform(f), maybeTransform(catcher, f)]})
 
 def makeHideExpr(body, span):
     def scope := body.getStaticScope().hide()
@@ -1532,7 +1543,7 @@ def makeFinalPattern(noun, guard, span):
                 guard.subPrintOn(out, priorities["order"])
     return astWrapper(finalPattern, makeFinalPattern, [noun, guard], span,
         scope, term`FinalPattern`,
-        fn f {[noun.transform(f), if (guard == null) {null} else {guard.transform(f)}]})
+        fn f {[noun.transform(f), maybeTransform(guard, f)]})
 
 def makeSlotPattern(noun, span):
     def scope := makeStaticScope([], [], [noun.getName()], [], false)
@@ -1568,7 +1579,7 @@ def makeBindPattern(noun, span):
         scope, term`BindPattern`, fn f {[noun.transform(f)]})
 
 def makeIgnorePattern(guard, span):
-    def scope := if (guard != null) {guard.getStaticScope()} else {emptyScope}
+    def scope := scopeMaybe(guard)
     object ignorePattern:
         to getGuard():
             return guard
@@ -1581,9 +1592,7 @@ def makeIgnorePattern(guard, span):
         scope, term`IgnorePattern`, fn f {[guard.transform(f)]})
 
 def makeListPattern(patterns, tail, span):
-    def scope := union([p.getStaticScope() for p in patterns] +
-            if (tail == null) {[]} else {[tail.getStaticScope()]},
-        emptyScope)
+    def scope := sumScopes(patterns + [tail])
     object listPattern:
         to getPatterns():
             return patterns
@@ -1595,7 +1604,7 @@ def makeListPattern(patterns, tail, span):
                 out.print(" + ")
                 tail.subPrintOn(out, priorities["pattern"])
     return astWrapper(listPattern, makeListPattern, [patterns, tail], span,
-        scope, term`ListPattern`, fn f {[[p.transform(f) for p in patterns], if (tail == null) {null} else {tail.transform(f)}]})
+        scope, term`ListPattern`, fn f {[transformAll(patterns, f), maybeTransform(tail, f)]})
 
 def makeMapPatternAssoc(key, value, span):
     def scope := key.getStaticScope() + value.getStaticScope()
@@ -1655,9 +1664,7 @@ def makeMapPatternDefault(keyer, default, span):
         scope, term`MapPatternDefault`, fn f {[keyer.transform(f), default.transform(f)]})
 
 def makeMapPattern(patterns, tail, span):
-    def scope := union([p.getStaticScope() for p in patterns] +
-            if (tail == null) {[]} else {[tail.getStaticScope()]},
-        emptyScope)
+    def scope := sumScopes(patterns + [tail])
     object mapPattern:
         to getPatterns():
             return patterns
@@ -1669,7 +1676,7 @@ def makeMapPattern(patterns, tail, span):
                 out.print(" | ")
                 tail.subPrintOn(out, priorities["pattern"])
     return astWrapper(mapPattern, makeMapPattern, [patterns, tail], span,
-        scope, term`MapPattern`, fn f {[[p.transform(f) for p in patterns], if (tail == null) {null} else {tail.transform(f)}]})
+        scope, term`MapPattern`, fn f {[transformAll(patterns, f), maybeTransform(tail, f)]})
 
 def makeViaPattern(expr, subpattern, span):
     def scope := expr.getStaticScope() + subpattern.getStaticScope()
@@ -1776,7 +1783,7 @@ def quasiPrint(name, quasis, out, priority):
     out.print("`")
 
 def makeQuasiParserExpr(name, quasis, span):
-    def scope := union([q.getStaticScope() for q in quasis], if (name == null) {emptyScope} else {makeStaticScope([name + "__quasiParser"], [], [], [], false)})
+    def scope := if (name == null) {emptyScope} else {makeStaticScope([name + "__quasiParser"], [], [], [], false)} + sumScopes(quasis)
     object quasiParserExpr:
         to getName():
             return name
@@ -1785,10 +1792,10 @@ def makeQuasiParserExpr(name, quasis, span):
         to subPrintOn(out, priority):
             quasiPrint(name, quasis, out, priority)
     return astWrapper(quasiParserExpr, makeQuasiParserExpr, [name, quasis], span,
-        scope, term`QuasiParserExpr`, fn f {[name, [q.transform(f) for q in quasis]]})
+        scope, term`QuasiParserExpr`, fn f {[name, transformAll(quasis, f)]})
 
 def makeQuasiParserPattern(name, quasis, span):
-    def scope := union([q.getStaticScope() for q in quasis], if (name == null) {emptyScope} else {makeStaticScope([name + "__quasiParser"], [], [], [], false)})
+    def scope := if (name == null) {emptyScope} else {makeStaticScope([name + "__quasiParser"], [], [], [], false)} + sumScopes(quasis)
     object quasiParserPattern:
         to getName():
             return name
@@ -1797,7 +1804,7 @@ def makeQuasiParserPattern(name, quasis, span):
         to subPrintOn(out, priority):
             quasiPrint(name, quasis, out, priority)
     return astWrapper(quasiParserPattern, makeQuasiParserPattern, [name, quasis], span,
-        scope, term`QuasiParserPattern`, fn f {[name, [q.transform(f) for q in quasis]]})
+        scope, term`QuasiParserPattern`, fn f {[name, transformAll(quasis, f)]})
 
 def test_literalExpr(assert):
     def expr := makeLiteralExpr("one", null)
@@ -2050,7 +2057,7 @@ def test_augAssignExpr(assert):
     assert.equal(M.toString(makeAugAssignExpr(">>", makeGetExpr(lval, [makeLiteralExpr(0, null)], null), body, null)), "a[0] >>= 1")
 
 def test_ifExpr(assert):
-    def [test, consq, alt] := [makeNounExpr(n, null) for n in ["a", "b", "c"]]
+    def [test, consq, alt] := [makeNounExpr("a", null), makeNounExpr("b", null), makeNounExpr("c", null)]
     def expr := makeIfExpr(test, consq, alt, null)
     assert.equal(expr._uncall(), [makeIfExpr, "run", [test, consq, alt, null]])
     assert.equal(M.toString(expr), "if (a):\n    b\nelse:\n    c")
