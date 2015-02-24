@@ -54,7 +54,7 @@ def optMakeTagFromData(val, mkt):
         match v :int:
             return mkt(".int.", v)
         match v :float:
-            return mkt(".float.", v)
+            return mkt(".float64.", v)
         match v :str:
             return mkt(".String.", v)
         match v :char:

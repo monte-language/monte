@@ -14,4 +14,6 @@ def testSwitch := pkg.readFile("test_switch.mt")([=> unittest])
 def testOperators := pkg.readFile("test_operators.mt")([=> unittest])
 def monte_lexer := pkg.readFile("monte_lexer.mt")([=> unittest])
 def monte_ast := pkg.readFile("monte_ast.mt")([=> unittest])
-pkg.makeModule(monte_ast | monte_lexer | blackjack | example | ometaTests | testUnicode | regionTests | testOperators)
+def monte_parser := pkg.readFile("monte_parser.mt")([=> unittest] | monte_lexer | monte_ast)
+
+pkg.makeModule(monte_parser | monte_lexer | blackjack | example | ometaTests | testUnicode | regionTests | testOperators)

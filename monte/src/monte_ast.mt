@@ -1,5 +1,5 @@
 module unittest
-export (makeLiteralExpr, makeNounExpr, makeFinalPattern)
+export (astBuilder)
 
 def MONTE_KEYWORDS := [
 "as", "bind", "break", "catch", "continue", "def", "else", "escape",
@@ -196,6 +196,8 @@ def astWrapper(node, maker, args, span, scope, termFunctor, transformArgs):
     return object astNode extends node:
         to getStaticScope():
             return scope
+        to getSpan():
+            return span
         to asTerm():
             def termit(subnode, maker, args, span):
                 return subnode.asTerm()
@@ -1805,6 +1807,174 @@ def makeQuasiParserPattern(name, quasis, span):
             quasiPrint(name, quasis, out, priority)
     return astWrapper(quasiParserPattern, makeQuasiParserPattern, [name, quasis], span,
         scope, term`QuasiParserPattern`, fn f {[name, transformAll(quasis, f)]})
+
+object astBuilder:
+    to LiteralExpr(value, span):
+        return makeLiteralExpr(value, span)
+    to NounExpr(name, span):
+        return makeNounExpr(name, span)
+    to TempNounExpr(namePrefix, span):
+        return makeTempNounExpr(namePrefix, span)
+    to SlotExpr(name, span):
+        return makeSlotExpr(name, span)
+    to MetaContextExpr(span):
+        return makeMetaContextExpr(span)
+    to MetaStateExpr(span):
+        return makeMetaStateExpr(span)
+    to BindingExpr(name, span):
+        return makeBindingExpr(name, span)
+    to SeqExpr(exprs, span):
+        return makeSeqExpr(exprs, span)
+    to "Module"(imports, exports, body, span):
+        return makeModule(imports, exports, body, span)
+    to MethodCallExpr(rcvr, verb, arglist, span):
+        return makeMethodCallExpr(rcvr, verb, arglist, span)
+    to FunCallExpr(receiver, args, span):
+        return makeFunCallExpr(receiver, args, span)
+    to SendExpr(rcvr, verb, arglist, span):
+        return makeSendExpr(rcvr, verb, arglist, span)
+    to FunSendExpr(receiver, args, span):
+        return makeFunSendExpr(receiver, args, span)
+    to GetExpr(receiver, indices, span):
+        return makeGetExpr(receiver, indices, span)
+    to AndExpr(left, right, span):
+        return makeAndExpr(left, right, span)
+    to OrExpr(left, right, span):
+        return makeOrExpr(left, right, span)
+    to BinaryExpr(left, op, right, span):
+        return makeBinaryExpr(left, op, right, span)
+    to CompareExpr(left, op, right, span):
+        return makeCompareExpr(left, op, right, span)
+    to RangeExpr(left, op, right, span):
+        return makeRangeExpr(left, op, right, span)
+    to SameExpr(left, right, direction, span):
+        return makeSameExpr(left, right, direction, span)
+    to MatchBindExpr(specimen, pattern, span):
+        return makeMatchBindExpr(specimen, pattern, span)
+    to MismatchExpr(specimen, pattern, span):
+        return makeMismatchExpr(specimen, pattern, span)
+    to PrefixExpr(op, receiver, span):
+        return makePrefixExpr(op, receiver, span)
+    to CoerceExpr(specimen, guard, span):
+        return makeCoerceExpr(specimen, guard, span)
+    to CurryExpr(receiver, verb, isSend, span):
+        return makeCurryExpr(receiver, verb, isSend, span)
+    to ExitExpr(name, value, span):
+        return makeExitExpr(name, value, span)
+    to ForwardExpr(name, span):
+        return makeForwardExpr(name, span)
+    to VarPattern(noun, guard, span):
+        return makeVarPattern(noun, guard, span)
+    to DefExpr(pattern, exit_, expr, span):
+        return makeDefExpr(pattern, exit_, expr, span)
+    to AssignExpr(lvalue, rvalue, span):
+        return makeAssignExpr(lvalue, rvalue, span)
+    to VerbAssignExpr(verb, lvalue, rvalues, span):
+        return makeVerbAssignExpr(verb, lvalue, rvalues, span)
+    to AugAssignExpr(op, lvalue, rvalue, span):
+        return makeAugAssignExpr(op, lvalue, rvalue, span)
+    to "Method"(docstring, verb, patterns, resultGuard, body, span):
+        return makeMethod(docstring, verb, patterns, resultGuard, body, span)
+    to "To"(docstring, verb, patterns, resultGuard, body, span):
+        return makeTo(docstring, verb, patterns, resultGuard, body, span)
+    to Matcher(pattern, body, span):
+        return makeMatcher(pattern, body, span)
+    to Catcher(pattern, body, span):
+        return makeCatcher(pattern, body, span)
+    to Script(extend, methods, matchers, span):
+        return makeScript(extend, methods, matchers, span)
+    to FunctionScript(patterns, resultGuard, body, span):
+        return makeFunctionScript(patterns, resultGuard, body, span)
+    to FunctionExpr(patterns, body, span):
+        return makeFunctionExpr(patterns, body, span)
+    to ListExpr(items, span):
+        return makeListExpr(items, span)
+    to ListComprehensionExpr(iterable, filter, key, value, body, span):
+        return makeListComprehensionExpr(iterable, filter, key, value, body, span)
+    to MapExprAssoc(key, value, span):
+        return makeMapExprAssoc(key, value, span)
+    to MapExprExport(value, span):
+        return makeMapExprExport(value, span)
+    to MapExpr(pairs, span):
+        return makeMapExpr(pairs, span)
+    to MapComprehensionExpr(iterable, filter, key, value, bodyk, bodyv, span):
+        return makeMapComprehensionExpr(iterable, filter, key, value, bodyk, bodyv, span)
+    to ForExpr(iterable, key, value, body, span):
+        return makeForExpr(iterable, key, value, body, span)
+    to ObjectExpr(docstring, name, asExpr, auditors, script, span):
+        return makeObjectExpr(docstring, name, asExpr, auditors, script, span)
+    to ParamDesc(name, guard, span):
+        return makeParamDesc(name, guard, span)
+    to MessageDesc(docstring, verb, params, resultGuard, span):
+        return makeMessageDesc(docstring, verb, params, resultGuard, span)
+    to InterfaceExpr(docstring, name, stamp, parents, auditors, messages, span):
+        return makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
+    to FunctionInterfaceExpr(docstring, messageDesc, span):
+        return makeFunctionInterfaceExpr(docstring, messageDesc, span)
+    to CatchExpr(body, pattern, catcher, span):
+        return makeCatchExpr(body, pattern, catcher, span)
+    to FinallyExpr(body, unwinder, span):
+        return makeFinallyExpr(body, unwinder, span)
+    to TryExpr(body, catchers, finallyBlock, span):
+        return makeTryExpr(body, catchers, finallyBlock, span)
+    to EscapeExpr(ejectorPattern, body, catchPattern, catchBody, span):
+        return makeEscapeExpr(ejectorPattern, body, catchPattern, catchBody, span)
+    to SwitchExpr(specimen, matchers, span):
+        return makeSwitchExpr(specimen, matchers, span)
+    to WhenExpr(args, body, catchers, finallyBlock, span):
+        return makeWhenExpr(args, body, catchers, finallyBlock, span)
+    to IfExpr(test, consq, alt, span):
+        return makeIfExpr(test, consq, alt, span)
+    to WhileExpr(test, body, catcher, span):
+        return makeWhileExpr(test, body, catcher, span)
+    to HideExpr(body, span):
+        return makeHideExpr(body, span)
+    to ValueHoleExpr(index, span):
+        return makeValueHoleExpr(index, span)
+    to PatternHoleExpr(index, span):
+        return makePatternHoleExpr(index, span)
+    to ValueHolePattern(index, span):
+        return makeValueHolePattern(index, span)
+    to PatternHolePattern(index, span):
+        return makePatternHolePattern(index, span)
+    to FinalPattern(noun, guard, span):
+        return makeFinalPattern(noun, guard, span)
+    to SlotPattern(noun, span):
+        return makeSlotPattern(noun, span)
+    to BindingPattern(noun, span):
+        return makeBindingPattern(noun, span)
+    to BindPattern(noun, span):
+        return makeBindPattern(noun, span)
+    to IgnorePattern(guard, span):
+        return makeIgnorePattern(guard, span)
+    to ListPattern(patterns, tail, span):
+        return makeListPattern(patterns, tail, span)
+    to MapPatternAssoc(key, value, span):
+        return makeMapPatternAssoc(key, value, span)
+    to MapPatternExport(value, span):
+        return makeMapPatternExport(value, span)
+    to MapPatternRequired(keyer, span):
+        return makeMapPatternRequired(keyer, span)
+    to MapPatternDefault(keyer, default, span):
+        return makeMapPatternDefault(keyer, default, span)
+    to MapPattern(patterns, tail, span):
+        return makeMapPattern(patterns, tail, span)
+    to ViaPattern(expr, subpattern, span):
+        return makeViaPattern(expr, subpattern, span)
+    to SuchThatPattern(subpattern, expr, span):
+        return makeSuchThatPattern(subpattern, expr, span)
+    to SamePattern(value, direction, span):
+        return makeSamePattern(value, direction, span)
+    to QuasiText(text, span):
+        return makeQuasiText(text, span)
+    to QuasiExprHole(expr, span):
+        return makeQuasiExprHole(expr, span)
+    to QuasiPatternHole(pattern, span):
+        return makeQuasiPatternHole(pattern, span)
+    to QuasiParserExpr(name, quasis, span):
+        return makeQuasiParserExpr(name, quasis, span)
+    to QuasiParserPattern(name, quasis, span):
+        return makeQuasiParserPattern(name, quasis, span)
 
 def test_literalExpr(assert):
     def expr := makeLiteralExpr("one", null)
