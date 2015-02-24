@@ -14,7 +14,7 @@ def optMakeTagFromData(val, mkt) as DeepFrozen:
         match v :int:
             return mkt(".int.", v)
         match v :float:
-            return mkt(".float.", v)
+            return mkt(".float64.", v)
         match v :str:
             return mkt(".String.", v)
         match v :char:
@@ -54,7 +54,7 @@ def test_convert(assert):
     def nul := a[1]
     assert.equal(nul.getTag().getName(), "null")
     def flo := a[2]
-    assert.equal(flo.getTag().getName(), ".float.")
+    assert.equal(flo.getTag().getName(), ".float64.")
     assert.equal(flo.getData(), 2.5)
     def s := a[3]
     assert.equal(s.getTag().getName(), ".String.")

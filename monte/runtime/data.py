@@ -1190,6 +1190,9 @@ class SourceSpan(MonteObject):
                                      self.startLine, self.startCol,
                                      self.endLine, self.endCol])])
 
+    def combine(self, other):
+        return spanCover(self, other)
+
 
 def spanCover(a, b):
     """
