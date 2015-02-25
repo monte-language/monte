@@ -883,6 +883,17 @@ class MonteLexer(object):
         """
         if self.currentChar == '\\':
             nex = self.nextChar()
+            if nex == 'U':
+                hexstr = ""
+                for i in range(8):
+                    hexstr += self.nextChar()
+                try:
+                    v = int(hexstr, 16)
+                except ValueError:
+                    self.syntaxError('\\U escape takes 8 hex digits')
+                else:
+                    self.nextChar()
+                    return unichr(v)
             if nex == 'u':
                 hexstr = ""
                 for i in range(4):
@@ -898,7 +909,7 @@ class MonteLexer(object):
                 try:
                     v = int(self.nextChar() + self.nextChar(), 16)
                 except ValueError:
-                    self.syntaxError('\\u escape must be four hex digits')
+                    self.syntaxError('\\x escape must be four hex digits')
                 else:
                     self.nextChar()
                     return unichr(v)
