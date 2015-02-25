@@ -253,3 +253,20 @@ What are M and m?
 
 M is a singleton providing runtime services including passing messages to
 farrefs. m is the quasiparser for monte source code. 
+
+Novice Errors
+=============
+
+::
+
+    monte/monte/test $ python test_lexer.py
+    Traceback (most recent call last):
+      File "test_lexer.py", line 1, in <module>
+        from monte.test import unittest
+    ImportError: No module named monte.test
+
+You're not suppsed to run the tests directly. In the root ``monte`` directory,
+use::
+
+    trial monte.test.test_lexer
+
