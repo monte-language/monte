@@ -166,6 +166,15 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
     def charConstant(fail):
         if (currentChar == '\\'):
             def nex := advance()
+            if (nex == 'U'):
+                def hexstr := __makeString.fromChars([advance() for _ in 0..!8])
+                def v
+                try:
+                    bind v := __makeInt(hexstr, 16)
+                catch _:
+                    throw.eject(fail, "\\U escape must be eight hex digits")
+                advance()
+                return __makeCharacter(v)
             if (nex == 'u'):
                 def hexstr := __makeString.fromChars([advance() for _ in 0..!4])
                 def v
