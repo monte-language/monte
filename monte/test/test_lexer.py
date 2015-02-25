@@ -18,6 +18,7 @@ class LexerTests(unittest.TestCase):
     def test_char(self):
         self.assertEqual(lex("'z'"),          [Term(Tag(".char."), "z", None, None)])
         self.assertEqual(lex("'\\n'"),        [Term(Tag(".char."), "\n", None, None)])
+        self.assertEqual(lex("'\\U00008000'"),[Term(Tag(".char."), u'\U00008000', None, None)])
         self.assertEqual(lex("'\\u0061'"),    [Term(Tag(".char."), "a", None, None)])
         self.assertEqual(lex("'\\x61'"),      [Term(Tag(".char."), "a", None, None)])
 
