@@ -924,7 +924,7 @@ class MonteLexer(object):
                 '"': '"',
                 '\'': "'",
                 '\\': '\\',
-                '\n': None
+                '\n': None      # escaped newline for continuation
                 }.get(nex, -1)
             if c == -1:
                 self.syntaxError("Unrecognized escaped character " + repr(nex))
