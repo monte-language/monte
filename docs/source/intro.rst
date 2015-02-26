@@ -170,9 +170,11 @@ Char
 Monte's character type is distinct from the string type. Characters are always
 surrounded by apostrophes (``'``) and are always unicode.
 
-.. warning:: In Python, you may be accustomed to 'single' and "double" quotes
-    functioning interchangeably. In Monte, double quotes can contain any number
-    of letters, but single quotes can only hold a single character. 
+.. warning:: 
+
+    In Python, you may be accustomed to 'single' and "double" quotes
+    functioning interchangeably. In Monte, double quotes can contain any
+    number of letters, but single quotes can only hold a single character. 
 
 .. code-block:: monte
 
@@ -184,8 +186,8 @@ String
 ~~~~~~
 
 Strings are objects with built-in methods and capabilities, rather than
-character arrays. Monte's strings are always Unicode, like Python 3 (but
-unlike Python 2). Strings are always surrounded by double-quotes (`"`).
+character arrays. Monte's strings are always unicode, like Python 3 (but
+unlike Python 2). Strings are always surrounded by double-quotes (``"``).
 
 .. code-block:: monte
 
@@ -203,6 +205,54 @@ in Python::
 
     def l := ['I', "love", "Monte", 42, 0.5]
     def x := l[3] # x == 42
+
+Special Characters
+------------------
+
+In lists and strings, special characters and unicode values can be escaped: 
+
++-----------------+---------------------------------+
+| Escape Sequence | Meaning                         |
++=================+=================================+
+| ``\\``          | Backslash (``\``)               |
++-----------------+---------------------------------+
+| ``\'``          | Single quote (``'``)            |
++-----------------+---------------------------------+
+| ``\"``          | Double quote (``"``)            |
++-----------------+---------------------------------+
+| ``\b``          | ASCII Backspace (BS)            |
++-----------------+---------------------------------+
+| ``\f``          | ASCII Formfeed (FF)             |
++-----------------+---------------------------------+
+| ``\n``          | ASCII Linefeed (LF)             |
++-----------------+---------------------------------+
+| ``\r``          | ASCII Carriage Return (CR)      |
++-----------------+---------------------------------+
+| ``\t``          | ASCII Horizontal Tab (TAB)      |
++-----------------+---------------------------------+
+| ``\uxxxx``      | Character with 16-bit hex value |
+|                 | *xxxx* (Unicode only)           |
++-----------------+---------------------------------+
+| ``\Uxxxxxxxx``  | Character with 32-bit hex value |
+|                 | *xxxxxxxx* (Unicode only)       |
++-----------------+---------------------------------+
+| ``\xhh``        | Character with hex value *hh*   |
++-----------------+---------------------------------+
+
+(table mostly from `the Python docs <https://docs.python.org/2/_sources/reference/lexical_analysis.txt>`_)
+
+.. note:: 
+
+    Monte intentionally avoids supporting ASCII vertical tabs (``\v``) and
+    octal values (``\o00``) because it is a language of the future and in the
+    future, nobody uses those. 
+
+.. note::
+
+    As with Python, a backslash (``\``) as the final character of a line
+    escapes the newline and causes that line and its successor to be
+    interpereted as one.
+
 
 Data Structures
 ---------------
