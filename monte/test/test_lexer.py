@@ -26,7 +26,16 @@ class LexerTests(unittest.TestCase):
         self.assertEqual(lex('"foo\\\nbar"'), [Term(Tag(".String."), 'foobar', None, None)])
         self.assertEqual(lex('"foo"'),        [Term(Tag(".String."), 'foo', None, None)])
         self.assertEqual(lex('"foo bar 9"'),  [Term(Tag(".String."), 'foo bar 9', None, None)])
-        self.assertEqual(lex('"foo\\nbar"'),  [Term(Tag(".String."), 'foo\nbar', None, None)])
+        self.assertEqual(lex('"a\\U00008000"'),[Term(Tag(".String."), u'a\U00008000', None, None)])
+        self.assertEqual(lex('"\\U00008000"'),[Term(Tag(".String."), u'\U00008000', None, None)])
+        self.assertEqual(lex('"abc\\u0061"'), [Term(Tag(".String."), 'abca', None, None)])
+        self.assertEqual(lex('"\\u0061 bc"'), [Term(Tag(".String."), 'a bc', None, None)])
+        self.assertEqual(lex('"\\u0061"'),    [Term(Tag(".String."), 'a', None, None)])
+        self.assertEqual(lex('"\\x61"'),      [Term(Tag(".String."), 'a', None, None)])
+        self.assertEqual(lex('"\\\n\\x61"'),  [Term(Tag(".String."), 'a', None, None)])
+        self.assertEqual(lex('"w\\x61t"'),    [Term(Tag(".String."), 'wat', None, None)])
+
+       self.assertEqual(lex('"foo\\nbar"'),  [Term(Tag(".String."), 'foo\nbar', None, None)])
 
     def test_integer(self):
         self.assertEqual(lex('0'),          [Term(Tag(".int."), 0, None, None)])
