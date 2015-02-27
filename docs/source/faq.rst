@@ -204,6 +204,52 @@ floats, strings, and objects that you define correctly.
 Selfless objects are "passed by construction", meaning that instructions for
 creating a near version are passed over the wire. 
 
+Wait, what about Self?
+----------------------
+
+Newcomers to Monte are often surprised to learn that Monte lacks a ``this`` or
+``self`` keyword. In fact, Monte does have ways to refer to the current object,
+but there's a deeper conceptual difference between Monte and other object-based
+languages.
+
+Monte does not have a ``this`` or ``self`` keyword because Monte objects can
+refer to their "member" or "private" names without qualification. This is a
+consequence of how Monte objects are built. Recall our previous example: ::
+
+    def makeMyObject():
+        return object myObject:
+            pass
+
+Let's modify it slightly. We want to give this object a "private" value secret
+which cannot be accessed directly, and a method ``getSecret/0`` which will
+return it. We put "private" in quotation marks to emphasize that Monte does not
+have private names. Instead, all names are private in Monte; if one cannot see
+a name, then one cannot access it. ::
+
+    def makeMyObject(secret):
+        return object myObject:
+            to getSecret():
+                return secret
+
+And that's it. No declarations of object contents or special references to this
+or self.
+
+We can also simulate "member" names for objects. As before, we can achieve this
+without this. ::
+
+    def makeMyObject():
+        var counter :int := 0
+        return object myObject:
+            to getCounter():
+                return counter += 1
+
+Here, ``counter`` is not visible outside of ``makeMyObject()``, which means
+that no other object can directly modify it. Each time we call
+``makeMyObject()``, we get a new object called ``myObject`` with a new counter.
+
+(Note: Remember, Monte is an expression language. ``counter += 1`` returns the
+value of ``counter``. That's how ``return counter += 1`` can work properly.)
+
 
 Psuedomonadic joining on promises
 ---------------------------------
