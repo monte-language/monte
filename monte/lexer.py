@@ -890,7 +890,7 @@ class MonteLexer(object):
                 try:
                     v = int(hexstr, 16)
                 except ValueError:
-                    self.syntaxError('\\U escape takes 8 hex digits')
+                    self.syntaxError('\\U escape must be eight hex digits')
                 else:
                     self.nextChar()
                     return unichr(v)
