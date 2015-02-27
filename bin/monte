@@ -7,8 +7,15 @@ while os.path.dirname(path) != path:
         break
     path = os.path.dirname(path)
 
-from monte.runtime.load import eval as monte_eval, monteImport
-# from monte.repl import startRepl
+try:
+    from monte.runtime.load import eval as monte_eval, monteImport
+    # from monte.repl import startRepl
+except ImportError:
+    import_error_message = """Failed to import a required Python module. 
+    Is everything in requirements.txt installed and available?
+    """
+    print >> sys.stderr, import_error_message
+    exit(-1)
 
 # startRepl()
 from monte.runtime.scope import bootScope, createSafeScope
