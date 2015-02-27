@@ -30,6 +30,13 @@ code. If you have problems, join us in #monte on irc.freenode.net, ask your
 question (use a pastebin_ to share any errors, rather than pasting into the
 channel), and wait a few hours if nobody is around. 
 
+If you'd like to contribute to Monte, check out the Monte_ and Typhon_ issue
+trackers and the `pipe dreams`_ wiki page. It's also worth grepping for
+``TODO`` in the source of both projects. 
+
+.. _Monte: https://github.com/monte-language/monte/issues
+.. _Typhon: https://github.com/monte-language/typhon/issues
+.. _pipe dreams: https://github.com/monte-language/monte/wiki/Pipe-Dreams
 .. _Python: https://docs.python.org/2/tutorial/
 .. _E: http://www.skyhunter.com/marcs/ewalnut.html
 .. _repo: https://github.com/monte-language/monte
