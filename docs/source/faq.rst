@@ -9,7 +9,7 @@ It's like Monty Python, but with E.
 What can you know about an object?
 ----------------------------------
 
-Any object that you can access meets one of three criteria: 
+Any object that you can access meets one of three criteria:
 
 * You created it,
 * You were born with it, or
@@ -17,10 +17,10 @@ Any object that you can access meets one of three criteria:
   of the first two criteria.
 
 Additionally, you can use guards and auditors to ensure properties of an
-object. 
+object.
 
 Note that using ``when`` on a promise for a far reference still results in a
-far reference. 
+far reference.
 
 
 Parallelism?
@@ -73,18 +73,38 @@ near/far, settled/unsettled, resolved/unresolved
 http://www.erights.org/elib/concurrency/refmech.html
 
 A near reference is to an object in the same vat, whereas a far reference is
-to an object elsewhere. 
+to an object elsewhere.
 
 References are settled if they won't change to a different reference state.
 They can be compared with == and used as hashtable keys.
 
 Settled/unsettled is more or less the same as resolved/unresolved, although
-edge cases in previous implementations have required the distinction. 
+edge cases in previous implementations have required the distinction.
 
 A reference is either a promise or resolved. A resolved reference is either
 near, far, or broken. Near references can have synchronous calls made on them.
 Promises, far references, and broken references will raise an exception if
-synchronous calls are made. 
+synchronous calls are made.
+
+Ternary operators?
+------------------
+
+A common pattern in C and other languages that support a ternary boolean
+operator is to assign the result of a ternary operation to a variable or return
+a result from a function:::
+
+    char* even(int i) {
+        return i % 2 ? "no" : "yes";
+    }
+
+Monte lacks the ternary operator, but permits using regular conditional
+expressions in its place:::
+
+    def even(i):
+        return if (i % 2 == 0) { "yes" } else { "no"}
+
+Note that Monte requires the first component of its conditional expressions to
+evaluate to a boolean object; no automatic coercion is done.
 
 Functions?
 ----------
@@ -94,7 +114,7 @@ than functions.
 
 A function is actually an object with a single run() method. In other words,
 ``def f() { ... }`` always desugars to ``object f { to run() { ... } }``.
- 
+
 
 Everything's a method?
 ----------------------
@@ -107,12 +127,11 @@ Does this mean we should never make synchronous calls?
 
 No. There are many kind of objects on which synchronous calls work, because
 they are near references. For example, all literals are near: ``def lue :=
-(6).mul(7)``. 
+(6).mul(7)``.
 
 When in doubt, remember that there is a ``near`` guard which can be used to
 confirm that an object is in the same vat as you and thus available for
-synchronous calls. 
-
+synchronous calls.
 
 What's Monte's comment syntax?
 ---------------------------------
@@ -170,10 +189,10 @@ Vats?
 
 http://erights.org/elib/concurrency/vat.html might help
 
-A vat's an object that sits on the border of the runtime and is responsible 
+A vat's an object that sits on the border of the runtime and is responsible
 for containing, guarding, and passing messages to the objects inside of it.
 
-"A Vat is vaguely like a traditional OS process -- it bundles together a 
+"A Vat is vaguely like a traditional OS process -- it bundles together a
 single thread of control and an address space of synchronously accessible data"
 
 
@@ -190,7 +209,7 @@ Promises?
 
 ES6 promises were derived from E's.
 The crucial part is, when promises are resolved they become forwarders to
-their values. 
+their values.
 
 
 Selfless objects?
@@ -199,10 +218,56 @@ Selfless objects?
 Some objects can always be near, even if they were initially far, if they can
 be serialized in a way that allows them to be reconstituted in another vat.
 This quality is known as being selfless, and objects with it include ints,
-floats, strings, and objects that you define correctly. 
+floats, strings, and objects that you define correctly.
 
 Selfless objects are "passed by construction", meaning that instructions for
-creating a near version are passed over the wire. 
+creating a near version are passed over the wire.
+
+Wait, what about Self?
+----------------------
+
+Newcomers to Monte are often surprised to learn that Monte lacks a ``this`` or
+``self`` keyword. In fact, Monte does have ways to refer to the current object,
+but there's a deeper conceptual difference between Monte and other object-based
+languages.
+
+Monte does not have a ``this`` or ``self`` keyword because Monte objects can
+refer to their "member" or "private" names without qualification. This is a
+consequence of how Monte objects are built. Recall our previous example: ::
+
+    def makeMyObject():
+        return object myObject:
+            pass
+
+Let's modify it slightly. We want to give this object a "private" value secret
+which cannot be accessed directly, and a method ``getSecret/0`` which will
+return it. We put "private" in quotation marks to emphasize that Monte does not
+have private names. Instead, all names are private in Monte; if one cannot see
+a name, then one cannot access it. ::
+
+    def makeMyObject(secret):
+        return object myObject:
+            to getSecret():
+                return secret
+
+And that's it. No declarations of object contents or special references to this
+or self.
+
+We can also simulate "member" names for objects. As before, we can achieve this
+without this. ::
+
+    def makeMyObject():
+        var counter :int := 0
+        return object myObject:
+            to getCounter():
+                return counter += 1
+
+Here, ``counter`` is not visible outside of ``makeMyObject()``, which means
+that no other object can directly modify it. Each time we call
+``makeMyObject()``, we get a new object called ``myObject`` with a new counter.
+
+(Note: Remember, Monte is an expression language. ``counter += 1`` returns the
+value of ``counter``. That's how ``return counter += 1`` can work properly.)
 
 
 Psuedomonadic joining on promises
@@ -210,15 +275,15 @@ Psuedomonadic joining on promises
 
 Monte has a mechanic which can be called pseudomonadic joining on promises.
 
-This means that a promise becomes the value for the promise: 
+This means that a promise becomes the value for the promise:
 
-.. code-block:: 
+.. code-block::
 
     def p := foo<-bar(); def p2 := p<-baz()
 
 Because when-exprs evaluate to a promise as well, you can have something like
 
-.. code-block:: 
+.. code-block::
 
     def p := foo<-bar(); def p2 := when (p) -> { p.doStuff() }; p2<-baz()
 
@@ -252,4 +317,21 @@ What are M and m?
 -----------------
 
 M is a singleton providing runtime services including passing messages to
-farrefs. m is the quasiparser for monte source code. 
+farrefs. m is the quasiparser for monte source code.
+
+Novice Errors
+=============
+
+::
+
+    monte/monte/test $ python test_lexer.py
+    Traceback (most recent call last):
+      File "test_lexer.py", line 1, in <module>
+        from monte.test import unittest
+    ImportError: No module named monte.test
+
+You're not suppsed to run the tests directly. In the root ``monte`` directory,
+use::
+
+    trial monte.test.test_lexer
+

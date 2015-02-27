@@ -30,6 +30,13 @@ code. If you have problems, join us in #monte on irc.freenode.net, ask your
 question (use a pastebin_ to share any errors, rather than pasting into the
 channel), and wait a few hours if nobody is around. 
 
+If you'd like to contribute to Monte, check out the Monte_ and Typhon_ issue
+trackers and the `pipe dreams`_ wiki page. It's also worth grepping for
+``TODO`` in the source of both projects. 
+
+.. _Monte: https://github.com/monte-language/monte/issues
+.. _Typhon: https://github.com/monte-language/typhon/issues
+.. _pipe dreams: https://github.com/monte-language/monte/wiki/Pipe-Dreams
 .. _Python: https://docs.python.org/2/tutorial/
 .. _E: http://www.skyhunter.com/marcs/ewalnut.html
 .. _repo: https://github.com/monte-language/monte
@@ -146,6 +153,41 @@ Objects can also be created by functions::
 
     hi.greet("Student")
 
+Object Composition
+------------------
+
+Monte has a simpler approach to object composition and inheritance than many
+other object-based and object-oriented languages. Instead of classes or
+prototypes, Monte has a simple single syntax for constructing objects, the
+object expression.::
+
+    object myObject:
+        pass
+
+Unlike Java, Monte objects are not constructed from classes. Unlike JavaScript
+or Python, Monte objects are not constructed from prototypes. As a result, it
+might not be obvious at first how to build multiple objects which are similar
+in behavior. However, Monte has a very simple idiom for class-like constructs.
+
+::
+
+    def makeMyObject():
+        return object myObject:
+            pass
+
+Methods can be attached to objects with the to keyword.::
+
+    object deck:
+        to size():
+            return 52
+
+Finally, just like with functions, methods can have guards on their parameters
+and return value.::
+
+    object deck:
+        to size(suits :int, ranks :int) :int:
+            return suits * ranks
+
 Built-In Types
 --------------
 
@@ -170,9 +212,11 @@ Char
 Monte's character type is distinct from the string type. Characters are always
 surrounded by apostrophes (``'``) and are always unicode.
 
-.. warning:: In Python, you may be accustomed to 'single' and "double" quotes
-    functioning interchangeably. In Monte, double quotes can contain any number
-    of letters, but single quotes can only hold a single character. 
+.. warning:: 
+
+    In Python, you may be accustomed to 'single' and "double" quotes
+    functioning interchangeably. In Monte, double quotes can contain any
+    number of letters, but single quotes can only hold a single character. 
 
 .. code-block:: monte
 
@@ -184,8 +228,8 @@ String
 ~~~~~~
 
 Strings are objects with built-in methods and capabilities, rather than
-character arrays. Monte's strings are always Unicode, like Python 3 (but
-unlike Python 2). Strings are always surrounded by double-quotes (`"`).
+character arrays. Monte's strings are always unicode, like Python 3 (but
+unlike Python 2). Strings are always surrounded by double-quotes (``"``).
 
 .. code-block:: monte
 
@@ -203,6 +247,54 @@ in Python::
 
     def l := ['I', "love", "Monte", 42, 0.5]
     def x := l[3] # x == 42
+
+Special Characters
+------------------
+
+In lists and strings, special characters and unicode values can be escaped: 
+
++-----------------+---------------------------------+
+| Escape Sequence | Meaning                         |
++=================+=================================+
+| ``\\``          | Backslash (``\``)               |
++-----------------+---------------------------------+
+| ``\'``          | Single quote (``'``)            |
++-----------------+---------------------------------+
+| ``\"``          | Double quote (``"``)            |
++-----------------+---------------------------------+
+| ``\b``          | ASCII Backspace (BS)            |
++-----------------+---------------------------------+
+| ``\f``          | ASCII Formfeed (FF)             |
++-----------------+---------------------------------+
+| ``\n``          | ASCII Linefeed (LF)             |
++-----------------+---------------------------------+
+| ``\r``          | ASCII Carriage Return (CR)      |
++-----------------+---------------------------------+
+| ``\t``          | ASCII Horizontal Tab (TAB)      |
++-----------------+---------------------------------+
+| ``\uxxxx``      | Character with 16-bit hex value |
+|                 | *xxxx* (Unicode only)           |
++-----------------+---------------------------------+
+| ``\Uxxxxxxxx``  | Character with 32-bit hex value |
+|                 | *xxxxxxxx* (Unicode only)       |
++-----------------+---------------------------------+
+| ``\xhh``        | Character with hex value *hh*   |
++-----------------+---------------------------------+
+
+(table mostly from `the Python docs <https://docs.python.org/2/_sources/reference/lexical_analysis.txt>`_)
+
+.. note:: 
+
+    Monte intentionally avoids supporting ASCII vertical tabs (``\v``) and
+    octal values (``\o00``) because it is a language of the future and in the
+    future, nobody uses those. 
+
+.. note::
+
+    As with Python, a backslash (``\``) as the final character of a line
+    escapes the newline and causes that line and its successor to be
+    interpereted as one.
+
 
 Data Structures
 ---------------
