@@ -86,6 +86,33 @@ near, far, or broken. Near references can have synchronous calls made on them.
 Promises, far references, and broken references will raise an exception if
 synchronous calls are made. 
 
+Ternary operators?
+------------------
+
+A common pattern in C and other languages that support a ternary boolean
+operator is to assign the result of a ternary operation to a variable or return
+a result from a function:::
+
+    int increment = count > 5 ? 2 : 1;
+
+    char* even(int i) {
+        return i % 2 ? "no" : "yes";
+    }
+
+Monte lacks the ternary operator, but permits using regular conditional
+expressions in its place:::
+
+    increment :int := if (count > 5) { 2 } else { 1 }
+
+    def even(i :int) :String:
+        return if (i % 2 == 0):
+            "yes"
+        else:
+            "no"
+
+Note that Monte requires the first component of its conditional expressions to
+evaluate to a boolean object; no automatic coercion is done.
+
 Functions?
 ----------
 
@@ -112,7 +139,6 @@ they are near references. For example, all literals are near: ``def lue :=
 When in doubt, remember that there is a ``near`` guard which can be used to
 confirm that an object is in the same vat as you and thus available for
 synchronous calls. 
-
 
 What's Monte's comment syntax?
 ---------------------------------
