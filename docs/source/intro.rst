@@ -153,6 +153,41 @@ Objects can also be created by functions::
 
     hi.greet("Student")
 
+Object Composition
+------------------
+
+Monte has a simpler approach to object composition and inheritance than many
+other object-based and object-oriented languages. Instead of classes or
+prototypes, Monte has a simple single syntax for constructing objects, the
+object expression.::
+
+    object myObject:
+        pass
+
+Unlike Java, Monte objects are not constructed from classes. Unlike JavaScript
+or Python, Monte objects are not constructed from prototypes. As a result, it
+might not be obvious at first how to build multiple objects which are similar
+in behavior. However, Monte has a very simple idiom for class-like constructs.
+
+::
+
+    def makeMyObject():
+        return object myObject:
+            pass
+
+Methods can be attached to objects with the to keyword.::
+
+    object deck:
+        to size():
+            return 52
+
+Finally, just like with functions, methods can have guards on their parameters
+and return value.::
+
+    object deck:
+        to size(suits :int, ranks :int) :int:
+            return suits * ranks
+
 Built-In Types
 --------------
 
