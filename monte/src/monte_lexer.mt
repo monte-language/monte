@@ -269,6 +269,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
                 if (currentChar == EOF):
                     throw.eject(fail, "File ends inside quasiliteral")
                 buf.push(currentChar)
+                advance()
             if (peekChar() == currentChar):
                 buf.push(currentChar)
                 advance()
@@ -277,7 +278,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
                 # close backtick
                 advance()
                 popBrace('`', fail)
-                return composite("QUASI_CLOSE", __makeString.fromChars(buf),
+                return composite("QUASI_CLOSE", __makeString.fromChars(buf.snapshot()),
                                  endToken().getSpan())
             else if (currentChar == '$' && peekChar() == '\\'):
                 # it's a character constant like $\u2603 or a line continuation like $\
@@ -288,9 +289,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
             else:
                 def opener := endToken()
                 pushBrace(opener, "hole", nestLevel * 4, true)
-                if (buf.size() == 0):
-                    return null
-                return composite("QUASI_OPEN", __makeString.fromChars(buf),
+                return composite("QUASI_OPEN", __makeString.fromChars(buf.snapshot()),
                                  opener.getSpan())
 
 
@@ -335,7 +334,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
 
         if (braceStack.last()[1] == '`'):
             startToken()
-            return quasiPart()
+            return quasiPart(fail)
 
         skipSpaces()
         startToken()
