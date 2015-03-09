@@ -35,10 +35,7 @@ class Bool(MonteObject):
         return self._b
 
     def __eq__(self, other):
-        from monte.runtime.guards.data import booleanGuard
-        try:
-            other = booleanGuard.coerce(other, throw)
-        except RuntimeError:
+        if not isinstance(other, Bool):
             return false
         return bwrap(self._b == other._b)
 
@@ -120,10 +117,7 @@ class Character(MonteObject):
         return hash(self._c)
 
     def __eq__(self, other):
-        from monte.runtime.guards.data import charGuard
-        try:
-            other = charGuard.coerce(other, throw)
-        except RuntimeError:
+        if not isinstance(other, Character):
             return false
         return bwrap(self._c == other._c)
 
@@ -190,8 +184,8 @@ class Bytestring(MonteObject):
         out._m_print(self.quote())
 
     def __eq__(self, other):
-        from monte.runtime.guards.data import bytesGuard
-        other = bytesGuard.coerce(other, throw)
+        if not isinstance(other, Bytestring):
+            return false
         return bwrap(self.b == other.b)
 
     def _makeIterator(self):
@@ -292,10 +286,7 @@ class Integer(MonteObject):
         return hash(self.n)
 
     def __eq__(self, other):
-        from monte.runtime.guards.data import intGuard
-        try:
-            other = intGuard.coerce(other, throw)
-        except RuntimeError:
+        if not isinstance(other, Integer):
             return false
         return bwrap(self.n == other.n)
 
@@ -463,10 +454,7 @@ class Float(MonteObject):
         return hash(self.n)
 
     def __eq__(self, other):
-        from monte.runtime.guards.data import floatGuard
-        try:
-            other = floatGuard.coerce(other, throw)
-        except RuntimeError:
+        if not isinstance(other, Float):
             return false
         return bwrap(self.n == other.n)
 
@@ -922,12 +910,9 @@ class String(AtomicTwine):
         return hash(self.s)
 
     def __eq__(self, other):
-        from monte.runtime.guards.data import twineGuard
-        try:
-            other = twineGuard.coerce(other, throw).bare().s
-        except RuntimeError:
+        if not isinstance(other, Twine):
             return false
-        return bwrap(self.s == other)
+        return bwrap(self.s == other.bare().s)
 
     def bare(self):
         return self
