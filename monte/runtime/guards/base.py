@@ -501,6 +501,10 @@ class ProtocolDesc(MonteObject):
                 throw.eject(ej, "%s not stamped by %s" % (toQuote(specimen), self))
 
     @classmethod
+    def run(cls, *a):
+        return cls(*a)
+
+    @classmethod
     def makePair(cls, doc, fqn, supers, auditors, msgs):
         from monte.runtime.tables import ConstList
         stamp = InterfaceStamp(fqn)

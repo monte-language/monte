@@ -442,10 +442,7 @@ class PythonWriter(object):
         rcvr, verb, args = node.args
         rcvrName = self._generate(out, ctx.with_(mode=VALUE), rcvr)
         argNames = [self._generate(out, ctx.with_(mode=VALUE), arg) for arg in args.args]
-        if verb.data == "run":
-            return "%s(%s)" % (rcvrName, ', '.join(argNames))
-        else:
-            return "%s.%s(%s)" % (rcvrName, mangleIdent(verb.data), ', '.join(argNames))
+        return "%s.%s(%s)" % (rcvrName, mangleIdent(verb.data), ', '.join(argNames))
 
     def generate_Def(self, out, ctx, node):
         patt, ej, expr = node.args
