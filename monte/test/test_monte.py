@@ -1,3 +1,5 @@
+#import cProfile, lsprofcalltree
+import json
 import os
 
 from zope.interface import implementer
@@ -6,6 +8,7 @@ from twisted.python import failure
 from twisted.trial.itrial import ITestCase
 
 import monte
+from monte.runtime import load, audit
 from monte.runtime.load import TestCollector, buildPackage, eval as monte_eval
 from monte.runtime.scope import bootScope, createSafeScope
 from monte.runtime.tables import ConstMap
@@ -45,6 +48,10 @@ class MonteTestCase(object):
 
 def testSuite():
     srcdir = os.path.join(os.path.dirname(monte.__file__), 'src')
+    parsecache = os.path.join(srcdir, "parse.cache")
+    if os.path.exists(parsecache):
+        with monte.TimeRecorder("loadCache"):
+            load.COMPILE_CACHE = json.load(open(parsecache))
     safeScope = createSafeScope(bootScope)
     asserts = monte_eval(open(os.path.join(srcdir, "unittest.mt")).read(), safeScope)
     tests = []
@@ -54,4 +61,12 @@ def testSuite():
     testlist = sorted(c.tests.d.items())
     for (name, obj) in testlist:
         tests.append(MonteTestCase(name.bare().s, obj, asserts))
+    json.dump(load.COMPILE_CACHE, open(parsecache, 'w'))
     return unittest.TestSuite(tests)
+
+# def testSuite():
+#     prof = cProfile.Profile()
+#     ts = prof.runcall(_testSuite)
+#     kc = lsprofcalltree.KCacheGrind(prof)
+#     kc.output(open("monte.cachegrind", 'w'))
+#     return ts
