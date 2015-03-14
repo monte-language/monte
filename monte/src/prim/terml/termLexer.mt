@@ -67,7 +67,7 @@ def _makeTermLexer(input, builder, braceStack, var nestLevel):
     def skipWhitespace():
         if (atEnd()):
             return
-        while (currentChar == ' '):
+        while (['\n', ' '].contains(currentChar)):
             advance()
 
     def startToken():

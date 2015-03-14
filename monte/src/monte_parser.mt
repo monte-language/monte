@@ -121,6 +121,7 @@ def parseMonte(lex, builder, mode, err):
 
     def expr
     #def block
+    def prim
     def quasiliteral(id, isPattern, ej):
         def spanStart := if (id == null) {spanHere()} else {id.getSpan()}
         def name := if (id == null) {null} else {id.getData()}
@@ -154,7 +155,17 @@ def parseMonte(lex, builder, mode, err):
         else:
             return builder.QuasiParserExpr(name, parts, spanFrom(spanStart))
 
-    def prim(ej):
+    def mapItem(ej):
+        def spanStart := spanHere()
+        if (peekTag() == "=>"):
+            advance(ej)
+            return builder.MapExprExport(prim(ej), spanFrom(spanStart))
+        def k := prim(ej)
+        accept("=>", ej)
+        def v := prim(ej)
+        return builder.MapExprAssoc(k, v, spanFrom(spanStart))
+
+    bind prim(ej):
         def tag := peekTag()
         if ([".String.", ".int.", ".float64.", ".char."].contains(tag)):
             def t := advance(ej)
@@ -173,12 +184,39 @@ def parseMonte(lex, builder, mode, err):
             return builder.NounExpr(t.getData(), t.getSpan())
         if (tag == "QUASI_OPEN" || tag == "QUASI_CLOSE"):
             return quasiliteral(null, false, ej)
-        throw.eject(ej, `don't recognize $tag`)
         # paren expr
+        if (tag == "("):
+            advance(ej)
+            def e := expr(ej)
+            accept(")", ej)
+            return e
         # hideexpr
+        if (tag == "{"):
+            def spanStart := spanHere()
+            advance(ej)
+            if (peekTag() == "}"):
+                advance(ej)
+                return builder.HideExpr(builder.SeqExpr([], null), spanFrom(spanHere))
+            def e := expr(ej)
+            accept("}", ej)
+            return builder.HideExpr(e, spanFrom(spanStart))
         # list/map
+        if (tag == "["):
+            def spanStart := spanHere()
+            advance(ej)
+            def isMapPair := (position + 2 < tokens.size() &&
+                              tokens[position + 2].getTag().getName() ==  "=>")
+            if (isMapPair || peekTag() == "=>"):
+                def items := acceptList(mapItem)
+                accept("]", ej)
+                return builder.MapExpr(items, spanFrom(spanStart))
+            def items := acceptList(expr)
+            accept("]", ej)
+            return builder.ListExpr(items, spanFrom(spanStart))
+        throw.eject(ej, `don't recognize $tag`)
 
     # let's pretend
+    "lucky charm to ward off bootstrap parser bugs"
     bind expr := prim
     def blockExpr := prim
     def seqSep(ej):
@@ -284,6 +322,7 @@ def testLiteral(assert):
     assert.equal(expr("\"foo bar\""), term`LiteralExpr("foo bar")`)
     assert.equal(expr("'z'"), term`LiteralExpr('z')`)
     assert.equal(expr("7"), term`LiteralExpr(7)`)
+    assert.equal(expr("(7)"), term`LiteralExpr(7)`)
     assert.equal(expr("0.5"), term`LiteralExpr(0.5)`)
 
 def testNoun(assert):
@@ -296,10 +335,26 @@ def testQuasiliteralExpr(assert):
     assert.equal(expr("bob`foo`` $x baz`"), term`QuasiParserExpr("bob", [QuasiText("foo`` "), QuasiExprHole(NounExpr("x")), QuasiText(" baz")])`)
     assert.equal(expr("`($x)`"), term`QuasiParserExpr(null, [QuasiText("("), QuasiExprHole(NounExpr("x")), QuasiText(")")])`)
 
+def testHide(assert):
+    assert.equal(expr("{}"), term`HideExpr(SeqExpr([]))`)
+    assert.equal(expr("{1}"), term`HideExpr(LiteralExpr(1))`)
+
+def testList(assert):
+    assert.equal(expr("[]"), term`ListExpr([])`)
+    assert.equal(expr("[a, b]"), term`ListExpr([NounExpr("a"), NounExpr("b")])`)
+
+def testMap(assert):
+    assert.equal(expr("[k => v, => a]"),
+         term`MapExpr([MapExprAssoc(NounExpr("k"), NounExpr("v")),
+                       MapExprExport(NounExpr("a"))])`)
+    assert.equal(expr("[=> b, k => v]"),
+         term`MapExpr([MapExprExport(NounExpr("b")),
+                       MapExprAssoc(NounExpr("k"), NounExpr("v"))])`)
+
 
 # def test_holes(assert):
 #     assert.equal(quasiMonteParser.valueMaker(["foo(", quasiMonteParser.valueHole(0), ")"]), term`ValueHoleExpr(0)`)
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([testLiteral, testNoun, testQuasiliteralExpr])
+unittest([testLiteral, testNoun, testQuasiliteralExpr, testHide, testList, testMap])
