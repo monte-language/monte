@@ -172,7 +172,7 @@ def ejector(_name):
         _m_type = ejtype
         _m_active = True
 
-        def __call__(self, val=null):
+        def run(self, val=null):
             if not self._m_active:
                 throw("Ejector is not active")
             raise ejtype(val)
@@ -187,7 +187,7 @@ class Throw(MonteObject):
     _m_fqn = "throw"
     ## This is patched later to avoid import circularity
     #_m_auditorStamps = (deepFrozenGuard,)
-    def __call__(self, val):
+    def run(self, val):
         from monte.runtime.data import Twine
         from monte.runtime.ref import _resolution
         val = _resolution(val)

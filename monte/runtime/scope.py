@@ -27,6 +27,17 @@ from monte.runtime.m import theM
 from monte.runtime.text import simpleQuasiParser, quasiMatcher
 from monte.runtime.trace import trace, traceln
 
+
+class Func(object):
+    def __init__(self, f):
+        self._m_auditorStamps = getattr(f, '_m_auditorStamps', ())
+        self.f = f
+    def __call__(self, *a, **kw):
+        return self.f(*a, **kw)
+
+    def run(self, *a, **kw):
+        return self.f(*a, **kw)
+
 bootScope = {
     ## Primitive non-literal values
     'true': true,
@@ -39,7 +50,7 @@ bootScope = {
     # XXX Create this properly per-vat, when we have vats.
     'M': theM,
     'throw': throw,
-    '__loop': monteLooper,
+    '__loop': Func(monteLooper),
 
     ## Primitive reference/object operations
     # XXX Create this properly per-vat, when we have vats.
@@ -51,15 +62,15 @@ bootScope = {
     "SubrangeGuard": subrangeGuardMaker,
 
     ## Primitive: tracing
-    'trace': trace,
-    'traceln': traceln,
+    'trace': Func(trace),
+    'traceln': Func(traceln),
 
     ## Data constructors
     '__makeList': makeMonteList,
     '__makeMap': mapMaker,
-    '__makeCharacter': makeCharacter,
-    '__makeInt': makeInteger,
-    '__makeFloat': makeFloat,
+    '__makeCharacter': Func(makeCharacter),
+    '__makeInt': Func(makeInteger),
+    '__makeFloat': Func(makeFloat),
     '__makeFinalSlot': FinalSlot,
     '__makeVarSlot': VarSlot,
     # '__makeCoercedSlot': makeCoercedSlot,
@@ -91,8 +102,8 @@ bootScope = {
     # 'set': setGuard,
 
     ## Protocol/guard constructors
-    '__makeMessageDesc': MessageDesc,
-    '__makeParamDesc': ParamDesc,
+    '__makeMessageDesc': Func(MessageDesc),
+    '__makeParamDesc': Func(ParamDesc),
     '__makeProtocolDesc': ProtocolDesc,
 
     ## guard meta
@@ -125,24 +136,24 @@ bootScope = {
     'simple__quasiParser': simpleQuasiParser,
 
     ## expansion utilities
-    '__accumulateList': accumulateList,
-    '__accumulateMap': accumulateMap,
-    '__bind': makeViaBinder,
+    '__accumulateList': Func(accumulateList),
+    '__accumulateMap': Func(accumulateMap),
+    '__bind': Func(makeViaBinder),
     #XXX vat
     '__booleanFlow': BooleanFlow(None),
     '__comparer': comparer,
-    '__iterWhile': iterWhile,
-    '__makeVerbFacet': makeVerbFacet,
+    '__iterWhile': Func(iterWhile),
+    '__makeVerbFacet': Func(makeVerbFacet),
     '__mapEmpty': Empty(),
-    '__mapExtract': extract,
-    '__matchSame': matchSame,
+    '__mapExtract': Func(extract),
+    '__matchSame': Func(matchSame),
     '__quasiMatcher': quasiMatcher,
-    '__slotToBinding': reifyBinding,
-    '__splitList': splitList,
-    '__suchThat': suchThat,
-    '__switchFailed': switchFailed,
+    '__slotToBinding': Func(reifyBinding),
+    '__splitList': Func(splitList),
+    '__suchThat': Func(suchThat),
+    '__switchFailed': Func(switchFailed),
     # '__promiseAllFulfilled': promiseAllFulfilled,
-    '__validateFor': validateFor,
+    '__validateFor': Func(validateFor),
 
     ## misc
     # '__identityFunc': identityFunc,
@@ -150,7 +161,7 @@ bootScope = {
     'help': help,
 
     # move this into something importable
-    'makeSourceSpan': makeSourceSpan,
+    'makeSourceSpan': Func(makeSourceSpan),
 
 }
 
