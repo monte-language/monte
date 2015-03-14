@@ -2,7 +2,7 @@ import re, string
 from keyword import iskeyword
 
 from StringIO import StringIO
-from monte import ast
+from monte import ast, TimeRecorder
 from monte.parser import parse
 from monte.expander import expand, scope
 
@@ -858,8 +858,12 @@ class PythonWriter(object):
         out.writeln("%s = %s" % (pyname, val))
         return pyname
 
+
 def ecompile(source, scope, origin="__main"):
-    ast = expand(parse(source))
+    with TimeRecorder("parse"):
+        p = parse(source)
+    with TimeRecorder("expand"):
+        ast = expand(p)
     f = StringIO()
     PythonWriter(ast, origin, scope).output(TextWriter(f))
     return f.getvalue().strip()
