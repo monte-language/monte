@@ -1,9 +1,9 @@
 import linecache, sys, uuid, os
 from types import ModuleType as module
-
+from monte import TimeRecorder
 from monte.compiler import ecompile
 from monte.expander import expand, scope
-from monte.parser import parse
+from monte.parser import parseJustModule
 from monte.runtime.base import MonteObject
 from monte.runtime.data import String, Twine, null
 from monte.runtime.tables import ConstList, ConstMap, FlexList, FlexMap
@@ -27,16 +27,22 @@ class GeneratedCodeLoader(object):
     def get_source(self, name):
         return self.source
 
+COMPILE_CACHE = {}
+
 def eval(source, scope=None, origin="__main"):
-    name = uuid.uuid4().hex
+    name = origin.encode('ascii')
     mod = module(name)
     mod.__name__ = name
     mod._m_outerScope = scope
-    pysrc, _, lastline = ecompile(source, scope, origin).rpartition('\n')
-    pysrc = '\n'.join(["from monte.runtime import compiler_helpers as _monte",
-                       pysrc.encode('utf-8'),
-                       "_m_evalResult = " + lastline.encode('utf-8')])
+    if source in COMPILE_CACHE:
+        pysrc = COMPILE_CACHE[source].encode('ascii')
+    else:
+        pysrc, _, lastline = ecompile(source, scope, origin).rpartition('\n')
+        pysrc = '\n'.join(["from monte.runtime import compiler_helpers as _monte",
+                               pysrc.encode('utf-8'),
+                               "_m_evalResult = " + lastline.encode('utf-8')])
     mod.__loader__ = GeneratedCodeLoader(pysrc)
+    COMPILE_CACHE[source] = pysrc
     code = compile(pysrc, name, "exec")
     import __builtin__
     __builtin__.eval(code, mod.__dict__)
@@ -241,7 +247,7 @@ def getModuleStructure(name, location, scope, testCollector):
 
 
 def readModuleFile(moduleFilename):
-    ast = parse(open(moduleFilename).read())
+    ast = parseJustModule(open(moduleFilename).read())
     if ast.tag.name != 'Module':
         raise ValueError("'%s' is not a module" % (moduleFilename,))
     imports = []

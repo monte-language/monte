@@ -197,6 +197,20 @@ def parse(source, origin="<string>", tracefunc=None):
         import sys
         sys.exit(1)
 
+
+def parseJustModule(source, origin="<string>", tracefunc=None):
+    from parsley import _GrammarWrapper
+    p = makeParser(source, origin)
+    if tracefunc:
+        p._trace = tracefunc
+    try:
+        return _GrammarWrapper(p, source).justModule()
+    except ParseError as e:
+        prettyParseErrorPrinter(e, source)
+        import sys
+        sys.exit(1)
+
+
 def prettyParseErrorPrinter(err, source):
 
     trail = err.trail

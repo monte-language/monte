@@ -3,7 +3,7 @@ Bottom level of Monte runtime object support.
 """
 import StringIO
 
-from monte import ast
+from monte import ast, TimeRecorder
 
 class _SlotDescriptor(object):
 
@@ -16,6 +16,7 @@ class _SlotDescriptor(object):
     def __set__(self, obj, val):
         return obj._m_slots[self.name][0].put(val)
 
+ASTCACHE = {}
 
 class MonteObject(object):
     _m_matcherNames = ()
@@ -32,7 +33,11 @@ class MonteObject(object):
         if self.__class__._m_auditorCache is None:
             self.__class__._m_auditorCache = {}
         from monte.runtime.audit import Audition
-        expr = ast.load(self._m_objectExpr)
+        expr = getattr(self.__class__, '_m_objectAst', None)
+        if expr is None:
+            with TimeRecorder("astLoad"):
+                expr = ast.load(self._m_objectExpr)
+            self.__class__._m_objectAst = expr
         bindingGuards = dict([(k, v[1]) for k, v in self._m_slots.iteritems()])
         bindingGuards.update(self._m_outers)
         audition = Audition(
@@ -42,8 +47,9 @@ class MonteObject(object):
             self,
             scope.keys(),
             self.__class__._m_auditorCache)
-        for auditor in auditors:
-            audition.ask(auditor)
+        with TimeRecorder("audit"):
+            for auditor in auditors:
+                audition.ask(auditor)
         audition._active = False
         self._m_auditorStamps = audition.approvers
 
