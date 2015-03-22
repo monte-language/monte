@@ -1532,7 +1532,10 @@ def makePatternHolePattern(index, span):
         scope, term`PatternHolePattern`, fn f {[index]})
 
 def makeFinalPattern(noun, guard, span):
-    def scope := makeStaticScope([], [], [noun.getName()], [], false)
+    def gs := scopeMaybe(guard)
+    if (gs.namesUsed().maps(noun.getName())):
+        throw("Kernel guard cycle not allowed")
+    def scope := makeStaticScope([], [], [noun.getName()], [], false) + gs
     object finalPattern:
         to getNoun():
             return noun
@@ -1547,16 +1550,22 @@ def makeFinalPattern(noun, guard, span):
         scope, term`FinalPattern`,
         fn f {[noun.transform(f), maybeTransform(guard, f)]})
 
-def makeSlotPattern(noun, span):
-    def scope := makeStaticScope([], [], [noun.getName()], [], false)
+def makeSlotPattern(noun, guard, span):
+    def gs := scopeMaybe(guard)
+    if (gs.namesUsed().maps(noun.getName())):
+        throw("Kernel guard cycle not allowed")
+    def scope := makeStaticScope([], [], [noun.getName()], [], false) + gs
     object slotPattern:
         to getNoun():
             return noun
         to subPrintOn(out, priority):
             out.print("&")
             noun.subPrintOn(out, priority)
-    return astWrapper(slotPattern, makeSlotPattern, [noun], span,
-        scope, term`SlotPattern`, fn f {[noun.transform(f)]})
+            if (guard != null):
+                out.print(" :")
+                guard.subPrintOn(out, priorities["order"])
+    return astWrapper(slotPattern, makeSlotPattern, [noun, guard], span,
+        scope, term`SlotPattern`, fn f {[noun.transform(f), maybeTransform(guard, f)]})
 
 def makeBindingPattern(noun, span):
     def scope := makeStaticScope([], [], [noun.getName()], [], false)
@@ -1939,8 +1948,8 @@ object astBuilder:
         return makePatternHolePattern(index, span)
     to FinalPattern(noun, guard, span):
         return makeFinalPattern(noun, guard, span)
-    to SlotPattern(noun, span):
-        return makeSlotPattern(noun, span)
+    to SlotPattern(noun, guard, span):
+        return makeSlotPattern(noun, guard, span)
     to BindingPattern(noun, span):
         return makeBindingPattern(noun, span)
     to BindPattern(noun, span):
@@ -2496,6 +2505,7 @@ def test_valueHolePattern(assert):
 
 def test_finalPattern(assert):
     def [name, guard] := [makeNounExpr("blee", null), makeNounExpr("Int", null)]
+    assert.raises(fn {makeFinalPattern(name, name, null)})
     def patt := makeFinalPattern(name, guard, null)
     assert.equal(patt._uncall(), [makeFinalPattern, "run", [name, guard, null]])
     assert.equal(M.toString(patt), "blee :Int")
@@ -2517,10 +2527,11 @@ def test_bindingPattern(assert):
 
 def test_slotPattern(assert):
     def name := makeNounExpr("blee", null)
-    def patt := makeSlotPattern(name, null)
-    assert.equal(patt._uncall(), [makeSlotPattern, "run", [name, null]])
-    assert.equal(M.toString(patt), "&blee")
-    assert.equal(patt.asTerm(), term`SlotPattern(NounExpr("blee"))`)
+    def guard := makeNounExpr("FinalSlot", null)
+    def patt := makeSlotPattern(name, guard, null)
+    assert.equal(patt._uncall(), [makeSlotPattern, "run", [name, guard, null]])
+    assert.equal(M.toString(patt), "&blee :FinalSlot")
+    assert.equal(patt.asTerm(), term`SlotPattern(NounExpr("blee"), NounExpr("FinalSlot"))`)
 
 def test_ignorePattern(assert):
     def guard := makeNounExpr("List", null)
