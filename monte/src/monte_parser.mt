@@ -189,15 +189,54 @@ def parseMonte(lex, builder, mode, err):
             advance(ej)
             def spanStart := spanHere()
             def t := advance(ej)
-            if (t.getTag().getName() == "IDENTIFIER"):
+            def tn := t.getTag().getName()
+            if (tn == "IDENTIFIER"):
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
                 return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
-            else:
-                acceptTag("::", ej)
-                advance(ej)
+            else if (tn == "::"):
                 def t := accept(".String.", ej)
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
                 return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
+        else if (nex == "=="):
+            def spanStart := spanHere()
+            advance(ej)
+            return builder.SamePattern(prim(ej), true, spanFrom(spanStart))
+        else if (nex == "!="):
+            def spanStart := spanHere()
+            advance(ej)
+            return builder.SamePattern(prim(ej), false, spanFrom(spanStart))
+        else if (nex == "&"):
+            advance(ej)
+            def spanStart := spanHere()
+            def t := advance(ej)
+            def tn := t.getTag().getName()
+            if (tn == "IDENTIFIER"):
+                def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+                return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
+            else if (tn == "::"):
+                def t := accept(".String.", ej)
+                def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+                return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
+        else if (nex == "&&"):
+            advance(ej)
+            def spanStart := spanHere()
+            def t := advance(ej)
+            def tn := t.getTag().getName()
+            if (tn == "IDENTIFIER"):
+                return builder.BindingPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
+            else if (tn == "::"):
+                def t := accept(".String.", ej)
+                return builder.BindingPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
+        else if (nex == "bind"):
+            advance(ej)
+            def spanStart := spanHere()
+            def t := advance(ej)
+            def tn := t.getTag().getName()
+            if (tn == "IDENTIFIER"):
+                return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
+            else if (tn == "::"):
+                def t := accept(".String.", ej)
+                return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
         ej(nex)
 
     "XXX buggy expander eats this line"
@@ -417,11 +456,38 @@ def testFinalPattern(assert):
     assert.equal(pattern("::\"foo baz\" :Int"), term`FinalPattern(NounExpr("foo baz"), NounExpr("Int"))`)
     assert.equal(pattern("::\"foo baz\" :(1)"), term`FinalPattern(NounExpr("foo baz"), LiteralExpr(1))`)
 
+def testSlotPattern(assert):
+    assert.equal(pattern("&foo"), term`SlotPattern(NounExpr("foo"), null)`)
+    assert.equal(pattern("&foo :Int"), term`SlotPattern(NounExpr("foo"), NounExpr("Int"))`)
+    assert.equal(pattern("&foo :(1)"), term`SlotPattern(NounExpr("foo"), LiteralExpr(1))`)
+    assert.equal(pattern("&::\"foo baz\""), term`SlotPattern(NounExpr("foo baz"), null)`)
+    assert.equal(pattern("&::\"foo baz\" :Int"), term`SlotPattern(NounExpr("foo baz"), NounExpr("Int"))`)
+    assert.equal(pattern("&::\"foo baz\" :(1)"), term`SlotPattern(NounExpr("foo baz"), LiteralExpr(1))`)
+
 
 def testVarPattern(assert):
     assert.equal(pattern("var foo"), term`VarPattern(NounExpr("foo"), null)`)
     assert.equal(pattern("var foo :Int"), term`VarPattern(NounExpr("foo"), NounExpr("Int"))`)
     assert.equal(pattern("var foo :(1)"), term`VarPattern(NounExpr("foo"), LiteralExpr(1))`)
+    assert.equal(pattern("var ::\"foo baz\""), term`VarPattern(NounExpr("foo baz"), null)`)
+    assert.equal(pattern("var ::\"foo baz\" :Int"), term`VarPattern(NounExpr("foo baz"), NounExpr("Int"))`)
+    assert.equal(pattern("var ::\"foo baz\" :(1)"), term`VarPattern(NounExpr("foo baz"), LiteralExpr(1))`)
+
+def testBindPattern(assert):
+    assert.equal(pattern("bind foo"), term`BindPattern(NounExpr("foo"))`)
+    assert.equal(pattern("bind ::\"foo baz\""), term`BindPattern(NounExpr("foo baz"))`)
+
+def testBindingPattern(assert):
+    assert.equal(pattern("&&foo"), term`BindingPattern(NounExpr("foo"))`)
+    assert.equal(pattern("&&::\"foo baz\""), term`BindingPattern(NounExpr("foo baz"))`)
+
+def testSamePattern(assert):
+    assert.equal(pattern("==1"), term`SamePattern(LiteralExpr(1), true)`)
+    assert.equal(pattern("==(x)"), term`SamePattern(NounExpr("x"), true)`)
+
+def testNotSamePattern(assert):
+    assert.equal(pattern("!=1"), term`SamePattern(LiteralExpr(1), false)`)
+    assert.equal(pattern("!=(x)"), term`SamePattern(NounExpr("x"), false)`)
 
 def testQuasiliteralPattern(assert):
     assert.equal(pattern("`foo`"), term`QuasiParserPattern(null, [QuasiText("foo")])`)
@@ -436,4 +502,4 @@ def testQuasiliteralPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([testLiteral, testNoun, testQuasiliteralExpr, testHide, testList, testMap, testFinalPattern, testVarPattern, testQuasiliteralPattern])
+unittest([testLiteral, testNoun, testQuasiliteralExpr, testHide, testList, testMap, testFinalPattern, testVarPattern, testBindPattern, testSamePattern, testNotSamePattern, testSlotPattern, testBindingPattern, testQuasiliteralPattern])
