@@ -1600,7 +1600,7 @@ def makeIgnorePattern(guard, span):
                 out.print(" :")
                 guard.subPrintOn(out, priorities["order"])
     return astWrapper(ignorePattern, makeIgnorePattern, [guard], span,
-        scope, term`IgnorePattern`, fn f {[guard.transform(f)]})
+        scope, term`IgnorePattern`, fn f {[maybeTransform(guard, f)]})
 
 def makeListPattern(patterns, tail, span):
     def scope := sumScopes(patterns + [tail])
@@ -1636,7 +1636,7 @@ def makeMapPatternAssoc(key, value, span):
     return astWrapper(mapPatternAssoc, makeMapPatternAssoc, [key, value], span,
         scope, term`MapPatternAssoc`, fn f {[key.transform(f), value.transform(f)]})
 
-def makeMapPatternExport(value, span):
+def makeMapPatternImport(value, span):
     def scope := value.getStaticScope()
     object mapPatternExport:
         to getValue():
@@ -1644,8 +1644,8 @@ def makeMapPatternExport(value, span):
         to subPrintOn(out, priority):
             out.print("=> ")
             value.subPrintOn(out, priority)
-    return astWrapper(mapPatternExport, makeMapPatternExport, [value], span,
-        scope, term`MapPatternExport`, fn f {[value.transform(f)]})
+    return astWrapper(mapPatternExport, makeMapPatternImport, [value], span,
+        scope, term`MapPatternImport`, fn f {[value.transform(f)]})
 
 def makeMapPatternRequired(keyer, span):
     def scope := keyer.getStaticScope()
@@ -1960,8 +1960,8 @@ object astBuilder:
         return makeListPattern(patterns, tail, span)
     to MapPatternAssoc(key, value, span):
         return makeMapPatternAssoc(key, value, span)
-    to MapPatternExport(value, span):
-        return makeMapPatternExport(value, span)
+    to MapPatternImport(value, span):
+        return makeMapPatternImport(value, span)
     to MapPatternRequired(keyer, span):
         return makeMapPatternRequired(keyer, span)
     to MapPatternDefault(keyer, default, span):
@@ -2566,12 +2566,12 @@ def test_mapPattern(assert):
     def v3 := makeFinalPattern(makeNounExpr("f", null), null, null)
     def pair1 := makeMapPatternRequired(makeMapPatternAssoc(k1, v1, null), null)
     def pair2 := makeMapPatternDefault(makeMapPatternAssoc(k2, v2, null), default, null)
-    def pair3 := makeMapPatternRequired(makeMapPatternExport(v3, null), null)
+    def pair3 := makeMapPatternRequired(makeMapPatternImport(v3, null), null)
     def tail := makeFinalPattern(makeNounExpr("tail", null), null, null)
     def patt := makeMapPattern([pair1, pair2, pair3], tail, null)
     assert.equal(patt._uncall(), [makeMapPattern, "run", [[pair1, pair2, pair3], tail, null]])
     assert.equal(M.toString(patt), "[\"a\" => b, (c) => d := (e), => f] | tail")
-    assert.equal(patt.asTerm(), term`MapPattern([MapPatternRequired(MapPatternAssoc(LiteralExpr("a"), FinalPattern(NounExpr("b"), null))), MapPatternDefault(MapPatternAssoc(NounExpr("c"), FinalPattern(NounExpr("d"), null)), default), MapPatternRequired(MapPatternExport(FinalPattern(NounExpr("e"), null)))], FinalPattern(NounExpr("tail"), null))`)
+    assert.equal(patt.asTerm(), term`MapPattern([MapPatternRequired(MapPatternAssoc(LiteralExpr("a"), FinalPattern(NounExpr("b"), null))), MapPatternDefault(MapPatternAssoc(NounExpr("c"), FinalPattern(NounExpr("d"), null)), default), MapPatternRequired(MapPatternImport(FinalPattern(NounExpr("e"), null)))], FinalPattern(NounExpr("tail"), null))`)
 
 def test_viaPattern(assert):
     def subpatt := makeFinalPattern(makeNounExpr("a", null), null, null)

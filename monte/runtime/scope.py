@@ -143,7 +143,7 @@ bootScope = {
     '__booleanFlow': BooleanFlow(None),
     '__comparer': comparer,
     '__iterWhile': Func(iterWhile),
-    '__makeVerbFacet': Func(makeVerbFacet),
+    '__makeVerbFacet': makeVerbFacet,
     '__mapEmpty': Empty(),
     '__mapExtract': Func(extract),
     '__matchSame': Func(matchSame),
