@@ -642,10 +642,11 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
             return numberLiteral(fail)
 
         if (cur == '_'):
-            if (idStart(peekChar())):
+            def pc := peekChar()
+            if (pc != EOF && idStart(pc)):
                 return identifier(fail)
             advance()
-            return leaf("_", fail)
+            return leaf("_")
 
         if (cur == '\t'):
             throw.eject(fail, "Tab characters are not permitted in Monte source.")

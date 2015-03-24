@@ -120,7 +120,30 @@ def parseMonte(lex, builder, mode, err):
                 items.push(rule(__break))
         return items.snapshot()
 
+    def acceptListOrMap(ruleList, ruleMap):
+        var isMap := false
+        def items := [].diverge()
+        def startpos := position
+        escape em:
+            items.push(ruleMap(em))
+            isMap := true
+        catch _:
+            escape e:
+                position := startpos
+                items.push(ruleList(e))
+                isMap := false
+            catch _:
+                return [[], false]
+        while (true):
+            acceptTag(",", __break)
+            if (isMap):
+                items.push(ruleMap(__break))
+            else:
+                items.push(ruleList(__break))
+        return [items.snapshot(), isMap]
+
     def expr
+    def order
     #def block
     def prim
     def pattern
@@ -166,25 +189,26 @@ def parseMonte(lex, builder, mode, err):
        acceptTag(")", ej)
        return e
 
-    bind pattern(ej):
+    def namePattern(ej, tryQuasi):
         def spanStart := spanHere()
         def nex := peekTag()
-        if (nex == "QUASI_OPEN" || nex == "QUASI_CLOSE"):
-            return quasiliteral(null, true, ej)
         if (nex == "IDENTIFIER"):
             def t := advance(ej)
             def nex2 := peekTag()
             if (nex2 == "QUASI_OPEN" || nex2 == "QUASI_CLOSE"):
-                return quasiliteral(t, true, ej)
+                if (tryQuasi):
+                    return quasiliteral(t, true, ej)
+                else:
+                    ej(nex2)
             else:
                 def g := if (nex2 == ":") {advance(ej); guard(ej)} else {null}
-                return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
+                return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "::"):
             advance(ej)
             def spanStart := spanHere()
             def t := accept(".String.", ej)
             def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-            return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
+            return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "var"):
             advance(ej)
             def spanStart := spanHere()
@@ -192,19 +216,11 @@ def parseMonte(lex, builder, mode, err):
             def tn := t.getTag().getName()
             if (tn == "IDENTIFIER"):
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-                return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
+                return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
             else if (tn == "::"):
                 def t := accept(".String.", ej)
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-                return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
-        else if (nex == "=="):
-            def spanStart := spanHere()
-            advance(ej)
-            return builder.SamePattern(prim(ej), true, spanFrom(spanStart))
-        else if (nex == "!="):
-            def spanStart := spanHere()
-            advance(ej)
-            return builder.SamePattern(prim(ej), false, spanFrom(spanStart))
+                return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "&"):
             advance(ej)
             def spanStart := spanHere()
@@ -212,11 +228,11 @@ def parseMonte(lex, builder, mode, err):
             def tn := t.getTag().getName()
             if (tn == "IDENTIFIER"):
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-                return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
+                return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
             else if (tn == "::"):
                 def t := accept(".String.", ej)
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-                return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanCover(t.getSpan(), spanFrom(spanStart)))
+                return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "&&"):
             advance(ej)
             def spanStart := spanHere()
@@ -233,12 +249,95 @@ def parseMonte(lex, builder, mode, err):
             def t := advance(ej)
             def tn := t.getTag().getName()
             if (tn == "IDENTIFIER"):
-                return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
+                return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanFrom(spanStart))
             else if (tn == "::"):
                 def t := accept(".String.", ej)
-                return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
+                return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanFrom(spanStart))
         ej(nex)
 
+    def mapPatternItemInner(ej):
+        def spanStart := spanHere()
+        if (peekTag() == "=>"):
+            advance(ej)
+            def p := namePattern(ej, false)
+            return builder.MapPatternImport(p, spanFrom(spanStart))
+        def k := if (peekTag() == "(") {
+            advance(ej)
+            def e := expr(ej)
+            acceptTag(")", ej)
+            e
+        } else {
+            if ([".String.", ".int.", ".float64.", ".char."].contains(peekTag())) {
+                def t := advance(ej)
+                builder.LiteralExpr(t, t.getSpan())
+            } else {
+                ej(peekTag())
+            }
+        }
+        accept("=>", ej)
+        return builder.MapPatternAssoc(k, pattern(ej), spanFrom(spanStart))
+
+    def mapPatternItem(ej):
+        def spanStart := spanHere()
+        def p := mapPatternItemInner(ej)
+        if (peekTag() == ":="):
+            advance(ej)
+            return builder.MapPatternDefault(p, order(ej), spanFrom(spanStart))
+        else:
+            return builder.MapPatternRequired(p, spanFrom(spanStart))
+
+    def _pattern(ej):
+        escape e:
+            return namePattern(e, true)
+        # ... if namePattern fails, keep going
+        def spanStart := spanHere()
+        def nex := peekTag()
+        if (nex == "QUASI_OPEN" || nex == "QUASI_CLOSE"):
+            return quasiliteral(null, true, ej)
+        else if (nex == "=="):
+            def spanStart := spanHere()
+            advance(ej)
+            return builder.SamePattern(prim(ej), true, spanFrom(spanStart))
+        else if (nex == "!="):
+            def spanStart := spanHere()
+            advance(ej)
+            return builder.SamePattern(prim(ej), false, spanFrom(spanStart))
+        else if (nex == "_"):
+            advance(ej)
+            def spanStart := spanHere()
+            def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+            return builder.IgnorePattern(g, spanFrom(spanStart))
+        else if (nex == "via"):
+            advance(ej)
+            def spanStart := spanHere()
+            acceptTag("(", ej)
+            def e := expr(ej)
+            acceptTag(")", ej)
+            return builder.ViaPattern(e, pattern(ej), spanFrom(spanStart))
+        else if (nex == "["):
+            def spanStart := spanHere()
+            advance(ej)
+            def [items, isMap] := acceptListOrMap(pattern, mapPatternItem)
+            acceptTag("]", ej)
+            if (isMap):
+                def tail := if (peekTag() == "|") {advance(ej); _pattern(ej)}
+                return builder.MapPattern(items, tail, spanFrom(spanStart))
+            else:
+                def tail := if (peekTag() == "+") {advance(ej); _pattern(ej)}
+                return builder.ListPattern(items, tail, spanFrom(spanStart))
+        ej(nex)
+
+    bind pattern(ej):
+        def spanStart := spanHere()
+        def p := _pattern(ej)
+        if (peekTag() == "?"):
+            advance(ej)
+            acceptTag("(", ej)
+            def e := expr(ej)
+            acceptTag(")", ej)
+            return builder.SuchThatPattern(p, e, spanFrom(spanStart))
+        else:
+            return p
     "XXX buggy expander eats this line"
     def mapItem(ej):
         def spanStart := spanHere()
@@ -292,19 +391,16 @@ def parseMonte(lex, builder, mode, err):
             if (peekTag() == "for"):
                 advance(ej)
                 # XXX
-            def isMapPair := (position + 2 < tokens.size() &&
-                              tokens[position + 2].getTag().getName() ==  "=>")
-            if (isMapPair || peekTag() == "=>"):
-                def items := acceptList(mapItem)
-                accept("]", ej)
-                return builder.MapExpr(items, spanFrom(spanStart))
-            def items := acceptList(expr)
+            def [items, isMap] := acceptListOrMap(expr, mapItem)
             accept("]", ej)
-            return builder.ListExpr(items, spanFrom(spanStart))
+            if (isMap):
+                return builder.MapExpr(items, spanFrom(spanStart))
+            else:
+                return builder.ListExpr(items, spanFrom(spanStart))
         throw.eject(ej, `don't recognize $tag`)
     "XXX buggy expander eats this line"
     # let's pretend
-
+    bind order := prim
     bind expr := prim
     def blockExpr := prim
     def seqSep(ej):
@@ -448,6 +544,11 @@ def testMap(assert):
          term`MapExpr([MapExprExport(NounExpr("b")),
                        MapExprAssoc(NounExpr("k"), NounExpr("v"))])`)
 
+def testIgnorePattern(assert):
+    assert.equal(pattern("_"), term`IgnorePattern(null)`)
+    assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
+    assert.equal(pattern("_ :(1)"), term`IgnorePattern(LiteralExpr(1))`)
+
 def testFinalPattern(assert):
     assert.equal(pattern("foo"), term`FinalPattern(NounExpr("foo"), null)`)
     assert.equal(pattern("foo :Int"), term`FinalPattern(NounExpr("foo"), NounExpr("Int"))`)
@@ -489,6 +590,19 @@ def testNotSamePattern(assert):
     assert.equal(pattern("!=1"), term`SamePattern(LiteralExpr(1), false)`)
     assert.equal(pattern("!=(x)"), term`SamePattern(NounExpr("x"), false)`)
 
+def testViaPattern(assert):
+    assert.equal(pattern("via (b) a"), term`ViaPattern(NounExpr("b"), FinalPattern(NounExpr("a"), null))`)
+
+def testListPattern(assert):
+    assert.equal(pattern("[]"), term`ListPattern([], null)`)
+    assert.equal(pattern("[a, b]"), term`ListPattern([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], null)`)
+    assert.equal(pattern("[a, b] + c"), term`ListPattern([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], FinalPattern(NounExpr("c"), null))`)
+
+def testMapPattern(assert):
+     assert.equal(pattern("[\"k\" => v, (a) => b, => c]"), term`MapPattern([MapPatternRequired(MapPatternAssoc(LiteralExpr("k"), FinalPattern(NounExpr("v"), null))), MapPatternRequired(MapPatternAssoc(NounExpr("a"), FinalPattern(NounExpr("b"), null))), MapPatternRequired(MapPatternImport(FinalPattern(NounExpr("c", null))))], null)`)
+     assert.equal(pattern("[\"a\" => b := 1] | c"), term`MapPattern([MapPatternDefault(MapPatternAssoc(LiteralExpr("a"), FinalPattern(NounExpr("b"), null)), LiteralExpr(1))], FinalPattern(NounExpr("c"), null))`)
+     assert.equal(pattern("[\"k\" => &v, => &&b, => ::\"if\"]"), term`MapPattern([MapPatternRequired(MapPatternAssoc(LiteralExpr("k"), SlotPattern(NounExpr("v"), null))), MapPatternRequired(MapPatternImport(BindingPattern(NounExpr("b")))), MapPatternRequired(MapPatternImport(FinalPattern(NounExpr("if"), null)))], null)`)
+
 def testQuasiliteralPattern(assert):
     assert.equal(pattern("`foo`"), term`QuasiParserPattern(null, [QuasiText("foo")])`)
     assert.equal(pattern("bob`foo`"), term`QuasiParserPattern("bob", [QuasiText("foo")])`)
@@ -496,10 +610,13 @@ def testQuasiliteralPattern(assert):
     assert.equal(pattern("`($x)`"), term`QuasiParserPattern(null, [QuasiText("("), QuasiExprHole(NounExpr("x")), QuasiText(")")])`)
     assert.equal(pattern("`foo @{w}@x $y${z} baz`"), term`QuasiParserPattern(null, [QuasiText("foo "), QuasiPatternHole(FinalPattern(NounExpr("w"), null)), QuasiPatternHole(FinalPattern(NounExpr("x"), null)), QuasiText(" "), QuasiExprHole(NounExpr("y")), QuasiExprHole(NounExpr("z")), QuasiText(" baz")])`)
 
+def testSuchThatPattern(assert):
+    assert.equal(pattern("x :y ? (1)"), term`SuchThatPattern(FinalPattern(NounExpr("x"), NounExpr("y")), LiteralExpr(1))`)
+
 
 # def test_holes(assert):
 #     assert.equal(quasiMonteParser.valueMaker(["foo(", quasiMonteParser.valueHole(0), ")"]), term`ValueHoleExpr(0)`)
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([testLiteral, testNoun, testQuasiliteralExpr, testHide, testList, testMap, testFinalPattern, testVarPattern, testBindPattern, testSamePattern, testNotSamePattern, testSlotPattern, testBindingPattern, testQuasiliteralPattern])
+unittest([testLiteral, testNoun, testQuasiliteralExpr, testHide, testList, testMap, testIgnorePattern, testFinalPattern, testVarPattern, testBindPattern, testSamePattern, testNotSamePattern, testSlotPattern, testBindingPattern, testViaPattern, testListPattern, testMapPattern, testQuasiliteralPattern, testSuchThatPattern])
