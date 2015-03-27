@@ -248,6 +248,35 @@ in Python::
     def l := ['I', "love", "Monte", 42, 0.5]
     def x := l[3] # x == 42
 
+
+For an introduction to lists, check out the `python tutorial`_. Here's what
+those basic operations are called in Monte:
+
+.. _python tutorial: https://docs.python.org/2/tutorial/datastructures.html
+
+==============  =============  ==============================
+Python          Monte           Notes
+==============  =============  ==============================
+l.append(x)     l.with(x)
+l.extend(L)     l.add(L)        l.append(x) also works
+l.insert(i,x)   l.with(i, x)
+l.remove(x)                     Not available in Monte
+l.pop([i])                      Only available on FlexLists 
+l.index(x)      l.indexOf(x)
+l.count(x)                      Not available in Monte
+l.sort()        l.sort()    
+l.reverse()     l.reverse()
+l.extend()      l.append(x)
+==============  =============  ==============================
+
+FlexLists
+*********
+
+FlexLists offer the push/1 and pop/0 methods as well.
+
+
+
+
 Special Characters
 ------------------
 
