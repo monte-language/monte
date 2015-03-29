@@ -339,6 +339,9 @@ def parseMonte(lex, builder, mode, err):
         else:
             return p
     "XXX buggy expander eats this line"
+    def blockExpr (indent, ej):
+        return prim(ej)
+
     def mapItem(ej):
         def spanStart := spanHere()
         if (peekTag() == "=>"):
@@ -348,6 +351,64 @@ def parseMonte(lex, builder, mode, err):
         accept("=>", ej)
         def v := prim(ej)
         return builder.MapExprAssoc(k, v, spanFrom(spanStart))
+
+    def seqSep(ej):
+        var next := peekTag()
+        if (next != ";" && next != "EOL"):
+            ej(null)
+        advance(ej)
+        while (true):
+            next := peekTag(ej)
+            if (next != ";" && next != "EOL"):
+                break
+            advance(ej)
+        return next
+
+    def seq(indent, ej):
+        def start := spanHere()
+        def exprs := [blockExpr(indent, ej)].diverge()
+        while (true):
+            seqSep(__break)
+            exprs.push(blockExpr(__break))
+        opt(seqSep, ej)
+        if (exprs.size() == 1):
+            return exprs[0]
+        return builder.SeqExpr(exprs.snapshot(), spanFrom(start))
+
+    def block(indent, ej):
+        if (indent):
+            acceptTag("INDENT", ej)
+        else:
+            acceptTag("{", ej)
+        def contents := escape e {
+            seq(indent, ej)
+        } catch _ {
+            builder.SeqExpr([], null)
+        }
+        if (indent):
+            acceptTag("DEDENT", ej)
+        else:
+            acceptTag("}", ej)
+        return contents
+
+    def basic(indent, ej):
+        def tag := peekTag()
+        if (tag == "if"):
+            def spanStart := spanHere()
+            advance(ej)
+            acceptTag("(", ej)
+            def test := expr(ej)
+            acceptTag(")", ej)
+            def consq := block(indent, ej)
+            def alt := if (peekTag() == "else") {
+                advance(ej)
+                if (peekTag() == "if") {
+                    basic(indent, ej)
+                } else {
+                    block(indent, ej)
+                }}
+            return builder.IfExpr(test, consq, alt, spanFrom(spanHere))
+        throw.eject(ej, `don't recognize $tag`)
 
     bind prim(ej):
         def tag := peekTag()
@@ -397,40 +458,11 @@ def parseMonte(lex, builder, mode, err):
                 return builder.MapExpr(items, spanFrom(spanStart))
             else:
                 return builder.ListExpr(items, spanFrom(spanStart))
-        throw.eject(ej, `don't recognize $tag`)
+        return basic(false, ej)
     "XXX buggy expander eats this line"
     # let's pretend
     bind order := prim
     bind expr := prim
-    def blockExpr := prim
-    def seqSep(ej):
-        var next := advanceTag(ej)
-        if (next != ";" && next != "EOL"):
-            ej(null)
-        while (true):
-            next := advanceTag(ej)
-            if (next != ";" && next != "EOL"):
-                break
-        return next
-
-    def seq(ej):
-        def start := spanHere()
-        def exprs := [blockExpr(ej)].diverge()
-        while (true):
-            seqSep(__break)
-            exprs.push(blockExpr(__break))
-        opt(seqSep, ej)
-        return builder.SeqExpr(exprs.snapshot(), spanFrom(start))
-
-    def block(ej):
-        acceptTag("{", ej)
-        def contents := escape e {
-            seq(ej)
-        } catch _ {
-            builder.SeqExpr([], null)
-        }
-        acceptTag("}", ej)
-        return contents
 
     # would be different if we have toplevel-only syntax like pragmas
     def topSeq := seq
@@ -511,45 +543,50 @@ def expr(s):
 def pattern(s):
  return parsePattern(makeMonteLexer(s), astBuilder, throw).asTerm()
 
-def testLiteral(assert):
+def test_Literal(assert):
     assert.equal(expr("\"foo bar\""), term`LiteralExpr("foo bar")`)
     assert.equal(expr("'z'"), term`LiteralExpr('z')`)
     assert.equal(expr("7"), term`LiteralExpr(7)`)
     assert.equal(expr("(7)"), term`LiteralExpr(7)`)
     assert.equal(expr("0.5"), term`LiteralExpr(0.5)`)
 
-def testNoun(assert):
+def test_Noun(assert):
     assert.equal(expr("foo"), term`NounExpr("foo")`)
     assert.equal(expr("::\"object\""), term`NounExpr("object")`)
 
-def testQuasiliteralExpr(assert):
+def test_QuasiliteralExpr(assert):
     assert.equal(expr("`foo`"), term`QuasiParserExpr(null, [QuasiText("foo")])`)
     assert.equal(expr("bob`foo`"), term`QuasiParserExpr("bob", [QuasiText("foo")])`)
     assert.equal(expr("bob`foo`` $x baz`"), term`QuasiParserExpr("bob", [QuasiText("foo`` "), QuasiExprHole(NounExpr("x")), QuasiText(" baz")])`)
     assert.equal(expr("`($x)`"), term`QuasiParserExpr(null, [QuasiText("("), QuasiExprHole(NounExpr("x")), QuasiText(")")])`)
 
-def testHide(assert):
+def test_Hide(assert):
     assert.equal(expr("{}"), term`HideExpr(SeqExpr([]))`)
     assert.equal(expr("{1}"), term`HideExpr(LiteralExpr(1))`)
 
-def testList(assert):
+def test_List(assert):
     assert.equal(expr("[]"), term`ListExpr([])`)
     assert.equal(expr("[a, b]"), term`ListExpr([NounExpr("a"), NounExpr("b")])`)
 
-def testMap(assert):
+def test_Map(assert):
     assert.equal(expr("[k => v, => a]"),
          term`MapExpr([MapExprAssoc(NounExpr("k"), NounExpr("v")),
                        MapExprExport(NounExpr("a"))])`)
     assert.equal(expr("[=> b, k => v]"),
          term`MapExpr([MapExprExport(NounExpr("b")),
                        MapExprAssoc(NounExpr("k"), NounExpr("v"))])`)
+def test_IfExpr(assert):
+    assert.equal(expr("if (1) {2} else if (3) {4} else {5}"),
+        term`IfExpr(LiteralExpr(1), LiteralExpr(2), IfExpr(LiteralExpr(3), LiteralExpr(4), LiteralExpr(5)))`)
+    assert.equal(expr("if (1) {2} else {3}"), term`IfExpr(LiteralExpr(1), LiteralExpr(2), LiteralExpr(3))`)
+    assert.equal(expr("if (1) {2}"), term`IfExpr(LiteralExpr(1), LiteralExpr(2), null)`)
 
-def testIgnorePattern(assert):
+def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
     assert.equal(pattern("_ :(1)"), term`IgnorePattern(LiteralExpr(1))`)
 
-def testFinalPattern(assert):
+def test_FinalPattern(assert):
     assert.equal(pattern("foo"), term`FinalPattern(NounExpr("foo"), null)`)
     assert.equal(pattern("foo :Int"), term`FinalPattern(NounExpr("foo"), NounExpr("Int"))`)
     assert.equal(pattern("foo :(1)"), term`FinalPattern(NounExpr("foo"), LiteralExpr(1))`)
@@ -557,7 +594,7 @@ def testFinalPattern(assert):
     assert.equal(pattern("::\"foo baz\" :Int"), term`FinalPattern(NounExpr("foo baz"), NounExpr("Int"))`)
     assert.equal(pattern("::\"foo baz\" :(1)"), term`FinalPattern(NounExpr("foo baz"), LiteralExpr(1))`)
 
-def testSlotPattern(assert):
+def test_SlotPattern(assert):
     assert.equal(pattern("&foo"), term`SlotPattern(NounExpr("foo"), null)`)
     assert.equal(pattern("&foo :Int"), term`SlotPattern(NounExpr("foo"), NounExpr("Int"))`)
     assert.equal(pattern("&foo :(1)"), term`SlotPattern(NounExpr("foo"), LiteralExpr(1))`)
@@ -566,7 +603,7 @@ def testSlotPattern(assert):
     assert.equal(pattern("&::\"foo baz\" :(1)"), term`SlotPattern(NounExpr("foo baz"), LiteralExpr(1))`)
 
 
-def testVarPattern(assert):
+def test_VarPattern(assert):
     assert.equal(pattern("var foo"), term`VarPattern(NounExpr("foo"), null)`)
     assert.equal(pattern("var foo :Int"), term`VarPattern(NounExpr("foo"), NounExpr("Int"))`)
     assert.equal(pattern("var foo :(1)"), term`VarPattern(NounExpr("foo"), LiteralExpr(1))`)
@@ -574,49 +611,49 @@ def testVarPattern(assert):
     assert.equal(pattern("var ::\"foo baz\" :Int"), term`VarPattern(NounExpr("foo baz"), NounExpr("Int"))`)
     assert.equal(pattern("var ::\"foo baz\" :(1)"), term`VarPattern(NounExpr("foo baz"), LiteralExpr(1))`)
 
-def testBindPattern(assert):
+def test_BindPattern(assert):
     assert.equal(pattern("bind foo"), term`BindPattern(NounExpr("foo"))`)
     assert.equal(pattern("bind ::\"foo baz\""), term`BindPattern(NounExpr("foo baz"))`)
 
-def testBindingPattern(assert):
+def test_BindingPattern(assert):
     assert.equal(pattern("&&foo"), term`BindingPattern(NounExpr("foo"))`)
     assert.equal(pattern("&&::\"foo baz\""), term`BindingPattern(NounExpr("foo baz"))`)
 
-def testSamePattern(assert):
+def test_SamePattern(assert):
     assert.equal(pattern("==1"), term`SamePattern(LiteralExpr(1), true)`)
     assert.equal(pattern("==(x)"), term`SamePattern(NounExpr("x"), true)`)
 
-def testNotSamePattern(assert):
+def test_NotSamePattern(assert):
     assert.equal(pattern("!=1"), term`SamePattern(LiteralExpr(1), false)`)
     assert.equal(pattern("!=(x)"), term`SamePattern(NounExpr("x"), false)`)
 
-def testViaPattern(assert):
+def test_ViaPattern(assert):
     assert.equal(pattern("via (b) a"), term`ViaPattern(NounExpr("b"), FinalPattern(NounExpr("a"), null))`)
 
-def testListPattern(assert):
+def test_ListPattern(assert):
     assert.equal(pattern("[]"), term`ListPattern([], null)`)
     assert.equal(pattern("[a, b]"), term`ListPattern([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], null)`)
     assert.equal(pattern("[a, b] + c"), term`ListPattern([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], FinalPattern(NounExpr("c"), null))`)
 
-def testMapPattern(assert):
+def test_MapPattern(assert):
      assert.equal(pattern("[\"k\" => v, (a) => b, => c]"), term`MapPattern([MapPatternRequired(MapPatternAssoc(LiteralExpr("k"), FinalPattern(NounExpr("v"), null))), MapPatternRequired(MapPatternAssoc(NounExpr("a"), FinalPattern(NounExpr("b"), null))), MapPatternRequired(MapPatternImport(FinalPattern(NounExpr("c", null))))], null)`)
      assert.equal(pattern("[\"a\" => b := 1] | c"), term`MapPattern([MapPatternDefault(MapPatternAssoc(LiteralExpr("a"), FinalPattern(NounExpr("b"), null)), LiteralExpr(1))], FinalPattern(NounExpr("c"), null))`)
      assert.equal(pattern("[\"k\" => &v, => &&b, => ::\"if\"]"), term`MapPattern([MapPatternRequired(MapPatternAssoc(LiteralExpr("k"), SlotPattern(NounExpr("v"), null))), MapPatternRequired(MapPatternImport(BindingPattern(NounExpr("b")))), MapPatternRequired(MapPatternImport(FinalPattern(NounExpr("if"), null)))], null)`)
 
-def testQuasiliteralPattern(assert):
+def test_QuasiliteralPattern(assert):
     assert.equal(pattern("`foo`"), term`QuasiParserPattern(null, [QuasiText("foo")])`)
     assert.equal(pattern("bob`foo`"), term`QuasiParserPattern("bob", [QuasiText("foo")])`)
     assert.equal(pattern("bob`foo`` $x baz`"), term`QuasiParserPattern("bob", [QuasiText("foo`` "), QuasiExprHole(NounExpr("x")), QuasiText(" baz")])`)
     assert.equal(pattern("`($x)`"), term`QuasiParserPattern(null, [QuasiText("("), QuasiExprHole(NounExpr("x")), QuasiText(")")])`)
     assert.equal(pattern("`foo @{w}@x $y${z} baz`"), term`QuasiParserPattern(null, [QuasiText("foo "), QuasiPatternHole(FinalPattern(NounExpr("w"), null)), QuasiPatternHole(FinalPattern(NounExpr("x"), null)), QuasiText(" "), QuasiExprHole(NounExpr("y")), QuasiExprHole(NounExpr("z")), QuasiText(" baz")])`)
 
-def testSuchThatPattern(assert):
+def test_SuchThatPattern(assert):
     assert.equal(pattern("x :y ? (1)"), term`SuchThatPattern(FinalPattern(NounExpr("x"), NounExpr("y")), LiteralExpr(1))`)
 
 
-# def test_holes(assert):
+# def test__holes(assert):
 #     assert.equal(quasiMonteParser.valueMaker(["foo(", quasiMonteParser.valueHole(0), ")"]), term`ValueHoleExpr(0)`)
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([testLiteral, testNoun, testQuasiliteralExpr, testHide, testList, testMap, testIgnorePattern, testFinalPattern, testVarPattern, testBindPattern, testSamePattern, testNotSamePattern, testSlotPattern, testBindingPattern, testViaPattern, testListPattern, testMapPattern, testQuasiliteralPattern, testSuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
