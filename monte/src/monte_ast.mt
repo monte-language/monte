@@ -1446,7 +1446,7 @@ def makeIfExpr(test, consq, alt, span):
                 printSuiteOn(fn {out.print("else")}, alt, true, out, priority)
 
     return astWrapper(ifExpr, makeIfExpr, [test, consq, alt], span,
-        scope, term`IfExpr`, fn f {[test.transform(f), consq.transform(f), alt.transform(f)]})
+        scope, term`IfExpr`, fn f {[test.transform(f), consq.transform(f), maybeTransform(alt, f)]})
 
 def makeWhileExpr(test, body, catcher, span):
     def scope := sumScopes([test, body, catcher])
