@@ -240,10 +240,15 @@ unlike Python 2). Strings are always surrounded by double-quotes (``"``).
 Lists
 ~~~~~
 
-Among Monte's collection types, the list is a very common type. Lists are
-heterogenous ordered unsorted collections with sequencing and indexing, and
-have the performance characteristics of arrays in C, vectors in C++, or lists
-in Python::
+Lists are heterogenous ordered unsorted collections with sequencing and
+indexing. 
+
+There are two types of list in Monte: ``ConstList`` and ``FlexList``. A
+ConstList is immutable (think of tuples in Python), whereas a FlexList is
+mutable. The ``[]`` constructor always creates a ConstList.  
+
+They have the performance characteristics of arrays in C, vectors in
+C++, or lists in Python::
 
     def l := ['I', "love", "Monte", 42, 0.5]
     def x := l[3] # x == 42
@@ -269,12 +274,27 @@ l.reverse()     l.reverse()
 l.extend()      l.append(x)
 ==============  =============  ==============================
 
+ConstLists
+**********
+
+All of the list operations in the table above return a new ConstList when
+applied to a ConstList.
+
 FlexLists
 *********
 
-FlexLists offer the push/1 and pop/0 methods as well.
+You can create a FlexList by calling ``diverge()`` on a ConstList::
 
+    def f := l.diverge()
+    def g := [].diverge()
 
+FlexLists offer the push/1 and pop/0 methods as well::
+
+    g.push("foo")
+    def foo := g.pop() # foo == "foo"
+
+Note that calling ``sort()`` on a FlexList sorts it in place, modifying the
+original. 
 
 
 Special Characters
