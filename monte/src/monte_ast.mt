@@ -1017,7 +1017,7 @@ def makeFunctionExpr(patterns, body, span):
                 printListOn("fn ", patterns, ", ", "", out, priorities["pattern"])
             }, body, false, out, priority)
     return astWrapper(functionExpr, makeFunctionExpr, [patterns, body], span,
-        scope, term`FunctionExpr`, fn f {[transformAll(patterns, f), body]})
+        scope, term`FunctionExpr`, fn f {[transformAll(patterns, f), body.transform(f)]})
 
 def makeListExpr(items, span):
     def scope := sumScopes(items)
