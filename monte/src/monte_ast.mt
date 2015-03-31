@@ -1130,7 +1130,7 @@ def makeMapComprehensionExpr(iterable, filter, key, value, bodyk, bodyv, span):
     return astWrapper(mapComprehensionExpr, makeMapComprehensionExpr, [iterable, filter, key, value, bodyk, bodyv], span,
         scope, term`MapComprehensionExpr`, fn f {[iterable.transform(f), maybeTransform(filter, f), maybeTransform(key, f), value.transform(f), bodyk.transform(f), bodyv.transform(f)]})
 
-def makeForExpr(iterable, key, value, body, span):
+def makeForExpr(iterable, key, value, body, catchPattern, catchBody, span):
     def scope := sumScopes([iterable, key, value, body]).hide()
     object forExpr:
         to getKey():
@@ -1141,6 +1141,10 @@ def makeForExpr(iterable, key, value, body, span):
             return iterable
         to getBody():
             return body
+        to getCatchPattern():
+            return catchPattern
+        to getCatchBody():
+            return catchBody
         to subPrintOn(out, priority):
             printSuiteOn(fn {
                 out.print("for ")
@@ -1152,8 +1156,14 @@ def makeForExpr(iterable, key, value, body, span):
                 out.print(" in ")
                 iterable.subPrintOn(out, priorities["braceExpr"])
             }, body, false, out, priority)
-    return astWrapper(forExpr, makeForExpr, [iterable, key, value, body], span,
-        scope, term`ForExpr`, fn f {[iterable.transform(f), maybeTransform(key, f), value.transform(f), body.transform(f)]})
+            if (catchPattern != null):
+                printSuiteOn(fn {
+                    out.print("catch ")
+                    catchPattern.subPrintOn(out, priorities["pattern"])
+                }, catchBody, true, out, priority)
+    return astWrapper(forExpr, makeForExpr, [iterable, key, value, body, catchPattern, catchBody],
+        span,
+        scope, term`ForExpr`, fn f {[iterable.transform(f), maybeTransform(key, f), value.transform(f), body.transform(f), maybeTransform(catchPattern, f), maybeTransform(catchBody, f)]})
 
 def makeObjectExpr(docstring, name, asExpr, auditors, script, span):
     def scope := name.getStaticScope() + sumScopes([asExpr] + auditors).hide() + script.getStaticScope()
@@ -1366,7 +1376,8 @@ def makeEscapeExpr(ejectorPattern, body, catchPattern, catchBody, span):
          [ejectorPattern, body, catchPattern, catchBody], span,
         scope, term`EscapeExpr`,
          fn f {[ejectorPattern.transform(f), body.transform(f),
-                catchPattern.transform(f), catchBody.transform(f)]})
+                maybeTransform(catchPattern, f), maybeTransform(catchBody, f)]})
+
 def makeSwitchExpr(specimen, matchers, span):
     def scope := specimen.getStaticScope() + sumScopes(matchers)
     object switchExpr:
@@ -1908,8 +1919,8 @@ object astBuilder:
         return makeMapExpr(pairs, span)
     to MapComprehensionExpr(iterable, filter, key, value, bodyk, bodyv, span):
         return makeMapComprehensionExpr(iterable, filter, key, value, bodyk, bodyv, span)
-    to ForExpr(iterable, key, value, body, span):
-        return makeForExpr(iterable, key, value, body, span)
+    to ForExpr(iterable, key, value, body, catchPattern, catchBlock, span):
+        return makeForExpr(iterable, key, value, body, catchPattern, catchBlock, span)
     to ObjectExpr(docstring, name, asExpr, auditors, script, span):
         return makeObjectExpr(docstring, name, asExpr, auditors, script, span)
     to ParamDesc(name, guard, span):
@@ -2383,12 +2394,14 @@ def test_forExpr(assert):
     def iterable  := makeNounExpr("a", null)
     def [k, v] := [makeFinalPattern(makeNounExpr("k", null), null, null), makeFinalPattern(makeNounExpr("v", null), null, null)]
     def body  := makeNounExpr("b", null)
-    def expr := makeForExpr(iterable, k, v, body, null)
-    assert.equal(expr._uncall(), [makeForExpr, "run", [iterable, k, v, body, null]])
+    def expr := makeForExpr(iterable, k, v, body, null, null, null)
+    assert.equal(expr._uncall(), [makeForExpr, "run", [iterable, k, v, body, null, null, null]])
     assert.equal(M.toString(expr), "for k => v in a:\n    b")
-    assert.equal(M.toString(makeForExpr(iterable, null, v, body, null)),
+    assert.equal(M.toString(makeForExpr(iterable, null, v, body, null, null, null)),
                  "for v in a:\n    b")
-    assert.equal(expr.asTerm(), term`ForExpr(NounExpr("a"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), NounExpr("b"))`)
+    assert.equal(M.toString(makeForExpr(iterable, null, v, body, makeFinalPattern(makeNounExpr("p"), null), makeLiteralExpr(1), null)),
+                 "for v in a:\n    b\ncatch p:\n    1")
+    assert.equal(expr.asTerm(), term`ForExpr(NounExpr("a"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), NounExpr("b"), null, null)`)
 
 def test_objectExpr(assert):
     def objName := makeFinalPattern(makeNounExpr("a", null), null, null)

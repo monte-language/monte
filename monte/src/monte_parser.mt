@@ -408,6 +408,34 @@ def parseMonte(lex, builder, mode, err):
                     block(indent, ej)
                 }}
             return builder.IfExpr(test, consq, alt, spanFrom(spanHere))
+        if (tag == "escape"):
+            def spanStart := spanHere()
+            advance(ej)
+            def p1 := pattern(ej)
+            def e1 := block(indent, ej)
+            if (peekTag() == "catch"):
+                advance(ej)
+                def p2 := pattern(ej)
+                def e2 := block(indent, ej)
+                return builder.EscapeExpr(p1, e1, p2, e2, spanFrom(spanHere))
+            return builder.EscapeExpr(p1, e1, null, null, spanFrom(spanHere))
+        if (tag == "for"):
+            def spanStart := spanHere()
+            advance(ej)
+            def p1 := pattern(ej)
+            def p2 := if (peekTag() == "=>") {advance(ej); pattern(ej)
+                      } else {null}
+            def [k, v] := if (p2 == null) {[null, p1]} else {[p1, p2]}
+            acceptTag("in", ej)
+            def it := order(ej)
+            def body := block(indent, ej)
+            def [catchPattern, catchBody] := if (peekTag == "catch") {
+                advance(ej)
+                [pattern(ej), block(indent, ej)]
+            } else {
+                [null, null]
+            }
+            return builder.ForExpr(it, k, v, body, catchPattern, catchBody, spanFrom(spanHere))
         throw.eject(ej, `don't recognize $tag`)
 
     bind prim(ej):
@@ -581,6 +609,17 @@ def test_IfExpr(assert):
     assert.equal(expr("if (1) {2} else {3}"), term`IfExpr(LiteralExpr(1), LiteralExpr(2), LiteralExpr(3))`)
     assert.equal(expr("if (1) {2}"), term`IfExpr(LiteralExpr(1), LiteralExpr(2), null)`)
 
+def test_EscapeExpr(assert):
+    assert.equal(expr("escape e {1} catch p {2}"),
+        term`EscapeExpr(FinalPattern(NounExpr("e"), null), LiteralExpr(1), FinalPattern(NounExpr("p"), null), LiteralExpr(2))`)
+    assert.equal(expr("escape e {1}"),
+        term`EscapeExpr(FinalPattern(NounExpr("e"), null), LiteralExpr(1), null, null)`)
+
+def test_ForExpr(assert):
+    assert.equal(expr("for v in foo {1}"), term`ForExpr(NounExpr("foo"), null, FinalPattern(NounExpr("v"), null), LiteralExpr(1), null, null)`)
+    assert.equal(expr("for k => v in foo {1}"), term`ForExpr(NounExpr("foo"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), LiteralExpr(1), null, null)`)
+    assert.equal(expr("for k => v in foo {1} catch p {2}"), term`ForExpr(NounExpr("foo"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), LiteralExpr(1), FinalPattern(NounExpr("p"), null), LiteralExpr(2))`)
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -656,4 +695,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
