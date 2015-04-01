@@ -1400,7 +1400,7 @@ def makeSwitchExpr(specimen, matchers, span):
             if (priorities["braceExpr"] < priority):
                 out.print("}")
     return astWrapper(switchExpr, makeSwitchExpr, [specimen, matchers], span,
-        scope, term`SwitchExpr`, fn f {[specimen.transfomr(f), transformAll(matchers, f)]})
+        scope, term`SwitchExpr`, fn f {[specimen.transform(f), transformAll(matchers, f)]})
 
 def makeWhenExpr(args, body, catchers, finallyBlock, span):
     def scope := sumScopes(args + [body]).hide() + sumScopes(catchers) + scopeMaybe(finallyBlock).hide()
