@@ -490,6 +490,50 @@ def parseMonte(lex, builder, mode, err):
             }
             return builder.TryExpr(tryblock, catchers.snapshot(),
                                    finallyblock, spanFrom(spanStart))
+        if (tag == "while"):
+            def spanStart := spanHere()
+            advance(ej)
+            acceptTag("(", ej)
+            def test := expr(ej)
+            acceptTag(")", ej)
+            def whileblock := block(indent, ej)
+            def catchblock := if (peekTag() == "catch") {
+               catcher(indent, ej)
+            } else {
+                null
+            }
+            return builder.WhileExpr(test, whileblock, catchblock, spanFrom(spanStart))
+        if (tag == "when"):
+            def spanStart := spanHere()
+            advance(ej)
+            acceptTag("(", ej)
+            def exprs := acceptList(expr)
+            acceptTag(")", ej)
+            acceptTag("->", ej)
+            if (indent):
+                acceptTag("INDENT", ej)
+            else:
+                acceptTag("{", ej)
+            def whenblock := escape e {
+                seq(indent, ej)
+            } catch _ {
+                builder.SeqExpr([], null)
+            }
+            if (indent):
+                acceptTag("DEDENT", ej)
+            else:
+                acceptTag("}", ej)
+            def catchers := [].diverge()
+            while (true):
+               catchers.push(catcher(indent, __break))
+            def finallyblock := if (peekTag() == "finally") {
+                advance(ej)
+                block(indent, ej)
+            } else {
+                null
+            }
+            return builder.WhenExpr(exprs, whenblock, catchers.snapshot(),
+                                    finallyblock, spanFrom(spanStart))
         throw.eject(ej, `don't recognize $tag`)
 
     bind prim(ej):
@@ -689,6 +733,17 @@ def test_TryExpr(assert):
     assert.equal(expr("try {1} catch p {2}"),
         term`TryExpr(LiteralExpr(1), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2))], null)`)
 
+def test_WhileExpr(assert):
+    assert.equal(expr("while (1) {2}"), term`WhileExpr(LiteralExpr(1), LiteralExpr(2), null)`)
+    assert.equal(expr("while (1) {2} catch p {3}"), term`WhileExpr(LiteralExpr(1), LiteralExpr(2), Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3)))`)
+
+def test_WhenExpr(assert):
+    assert.equal(expr("when (1) -> {2}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [], null)`)
+    assert.equal(expr("when (1, 2) -> {3}"), term`WhenExpr([LiteralExpr(1), LiteralExpr(2)], LiteralExpr(3), [], null)`)
+    assert.equal(expr("when (1) -> {2} catch p {3}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3))], null)`)
+    assert.equal(expr("when (1) -> {2} finally {3}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [], LiteralExpr(3))`)
+    assert.equal(expr("when (1) -> {2} catch p {3} finally {4}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3))], LiteralExpr(4))`)
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -764,4 +819,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr,test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
