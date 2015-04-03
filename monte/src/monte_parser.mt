@@ -412,6 +412,11 @@ def parseMonte(lex, builder, mode, err):
         acceptTag("match", ej)
         return builder.Matcher(pattern(ej), block(indent, ej), spanFrom(spanStart))
 
+    def catcher(indent, ej):
+        def spanStart := spanHere()
+        acceptTag("catch", ej)
+        return builder.Catcher(pattern(ej), block(indent, ej), spanFrom(spanStart))
+
     def basic(indent, ej):
         def tag := peekTag()
         if (tag == "if"):
@@ -470,6 +475,21 @@ def parseMonte(lex, builder, mode, err):
             def spec := expr(ej)
             acceptTag(")", ej)
             return builder.SwitchExpr(spec, suite(matchers, indent, ej), spanFrom(spanStart))
+        if (tag == "try"):
+            def spanStart := spanHere()
+            advance(ej)
+            def tryblock := block(indent, ej)
+            def catchers := [].diverge()
+            while (true):
+               catchers.push(catcher(indent, __break))
+            def finallyblock := if (peekTag() == "finally") {
+                advance(ej)
+                block(indent, ej)
+            } else {
+                null
+            }
+            return builder.TryExpr(tryblock, catchers.snapshot(),
+                                   finallyblock, spanFrom(spanStart))
         throw.eject(ej, `don't recognize $tag`)
 
     bind prim(ej):
@@ -661,6 +681,14 @@ def test_FunctionExpr(assert):
 def test_SwitchExpr(assert):
     assert.equal(expr("switch (1) {match p {2} match q {3}}"), term`SwitchExpr(LiteralExpr(1), [Matcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2)), Matcher(FinalPattern(NounExpr("q"), null), LiteralExpr(3))])`)
 
+def test_TryExpr(assert):
+    assert.equal(expr("try {1} catch p {2} catch q {3} finally {4}"),
+        term`TryExpr(LiteralExpr(1), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2)), Catcher(FinalPattern(NounExpr("q"), null), LiteralExpr(3))], LiteralExpr(4))`)
+    assert.equal(expr("try {1} finally {2}"),
+        term`TryExpr(LiteralExpr(1), [], LiteralExpr(2))`)
+    assert.equal(expr("try {1} catch p {2}"),
+        term`TryExpr(LiteralExpr(1), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2))], null)`)
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -736,4 +764,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr,test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
