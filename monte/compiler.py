@@ -462,21 +462,22 @@ class PythonWriter(object):
         # only generate ejector code if it's mentioned in the body
         if bodyScope.namesUsed() & pattScope.outNames():
             name = next(iter(pattScope.outNames()))
-            ej = self._generatePattern(out, ctx, None,
+            newctx = ctx.with_(layout=ctx.layout.makeInner())
+            ej = self._generatePattern(out, newctx, None,
                                        '_monte.ejector("%s")' % (name,),
                                        patt)
             out.writeln("try:")
             sub = out.indent()
             ejTemp = ctx.layout.gensym(name)
             escapeTemp = ctx.layout.gensym("escape")
-            newctx = ctx.with_(layout=ctx.layout.makeInner())
             val = self._generate(sub, newctx, body)
             sub.writeln("%s = %s" % (escapeTemp, val))
             out.writeln("except %s._m_type, %s:" % (ej, ejTemp))
             if catchpatt.tag.name != 'null':
-                self._generatePattern(sub, ctx, None,
+                catchctx = ctx.with_(layout=ctx.layout.makeInner())
+                self._generatePattern(sub, catchctx, None,
                                       ejTemp + '.args[0]', catchpatt)
-                val = self._generate(sub, ctx, catchbody)
+                val = self._generate(sub, catchctx, catchbody)
                 sub.writeln("%s = %s" % (escapeTemp, val))
             else:
                 sub.writeln("%s = %s.args[0]" % (escapeTemp, ejTemp))
