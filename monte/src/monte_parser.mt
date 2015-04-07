@@ -44,7 +44,14 @@ def spanCover(left, right):
 
 def parseMonte(lex, builder, mode, err):
     def [VALUE_HOLE, PATTERN_HOLE] := [lex.valueHole(), lex.patternHole()]
-    def tokens := __makeList.fromIterable(lex)
+    def _toks := [].diverge()
+    while (true):
+         _toks.push(lex.next(__break)[1])
+    catch p:
+        if (p != null):
+            traceln(`lexer stopped: $p`)
+            throw.eject(err, p)
+    def tokens := _toks.snapshot()
     var dollarHoleValueIndex := -1
     var atHoleValueIndex := -1
     var position := -1
@@ -73,13 +80,13 @@ def parseMonte(lex, builder, mode, err):
 
     def acceptEOLs():
         while (true):
-            position += 1
-            if (position >= tokens.size()):
+            if ((position + 1) >= tokens.size()):
                 return
-            def t := tokens[position]
+            def t := tokens[position + 1]
             def isHole := t == VALUE_HOLE || t == PATTERN_HOLE
             if (isHole || t.getTag().getName() != "EOL"):
                 return
+            position += 1
 
     def peek():
         if (position + 1 >= tokens.size()):
@@ -112,11 +119,13 @@ def parseMonte(lex, builder, mode, err):
         return tokens[position + 1].getTag().getName()
 
     def acceptList(rule):
+        acceptEOLs()
         def items := [].diverge()
         escape e:
             items.push(rule(e))
             while (true):
                 acceptTag(",", __break)
+                acceptEOLs()
                 items.push(rule(__break))
         return items.snapshot()
 
@@ -124,6 +133,7 @@ def parseMonte(lex, builder, mode, err):
         var isMap := false
         def items := [].diverge()
         def startpos := position
+        acceptEOLs()
         escape em:
             items.push(ruleMap(em))
             isMap := true
@@ -136,6 +146,7 @@ def parseMonte(lex, builder, mode, err):
                 return [[], false]
         while (true):
             acceptTag(",", __break)
+            acceptEOLs()
             if (isMap):
                 items.push(ruleMap(__break))
             else:
@@ -264,6 +275,7 @@ def parseMonte(lex, builder, mode, err):
         def k := if (peekTag() == "(") {
             advance(ej)
             def e := expr(ej)
+            acceptEOLs()
             acceptTag(")", ej)
             e
         } else {
@@ -318,6 +330,7 @@ def parseMonte(lex, builder, mode, err):
             def spanStart := spanHere()
             advance(ej)
             def [items, isMap] := acceptListOrMap(pattern, mapPatternItem)
+            acceptEOLs()
             acceptTag("]", ej)
             if (isMap):
                 def tail := if (peekTag() == "|") {advance(ej); _pattern(ej)}
@@ -347,9 +360,9 @@ def parseMonte(lex, builder, mode, err):
         if (peekTag() == "=>"):
             advance(ej)
             return builder.MapExprExport(prim(ej), spanFrom(spanStart))
-        def k := prim(ej)
+        def k := expr(ej)
         accept("=>", ej)
-        def v := prim(ej)
+        def v := expr(ej)
         return builder.MapExprAssoc(k, v, spanFrom(spanStart))
 
     def seqSep(ej):
@@ -378,9 +391,11 @@ def parseMonte(lex, builder, mode, err):
     def block(indent, ej):
         if (indent):
             acceptTag(":", ej)
+            acceptEOLs()
             acceptTag("INDENT", ej)
         else:
             acceptTag("{", ej)
+        acceptEOLs()
         def contents := escape e {
             seq(indent, ej)
         } catch _ {
@@ -390,25 +405,35 @@ def parseMonte(lex, builder, mode, err):
             acceptTag("DEDENT", ej)
         else:
             acceptTag("}", ej)
+        acceptEOLs()
         return contents
 
     def suite(rule, indent, ej):
         if (indent):
             acceptTag(":", ej)
+            acceptEOLs()
             acceptTag("INDENT", ej)
         else:
             acceptTag("{", ej)
-        def contents := [].diverge()
-        while (true):
-            contents.push(rule(indent, __break))
+        acceptEOLs()
+        def content := rule(indent, ej)
+        acceptEOLs()
         if (indent):
             acceptTag("DEDENT", ej)
         else:
             acceptTag("}", ej)
+        acceptEOLs()
+        return content
+
+    def repeat(rule, indent, ej):
+        def contents := [].diverge()
+        while (true):
+            contents.push(rule(indent, __break))
         return contents.snapshot()
 
     def matchers(indent, ej):
         def spanStart := spanHere()
+        acceptEOLs()
         acceptTag("match", ej)
         return builder.Matcher(pattern(ej), block(indent, ej), spanFrom(spanStart))
 
@@ -416,6 +441,72 @@ def parseMonte(lex, builder, mode, err):
         def spanStart := spanHere()
         acceptTag("catch", ej)
         return builder.Catcher(pattern(ej), block(indent, ej), spanFrom(spanStart))
+
+    def methBody(indent, ej):
+        acceptEOLs()
+        def doco := if (peekTag() == ".String.") {
+            advance(ej)
+            acceptEOLs()
+        } else {
+            null
+        }
+        def contents := escape e {
+            seq(indent, ej)
+        } catch _ {
+            builder.SeqExpr([], null)
+        }
+        return [doco, contents]
+
+    def meth(indent, ej):
+        acceptEOLs()
+        def spanStart := spanHere()
+        def mknode := if (peekTag() == "to") {
+            advance(ej)
+            builder."To"
+        } else {
+            acceptTag("method", ej)
+            builder."Method"
+        }
+        def verb := if (peekTag() == ".String.") {
+            advance(ej)
+        } else {
+            acceptTag("IDENTIFIER", ej)
+        }
+        acceptTag("(", ej)
+        def patts := acceptList(pattern)
+        acceptTag(")", ej)
+        def resultguard := if (peekTag() == ":") {
+            advance(ej)
+            guard(ej)
+        } else {
+            null
+        }
+        def [doco, body] := suite(methBody, indent, ej)
+        return mknode(doco, verb, patts, resultguard, body, spanFrom(spanStart))
+
+    def objectScript(indent, ej):
+        def doco := if (peekTag() == ".String.") {
+            advance(ej)
+        } else {
+            null
+        }
+        def meths := [].diverge()
+        while (true):
+            meths.push(meth(indent, __break))
+        def matchs := [].diverge()
+        while (true):
+            matchs.push(matchers(indent, __break))
+        return [doco, meths.snapshot(), matchs.snapshot()]
+
+    def noun(ej):
+        if (peekTag() == "IDENTIFIER"):
+            def t := advance(ej)
+            return builder.NounExpr(t.getData(), t.getSpan())
+        else:
+            def spanStart := spanHere()
+            acceptTag("::", ej)
+            def t := accept(".String.", ej)
+            return builder.NounExpr(t.getData(), spanFrom(spanStart))
 
     def basic(indent, ej):
         def tag := peekTag()
@@ -474,7 +565,10 @@ def parseMonte(lex, builder, mode, err):
             acceptTag("(", ej)
             def spec := expr(ej)
             acceptTag(")", ej)
-            return builder.SwitchExpr(spec, suite(matchers, indent, ej), spanFrom(spanStart))
+            return builder.SwitchExpr(
+                spec,
+                suite(fn i, j {repeat(matchers, i, j)}, indent, ej),
+                spanFrom(spanStart))
         if (tag == "try"):
             def spanStart := spanHere()
             advance(ej)
@@ -534,6 +628,42 @@ def parseMonte(lex, builder, mode, err):
             }
             return builder.WhenExpr(exprs, whenblock, catchers.snapshot(),
                                     finallyblock, spanFrom(spanStart))
+        if (tag == "object" || tag == "bind"):
+            def spanStart := spanHere()
+            advance(ej)
+            def name := if (tag == "bind") {
+                builder.BindPattern(noun(ej), spanFrom(spanStart))
+            } else if (peekTag() == "bind") {
+                advance(ej)
+                builder.BindPattern(noun(ej), spanFrom(spanStart))
+            } else if (peekTag() == "_") {
+                advance(ej)
+                builder.IgnorePattern(null, spanHere())
+            } else {
+                builder.FinalPattern(noun(ej), null, spanFrom(spanStart))
+            }
+            def oExtends := if (peekTag() == "extends") {
+                advance(ej)
+                order(ej)
+            } else {
+                null
+            }
+            def oAs := if (peekTag() == "as") {
+                advance(ej)
+                order(ej)
+            } else {
+                null
+            }
+            def oImplements := if (peekTag() == "implements") {
+                advance(ej)
+                acceptList(order)
+            } else {
+                []
+            }
+            def [doco, methods, matchers] := suite(objectScript, indent, ej)
+            def span := spanFrom(spanStart)
+            return builder.ObjectExpr(doco, name, oAs, oImplements,
+                builder.Script(oExtends, methods, matchers, span), span)
         throw.eject(ej, `don't recognize $tag`)
 
     bind prim(ej):
@@ -551,7 +681,7 @@ def parseMonte(lex, builder, mode, err):
         if (tag == "::"):
             def spanStart := spanHere()
             advance(ej)
-            def t := accept(".String.", ej)
+            def t := acceptTag(".String.", ej)
             return builder.NounExpr(t.getData(), t.getSpan())
         if (tag == "QUASI_OPEN" || tag == "QUASI_CLOSE"):
             return quasiliteral(null, false, ej)
@@ -592,17 +722,6 @@ def parseMonte(lex, builder, mode, err):
 
     # would be different if we have toplevel-only syntax like pragmas
     def topSeq := seq
-
-    def noun(ej):
-        if (peekTag() == "IDENTIFIER"):
-            def t := advance(ej)
-            return builder.NounExpr(t.getData(), t.getSpan())
-        else:
-            acceptTag("::", ej)
-            def spanStart := spanHere()
-            advance(ej)
-            def t := accept(".String.", ej)
-            return builder.NounExpr(t.getData(), spanFrom(spanStart))
 
     def module_(ej):
         def start := spanHere()
@@ -744,6 +863,19 @@ def test_WhenExpr(assert):
     assert.equal(expr("when (1) -> {2} finally {3}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [], LiteralExpr(3))`)
     assert.equal(expr("when (1) -> {2} catch p {3} finally {4}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3))], LiteralExpr(4))`)
 
+def test_ObjectExpr(assert):
+    assert.equal(expr("object foo {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(null, [], []))`)
+    assert.equal(expr("object _ {}"), term`ObjectExpr(null, IgnorePattern(null), null, [], Script(null, [], []))`)
+    assert.equal(expr("object ::\"object\" {}"), term`ObjectExpr(null, FinalPattern(NounExpr("object"), null), null, [], Script(null, [], []))`)
+    assert.equal(expr("bind foo {}"), term`ObjectExpr(null, BindPattern(NounExpr("foo")), null, [], Script(null, [], []))`)
+    assert.equal(expr("object bind foo {}"), term`ObjectExpr(null, BindPattern(NounExpr("foo")), null, [], Script(null, [], []))`)
+    assert.equal(expr("object foo { to doA(x, y) :z {0} method blee() {1} to \"object\"() {2} match p {3} match q {4}}"),
+        term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(null, [To(null, "doA", [FinalPattern(NounExpr("x", null)), FinalPattern(NounExpr("y", null))], NounExpr("z"), LiteralExpr(0)), Method(null, "blee", [], null, LiteralExpr(1)), To(null, "object", [], null, LiteralExpr(2))], [Matcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3)), Matcher(FinalPattern(NounExpr("q"), null), LiteralExpr(4))]))`)
+    assert.equal(expr("object foo {\"hello\" to blee() {\"yes\"\n1}}"), term`ObjectExpr("hello", FinalPattern(NounExpr("foo"), null), null, [], Script(null, [To("yes", "blee", [], LiteralExpr(1))], []))`)
+    assert.equal(expr("object foo as A implements B, C {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), NounExpr("A"), [NounExpr("B"), NounExpr("C")], Script(NounExpr("baz"), [], []))`)
+    assert.equal(expr("object foo extends baz {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(NounExpr("baz"), [], []))`)
+
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -814,9 +946,9 @@ def test_SuchThatPattern(assert):
     assert.equal(pattern("x :y ? (1)"), term`SuchThatPattern(FinalPattern(NounExpr("x"), NounExpr("y")), LiteralExpr(1))`)
 
 
-# def test__holes(assert):
+# def test_holes(assert):
 #     assert.equal(quasiMonteParser.valueMaker(["foo(", quasiMonteParser.valueHole(0), ")"]), term`ValueHoleExpr(0)`)
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
