@@ -15,3 +15,7 @@
 <simpson> dash: It's not yet equipped for that.
 <dash> simpson: i'm patient.
 %
+<dash> well, okay. what's our threat model?
+<simpson> Developers want to deploy HTTPS sites.
+<simpson> Origin of threat: Developers
+%
