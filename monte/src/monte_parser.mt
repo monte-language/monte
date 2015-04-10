@@ -508,6 +508,45 @@ def parseMonte(lex, builder, mode, err):
             def t := accept(".String.", ej)
             return builder.NounExpr(t.getData(), spanFrom(spanStart))
 
+    def objectExpr(name, indent, ej, spanStart):
+        def oExtends := if (peekTag() == "extends") {
+            advance(ej)
+            order(ej)
+        } else {
+            null
+        }
+        def oAs := if (peekTag() == "as") {
+            advance(ej)
+            order(ej)
+        } else {
+            null
+        }
+        def oImplements := if (peekTag() == "implements") {
+            advance(ej)
+            acceptList(order)
+        } else {
+            []
+        }
+        def [doco, methods, matchers] := suite(objectScript, indent, ej)
+        def span := spanFrom(spanStart)
+        return builder.ObjectExpr(doco, name, oAs, oImplements,
+            builder.Script(oExtends, methods, matchers, span), span)
+
+    def objectFunction(name, indent, ej, spanStart):
+        acceptTag("(", ej)
+        def patts := acceptList(pattern)
+        acceptTag(")", ej)
+        def resultguard := if (peekTag() == ":") {
+            advance(ej)
+            guard(ej)
+        } else {
+            null
+        }
+        def [doco, body] := suite(methBody, indent, ej)
+        def span := spanFrom(spanStart)
+        return builder.ObjectExpr(doco, name, null, [],
+            builder.FunctionScript(patts, resultguard, body, span), span)
+
     def basic(indent, ej):
         def tag := peekTag()
         if (tag == "if"):
@@ -628,12 +667,21 @@ def parseMonte(lex, builder, mode, err):
             }
             return builder.WhenExpr(exprs, whenblock, catchers.snapshot(),
                                     finallyblock, spanFrom(spanStart))
-        if (tag == "object" || tag == "bind"):
+        if (tag == "bind"):
             def spanStart := spanHere()
             advance(ej)
-            def name := if (tag == "bind") {
-                builder.BindPattern(noun(ej), spanFrom(spanStart))
-            } else if (peekTag() == "bind") {
+            def name := builder.BindPattern(noun(ej), spanFrom(spanStart))
+            if (peekTag() == "("):
+                return objectFunction(name, indent, ej, spanStart)
+            else if (peekTag() == ":="):
+                return null
+            else:
+                return objectExpr(name, indent, ej, spanStart)
+
+        if (tag == "object"):
+            def spanStart := spanHere()
+            advance(ej)
+            def name := if (peekTag() == "bind") {
                 advance(ej)
                 builder.BindPattern(noun(ej), spanFrom(spanStart))
             } else if (peekTag() == "_") {
@@ -642,28 +690,23 @@ def parseMonte(lex, builder, mode, err):
             } else {
                 builder.FinalPattern(noun(ej), null, spanFrom(spanStart))
             }
-            def oExtends := if (peekTag() == "extends") {
+            return objectExpr(name, indent, ej, spanStart)
+
+        if (tag == "def"):
+            def spanStart := spanHere()
+            advance(ej)
+            def origPosition := position
+            def name := if (peekTag() == "bind") {
                 advance(ej)
-                order(ej)
+                builder.BindPattern(noun(ej), spanFrom(spanStart))
             } else {
-                null
+                builder.FinalPattern(noun(ej), null, spanFrom(spanStart))
             }
-            def oAs := if (peekTag() == "as") {
-                advance(ej)
-                order(ej)
-            } else {
-                null
-            }
-            def oImplements := if (peekTag() == "implements") {
-                advance(ej)
-                acceptList(order)
-            } else {
-                []
-            }
-            def [doco, methods, matchers] := suite(objectScript, indent, ej)
-            def span := spanFrom(spanStart)
-            return builder.ObjectExpr(doco, name, oAs, oImplements,
-                builder.Script(oExtends, methods, matchers, span), span)
+            if (peekTag() == "("):
+                return objectFunction(name, indent, ej, spanStart)
+            else:
+                position := origPosition
+                return null
         throw.eject(ej, `don't recognize $tag`)
 
     bind prim(ej):
@@ -875,6 +918,9 @@ def test_ObjectExpr(assert):
     assert.equal(expr("object foo as A implements B, C {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), NounExpr("A"), [NounExpr("B"), NounExpr("C")], Script(NounExpr("baz"), [], []))`)
     assert.equal(expr("object foo extends baz {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(NounExpr("baz"), [], []))`)
 
+def test_Function(assert):
+    assert.equal(expr("def foo() {1}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], FunctionScript([], null, LiteralExpr(1)))`)
+    assert.equal(expr("def foo(a, b) :c {1}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], FunctionScript([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], NounExpr("c"), LiteralExpr(1)))`)
 
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
@@ -951,4 +997,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
