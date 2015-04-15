@@ -431,6 +431,18 @@ def parseMonte(lex, builder, mode, err):
             contents.push(rule(indent, __break))
         return contents.snapshot()
 
+    def forExprHead(needParens, ej):
+        def p1 := pattern(ej)
+        def p2 := if (peekTag() == "=>") {advance(ej); pattern(ej)
+                  } else {null}
+        acceptTag("in", ej)
+        if (needParens):
+            acceptTag("(", ej)
+        def it := order(ej)
+        if (needParens):
+            acceptTag(")", ej)
+        return if (p2 == null) {[null, p1, it]} else {[p1, p2, it]}
+
     def matchers(indent, ej):
         def spanStart := spanHere()
         acceptEOLs()
@@ -655,12 +667,7 @@ def parseMonte(lex, builder, mode, err):
         if (tag == "for"):
             def spanStart := spanHere()
             advance(ej)
-            def p1 := pattern(ej)
-            def p2 := if (peekTag() == "=>") {advance(ej); pattern(ej)
-                      } else {null}
-            def [k, v] := if (p2 == null) {[null, p1]} else {[p1, p2]}
-            acceptTag("in", ej)
-            def it := order(ej)
+            def [k, v, it] := forExprHead(false, ej)
             def body := block(indent, ej)
             def [catchPattern, catchBody] := if (peekTag() == "catch") {
                 advance(ej)
@@ -862,7 +869,23 @@ def parseMonte(lex, builder, mode, err):
             advance(ej)
             if (peekTag() == "for"):
                 advance(ej)
-                # XXX
+                def [k, v, it] := forExprHead(true, ej)
+                def filt := if (peekTag() == "if") {
+                    advance(ej)
+                    acceptTag("(", ej)
+                    def e := expr(ej)
+                    acceptTag(")", ej)
+                    e
+                } else {
+                    null
+                }
+                def body := expr(ej)
+                if (peekTag() == "=>"):
+                    advance(ej)
+                    return builder.MapComprehensionExpr(it, filt, k, v, body, expr(ej),
+                        spanFrom(spanStart))
+                return builder.ListComprehensionExpr(it, filt, k, v, body,
+                    spanFrom(spanStart))
             def [items, isMap] := acceptListOrMap(expr, mapItem)
             accept("]", ej)
             if (isMap):
@@ -975,6 +998,15 @@ def test_Map(assert):
     assert.equal(expr("[=> b, k => v]"),
          term`MapExpr([MapExprExport(NounExpr("b")),
                        MapExprAssoc(NounExpr("k"), NounExpr("v"))])`)
+
+def test_ListComprehensionExpr(assert):
+    assert.equal(expr("[for k => v in (a) if (b) c]"), term`ListComprehensionExpr(NounExpr("a"), NounExpr("b"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), NounExpr("c"))`)
+    assert.equal(expr("[for v in (a) c]"), term`ListComprehensionExpr(NounExpr("a"), null, null, FinalPattern(NounExpr("v"), null), NounExpr("c"))`)
+
+def test_MapComprehensionExpr(assert):
+    assert.equal(expr("[for k => v in (a) if (b) k1 => v1]"), term`MapComprehensionExpr(NounExpr("a"), NounExpr("b"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), NounExpr("k1"), NounExpr("v1"))`)
+    assert.equal(expr("[for v in (a) k1 => v1]"), term`MapComprehensionExpr(NounExpr("a"), null, null, FinalPattern(NounExpr("v"), null), NounExpr("k1"), NounExpr("v1"))`)
+
 def test_IfExpr(assert):
     assert.equal(expr("if (1) {2} else if (3) {4} else {5}"),
         term`IfExpr(LiteralExpr(1), LiteralExpr(2), IfExpr(LiteralExpr(3), LiteralExpr(4), LiteralExpr(5)))`)
@@ -1120,4 +1152,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
