@@ -12,6 +12,18 @@ from monte.runtime.ref import UnconnectedRef
 from monte.runtime.tables import (ConstList, FlexList, ConstMap, FlexMap,
                                   mapMaker)
 
+
+class Func(object):
+    def __init__(self, f):
+        self._m_auditorStamps = getattr(f, '_m_auditorStamps', ())
+        self.f = f
+
+    def __call__(self, *a, **kw):
+        return self.f(*a, **kw)
+
+    def run(self, *a, **kw):
+        return self.f(*a, **kw)
+
 @deepFrozenFunc
 def validateFor(flag):
     if not flag:
@@ -71,11 +83,13 @@ comparer = Comparer()
 class MakeVerbFacet(MonteObject):
     _m_fqn = "__makeVerbFacet$verbFacet"
     _m_auditorStamps = (deepFrozenGuard,)
+
     def curryCall(self, obj, verb):
         verb = twineGuard.coerce(verb, throw).bare().s
+
         def facet(*a):
             return getattr(obj, verb)(*a)
-        return facet
+        return Func(facet)
 
 makeVerbFacet = MakeVerbFacet()
 
