@@ -1274,20 +1274,25 @@ def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
             if (priorities["braceExpr"] < priority):
                 out.print("}")
     return astWrapper(interfaceExpr, makeInterfaceExpr, [docstring, name, stamp, parents, auditors, messages], span,
-        scope, term`InterfaceExpr`, fn f {[docstring, name, maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), transformAll(messages, f)]})
+        scope, term`InterfaceExpr`, fn f {[docstring, name.transform(f), maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), transformAll(messages, f)]})
 
-def makeFunctionInterfaceExpr(docstring, messageDesc, span):
+def makeFunctionInterfaceExpr(name, stamp, parents, auditors, messageDesc, span):
     def scope := messageDesc.getStaticScope()
     object functionInterfaceExpr:
+        to getName():
+            return name
         to getMessageDesc():
             return messageDesc
-        to getDocstring():
-            return docstring
+        to getStamp():
+            return stamp
+        to getParents():
+            return parents
+        to getAuditors():
+            return auditors
         to subPrintOn(out, priority):
-            printDocstringOn(docstring, out)
             messageDesc.subPrintOn("interface", out, priority)
-    return astWrapper(functionInterfaceExpr, makeFunctionInterfaceExpr, [docstring, messageDesc], span,
-        scope, term`FunctionInterfaceExpr`, fn f {[docstring, messageDesc.transform(f)]})
+    return astWrapper(functionInterfaceExpr, makeFunctionInterfaceExpr, [name, stamp, parents, auditors, messageDesc], span,
+        scope, term`FunctionInterfaceExpr`, fn f {[name.transform(f), maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), messageDesc.transform(f)]})
 
 def makeCatchExpr(body, pattern, catcher, span):
     def scope := body.getStaticScope().hide() + (pattern.getStaticScope() + catcher.getStaticScope()).hide()
@@ -1929,8 +1934,8 @@ object astBuilder:
         return makeMessageDesc(docstring, verb, params, resultGuard, span)
     to InterfaceExpr(docstring, name, stamp, parents, auditors, messages, span):
         return makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
-    to FunctionInterfaceExpr(docstring, messageDesc, span):
-        return makeFunctionInterfaceExpr(docstring, messageDesc, span)
+    to FunctionInterfaceExpr(name, stamp, parents, auditors, messageDesc, span):
+        return makeFunctionInterfaceExpr(name, stamp, parents, auditors, messageDesc, span)
     to CatchExpr(body, pattern, catcher, span):
         return makeCatchExpr(body, pattern, catcher, span)
     to FinallyExpr(body, unwinder, span):
@@ -2473,11 +2478,11 @@ def test_functionInterfaceExpr(assert):
     def guard := makeNounExpr("B", null)
     def paramA := makeParamDesc("a", guard, null)
     def paramC := makeParamDesc("c", null, null)
-    def messageD := makeMessageDesc(null, "d", [paramA, paramC], guard, null)
-    def expr := makeFunctionInterfaceExpr("foo", messageD, null)
-    assert.equal(expr._uncall(), [makeFunctionInterfaceExpr, "run", ["foo", messageD, null]])
+    def messageD := makeMessageDesc("foo", "d", [paramA, paramC], guard, null)
+    def expr := makeFunctionInterfaceExpr(messageD, null)
+    assert.equal(expr._uncall(), [makeFunctionInterfaceExpr, "run", [messageD, null]])
     assert.equal(M.toString(expr), "/**\n    foo\n*/\ninterface d(a :B, c) :B")
-    assert.equal(expr.asTerm(), term`FunctionInterfaceExpr("foo", MessageDesc(null, "d", [ParamDesc("a", NounExpr("B")), ParamDesc("c", null)], NounExpr("B")))`)
+    assert.equal(expr.asTerm(), term`FunctionInterfaceExpr(MessageDesc("foo", "d", [ParamDesc("a", NounExpr("B")), ParamDesc("c", null)], NounExpr("B")))`)
 
 def test_quasiParserExpr(assert):
     def hole1 := makeQuasiExprHole(makeNounExpr("a", null), null)
