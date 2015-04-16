@@ -353,7 +353,7 @@ def parseMonte(lex, builder, mode, err):
             return p
     "XXX buggy expander eats this line"
     def blockExpr (indent, ej):
-        return prim(ej)
+        return expr(ej)
 
     def mapItem(ej):
         def spanStart := spanHere()
@@ -829,7 +829,22 @@ def parseMonte(lex, builder, mode, err):
             def [doco, msgs] := suite(interfaceBody, indent, ej)
             return builder.InterfaceExpr(doco, name, guards_, extends_, implements_, msgs,
                 spanFrom(spanStart))
-        throw.eject(ej, `don't recognize $tag`)
+        if (peekTag() == "meta"):
+            def spanStart := spanHere()
+            acceptTag("meta", ej)
+            acceptTag(".", ej)
+            def verb := acceptTag("IDENTIFIER", ej)
+            if (verb.getData() == "context"):
+                acceptTag("(", ej)
+                acceptTag(")", ej)
+                return builder.MetaContextExpr(spanFrom(spanStart))
+            if (verb.getData() == "getState"):
+                acceptTag("(", ej)
+                acceptTag(")", ej)
+                return builder.MetaStateExpr(spanFrom(spanStart))
+            throw.eject(ej, [`Meta verbs are "context" or "getState"`, spanHere()])
+
+        throw.eject(ej, [`don't recognize $tag`, spanHere()])
 
     bind prim(ej):
         def tag := peekTag()
@@ -1155,6 +1170,10 @@ def test_Get(assert):
     assert.equal(expr("a[]"), term`GetExpr(NounExpr("a"), [])`)
     assert.equal(expr("a.b()[c].d()"), term`MethodCallExpr(GetExpr(MethodCallExpr(NounExpr("a"), "b", []), [NounExpr("c")]), "d", [])`)
 
+def test_Meta(assert):
+    assert.equal(expr("meta.context()"), term`MetaContextExpr()`)
+    assert.equal(expr("meta.getState()"), term`MetaStateExpr()`)
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -1230,4 +1249,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_Send, test_Get, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_Send, test_Get, test_Meta, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
