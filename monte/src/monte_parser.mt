@@ -897,9 +897,42 @@ def parseMonte(lex, builder, mode, err):
                 return builder.ListExpr(items, spanFrom(spanStart))
         return basic(false, ej)
     "XXX buggy expander eats this line"
+    def call(ej):
+        def spanStart := spanHere()
+        def base := prim(ej)
+        def trailers := [].diverge()
+        while (true):
+            if (peekTag() == "."):
+                advance(ej)
+                def verb := if (peekTag() == ".String.") {
+                    advance(ej)
+                } else {
+                    def t := acceptTag("IDENTIFIER", ej)
+                    __makeString.fromString(t.getData(), t.getSpan())
+                }
+                if (peekTag() == "("):
+                    advance(ej)
+                    def arglist := acceptList(expr)
+                    acceptTag(")", ej)
+                    trailers.push(["MethodCallExpr", [verb, arglist, spanFrom(spanStart)]])
+                else:
+                    trailers.push(["CurryExpr", [verb, false, spanFrom(spanStart)]])
+                    break
+            else if (peekTag() == "("):
+                advance(ej)
+                def arglist := acceptList(expr)
+                acceptTag(")", ej)
+                trailers.push(["FunCallExpr", [arglist, spanFrom(spanStart)]])
+            else:
+                break
+        var result := base
+        for tr in trailers:
+            result := M.call(builder, tr[0], [result] + tr[1])
+        return result
+
     # let's pretend
-    bind order := prim
-    bind expr := prim
+    bind order := call
+    bind expr := order
 
     # would be different if we have toplevel-only syntax like pragmas
     def topSeq := seq
@@ -1080,6 +1113,14 @@ def test_Interface(assert):
     assert.equal(expr("interface foo(a :int, b :float64) :any {\"msg docstring\"}"), term`FunctionInterfaceExpr(FinalPattern(NounExpr("foo"), null), null, [], [], MessageDesc("msg docstring", "run", [ParamDesc("a", NounExpr("int")), ParamDesc("b", NounExpr("float64"))], NounExpr("any")))`)
     assert.equal(expr("interface foo(a :int, b :float64) :any"), term`FunctionInterfaceExpr(FinalPattern(NounExpr("foo"), null), null, [], [], MessageDesc(null, "run", [ParamDesc("a", NounExpr("int")), ParamDesc("b", NounExpr("float64"))], NounExpr("any")))`)
 
+def test_Call(assert):
+    assert.equal(expr("a.b(c, d)"), term`MethodCallExpr(NounExpr("a"), "b", [NounExpr("c"), NounExpr("d")])`)
+    assert.equal(expr("a.b()"), term`MethodCallExpr(NounExpr("a"), "b", [])`)
+    assert.equal(expr("a.b"), term`CurryExpr(NounExpr("a"), "b", false)`)
+    assert.equal(expr("a.b().c()"), term`MethodCallExpr(MethodCallExpr(NounExpr("a"), "b", []), "c", [])`)
+    assert.equal(expr("a.\"if\"()"), term`MethodCallExpr(NounExpr("a"), "if", [])`)
+    assert.equal(expr("a(b, c)"), term`FunCallExpr(NounExpr("a"), [NounExpr("b"), NounExpr("c")])`)
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -1155,4 +1196,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
