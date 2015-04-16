@@ -80,17 +80,24 @@ bootScope = {
 
     ## Primitive: guards
     'any': anyGuard,
+    'Any': anyGuard,
     'void': voidGuard,
+    'Void': voidGuard,
 
     ## Primitive: atomic data guards
     'boolean': booleanGuard,
+    'Bool': booleanGuard,
     'str': stringGuard,
+    'Str': stringGuard,
     'Twine': twineGuard,
     # 'TextWriter': textWriterGuard,
     ## XXX wrap as ordered spaces
     'char': charGuard,
+    'Char': charGuard,
     'float': floatGuard,
+    'Double': floatGuard,
     'int': intGuard,
+    'Int': intGuard,
 
     ## data guards
     # 'all': makeIntersectionGuard,
@@ -114,6 +121,7 @@ bootScope = {
     ## Utility guards
     # 'notNull': notNullGuard,
     'nullOk': nullOkGuard,
+    'NullOk': nullOkGuard,
 
     ## Primitive: reference conditions
     'Selfless': selflessGuard,
