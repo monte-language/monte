@@ -939,6 +939,11 @@ def parseMonte(lex, builder, mode, err):
                 else:
                     if(callish("SendExpr", true)):
                         break
+            else if (peekTag() == "["):
+                advance(ej)
+                def arglist := acceptList(expr)
+                acceptTag("]", ej)
+                trailers.push(["GetExpr", [arglist, spanFrom(spanStart)]])
             else:
                 break
         var result := base
@@ -1145,6 +1150,11 @@ def test_Send(assert):
     assert.equal(expr("a <- \"if\"()"), term`SendExpr(NounExpr("a"), "if", [])`)
     assert.equal(expr("a <- (b, c)"), term`FunSendExpr(NounExpr("a"), [NounExpr("b"), NounExpr("c")])`)
 
+def test_Get(assert):
+    assert.equal(expr("a[b, c]"), term`GetExpr(NounExpr("a"), [NounExpr("b"), NounExpr("c")])`)
+    assert.equal(expr("a[]"), term`GetExpr(NounExpr("a"), [])`)
+    assert.equal(expr("a.b()[c].d()"), term`MethodCallExpr(GetExpr(MethodCallExpr(NounExpr("a"), "b", []), [NounExpr("c")]), "d", [])`)
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -1220,4 +1230,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_Send, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_Send, test_Get, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
