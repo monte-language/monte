@@ -19,6 +19,7 @@ For users:
     modules
     design
     iteration
+    guards
 
 For Developers: 
 
