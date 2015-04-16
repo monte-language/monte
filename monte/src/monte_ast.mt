@@ -2404,7 +2404,7 @@ def test_forExpr(assert):
     assert.equal(M.toString(expr), "for k => v in a:\n    b")
     assert.equal(M.toString(makeForExpr(iterable, null, v, body, null, null, null)),
                  "for v in a:\n    b")
-    assert.equal(M.toString(makeForExpr(iterable, null, v, body, makeFinalPattern(makeNounExpr("p"), null), makeLiteralExpr(1), null)),
+    assert.equal(M.toString(makeForExpr(iterable, null, v, body, makeFinalPattern(makeNounExpr("p", null), null, null), makeLiteralExpr(1, null), null)),
                  "for v in a:\n    b\ncatch p:\n    1")
     assert.equal(expr.asTerm(), term`ForExpr(NounExpr("a"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), NounExpr("b"), null, null)`)
 
