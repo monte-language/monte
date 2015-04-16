@@ -9,7 +9,9 @@ class M(MonteObject):
     _m_auditorStamps = (deepFrozenGuard,)
 
     def call(self, obj, verb, arglist):
-        return getattr(obj, verb)(*arglist)
+        verb = twineGuard.coerce(verb, throw)
+        arglist = listGuard.coerce(arglist, throw)
+        return getattr(obj, verb.bare().s)(*arglist.l)
 
     def callWithPair(self, obj, (verb, arglist)):
         verb = twineGuard.coerce(verb, throw)

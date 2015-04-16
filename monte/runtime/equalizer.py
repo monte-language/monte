@@ -19,10 +19,10 @@ def _pushSofar(left, right, sofar):
     lid, rid = id(left), id(right)
     if rid < lid:
         lid, rid = rid, lid
-    sofar.append((lid, rid))
+    sofar[(lid, rid)] = (left, right)
 
 
-def _same(left, right, sofar):
+def _same(left, right, sofar, dbg=False):
     from monte.runtime.ref import _resolution
     left = _resolution(left)
     right = _resolution(right)
@@ -45,11 +45,13 @@ def _same(left, right, sofar):
             return false
         _pushSofar(left, right, sofar)
         for l, r in zip(left, right):
-            result = _same(l, r, sofar)
+            result = _same(l, r, sofar, dbg)
             if result is null:
                 return null
             if result is false:
                 return false
+            if result is not true:
+                import pdb; pdb.set_trace()
         return true
 
     if t in DOES_OWN_HASHING:
@@ -83,15 +85,19 @@ class Equalizer(MonteObject):
     _m_fqn = "__equalizer"
     _m_auditorStamps = (deepFrozenGuard,)
 
-    def sameEver(self, left, right):
-        result = _same(left, right, [])
+    def debugSameEver(self, left, right):
+        import pdb; pdb.set_trace()
+        return self.sameEver(left, right, True)
+
+    def sameEver(self, left, right, dbg=False):
+        result = _same(left, right, {}, dbg)
         if result is null:
             raise RuntimeError("Not sufficiently settled: %s == %s" % (
                 toQuote(left), toQuote(right)))
         return result
 
     def sameYet(self, left, right):
-        result = _same(left, right, [])
+        result = _same(left, right, {})
         if result is None:
             return false
         else:

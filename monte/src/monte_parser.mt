@@ -458,10 +458,10 @@ def parseMonte(lex, builder, mode, err):
         acceptEOLs()
         def doco := if (peekTag() == ".String.") {
             advance(ej)
-            acceptEOLs()
         } else {
             null
         }
+        acceptEOLs()
         def contents := escape e {
             seq(indent, ej)
         } catch _ {
@@ -482,7 +482,8 @@ def parseMonte(lex, builder, mode, err):
         def verb := if (peekTag() == ".String.") {
             advance(ej)
         } else {
-            acceptTag("IDENTIFIER", ej)
+            def t := acceptTag("IDENTIFIER", ej)
+            __makeString.fromString(t.getData(), t.getSpan())
         }
         acceptTag("(", ej)
         def patts := acceptList(pattern)
@@ -577,7 +578,8 @@ def parseMonte(lex, builder, mode, err):
             advance(ej)
             null
         } else if (peekTag() == "IDENTIFIER") {
-            advance(ej)
+            def t := advance(ej)
+            __makeString.fromString(t.getData(), t.getSpan())
         } else {
             acceptTag("::", ej)
             acceptTag(".String.", ej)
@@ -620,7 +622,8 @@ def parseMonte(lex, builder, mode, err):
         def verb := if (peekTag() == ".String.") {
             advance(ej)
         } else {
-            acceptTag("IDENTIFIER", ej)
+            def t := acceptTag("IDENTIFIER", ej)
+            __makeString.fromString(t.getData(), t.getSpan())
         }
         def [doco, params, resultguard] := messageDescInner(indent, ej)
         return builder.MessageDesc(doco, verb, params, resultguard, spanFrom(spanStart))
@@ -1057,8 +1060,8 @@ def test_ObjectExpr(assert):
     assert.equal(expr("bind foo {}"), term`ObjectExpr(null, BindPattern(NounExpr("foo")), null, [], Script(null, [], []))`)
     assert.equal(expr("object bind foo {}"), term`ObjectExpr(null, BindPattern(NounExpr("foo")), null, [], Script(null, [], []))`)
     assert.equal(expr("object foo { to doA(x, y) :z {0} method blee() {1} to \"object\"() {2} match p {3} match q {4}}"),
-        term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(null, [To(null, "doA", [FinalPattern(NounExpr("x", null)), FinalPattern(NounExpr("y", null))], NounExpr("z"), LiteralExpr(0)), Method(null, "blee", [], null, LiteralExpr(1)), To(null, "object", [], null, LiteralExpr(2))], [Matcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3)), Matcher(FinalPattern(NounExpr("q"), null), LiteralExpr(4))]))`)
-    assert.equal(expr("object foo {\"hello\" to blee() {\"yes\"\n1}}"), term`ObjectExpr("hello", FinalPattern(NounExpr("foo"), null), null, [], Script(null, [To("yes", "blee", [], LiteralExpr(1))], []))`)
+        term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(null, [To(null, "doA", [FinalPattern(NounExpr("x"), null), FinalPattern(NounExpr("y"), null)], NounExpr("z"), LiteralExpr(0)), Method(null, "blee", [], null, LiteralExpr(1)), To(null, "object", [], null, LiteralExpr(2))], [Matcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3)), Matcher(FinalPattern(NounExpr("q"), null), LiteralExpr(4))]))`)
+    assert.equal(expr("object foo {\"hello\" to blee() {\"yes\"\n1}}"), term`ObjectExpr("hello", FinalPattern(NounExpr("foo"), null), null, [], Script(null, [To("yes", "blee", [], null, LiteralExpr(1))], []))`)
     assert.equal(expr("object foo as A implements B, C {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), NounExpr("A"), [NounExpr("B"), NounExpr("C")], Script(null, [], []))`)
     assert.equal(expr("object foo extends baz {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(NounExpr("baz"), [], []))`)
 
