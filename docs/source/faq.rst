@@ -1,13 +1,37 @@
+==================
 Answered Questions
 ==================
 
-Why the name?
--------------
+Community
+~~~~~~~~~
 
-It's like Monty Python, but with E.
+What is the origin of Monte's name?
+-----------------------------------
 
-What can you know about an object?
-----------------------------------
+The Monte language has its roots in the E and Python languages. We took
+"Monty" from "Monty Python", and put an "e" in there. Thus, "Monte".
+
+Why is Monte called a "dynamic language"?
+-----------------------------------------
+
+Monte is dynamic in three ways.
+
+Dynamic Typing
+    Monte is **unityped**, in formal type theory. For the informal engineer,
+    Monte is "untyped" or "dynamically typed"; the type of a value might not
+    be known at runtime, and "types are open".
+Dynamic Binding
+    Monte's polymorphism is late-binding. It is possible to pass a message to
+    an object that will never able to handle that message.
+Dynamic Compiling
+    Monte can compile and run Monte code at runtime, as part of its core
+    language.
+
+Object Capabilities
+~~~~~~~~~~~~~~~~~~~
+
+How do I know which capabilities I have?
+----------------------------------------
 
 Any object that you can access meets one of three criteria:
 
@@ -16,55 +40,47 @@ Any object that you can access meets one of three criteria:
 * You received it as a result of passing messages to something that met either
   of the first two criteria.
 
-Additionally, you can use guards and auditors to ensure properties of an
-object.
+An object has the capabilities of all objects that it can access with these
+three rules.
 
-Note that using ``when`` on a promise for a far reference still results in a
-far reference.
+.. note::
+    This answer still isn't satisfying. Neither is this question, really.
 
+Monte in Theory
+~~~~~~~~~~~~~~~
 
-Parallelism?
----------------
+How do I perform parallel computations?
+---------------------------------------
 
-Monte doesn't really say anything about parallelism per se. We *should*
-though. If we're going to be agoric, we should say something about CPUs, even
-if it's just that people should spin up more vats and make more code use
-farrefs.
+Currently, we haven't specified it. Run multiple processes to get node-level
+parallelism.
 
-Concurrency?
-------------
+.. note::
+    Monte doesn't really say anything about parallelism per se. We *should*
+    though. If we're going to be agoric, we should say something about CPUs,
+    even if it's just that people should spin up more vats and make more code
+    use farrefs.
 
-The one concurrency pattern in Monte is that, if you absolutely have to
-perform near-ref operations on a far-ref, you must make a when-expression.
-This allows the compiler to transform it into far-ref operations.
+How do I perform concurrent operations?
+---------------------------------------
 
-
-How do you send a message to an object?
-------------------------------------------
-
-In E (and Monte), there are two ways to send a message to an object.
-
-1) Use the method call, foo.baz()
-2) Use eventual send, foo <- baz()
-
+Spawn more vats. All vats are concurrently turning.
 
 Are all messages eligible for both methods of sending?
----------------------------------------------------------
+------------------------------------------------------
 
-A call (#1) is immediate and returns the value of whatever in foo handles that
-message, probably a method.
+In short, yes. The details follow.
 
-An eventual send (#2) returns a promise for the result  (in particular, foo does
-not receive the messages until the end of the current turn (event loop
-iteration), and eventual messages are delivered in order.) Calls are only
-allowed for near, resolved objects. Sends can be made to far or unresolved
-objects (promises)
-
-All messages are eligible for both kinds of sending, but not all objects can
-receive messages in both ways.
+Nearly all Monte objects are unable to distinguish passed messages based on
+how they were delivered. A few extremely special runtime objects can make the
+distinction, but they are the only exception. User-defined objects cannot tell
+whether they received a message via call or send.
 
 References?
 -----------
+
+.. note::
+    Messy.
 
 There are three words about references:
 
@@ -86,44 +102,30 @@ near, far, or broken. Near references can have synchronous calls made on them.
 Promises, far references, and broken references will raise an exception if
 synchronous calls are made.
 
-Ternary operators?
-------------------
+Does Monte have functions?
+--------------------------
 
-A common pattern in C and other languages that support a ternary boolean
-operator is to assign the result of a ternary operation to a variable or return
-a result from a function:::
+No. Since everything in Monte is an object, you're always calling methods
+rather than functions.
 
-    char* even(int i) {
-        return i % 2 ? "no" : "yes";
-    }
+Monte does have a convention that objects with a single method with the verb
+``run`` are functions. There is no difference, to Monte, between this
+function::
 
-Monte lacks the ternary operator, but permits using regular conditional
-expressions in its place:::
+    def f():
+        pass
 
-    def even(i):
-        return if (i % 2 == 0) { "yes" } else { "no"}
+And this object::
 
-Note that Monte requires the first component of its conditional expressions to
-evaluate to a boolean object; no automatic coercion is done.
-
-Functions?
-----------
-
-Since everything in Monte is an object, you're always calling methods rather
-than functions.
-
-A function is actually an object with a single run() method. In other words,
-``def f() { ... }`` always desugars to ``object f { to run() { ... } }``.
-
-
-Everything's a method?
-----------------------
-
-Well, everything's a message pass, rather.
-
+    object f:
+        to run():
+            pass
 
 Does this mean we should never make synchronous calls?
 ------------------------------------------------------
+
+.. note::
+    Ugh. This could probably be its own page!
 
 No. There are many kind of objects on which synchronous calls work, because
 they are near references. For example, all literals are near: ``def lue :=
@@ -133,97 +135,98 @@ When in doubt, remember that there is a ``near`` guard which can be used to
 confirm that an object is in the same vat as you and thus available for
 synchronous calls.
 
-What's Monte's comment syntax?
----------------------------------
-
-.. code-block:: monte
-
-    # This comment goes to the end of the line
-    /** This comment is multi-line.
-        Yes, it starts with a two stars
-        and ends with only one.
-        These should only be used for docstrings. */
-
-
-What does "dynamic" mean, when used to describe Monte?
----------------------------------------------------------
-
-Dynamic typing, dynamic binding, dynamic compiling.
-
-
 What are ejectors?
 ------------------
 
-Ejectors can be thought of as named breaks. You can break out of any
-expression with them. For example, early returns are implemented with them.
-An ejector has indefinite scope, so you can pass it to methods etc and
-invoking it unwinds the stack.
+An ejector is an object that aborts the current computation and returns to
+where it was created. They are created by ``escape`` expressions.
 
-Return, Break, and Continue are all implemented as ejectors. If you're
-familiar with call/current continuation shenanigans, it's like that, but
-delimited so that it can't be called outside the scope that created it.
+An ejector can be passed as deeply as one wants, but cannot be used outside of
+the ``escape`` that created it. This is called the **delimited** property of
+ejectors.
 
-Blocking operators?
--------------------
+Ejectors cannot be used multiple times. The first time an ejector is used, the
+``escape`` block aborts computation, resulting in the value of the ejector.
+Subsequent clever uses of the ejector will fail. This is called the **single
+use** property.
 
-Not available in Monte. Because of the no-stale-stack-frames policy, Monte
-has neither generators nor threads nor C#-style async/await.
+Monte implements the ``return``, ``break``, and ``continue`` expressions with
+ejectors.
 
-At an 'await' or 'yield' point, you don't know what subset of the code has
-already been read. Since Monte is intended to be useful in an environment with
-an unbounded amount of code, and 'await' and 'yield' force you to assume that
-all of the code has been read, they cannot be available in Monte.
+To be fully technical, ejectors are "single-use delimited continuations".
 
+Monte in Practice
+~~~~~~~~~~~~~~~~~
 
-What's a stale stack frame?
----------------------------
+How do I force an object to be a certain type?
+----------------------------------------------
 
-A stale stack frame is one that isn't currently running.
+Use a guard that coerces objects to be of that type. Guards for all of the
+primitive types in Monte are already builtin; see the documentation on
+:doc:`guards` for more details.
 
-Since state is mutable, your code's behavior is always affected by the stack
-frames above it. If you violate strict stack ordering (as generators do), you
-violate the assumptions that people make when reading and writing such code.
+How do I pass a message to an object?
+-------------------------------------
 
-Vats?
------
+There are two ways to pass a message. First, the **immediate call**::
 
-http://erights.org/elib/concurrency/vat.html might help
+    def result := obj.message(argument)
 
-A vat's an object that sits on the border of the runtime and is responsible
-for containing, guarding, and passing messages to the objects inside of it.
+And, second, the **eventual send**::
 
-"A Vat is vaguely like a traditional OS process -- it bundles together a
-single thread of control and an address space of synchronously accessible data"
+    def promisedResult := obj<-message(argument)
 
+How do I perform a conditional expression? What is Monte's ternary operator?
+----------------------------------------------------------------------------
 
+Monte does not have a ternary operator. However, in exchange, the ``if``
+expression can be used where any other expression might be placed. As an
+example, consider a function that tests whether an argument is even::
 
-Farrefs?
---------
+    def even(i :Int) :Str:
+        if (i % 2 == 0):
+            return "yes"
+        else:
+            return "no"
 
-Farrefs are references to far objects, namely objects in different vats. Messages
-to far objects can only be sent asynchronously.
+Monte lacks the ternary operator, but permits using regular conditional
+expressions in its place. We can refactor this example to pull the ``return``
+outside of the ``if``::
 
+    def even(i :Int) :Str:
+        return if (i % 2 == 0) {"yes"} else {"no"}
 
-Promises?
----------
+Don't forget that Monte requires ``if`` expressions to evaluate their
+condition to a ``Bool``.
 
-ES6 promises were derived from E's.
-The crucial part is, when promises are resolved they become forwarders to
-their values.
+How do I write comments?
+------------------------
 
+This is a single-line comment::
 
-Selfless objects?
------------------
+    # Lines starting with a # are single-line comments.
+    # They only last until the end of the line.
 
-Some objects can always be near, even if they were initially far, if they can
-be serialized in a way that allows them to be reconstituted in another vat.
-This quality is known as being selfless, and objects with it include ints,
-floats, strings, and objects that you define correctly.
+And this is a multi-line comment::
 
-Selfless objects are "passed by construction", meaning that instructions for
-creating a near version are passed over the wire.
+    /** This comment is multi-line.
+        Yes, it starts with two stars,
+        but ends with only one.
+        These should only be used for docstrings. */
 
-Wait, what about Self?
+What's the difference between the ``m`` and ``M`` objects?
+----------------------------------------------------------
+
+``M`` is a helper object that provides several runtime services. It can pass
+messages on behalf of other objects and quote strings.
+
+``m`` is a quasiparser which parses Monte source code. It is part of the
+runtime Monte compiler.
+
+Differences With Python
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Where did ``self`` go?
 ----------------------
 
 Newcomers to Monte are often surprised to learn that Monte lacks a ``this`` or
@@ -233,7 +236,7 @@ languages.
 
 Monte does not have a ``this`` or ``self`` keyword because Monte objects can
 refer to their "member" or "private" names without qualification. This is a
-consequence of how Monte objects are built. Recall our previous example: ::
+consequence of how Monte objects are built. Consider this object maker::
 
     def makeMyObject():
         return object myObject:
@@ -243,21 +246,25 @@ Let's modify it slightly. We want to give this object a "private" value secret
 which cannot be accessed directly, and a method ``getSecret/0`` which will
 return it. We put "private" in quotation marks to emphasize that Monte does not
 have private names. Instead, all names are private in Monte; if one cannot see
-a name, then one cannot access it. ::
+a name, then one cannot access it.
+
+::
 
     def makeMyObject(secret):
         return object myObject:
             to getSecret():
                 return secret
 
-And that's it. No declarations of object contents or special references to this
-or self.
+And that's it. No declarations of object contents or special references to ``this``
+or ``self``.
 
-We can also simulate "member" names for objects. As before, we can achieve this
-without this. ::
+We can also simulate "member" names for objects. As before, we can achieve
+this effect without ``this``.
+
+::
 
     def makeMyObject():
-        var counter :int := 0
+        var counter :Int := 0
         return object myObject:
             to getCounter():
                 return counter += 1
@@ -266,72 +273,22 @@ Here, ``counter`` is not visible outside of ``makeMyObject()``, which means
 that no other object can directly modify it. Each time we call
 ``makeMyObject()``, we get a new object called ``myObject`` with a new counter.
 
-(Note: Remember, Monte is an expression language. ``counter += 1`` returns the
-value of ``counter``. That's how ``return counter += 1`` can work properly.)
+.. note::
+    Remember, Monte is an expression language. ``counter += 1`` returns the
+    value of ``counter``. That's why ``return counter += 1`` works.
 
+What's the "no stale stack frame" policy?
+-----------------------------------------
 
-Psuedomonadic joining on promises
----------------------------------
+A stale stack frame is one that isn't currently running; it is neither the
+current stack frame nor below the current stack frame.
 
-Monte has a mechanic which can be called pseudomonadic joining on promises.
+The "no stale stack frame" policy is a policy in Monte's design: Monte forbids
+suspending computation mid-frame. There are no coroutines or undelimited
+continuations in Monte. Monte also does not have an "async/await" syntax,
+since there is no way to implement this syntax without stale stack frames.
 
-This means that a promise becomes the value for the promise:
-
-.. code-block::
-
-    def p := foo<-bar(); def p2 := p<-baz()
-
-Because when-exprs evaluate to a promise as well, you can have something like
-
-.. code-block::
-
-    def p := foo<-bar(); def p2 := when (p) -> { p.doStuff() }; p2<-baz()
-
-Will the iterable control when the computations are performed?
------------------------------------------------------------------
-
-That's way outside the scope of an iteration protocol
-
-Let's talk about the _lazy_ iteration protocol
--------------------------------------------------
-
- We can just do like everybody else and have explicit laziness, can't we?
-Or do we want language-level extra-lazy stuff?
-
-.. code-block:: monte
-
- def workItems := [lazyNext(someIter) for _ in 0..!cores]
- # or to be less handwavey
- def workItems := [someIter.lazyNext() for _ in 0..!cores]
-
-lazyNext() is like .next() but it either returns
-    1) a near value if it's immediately available
-    2) a promise if it's not
-    3) a broken promise if you've iterated off the end
-Even this isn't right,  but the idea is that you could use something like
-twisted's coiterate to serially compute some items in a iterable, a few at a
-time  and as they were made available, the promises in workItems would get
-resolved
-
-What are M and m?
------------------
-
-M is a singleton providing runtime services including passing messages to
-farrefs. m is the quasiparser for monte source code.
-
-Novice Errors
-=============
-
-::
-
-    monte/monte/test $ python test_lexer.py
-    Traceback (most recent call last):
-      File "test_lexer.py", line 1, in <module>
-        from monte.test import unittest
-    ImportError: No module named monte.test
-
-You're not suppsed to run the tests directly. In the root ``monte`` directory,
-use::
-
-    trial monte.test.test_lexer
-
+The policy is justified by readability concerns. Since Monte permits mutable
+state, one author's code's behavior could be affected by another author's code
+running further up the frame stack. Stale frames make comprehension of code
+much harder as a result.
