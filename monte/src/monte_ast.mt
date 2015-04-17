@@ -739,6 +739,17 @@ def makeVarPattern(noun, guard, span):
         scope, term`VarPattern`,
         fn f {[noun.transform(f), maybeTransform(guard, f)]})
 
+def makeBindPattern(noun, span):
+    def scope := makeStaticScope([], [], [noun.getName()], [], false)
+    object bindPattern:
+        to getNoun():
+            return noun
+        to subPrintOn(out, priority):
+            out.print("bind ")
+            noun.subPrintOn(out, priority)
+    return astWrapper(bindPattern, makeBindPattern, [noun], span,
+        scope, term`BindPattern`, fn f {[noun.transform(f)]})
+
 def makeDefExpr(pattern, exit_, expr, span):
     def scope := if (exit_ == null) {
         pattern.getStaticScope() + expr.getStaticScope()
@@ -755,7 +766,7 @@ def makeDefExpr(pattern, exit_, expr, span):
         to subPrintOn(out, priority):
             if (priorities["assign"] < priority):
                 out.print("(")
-            if (pattern._uncall()[0] != makeVarPattern):
+            if (![makeVarPattern, makeBindPattern].contains(pattern._uncall()[0])):
                 out.print("def ")
             pattern.subPrintOn(out, priorities["pattern"])
             if (exit_ != null):
@@ -1593,17 +1604,6 @@ def makeBindingPattern(noun, span):
             noun.subPrintOn(out, priority)
     return astWrapper(bindingPattern, makeBindingPattern, [noun], span,
         scope, term`BindingPattern`, fn f {[noun.transform(f)]})
-
-def makeBindPattern(noun, span):
-    def scope := makeStaticScope([], [], [noun.getName()], [], false)
-    object bindPattern:
-        to getNoun():
-            return noun
-        to subPrintOn(out, priority):
-            out.print("bind ")
-            noun.subPrintOn(out, priority)
-    return astWrapper(bindPattern, makeBindPattern, [noun], span,
-        scope, term`BindPattern`, fn f {[noun.transform(f)]})
 
 def makeIgnorePattern(guard, span):
     def scope := scopeMaybe(guard)
