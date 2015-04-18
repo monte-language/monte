@@ -24,8 +24,8 @@ def [=> parseTerm, => quasitermParser] := terml_files["termParser"]([
 
 pkg.makeModule([
     => __makeOrderedSpace,
-    "char" => charSpace,
-    "int" => intSpace,
-    "float" => floatSpace,
+    "Char" => charSpace,
+    "Int" => intSpace,
+    "Double" => floatSpace,
     "term__quasiParser" => quasitermParser,
     ])

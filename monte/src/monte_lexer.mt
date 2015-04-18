@@ -24,7 +24,7 @@ def MONTE_KEYWORDS := [
     "via", "when", "while"]
 
 def composite(name, data, span):
-    return term__quasiParser.makeTerm(term__quasiParser.makeTag(null, name, any),
+    return term__quasiParser.makeTerm(term__quasiParser.makeTag(null, name, Any),
                                       data, [], span)
 
 def _makeMonteLexer(input, braceStack, var nestLevel):
@@ -714,7 +714,7 @@ def lex(s):
     return toks
 
 def tt(tagname, data):
-    return term__quasiParser.makeTerm(term__quasiParser.makeTag(null, tagname, any),
+    return term__quasiParser.makeTerm(term__quasiParser.makeTag(null, tagname, Any),
                                       data, [], null)
 
 def test_ident(assert):

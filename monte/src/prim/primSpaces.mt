@@ -1,9 +1,9 @@
 module OrderedSpaceMaker
 export (charSpace, intSpace, floatSpace, __makeOrderedSpace)
 
-def charSpace := OrderedSpaceMaker(char, "char")
-def intSpace := OrderedSpaceMaker(int, "int")
-def floatSpace := OrderedSpaceMaker(float, "float")
+def charSpace := OrderedSpaceMaker(Char, "char")
+def intSpace := OrderedSpaceMaker(Int, "int")
+def floatSpace := OrderedSpaceMaker(Double, "float")
 
 object __makeOrderedSpace extends OrderedSpaceMaker:
     /**
@@ -11,11 +11,11 @@ object __makeOrderedSpace extends OrderedSpaceMaker:
      * fully ordered, this returns the corresponding OrderedSpace
      */
     to spaceOfValue(value):
-        if (value =~ i :int):
+        if (value =~ i :Int):
             return intSpace
-        else if (value =~ f :float):
+        else if (value =~ f :Double):
             return floatSpace
-        else if (value =~ c :char):
+        else if (value =~ c :Char):
             return charSpace
         else:
             def type := value._getAllegedType()

@@ -5,7 +5,7 @@ object TermStamp as DeepFrozen:
     to audit(_):
         return true
 
-def TermData :DeepFrozen := any[nullOk, str, int, float, char]
+def TermData :DeepFrozen := Any[NullOk, Str, Int, Double, Char]
 
 object Term as DeepFrozen:
     to coerce(specimen, ej):
@@ -77,7 +77,7 @@ object makeTerm as DeepFrozen:
 
             to _conformTo(guard):
                 def x := args != null && args.size() == 0
-                if (x && [str, float, int, char].contains(guard)):
+                if (x && [Str, Double, Int, Char].contains(guard)):
                     if (data == null):
                         return tag.getName()
                     return data
@@ -89,14 +89,14 @@ object makeTerm as DeepFrozen:
                 term.prettyPrintOn(out, false)
                 out.print("`")
 
-            to prettyPrintOn(out, isQuasi :boolean):
+            to prettyPrintOn(out, isQuasi :Bool):
                 var label := null # should be def w/ later bind
                 var reps := null
                 var delims := null
                 switch (data):
                     match ==null:
                         label := tag.getName()
-                    match f :float:
+                    match f :Double:
                         if (f.isNaN()):
                             label := "%NaN"
                         else if (f.isInfinite()):
@@ -168,7 +168,7 @@ object makeTerm as DeepFrozen:
 
 
 def mkt(name, data) as DeepFrozen:
-    return makeTerm(makeTag(null, name, any), data, [], null)
+    return makeTerm(makeTag(null, name, Any), data, [], null)
 
 object termBuilder:
     to leafInternal(tag, data, span):

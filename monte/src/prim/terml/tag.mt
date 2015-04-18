@@ -7,7 +7,7 @@ interface Tag :DeepFrozen guards TagStamp :DeepFrozen:
 object makeTag as DeepFrozen:
     to asType():
         return Tag
-    to run(code :nullOk[int], name :str, dataGuard :DeepFrozen):
+    to run(code :NullOk[Int], name :Str, dataGuard :DeepFrozen):
         return object tag implements Selfless, Transparent, TagStamp:
             to _uncall():
                 return [makeTag, "run", [code, name, dataGuard]]
@@ -51,13 +51,13 @@ def optMakeTagFromData(val, mkt):
             return mkt("true", null)
         match ==false:
             return mkt("false", null)
-        match v :int:
+        match v :Int:
             return mkt(".int.", v)
-        match v :float:
+        match v :Double:
             return mkt(".float64.", v)
-        match v :str:
+        match v :Str:
             return mkt(".String.", v)
-        match v :char:
+        match v :Char:
             return mkt(".char.", v)
         match _:
             return null
