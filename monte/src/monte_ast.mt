@@ -2040,7 +2040,7 @@ def test_bindingExpr(assert):
 def test_metaContextExpr(assert):
     def expr := makeMetaContextExpr(null)
     assert.equal(expr._uncall(), [makeMetaContextExpr, "run", [null]])
-    assert.equal(M.toString(expr), "meta.context()")
+    assert.equal(M.toString(expr), "meta.getContext()")
     assert.equal(expr.asTerm(), term`MetaContextExpr()`)
 
 def test_metaStateExpr(assert):
