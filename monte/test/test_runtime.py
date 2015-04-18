@@ -143,6 +143,8 @@ class EvalTest(unittest.TestCase):
         self.assertEqual(
             monte_eval('def a := "baz"; def `foo @x$a` := "foo baz"; x'),
             String(u""))
+        self.assertEqual(monte_eval('(if ("=>" =~ `@op=`) {op}) == null'), true)
+        self.assertEqual(monte_eval('(if ("+=" =~ `@op=`) {op}) == "+"'), true)
 
     def test_and(self):
         self.assertEqual(monte_eval("true && false"), false)
