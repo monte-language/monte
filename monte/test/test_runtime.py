@@ -1400,7 +1400,7 @@ class CompositeTwineTests(_TwineTests, unittest.TestCase):
                  k2:
                  SourceSpan(String(u'test string'), true,
                             Integer(2), Integer(0),
-                            Integer(2), Integer(1)),
+                            Integer(2), Integer(0)),
                  }, [k1, k2]))
 
     def test_add_merge(self):
