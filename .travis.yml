@@ -1,3 +1,6 @@
+# Switch to faster container-based builders. Forbids use of sudo, setuid,
+# seteid, etc. but we don't need them.
+sudo: false
 language: python
 python:
     - '2.7'
@@ -18,4 +21,3 @@ notifications:
             - "chat.freenode.net#monte"
         on_success: always
         on_failure: always
-
