@@ -2432,7 +2432,18 @@ def test_objectExpr(assert):
     assert.equal(matcher._uncall(),
         [makeMatcher, "run", [matchPatt, matchBody, null]])
     assert.equal(M.toString(expr), "/**\n    blee\n*/\nobject a as x implements b, c:\n    /**\n        method d\n    */\n    method d(e, f) :g:\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
-    assert.equal(expr.asTerm(), term`ObjectExpr("blee", FinalPattern(NounExpr("a"), null), NounExpr("x"), [NounExpr("b"), NounExpr("c")], Script(null, [Method("method d", "d", [FinalPattern(NounExpr("e")), FinalPattern(NounExpr("f"))], NounExpr("g"), NounExpr("h")), To(null, "i", [], null, NounExpr("j"))], [Matcher(FinalPattern(NounExpr("k")), NounExpr("l"))]))`)
+    assert.equal(expr.asTerm(),
+                 term`ObjectExpr("blee",
+                                 FinalPattern(NounExpr("a"), null),
+                                 NounExpr("x"),
+                                 [NounExpr("b"), NounExpr("c")],
+                                 Script(null,
+                                        [Method("method d", "d",
+                                        [FinalPattern(NounExpr("e"), null), FinalPattern(NounExpr("f"), null)],
+                                        NounExpr("g"), NounExpr("h")),
+                                        To(null, "i", [], null,
+                                        NounExpr("j"))],
+                                        [Matcher(FinalPattern(NounExpr("k"), null), NounExpr("l"))]))`)
 
 def test_functionScript(assert):
     def funName := makeFinalPattern(makeNounExpr("a", null), null, null)
