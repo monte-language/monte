@@ -32,6 +32,7 @@ class Func(object):
     def __init__(self, f):
         self._m_auditorStamps = getattr(f, '_m_auditorStamps', ())
         self.f = f
+
     def __call__(self, *a, **kw):
         return self.f(*a, **kw)
 
@@ -155,7 +156,7 @@ bootScope = {
     '__mapEmpty': Empty(),
     '__mapExtract': Func(extract),
     '__matchSame': Func(matchSame),
-    '__quasiMatcher': quasiMatcher,
+    '__quasiMatcher': Func(quasiMatcher),
     '__slotToBinding': Func(reifyBinding),
     '__splitList': Func(splitList),
     '__suchThat': Func(suchThat),

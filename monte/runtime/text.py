@@ -41,7 +41,7 @@ class Substituter(MonteObject):
 
     def matchBind(self, values, specimen, ej):
         #XXX maybe put this on a different object?
-        specimen = twineGuard.coerce(specimen, throw).bare().s
+        specimen = twineGuard.coerce(specimen, ej).bare().s
         values = listGuard.coerce(values, throw)
         values = values.l
         i = 0
@@ -64,6 +64,7 @@ class Substituter(MonteObject):
                 nextVal = None
                 if n == len(self.segments) - 1:
                     bindings.append(String(specimen[i:]))
+                    i = len(specimen)
                     continue
                 nextType, nextVal = self.segments[n + 1]
                 if nextType is VALUE_HOLE:
@@ -78,7 +79,10 @@ class Substituter(MonteObject):
                         specimen[i:]))
                 bindings.append(String(specimen[i:j]))
             i = j
-        return ConstList(bindings)
+
+        if (i == len(specimen)):
+            return ConstList(bindings)
+        throw.eject(ej, "Excess unmatched: " + specimen[i:])
 
 class SimpleQuasiParser(MonteObject):
     _m_fqn = "simple__quasiParser"
@@ -100,7 +104,8 @@ simpleQuasiParser = SimpleQuasiParser()
 def quasiMatcher(matchMaker, values):
     def matchit(specimen, ej):
         return matchMaker.matchBind(values, specimen, ej)
-    return matchit
+    from monte.runtime.scope import Func
+    return Func(matchit)
 
 
 class TextWriter(MonteObject):
