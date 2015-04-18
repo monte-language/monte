@@ -56,10 +56,18 @@ def parseMonte(lex, builder, mode, err):
     var atHoleValueIndex := -1
     var position := -1
 
+    def spanHere():
+        if (position + 1 >= tokens.size()):
+            return null
+        return tokens[position.max(0)].getSpan()
+
+    def spanFrom(start):
+        return spanCover(start, spanHere())
+
     def advance(ej):
         position += 1
         if (position >= tokens.size()):
-            ej("hit EOF")
+            throw.eject(ej, ["hit EOF", tokens.last().getSpan()])
         return tokens[position]
 
     def advanceTag(ej):
@@ -70,12 +78,12 @@ def parseMonte(lex, builder, mode, err):
         else:
             return t.getTag().getName()
 
-    def accept(tagname, fail):
+    def acceptTag(tagname, fail):
         def t := advance(fail)
         def specname := t.getTag().getName()
         if (specname != tagname):
             position -= 1
-            fail(specname)
+            throw.eject(fail, [`expected $tagname, got $specname`, spanHere()])
         return t
 
     def acceptEOLs():
@@ -93,25 +101,11 @@ def parseMonte(lex, builder, mode, err):
             return null
         return tokens[position + 1]
 
-    def acceptKw(tagname, fail):
-        return accept(tagname, fn t {fail(`expected keyword ${M.toQuote(tagname)}, got ${M.toQuote(t)}`)})
-
-    def acceptTag(tagname, fail):
-        return accept(tagname, fn t {fail(`expected $tagname, got $t`)})
-
     def opt(rule, ej):
         escape e:
             return rule(e)
         catch _:
             return null
-
-    def spanHere():
-        if (position + 1 >= tokens.size()):
-            return null
-        return tokens[position.max(0)].getSpan()
-
-    def spanFrom(start):
-        return spanCover(start, spanHere())
 
     def peekTag():
         if (position + 1 >= tokens.size()):
@@ -210,14 +204,14 @@ def parseMonte(lex, builder, mode, err):
                 if (tryQuasi):
                     return quasiliteral(t, true, ej)
                 else:
-                    ej(nex2)
+                    throw.eject(ej, [nex2, spanHere()])
             else:
                 def g := if (nex2 == ":") {advance(ej); guard(ej)} else {null}
                 return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "::"):
             advance(ej)
             def spanStart := spanHere()
-            def t := accept(".String.", ej)
+            def t := acceptTag(".String.", ej)
             def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
             return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "var"):
@@ -229,7 +223,7 @@ def parseMonte(lex, builder, mode, err):
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
                 return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
             else if (tn == "::"):
-                def t := accept(".String.", ej)
+                def t := acceptTag(".String.", ej)
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
                 return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "&"):
@@ -241,7 +235,7 @@ def parseMonte(lex, builder, mode, err):
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
                 return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
             else if (tn == "::"):
-                def t := accept(".String.", ej)
+                def t := acceptTag(".String.", ej)
                 def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
                 return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "&&"):
@@ -252,7 +246,7 @@ def parseMonte(lex, builder, mode, err):
             if (tn == "IDENTIFIER"):
                 return builder.BindingPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
             else if (tn == "::"):
-                def t := accept(".String.", ej)
+                def t := acceptTag(".String.", ej)
                 return builder.BindingPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
         else if (nex == "bind"):
             advance(ej)
@@ -262,9 +256,9 @@ def parseMonte(lex, builder, mode, err):
             if (tn == "IDENTIFIER"):
                 return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanFrom(spanStart))
             else if (tn == "::"):
-                def t := accept(".String.", ej)
+                def t := acceptTag(".String.", ej)
                 return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanFrom(spanStart))
-        ej(nex)
+        throw.eject(ej, [`Unrecognized name pattern $nex`, spanHere()])
 
     def mapPatternItemInner(ej):
         def spanStart := spanHere()
@@ -283,10 +277,10 @@ def parseMonte(lex, builder, mode, err):
                 def t := advance(ej)
                 builder.LiteralExpr(t, t.getSpan())
             } else {
-                ej(peekTag())
+                throw.eject(ej, ["Map pattern keys must be literals or expressions in parens", spanHere()])
             }
         }
-        accept("=>", ej)
+        acceptTag("=>", ej)
         return builder.MapPatternAssoc(k, pattern(ej), spanFrom(spanStart))
 
     def mapPatternItem(ej):
@@ -338,7 +332,7 @@ def parseMonte(lex, builder, mode, err):
             else:
                 def tail := if (peekTag() == "+") {advance(ej); _pattern(ej)}
                 return builder.ListPattern(items, tail, spanFrom(spanStart))
-        ej(nex)
+        throw.eject(ej, [`Invalid pattern $nex`, spanHere()])
 
     bind pattern(ej):
         def spanStart := spanHere()
@@ -361,7 +355,7 @@ def parseMonte(lex, builder, mode, err):
             advance(ej)
             return builder.MapExprExport(prim(ej), spanFrom(spanStart))
         def k := expr(ej)
-        accept("=>", ej)
+        acceptTag("=>", ej)
         def v := expr(ej)
         return builder.MapExprAssoc(k, v, spanFrom(spanStart))
 
@@ -524,7 +518,7 @@ def parseMonte(lex, builder, mode, err):
         else:
             def spanStart := spanHere()
             acceptTag("::", ej)
-            def t := accept(".String.", ej)
+            def t := acceptTag(".String.", ej)
             return builder.NounExpr(t.getData(), spanFrom(spanStart))
 
     def objectExpr(name, indent, ej, spanStart):
@@ -869,7 +863,7 @@ def parseMonte(lex, builder, mode, err):
         if (tag == "("):
             advance(ej)
             def e := expr(ej)
-            accept(")", ej)
+            acceptTag(")", ej)
             return e
         # hideexpr
         if (tag == "{"):
@@ -879,7 +873,7 @@ def parseMonte(lex, builder, mode, err):
                 advance(ej)
                 return builder.HideExpr(builder.SeqExpr([], null), spanFrom(spanStart))
             def e := expr(ej)
-            accept("}", ej)
+            acceptTag("}", ej)
             return builder.HideExpr(e, spanFrom(spanStart))
         # list/map
         if (tag == "["):
@@ -905,7 +899,7 @@ def parseMonte(lex, builder, mode, err):
                 return builder.ListComprehensionExpr(it, filt, k, v, body,
                     spanFrom(spanStart))
             def [items, isMap] := acceptListOrMap(expr, mapItem)
-            accept("]", ej)
+            acceptTag("]", ej)
             if (isMap):
                 return builder.MapExpr(items, spanFrom(spanStart))
             else:
@@ -975,10 +969,10 @@ def parseMonte(lex, builder, mode, err):
 
     def module_(ej):
         def start := spanHere()
-        def modKw := acceptKw("module", ej)
+        def modKw := acceptTag("module", ej)
         def imports := acceptList(pattern)
         acceptEOLs()
-        acceptKw("export", ej)
+        acceptTag("export", ej)
         def exports := acceptList(noun)
         def body := topSeq(ej)
         return builder."Module"(imports, exports, body, spanFrom(start))
