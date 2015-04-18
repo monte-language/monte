@@ -1285,7 +1285,7 @@ def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
             if (priorities["braceExpr"] < priority):
                 out.print("}")
     return astWrapper(interfaceExpr, makeInterfaceExpr, [docstring, name, stamp, parents, auditors, messages], span,
-        scope, term`InterfaceExpr`, fn f {[docstring, name, maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), transformAll(messages, f)]})
+        scope, term`InterfaceExpr`, fn f {[docstring, name.transform(f), maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), transformAll(messages, f)]})
 
 def makeFunctionInterfaceExpr(name, stamp, parents, auditors, messageDesc, span):
     def scope := messageDesc.getStaticScope()
@@ -2653,7 +2653,7 @@ unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
           test_listComprehensionExpr, test_mapExpr, test_mapComprehensionExpr,
           test_forExpr, test_functionScript, test_functionExpr,
           test_sendExpr, test_funSendExpr,
-          # XXX broken test_interfaceExpr,
+          test_interfaceExpr,
           # XXX broken test_functionInterfaceExpr,
           test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
           test_andExpr, test_orExpr, test_matchBindExpr, test_mismatchExpr,
