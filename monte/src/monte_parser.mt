@@ -962,7 +962,63 @@ def parseMonte(lex, builder, mode, err):
 
     # let's pretend
     bind order := call
-    bind expr := order
+    def infix := call
+
+    def assign(ej):
+        def spanStart := spanHere()
+        def defStart := position
+        if (peekTag() == "def"):
+            advance(ej)
+            def patt := pattern(ej)
+            def ex := if (peekTag() == "exit") {
+                advance(ej)
+                order(ej)
+            } else {
+                null
+            }
+            # careful, this might be a trap
+            if (peekTag() == ":="):
+                advance(ej)
+                return builder.DefExpr(patt, ex, assign(ej), spanFrom(spanStart))
+            else:
+                # bail out!
+                position := defStart
+                return basic(false, ej)
+        if (["var", "bind"].contains(peekTag())):
+            def patt := pattern(ej)
+            if (peekTag() == ":="):
+                advance(ej)
+                return builder.DefExpr(patt, null, assign(ej), spanFrom(spanStart))
+            else:
+                # curses, foiled again
+                position := defStart
+                return basic(false, ej)
+        def lval := infix(ej)
+        if (peekTag() == ":="):
+            advance(ej)
+            def lt := lval.asTerm().getTag().getName()
+            if (["NounExpr", "GetExpr"].contains(lt)):
+                return builder.AssignExpr(lval, assign(ej), spanFrom(spanStart))
+            throw.eject(ej, [`Invalid assignment target`, lt.getSpan()])
+        if (peekTag() =~ `@op=`):
+            advance(ej)
+            def lt := lval.asTerm().getTag().getName()
+            if (["NounExpr", "GetExpr"].contains(lt)):
+                return builder.AugAssignExpr(op, lval, assign(ej), spanFrom(spanStart))
+            throw.eject(ej, [`Invalid assignment target`, lt.getSpan()])
+        if (peekTag() == "VERB_ASSIGN"):
+            def verb := advance(ej).getData()
+            def lt := lval.asTerm().getTag().getName()
+            if (["NounExpr", "GetExpr"].contains(lt)):
+                acceptTag("(", ej)
+                def node := builder.VerbAssignExpr(verb, lval, acceptList(expr),
+                     spanFrom(spanStart))
+                acceptTag(")", ej)
+                return node
+            throw.eject(ej, [`Invalid assignment target`, lt.getSpan()])
+        return lval
+
+    bind expr := assign
 
     # would be different if we have toplevel-only syntax like pragmas
     def topSeq := seq
@@ -1168,6 +1224,18 @@ def test_Meta(assert):
     assert.equal(expr("meta.context()"), term`MetaContextExpr()`)
     assert.equal(expr("meta.getState()"), term`MetaStateExpr()`)
 
+def test_Def(assert):
+    assert.equal(expr("def a := b"), term`DefExpr(FinalPattern(NounExpr("a"), null), null, NounExpr("b"))`)
+    assert.equal(expr("def a exit b := c"), term`DefExpr(FinalPattern(NounExpr("a"), null), NounExpr("b"), NounExpr("c"))`)
+    assert.equal(expr("var a := b"), term`DefExpr(VarPattern(NounExpr("a"), null), null, NounExpr("b"))`)
+    assert.equal(expr("bind a := b"), term`DefExpr(BindPattern(NounExpr("a")), null, NounExpr("b"))`)
+
+def test_Assign(assert):
+    assert.equal(expr("a := b"), term`AssignExpr(NounExpr("a"), NounExpr("b"))`)
+    assert.equal(expr("a[b] := c"), term`AssignExpr(GetExpr(NounExpr("a"), [NounExpr("b")]), NounExpr("c"))`)
+    assert.equal(expr("a foo= (b)"), term`VerbAssignExpr("foo", NounExpr("a"), [NounExpr("b")])`)
+    assert.equal(expr("a += b"), term`AugAssignExpr("+", NounExpr("a"), NounExpr("b"))`)
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -1243,4 +1311,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_Send, test_Get, test_Meta, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_Send, test_Get, test_Meta, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_Def, test_Assign, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
