@@ -53,13 +53,13 @@ def makeHeap(contents) :Heap:
                 ret.push(heap.pop())
             return ret.snapshot()
 
-        to visualize() :str:
+        to visualize() :Str:
             var out := ""
             for v in storage:
                 out += `$v `
             return out
 
-        to checkInvariant() :boolean:
+        to checkInvariant() :Bool:
             var errors := 0
             for [i, v] in enumerate(storage):
                 def c1i := 2 * i + 1

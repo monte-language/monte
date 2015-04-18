@@ -11,19 +11,19 @@ def optMakeTagFromData(val, mkt) as DeepFrozen:
             return mkt("true", null)
         match ==false:
             return mkt("false", null)
-        match v :int:
+        match v :Int:
             return mkt(".int.", v)
-        match v :float:
+        match v :Double:
             return mkt(".float64.", v)
-        match v :str:
+        match v :Str:
             return mkt(".String.", v)
-        match v :char:
+        match v :Char:
             return mkt(".char.", v)
         match _:
             return null
 
 def mkt(name, data) as DeepFrozen:
-    return makeTerm(makeTag(null, name, any), data, [], null)
+    return makeTerm(makeTag(null, name, Any), data, [], null)
 
 def convertToTerm(val, ej) as DeepFrozen:
     if (val =~ _ :Term):
@@ -33,12 +33,12 @@ def convertToTerm(val, ej) as DeepFrozen:
     switch (val):
         match v :List:
             def l := [convertToTerm(item, ej) for item in v]
-            return makeTerm(makeTag(null, ".tuple.", any), null, l, null)
+            return makeTerm(makeTag(null, ".tuple.", Any), null, l, null)
         # match v :set:
         #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
         match m :Map:
-            return makeTerm(makeTag(null, ".bag.", any), null,
-                       [makeTerm(makeTag(null, ".attr.", any), null, [convertToTerm(k, ej),
+            return makeTerm(makeTag(null, ".bag.", Any), null,
+                       [makeTerm(makeTag(null, ".attr.", Any), null, [convertToTerm(k, ej),
                        convertToTerm(v, ej)], null)
                         for k => v in m], null)
         match _:

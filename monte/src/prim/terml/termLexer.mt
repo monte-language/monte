@@ -29,7 +29,7 @@ def _makeTermLexer(input, builder, braceStack, var nestLevel):
     var count := -1
 
     def leafTag(tagname, span):
-        return builder.leafInternal(makeTag(null, tagname, any), null, span)
+        return builder.leafInternal(makeTag(null, tagname, Any), null, span)
 
 
     def atEnd():
@@ -119,12 +119,12 @@ def _makeTermLexer(input, builder, braceStack, var nestLevel):
         def tok := endToken(fail)
         def s := tok.replace("_", "")
         if (floating):
-            return builder.leafInternal(makeTag(null, ".float64.", any), __makeFloat(s), tok.getSpan())
+            return builder.leafInternal(makeTag(null, ".float64.", Any), __makeFloat(s), tok.getSpan())
         else:
             if (radix == 16):
-                return builder.leafInternal(makeTag(null, ".int.", any), __makeInt(s.slice(2), 16), tok.getSpan())
+                return builder.leafInternal(makeTag(null, ".int.", Any), __makeInt(s.slice(2), 16), tok.getSpan())
             else:
-                return builder.leafInternal(makeTag(null, ".int.", any), __makeInt(s), tok.getSpan())
+                return builder.leafInternal(makeTag(null, ".int.", Any), __makeInt(s), tok.getSpan())
 
     def charConstant(fail):
         if (currentChar == '\\'):
@@ -195,7 +195,7 @@ def _makeTermLexer(input, builder, braceStack, var nestLevel):
         if (currentChar != '\''):
             throw.eject(fail, "Character constant must end in \"'\"")
         advance()
-        return builder.leafInternal(makeTag(null, ".char.", any), c, endToken(fail).getSpan())
+        return builder.leafInternal(makeTag(null, ".char.", Any), c, endToken(fail).getSpan())
 
     def tag(fail, initial):
         var done := false
@@ -233,7 +233,7 @@ def _makeTermLexer(input, builder, braceStack, var nestLevel):
             def closer := endToken(fail)
             popBrace('"', fail)
 
-            return builder.leafInternal(makeTag(null, ".String.", any), s, closer.getSpan())
+            return builder.leafInternal(makeTag(null, ".String.", Any), s, closer.getSpan())
         if (cur == '\''):
             return charLiteral(fail)
         if (cur == '-'):
@@ -320,7 +320,7 @@ def lex(s):
 
 def test_integer(assert):
     def mkint(n):
-        return makeTerm(makeTag(null, ".int.", any), n, [], null)
+        return makeTerm(makeTag(null, ".int.", Any), n, [], null)
     assert.equal(lex("0"), [mkint(0)])
     assert.equal(lex("-1"), [mkint(-1)])
     assert.equal(lex("7"), [mkint(7)])
@@ -329,7 +329,7 @@ def test_integer(assert):
 
 def test_float(assert):
     def mkfloat(n):
-        return makeTerm(makeTag(null, ".float64.", any), n, [], null)
+        return makeTerm(makeTag(null, ".float64.", Any), n, [], null)
     assert.equal(lex("1e9"), [mkfloat(1e9)])
     assert.equal(lex("3.1415E17"), [mkfloat(3.1415E17)])
     assert.equal(lex("0.91"), [mkfloat(0.91)])
@@ -338,7 +338,7 @@ def test_float(assert):
 
 def test_string(assert):
     def mkstr(s):
-        return makeTerm(makeTag(null, ".String.", any), s, [], null)
+        return makeTerm(makeTag(null, ".String.", Any), s, [], null)
     assert.equal(lex("\"foo bar\""), [mkstr("foo bar")])
     assert.equal(lex("\"foo\\nbar\""), [mkstr("foo\nbar")])
     assert.equal(lex("\"foo\\\nbar\""), [mkstr("foobar")])
@@ -347,7 +347,7 @@ def test_string(assert):
 
 def test_char(assert):
     def mkchar(c):
-        return makeTerm(makeTag(null, ".char.", any), c, [], null)
+        return makeTerm(makeTag(null, ".char.", Any), c, [], null)
     assert.equal(lex("'z'"), [mkchar('z')])
     assert.equal(lex("'\\n'"), [mkchar('\n')])
     assert.equal(lex("'\\u0061'"), [mkchar('a')])
@@ -355,7 +355,7 @@ def test_char(assert):
 
 def test_tag(assert):
     def mkTag(n):
-        return makeTerm(makeTag(null, n, any), null, [], null)
+        return makeTerm(makeTag(null, n, Any), null, [], null)
     assert.equal(lex("foo"), [mkTag("foo")])
     assert.equal(lex("::\"foo\""), [mkTag("::\"foo\"")])
     assert.equal(lex("::foo"), [mkTag("::foo")])
@@ -368,7 +368,7 @@ def test_tag(assert):
 
 def test_quant(assert):
     def mkTag(n):
-        return makeTerm(makeTag(null, n, any), null, [], null)
+        return makeTerm(makeTag(null, n, Any), null, [], null)
     assert.equal(lex("*"), [mkTag("*")])
     assert.equal(lex("+"), [mkTag("+")])
     assert.equal(lex("?"), [mkTag("?")])

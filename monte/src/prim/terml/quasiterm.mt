@@ -60,7 +60,7 @@ def matchCoerce(val, isFunctorHole, tag):
     var result := null
     if (isFunctorHole):
         def mkt(name, data, args):
-            return makeTerm(makeTag(null, name, any), data, args, null)
+            return makeTerm(makeTag(null, name, Any), data, args, null)
         switch (val):
             match _ :Term:
                 if (val.getArgs().size() != 0):

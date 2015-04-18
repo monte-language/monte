@@ -1,6 +1,6 @@
 module unittest
 export (OrderedRegionMaker, OrderedSpaceMaker)
-def primInt :DeepFrozen := int
+def primInt :DeepFrozen := Int
 
 /**
  * A min where null represents positive infinity
@@ -55,12 +55,12 @@ def get(list, index) as DeepFrozen:
  * @author Mark S. Miller
  */
 object OrderedRegionMaker as DeepFrozen:
-    to run(myType :DeepFrozen, myName :str, var initBoundedLeft :boolean, var initEdges):
+    to run(myType :DeepFrozen, myName :Str, var initBoundedLeft :Bool, var initEdges):
 
         /**
          * Notational convenience
          */
-        def region(boundedLeft :boolean, edges) as DeepFrozen:
+        def region(boundedLeft :Bool, edges) as DeepFrozen:
             return OrderedRegionMaker(myType, myName, boundedLeft, edges)
 
 
@@ -75,7 +75,7 @@ object OrderedRegionMaker as DeepFrozen:
         def myLen :primInt := initEdges.size()
         def myTypeR :Same[myType] := myType # for SubrangeGuard audit
 
-        def myBoundedLeft :boolean := initBoundedLeft
+        def myBoundedLeft :Bool := initBoundedLeft
         def myEdges :DeepFrozen := initEdges
 
         /**
@@ -140,7 +140,7 @@ object OrderedRegionMaker as DeepFrozen:
              * If it's in the type but not in the region, the answer is false.
              * If it's not in the type, a problem is thrown.
              */
-            to run(pos :myType) :boolean:
+            to run(pos :myType) :Bool:
                 # XXX linear time algorithm. For long myEdges lists,
                 # it should do a binary search.
                 for i => edge in myEdges:
@@ -177,7 +177,7 @@ object OrderedRegionMaker as DeepFrozen:
              * Note that the empty region is bounded left, but it doesn't
              * have a start
              */
-            to isBoundedLeft() :boolean:
+            to isBoundedLeft() :Bool:
                 return myBoundedLeft
 
             /**
@@ -208,7 +208,7 @@ object OrderedRegionMaker as DeepFrozen:
              * element greater than all elements in the region. Unlike the
              * left bound, it is *not* in the region.
              */
-            to getOptBound() :nullOk[myType]:
+            to getOptBound() :NullOk[myType]:
                 if (myLen >= 1 && myLen % 2 == myInParity):
                     return myEdges[myLen -1]
                 else:
@@ -221,7 +221,7 @@ object OrderedRegionMaker as DeepFrozen:
              * of a distinction and its complement, and is therefore an
              * interval, but not a distinction.
              */
-            to isEmpty() :boolean:
+            to isEmpty() :Bool:
                 return myLen == 0 && myBoundedLeft
 
             /**
@@ -230,7 +230,7 @@ object OrderedRegionMaker as DeepFrozen:
              * The full region is the intersection (and) of no regions, and
              * is therefore a interval but not a distinction.
              */
-            to isFull() :boolean:
+            to isFull() :Bool:
                 return myLen == 0 && !myBoundedLeft
 
             /**
@@ -240,7 +240,7 @@ object OrderedRegionMaker as DeepFrozen:
              * The not of a distinction must be a distinction. For this space,
              * the distinctions are (myType < y) and (myType >= y).
              */
-            to isDistinction() :boolean:
+            to isDistinction() :Bool:
                 return myLen == 1
 
             /**
@@ -256,7 +256,7 @@ object OrderedRegionMaker as DeepFrozen:
              * need not be an interval. A non-interval is a complex
              * region.
              */
-            to isSimpleRegion() :boolean:
+            to isSimpleRegion() :Bool:
                 if (myLen <= 1):
                     # distinctions, empty, and full are all intervals
                     return true
@@ -492,7 +492,7 @@ object OrderedRegionMaker as DeepFrozen:
             /**
              * As a region, my comparison is a subset test.
              */
-            to op__cmp(other) :float:
+            to op__cmp(other) :Double:
                 def selfExtra := !(self & !other).isEmpty()
                 def otherExtra := !(other & !self).isEmpty()
                 if (selfExtra):
@@ -520,12 +520,12 @@ object OrderedSpaceMaker as DeepFrozen:
      * ordered, this makes an OrderedSpace for making Regions and
      * Twisters for those instances using operator notation.
      */
-    to run(myType :DeepFrozen, myName :str):
+    to run(myType :DeepFrozen, myName :Str):
 
         /**
          * Notational convenience
          */
-        def region(boundedLeft :boolean, edges) as DeepFrozen:
+        def region(boundedLeft :Bool, edges) as DeepFrozen:
             return OrderedRegionMaker(myType, myName, boundedLeft, edges)
 
 
@@ -631,25 +631,25 @@ object OrderedSpaceMaker as DeepFrozen:
 
 
 def testIterable(assert):
-    def intspace := OrderedSpaceMaker(int, "int")
+    def intspace := OrderedSpaceMaker(Int, "int")
     def reg := (intspace >= 0) & (intspace < 5)
     assert.equal([x for x in reg], [0, 1, 2, 3, 4])
 
 def testContainment(assert):
-    def intspace := OrderedSpaceMaker(int, "int")
+    def intspace := OrderedSpaceMaker(Int, "int")
     def reg := (intspace >= 0) & (intspace < 5)
     assert.equal(reg(3), true)
     assert.equal(reg(5), false)
     assert.raises(fn fail {reg(1.0)})
 
 def testGuard(assert):
-    def intspace := OrderedSpaceMaker(int, "int")
+    def intspace := OrderedSpaceMaker(Int, "int")
     def reg := (intspace >= 0) & (intspace < 5)
     assert.equal(def x :reg := 3, 3)
     assert.ejects(fn ej, fail {def x :reg exit ej := 7})
 
 def testDeepFrozen(assert):
-    def intspace := OrderedSpaceMaker(int, "int")
+    def intspace := OrderedSpaceMaker(Int, "int")
     def reg := (intspace >= 0) & (intspace < 5)
     def x :reg := 2
     #traceln("welp")
