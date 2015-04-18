@@ -23,6 +23,14 @@ class FinalSlot(MonteObject):
             self.guard = anyGuard
             self.val = val
 
+    @classmethod
+    def run(cls, val):
+        """
+        __makeFinalSlot.run(val), basically.
+        """
+
+        return cls(val)
+
     def getGuard(self):
         return FinalSlotGuard(self.guard)
 
