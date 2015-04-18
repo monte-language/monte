@@ -551,7 +551,7 @@ kerneltry :tryexpr :finallyexpr -> t.Finally(tryexpr, finallyexpr)
 
 While(@test @block @catcher) = expandWhile(test block catcher)
 
-expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", mcall("__iterWhile", "run", t.Object(None, t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [], None, test)], []))), t.Object("While loop body", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.IgnorePattern(None), t.IgnorePattern(None)], t.NounExpr("boolean"),  t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None, None), t.NounExpr("true")]))], []))), *catcher)
+expandWhile :test :block :catcher -> t.Escape(t.FinalPattern(t.NounExpr("__break"), None), mcall("__loop", "run", mcall("__iterWhile", "run", t.Object(None, t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [], None, test)], []))), t.Object("While loop body", t.IgnorePattern(None), [None], t.Script(None, [t.Method(None, "run", [t.IgnorePattern(None), t.IgnorePattern(None)], t.NounExpr("Bool"), t.SeqExpr([t.Escape(t.FinalPattern(t.NounExpr("__continue"), None), block, None, None), t.NounExpr("true")]))], []))), *catcher)
 
 When([@arg] @block :catchers @finallyblock) expandWhen(arg block catchers finallyblock)
 When(@args @block :catchers :finallyblock) expandWhen(mcall("promiseAllFulfilled", "run", t.MethodCallExpr(t.NounExpr("__makeList"), "run", args)) block catchers finallyblock)

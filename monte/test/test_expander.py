@@ -495,7 +495,7 @@ class ExpanderTest(unittest.TestCase):
                 ["Script", None,
                  [["Method", None, "run",
                    [["IgnorePattern", None], ["IgnorePattern", None]],
-                   ["NounExpr", "boolean"],
+                   ["NounExpr", "Bool"],
                    ["SeqExpr",
                     [["Escape", ["FinalPattern",
                                  ["NounExpr", "__continue"], None],
