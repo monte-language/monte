@@ -172,13 +172,13 @@ def dumpTerm(term, out):
         for t in term.args:
             dumpTerm(t, out)
     elif name == '.String.':
-        bs = o.encode('utf-8')
+        bs = o.encode('utf-8') if isinstance(o, unicode) else o
         out.write(dumpVarint(len(bs)))
         out.write(bs)
     elif name == '.float64.':
         out.write(asciiShift(struct.pack('!d', o)))
     elif name == '.char.':
-        out.write(o.encode('utf-8'))
+        out.write(o.encode('utf-8') if isinstance(o, unicode) else o)
     else:
         assert name in arities
         assert len(term.args) == arities[name], "Bad arity of term: %r" % term
