@@ -266,7 +266,7 @@ def makeMetaContextExpr(span):
     def scope := emptyScope
     object metaContextExpr:
         to subPrintOn(out, priority):
-            out.print("meta.getContext()")
+            out.print("meta.context()")
     return astWrapper(metaContextExpr, makeMetaContextExpr, [], span,
         scope, term`MetaContextExpr`, fn f {[]})
 
@@ -1248,8 +1248,7 @@ def makeMessageDesc(docstring, verb, params, resultGuard, span):
 
 
 def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span):
-    def nameScope := makeStaticScope([], [], [name], [], false)
-    def scope := nameScope + sumScopes(parents + [stamp] + auditors + messages)
+    def scope := name.getStaticScope() + sumScopes(parents + [stamp] + auditors + messages)
     object interfaceExpr:
         to getDocstring():
             return docstring
@@ -1288,7 +1287,7 @@ def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
         scope, term`InterfaceExpr`, fn f {[docstring, name.transform(f), maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), transformAll(messages, f)]})
 
 def makeFunctionInterfaceExpr(name, stamp, parents, auditors, messageDesc, span):
-    def scope := messageDesc.getStaticScope()
+    def scope := name.getStaticScope() + messageDesc.getStaticScope()
     object functionInterfaceExpr:
         to getName():
             return name
@@ -2040,7 +2039,7 @@ def test_bindingExpr(assert):
 def test_metaContextExpr(assert):
     def expr := makeMetaContextExpr(null)
     assert.equal(expr._uncall(), [makeMetaContextExpr, "run", [null]])
-    assert.equal(M.toString(expr), "meta.getContext()")
+    assert.equal(M.toString(expr), "meta.context()")
     assert.equal(expr.asTerm(), term`MetaContextExpr()`)
 
 def test_metaStateExpr(assert):
@@ -2471,6 +2470,7 @@ def test_functionExpr(assert):
 
 
 def test_interfaceExpr(assert):
+    def name := makeFinalPattern(makeNounExpr("IA", null), null, null)
     def guard := makeNounExpr("B", null)
     def paramA := makeParamDesc("a", guard, null)
     def paramC := makeParamDesc("c", null, null)
@@ -2478,14 +2478,13 @@ def test_interfaceExpr(assert):
     def messageJ := makeMessageDesc(null, "j", [], null, null)
     def stamp := makeFinalPattern(makeNounExpr("h", null), null, null)
     def [e, f] := [makeNounExpr("e", null), makeNounExpr("f", null)]
-    def ia := makeNounExpr("IA", null)
     def [ib, ic] := [makeNounExpr("IB", null), makeNounExpr("IC", null)]
-    def expr := makeInterfaceExpr("blee", ia, stamp, [ib, ic], [e, f], [messageD, messageJ], null)
+    def expr := makeInterfaceExpr("blee", name, stamp, [ib, ic], [e, f], [messageD, messageJ], null)
     assert.equal(paramA._uncall(), [makeParamDesc, "run", ["a", guard, null]])
     assert.equal(messageD._uncall(), [makeMessageDesc, "run", ["foo", "d", [paramA, paramC], guard, null]])
-    assert.equal(expr._uncall(), [makeInterfaceExpr, "run", ["blee", ia, stamp, [ib, ic], [e, f], [messageD, messageJ], null]])
+    assert.equal(expr._uncall(), [makeInterfaceExpr, "run", ["blee", name, stamp, [ib, ic], [e, f], [messageD, messageJ], null]])
     assert.equal(M.toString(expr), "/**\n    blee\n*/\ninterface IA guards h extends IB, IC implements e, f:\n    /**\n        foo\n    */\n    to d(a :B, c) :B\n\n    to j()\n")
-    assert.equal(expr.asTerm(), term`InterfaceExpr("blee", NounExpr("IA"), FinalPattern(NounExpr("h"), null), [NounExpr("IB"), NounExpr("IC")], [NounExpr("e"), NounExpr("f")], [MessageDesc("foo", "d", [ParamDesc("a", NounExpr("B")), ParamDesc("c", null)], NounExpr("B")), MessageDesc(null, "j", [], null)])`)
+    assert.equal(expr.asTerm(), term`InterfaceExpr("blee", FinalPattern(NounExpr("IA"), null), FinalPattern(NounExpr("h"), null), [NounExpr("IB"), NounExpr("IC")], [NounExpr("e"), NounExpr("f")], [MessageDesc("foo", "d", [ParamDesc("a", NounExpr("B")), ParamDesc("c", null)], NounExpr("B")), MessageDesc(null, "j", [], null)])`)
 
 def test_functionInterfaceExpr(assert):
     def guard := makeNounExpr("B", null)
