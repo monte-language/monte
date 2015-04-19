@@ -1008,10 +1008,83 @@ def parseMonte(lex, builder, mode, err):
                 return base
             return builder.CoerceExpr(base, guard(ej), spanFrom(spanHere))
         return base
+    def operators  := [
+        "**" => 1,
+        "*" => 2,
+        "/" => 2,
+        "//" => 2,
+        "%" => 2,
+        "+" => 3,
+        "-" => 3,
+        "<<" => 4,
+        ">>" => 4,
+        ".." => 5,
+        "..!" => 5,
+        ">" => 6,
+        "<" => 6,
+        ">=" => 6,
+        "<=" => 6,
+        "<=>" => 6,
+        "=~" => 7,
+        "!~" => 7,
+        "==" => 7,
+        "!=" => 7,
+        "&!" => 7,
+        "^" => 7,
+        "&" => 8,
+        "|" => 8,
+        "&&" => 9,
+        "||" => 10]
 
-    # let's pretend
-    bind order := call
-    def infix := prefix
+    def leftAssociative := ["+", "-", ">>", "<<", "/", "*", "//", "%"]
+    def selfAssociative := ["|", "&"]
+    def convertInfix(maxPrec, ej):
+        def lhs := prefix(ej)
+        def output := [lhs].diverge()
+        def opstack := [].diverge()
+        def emitTop():
+            def [_, opName] := opstack.pop()
+            def rhs := output.pop()
+            def lhs := output.pop()
+            def tehSpan := spanCover(lhs.getSpan(), rhs.getSpan())
+            if (opName == "=="):
+                output.push(builder.SameExpr(lhs, rhs, true, tehSpan))
+            else if (opName == "!="):
+                output.push(builder.SameExpr(lhs, rhs, false, tehSpan))
+            else:
+                output.push(builder.BinaryExpr(lhs, opName, rhs, tehSpan))
+
+        while (true):
+            def op := peekTag()
+            def nextPrec := operators.fetch(op, __break)
+            if (nextPrec > maxPrec):
+                break
+            advance(ej)
+            acceptEOLs()
+            # XXX buggy expander can't handle compound booleans
+            if (opstack.size() > 0):
+                def selfy := selfAssociative.contains(op) && (opstack.last()[1] == op)
+                def lefty := leftAssociative.contains(op) && opstack.last()[0] <= nextPrec
+                def b2 := lefty || selfy
+                if (opstack.last()[0] < nextPrec || b2):
+                    emitTop()
+            opstack.push([operators[op], op])
+            if (["=~", "!~"].contains(op)):
+                output.push(pattern(ej))
+            else:
+                output.push(prefix(ej))
+        while (opstack.size() > 0):
+            emitTop()
+        if (output.size() != 1):
+            throw(["Internal parser error", spanHere()])
+        return output[0]
+
+    bind order(ej):
+        return convertInfix(6, ej)
+    "XXX buggy expander eats this line"
+
+    def infix(ej):
+        return convertInfix(10, ej)
 
     def assign(ej):
         def spanStart := spanHere()
@@ -1069,9 +1142,23 @@ def parseMonte(lex, builder, mode, err):
             throw.eject(ej, [`Invalid assignment target`, lt.getSpan()])
         return lval
 
-    bind expr(ej):
+    def _expr(ej):
+        if (["continue", "break", "return"].contains(peekTag())):
+            def spanStart := spanHere()
+            def ex := advanceTag(ej)
+            if (peekTag() == "("):
+                advance(ej)
+                acceptEOLs()
+                def val := escape e {expr(e)} catch _ {null}
+                acceptEOLs()
+                acceptTag(")", ej)
+                return builder.ExitExpr(ex, val, spanFrom(spanStart))
+            if (peekTag() == "EOL" || peekTag() == null):
+                return builder.ExitExpr(ex, null, spanFrom(spanStart))
+            return builder.ExitExpr(ex, expr(ej), spanFrom(spanStart))
         return assign(ej)
-    "XXX this line eaten by buggy expander"
+
+    bind expr := _expr
     # would be different if we have toplevel-only syntax like pragmas
     def topSeq := seq
 
@@ -1296,6 +1383,71 @@ def test_Prefix(assert):
 def test_Coerce(assert):
     assert.equal(expr("foo :baz"), term`CoerceExpr(NounExpr("foo"), NounExpr("baz"))`)
 
+def test_Infix(assert):
+    assert.equal(expr("x ** -y"), term`BinaryExpr(NounExpr("x"), "**", PrefixExpr("-", NounExpr("y")))`)
+    assert.equal(expr("x * y"), term`BinaryExpr(NounExpr("x"), "*", NounExpr("y"))`)
+    assert.equal(expr("x / y"), term`BinaryExpr(NounExpr("x"), "/", NounExpr("y"))`)
+    assert.equal(expr("x // y"), term`BinaryExpr(NounExpr("x"), "//", NounExpr("y"))`)
+    assert.equal(expr("x % y"), term`BinaryExpr(NounExpr("x"), "%", NounExpr("y"))`)
+    assert.equal(expr("x + y"), term`BinaryExpr(NounExpr("x"), "+", NounExpr("y"))`)
+    assert.equal(expr("(x + y) + z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "+", NounExpr("y")), "+", NounExpr("z"))`)
+    assert.equal(expr("x - y"), term`BinaryExpr(NounExpr("x"), "-", NounExpr("y"))`)
+    assert.equal(expr("x - y + z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "-", NounExpr("y")), "+", NounExpr("z"))`)
+    assert.equal(expr("x..y"), term`BinaryExpr(NounExpr("x"), "..", NounExpr("y"))`)
+    assert.equal(expr("x..!y"), term`BinaryExpr(NounExpr("x"), "..!", NounExpr("y"))`)
+    assert.equal(expr("x < y"), term`BinaryExpr(NounExpr("x"), "<", NounExpr("y"))`)
+    assert.equal(expr("x <= y"), term`BinaryExpr(NounExpr("x"), "<=", NounExpr("y"))`)
+    assert.equal(expr("x <=> y"), term`BinaryExpr(NounExpr("x"), "<=>", NounExpr("y"))`)
+    assert.equal(expr("x >= y"), term`BinaryExpr(NounExpr("x"), ">=", NounExpr("y"))`)
+    assert.equal(expr("x > y"), term`BinaryExpr(NounExpr("x"), ">", NounExpr("y"))`)
+    assert.equal(expr("x << y"), term`BinaryExpr(NounExpr("x"), "<<", NounExpr("y"))`)
+    assert.equal(expr("x >> y"), term`BinaryExpr(NounExpr("x"), ">>", NounExpr("y"))`)
+    assert.equal(expr("x << y >> z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "<<", NounExpr("y")), ">>", NounExpr("z"))`)
+    assert.equal(expr("x == y"), term`SameExpr(NounExpr("x"), NounExpr("y"), true)`)
+    assert.equal(expr("x != y"), term`SameExpr(NounExpr("x"), NounExpr("y"), false)`)
+    assert.equal(expr("x &! y"), term`BinaryExpr(NounExpr("x"), "&!", NounExpr("y"))`)
+    assert.equal(expr("x ^ y"), term`BinaryExpr(NounExpr("x"), "^", NounExpr("y"))`)
+    assert.equal(expr("x & y"), term`BinaryExpr(NounExpr("x"), "&", NounExpr("y"))`)
+    assert.equal(expr("x & y & z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "&", NounExpr("y")), "&", NounExpr("z"))`)
+    assert.equal(expr("x | y"), term`BinaryExpr(NounExpr("x"), "|", NounExpr("y"))`)
+    assert.equal(expr("x | y | z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "|", NounExpr("y")), "|", NounExpr("z"))`)
+    assert.equal(expr("x && y"), term`BinaryExpr(NounExpr("x"), "&&", NounExpr("y"))`)
+    assert.equal(expr("x && y && z"), term`BinaryExpr(NounExpr("x"), "&&", BinaryExpr(NounExpr("y"), "&&", NounExpr("z")))`)
+    assert.equal(expr("x || y"), term`BinaryExpr(NounExpr("x"), "||", NounExpr("y"))`)
+    assert.equal(expr("x || y || z"), term`BinaryExpr(NounExpr("x"), "||", BinaryExpr(NounExpr("y"), "||", NounExpr("z")))`)
+    assert.equal(expr("x && y || z"),  expr("(x && y) || z"))
+    assert.equal(expr("x || y && z"),  expr("x || (y && z)"))
+    assert.equal(expr("x =~ a || y == b && z != c"),
+                     expr("(x =~ a) || ((y == b) && (z != c))"))
+    assert.equal(expr("x | y > z"),  expr("x | (y > z)"))
+    assert.equal(expr("x < y | y > z"),  expr("(x < y) | (y > z)"))
+    assert.equal(expr("x & y > z"),  expr("x & (y > z)"))
+    assert.equal(expr("x < y & y > z"),  expr("(x < y) & (y > z)"))
+    assert.equal(expr("x..y <=> a..!b"),  expr("(x..y) <=> (a..!b)"))
+    assert.equal(expr("a << b..y >> z"),  expr("(a << b) .. (y >> z)"))
+    assert.equal(expr("x.y() :List[Int] > a..!b"),
+                     expr("(x.y() :List[Int]) > a..!b"))
+    assert.equal(expr("a + b >> z"),  expr("(a + b) >> z"))
+    assert.equal(expr("a >> b + z"),  expr("a >> (b + z)"))
+    assert.equal(expr("a + b * c"), expr("a + (b * c)"))
+    assert.equal(expr("a - b + c * d"), expr("(a - b) + (c * d)"))
+    assert.equal(expr("a / b + c - d"), expr("((a / b) + c) - d"))
+    assert.equal(expr("a / b * !c ** ~d"), expr("(a / b) * ((!c) ** (~d))"))
+
+def test_Exits(assert):
+    assert.equal(expr("return x + y"), term`ExitExpr("return", BinaryExpr(NounExpr("x"), "+", NounExpr("y")))`)
+    assert.equal(expr("continue x + y"), term`ExitExpr("continue", BinaryExpr(NounExpr("x"), "+", NounExpr("y")))`)
+    assert.equal(expr("break x + y"), term`ExitExpr("break", BinaryExpr(NounExpr("x"), "+", NounExpr("y")))`)
+    assert.equal(expr("return(x + y)"), term`ExitExpr("return", BinaryExpr(NounExpr("x"), "+", NounExpr("y")))`)
+    assert.equal(expr("continue(x + y)"), term`ExitExpr("continue", BinaryExpr(NounExpr("x"), "+", NounExpr("y")))`)
+    assert.equal(expr("break(x + y)"), term`ExitExpr("break", BinaryExpr(NounExpr("x"), "+", NounExpr("y")))`)
+    assert.equal(expr("return()"), term`ExitExpr("return", null)`)
+    assert.equal(expr("continue()"), term`ExitExpr("continue", null)`)
+    assert.equal(expr("break()"), term`ExitExpr("break", null)`)
+    assert.equal(expr("return"), term`ExitExpr("return", null)`)
+    assert.equal(expr("continue"), term`ExitExpr("continue", null)`)
+    assert.equal(expr("break"), term`ExitExpr("break", null)`)
+
 def test_IgnorePattern(assert):
     assert.equal(pattern("_"), term`IgnorePattern(null)`)
     assert.equal(pattern("_ :Int"), term`IgnorePattern(NounExpr("Int"))`)
@@ -1316,7 +1468,6 @@ def test_SlotPattern(assert):
     assert.equal(pattern("&::\"foo baz\""), term`SlotPattern(NounExpr("foo baz"), null)`)
     assert.equal(pattern("&::\"foo baz\" :Int"), term`SlotPattern(NounExpr("foo baz"), NounExpr("Int"))`)
     assert.equal(pattern("&::\"foo baz\" :(1)"), term`SlotPattern(NounExpr("foo baz"), LiteralExpr(1))`)
-
 
 def test_VarPattern(assert):
     assert.equal(pattern("var foo"), term`VarPattern(NounExpr("foo"), null)`)
@@ -1371,4 +1522,4 @@ def test_SuchThatPattern(assert):
 #     assert.equal(expr("@{2}"), term`PatternHoleExpr(2)`)
 #     assert.equal(pattern("${2}"), term`ValueHoleExpr(0)`)
 #     assert.equal(pattern("@{2}"), term`PatternHoleExpr(0)`)
-unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_Send, test_Get, test_Meta, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_Def, test_Assign, test_Prefix, test_Coerce, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
+unittest([test_Literal, test_Noun, test_QuasiliteralExpr, test_Hide, test_Call, test_Send, test_Get, test_Meta, test_List, test_Map, test_ListComprehensionExpr, test_MapComprehensionExpr, test_IfExpr, test_EscapeExpr, test_ForExpr, test_FunctionExpr, test_SwitchExpr, test_TryExpr, test_WhileExpr, test_WhenExpr, test_ObjectExpr, test_Function, test_Interface, test_Def, test_Assign, test_Prefix, test_Coerce, test_Infix, test_Exits, test_IgnorePattern, test_FinalPattern, test_VarPattern, test_BindPattern, test_SamePattern, test_NotSamePattern, test_SlotPattern, test_BindingPattern, test_ViaPattern, test_ListPattern, test_MapPattern, test_QuasiliteralPattern, test_SuchThatPattern])
