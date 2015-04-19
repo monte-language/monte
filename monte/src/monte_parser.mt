@@ -186,9 +186,17 @@ def parseMonte(lex, builder, mode, err):
             return builder.QuasiParserExpr(name, parts, spanFrom(spanStart))
 
     def guard(ej):
+       def spanStart := spanHere()
        if (peekTag() == "IDENTIFIER"):
             def t := advance(ej)
-            return builder.NounExpr(t.getData(), t.getSpan())
+            def n := builder.NounExpr(t.getData(), t.getSpan())
+            if (peekTag() == "["):
+                advance(ej)
+                def g := acceptList(expr)
+                acceptTag("]", ej)
+                return builder.GetExpr(n, g, spanFrom(spanStart))
+            else:
+                return n
        acceptTag("(", ej)
        def e := expr(ej)
        acceptTag(")", ej)
@@ -429,12 +437,18 @@ def parseMonte(lex, builder, mode, err):
         def p1 := pattern(ej)
         def p2 := if (peekTag() == "=>") {advance(ej); pattern(ej)
                   } else {null}
+        if (needParens):
+            acceptEOLs()
         acceptTag("in", ej)
         if (needParens):
+            acceptEOLs()
             acceptTag("(", ej)
+            acceptEOLs()
         def it := order(ej)
         if (needParens):
+            acceptEOLs()
             acceptTag(")", ej)
+            acceptEOLs()
         return if (p2 == null) {[null, p1, it]} else {[p1, p2, it]}
 
     def matchers(indent, ej):
@@ -862,43 +876,56 @@ def parseMonte(lex, builder, mode, err):
         # paren expr
         if (tag == "("):
             advance(ej)
+            acceptEOLs()
             def e := expr(ej)
+            acceptEOLs()
             acceptTag(")", ej)
             return e
         # hideexpr
         if (tag == "{"):
             def spanStart := spanHere()
             advance(ej)
+            acceptEOLs()
             if (peekTag() == "}"):
                 advance(ej)
                 return builder.HideExpr(builder.SeqExpr([], null), spanFrom(spanStart))
             def e := expr(ej)
+            acceptEOLs()
             acceptTag("}", ej)
             return builder.HideExpr(e, spanFrom(spanStart))
         # list/map
         if (tag == "["):
             def spanStart := spanHere()
             advance(ej)
+            acceptEOLs()
             if (peekTag() == "for"):
                 advance(ej)
                 def [k, v, it] := forExprHead(true, ej)
                 def filt := if (peekTag() == "if") {
                     advance(ej)
                     acceptTag("(", ej)
+                    acceptEOLs()
                     def e := expr(ej)
+                    acceptEOLs()
                     acceptTag(")", ej)
                     e
                 } else {
                     null
                 }
+                acceptEOLs()
                 def body := expr(ej)
                 if (peekTag() == "=>"):
                     advance(ej)
-                    return builder.MapComprehensionExpr(it, filt, k, v, body, expr(ej),
+                    acceptEOLs()
+                    def vbody := expr(ej)
+                    acceptTag("]", ej)
+                    return builder.MapComprehensionExpr(it, filt, k, v, body, vbody,
                         spanFrom(spanStart))
+                acceptTag("]", ej)
                 return builder.ListComprehensionExpr(it, filt, k, v, body,
                     spanFrom(spanStart))
             def [items, isMap] := acceptListOrMap(expr, mapItem)
+            acceptEOLs()
             acceptTag("]", ej)
             if (isMap):
                 return builder.MapExpr(items, spanFrom(spanStart))
@@ -921,6 +948,7 @@ def parseMonte(lex, builder, mode, err):
             if (peekTag() == "("):
                 advance(ej)
                 def arglist := acceptList(expr)
+                acceptEOLs()
                 acceptTag(")", ej)
                 trailers.push([methodish, [verb, arglist, spanFrom(spanStart)]])
                 return false
@@ -931,6 +959,7 @@ def parseMonte(lex, builder, mode, err):
         def funcallish(name):
             acceptTag("(", ej)
             def arglist := acceptList(expr)
+            acceptEOLs()
             acceptTag(")", ej)
             trailers.push([name, [arglist, spanFrom(spanStart)]])
 
@@ -951,6 +980,7 @@ def parseMonte(lex, builder, mode, err):
             else if (peekTag() == "["):
                 advance(ej)
                 def arglist := acceptList(expr)
+                acceptEOLs()
                 acceptTag("]", ej)
                 trailers.push(["GetExpr", [arglist, spanFrom(spanStart)]])
             else:
@@ -1030,8 +1060,10 @@ def parseMonte(lex, builder, mode, err):
             def lt := lval.asTerm().getTag().getName()
             if (["NounExpr", "GetExpr"].contains(lt)):
                 acceptTag("(", ej)
+                acceptEOLs()
                 def node := builder.VerbAssignExpr(verb, lval, acceptList(expr),
                      spanFrom(spanStart))
+                acceptEOLs()
                 acceptTag(")", ej)
                 return node
             throw.eject(ej, [`Invalid assignment target`, lt.getSpan()])
