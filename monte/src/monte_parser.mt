@@ -202,6 +202,16 @@ def parseMonte(lex, builder, mode, err):
        acceptTag(")", ej)
        return e
 
+    def noun(ej):
+        if (peekTag() == "IDENTIFIER"):
+            def t := advance(ej)
+            return builder.NounExpr(t.getData(), t.getSpan())
+        else:
+            def spanStart := spanHere()
+            acceptTag("::", ej)
+            def t := acceptTag(".String.", ej)
+            return builder.NounExpr(t.getData(), spanFrom(spanStart))
+
     def namePattern(ej, tryQuasi):
         def spanStart := spanHere()
         def nex := peekTag()
@@ -224,48 +234,20 @@ def parseMonte(lex, builder, mode, err):
             return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "var"):
             advance(ej)
-            def spanStart := spanHere()
-            def t := advance(ej)
-            def tn := t.getTag().getName()
-            if (tn == "IDENTIFIER"):
-                def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-                return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
-            else if (tn == "::"):
-                def t := acceptTag(".String.", ej)
-                def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-                return builder.VarPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
+            def n := noun(ej)
+            def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+            return builder.VarPattern(n, g, spanFrom(spanStart))
         else if (nex == "&"):
             advance(ej)
-            def spanStart := spanHere()
-            def t := advance(ej)
-            def tn := t.getTag().getName()
-            if (tn == "IDENTIFIER"):
-                def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-                return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
-            else if (tn == "::"):
-                def t := acceptTag(".String.", ej)
-                def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
-                return builder.SlotPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
+            def n := noun(ej)
+            def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+            return builder.SlotPattern(n, g, spanFrom(spanStart))
         else if (nex == "&&"):
             advance(ej)
-            def spanStart := spanHere()
-            def t := advance(ej)
-            def tn := t.getTag().getName()
-            if (tn == "IDENTIFIER"):
-                return builder.BindingPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
-            else if (tn == "::"):
-                def t := acceptTag(".String.", ej)
-                return builder.BindingPattern(builder.NounExpr(t.getData(), t.getSpan()), spanCover(t.getSpan(), spanFrom(spanStart)))
+            return builder.BindingPattern(noun(ej), spanFrom(spanStart))
         else if (nex == "bind"):
             advance(ej)
-            def spanStart := spanHere()
-            def t := advance(ej)
-            def tn := t.getTag().getName()
-            if (tn == "IDENTIFIER"):
-                return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanFrom(spanStart))
-            else if (tn == "::"):
-                def t := acceptTag(".String.", ej)
-                return builder.BindPattern(builder.NounExpr(t.getData(), t.getSpan()), spanFrom(spanStart))
+            return builder.BindPattern(noun(ej), spanFrom(spanStart))
         throw.eject(ej, [`Unrecognized name pattern $nex`, spanHere()])
 
     def mapPatternItemInner(ej):
@@ -524,16 +506,6 @@ def parseMonte(lex, builder, mode, err):
         while (true):
             matchs.push(matchers(indent, __break))
         return [doco, meths.snapshot(), matchs.snapshot()]
-
-    def noun(ej):
-        if (peekTag() == "IDENTIFIER"):
-            def t := advance(ej)
-            return builder.NounExpr(t.getData(), t.getSpan())
-        else:
-            def spanStart := spanHere()
-            acceptTag("::", ej)
-            def t := acceptTag(".String.", ej)
-            return builder.NounExpr(t.getData(), spanFrom(spanStart))
 
     def objectExpr(name, indent, ej, spanStart):
         def oExtends := if (peekTag() == "extends") {
@@ -999,6 +971,12 @@ def parseMonte(lex, builder, mode, err):
         if (["~", "!"].contains(op)):
             advance(ej)
             return builder.PrefixExpr(op, call(ej), spanFrom(spanStart))
+        if (op == "&"):
+            advance(ej)
+            return builder.SlotExpr(noun(ej), spanFrom(spanStart))
+        if (op == "&&"):
+            advance(ej)
+            return builder.BindingExpr(noun(ej), spanFrom(spanStart))
         def base := call(ej)
         if (peekTag() == ":"):
             advance(ej)
@@ -1379,6 +1357,8 @@ def test_Prefix(assert):
     assert.equal(expr("-3"), term`PrefixExpr("-", LiteralExpr(3))`)
     assert.equal(expr("!foo.baz()"), term`PrefixExpr("!", MethodCallExpr(NounExpr("foo"), "baz", []))`)
     assert.equal(expr("~foo.baz()"), term`PrefixExpr("~", MethodCallExpr(NounExpr("foo"), "baz", []))`)
+    assert.equal(expr("&&foo"), term`BindingExpr(NounExpr("foo"))`)
+    assert.equal(expr("&foo"), term`SlotExpr(NounExpr("foo"))`)
 
 def test_Coerce(assert):
     assert.equal(expr("foo :baz"), term`CoerceExpr(NounExpr("foo"), NounExpr("baz"))`)

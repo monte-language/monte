@@ -247,20 +247,16 @@ def makeTempNounExpr(namePrefix, span):
     return astWrapper(tempNounExpr, makeTempNounExpr, [name], span,
          scope, term`TempNounExpr`, fn f {[namePrefix]})
 
-def makeSlotExpr(name, span):
-    def scope := makeStaticScope([name], [], [], [], false)
+def makeSlotExpr(noun, span):
+    def scope := noun.getStaticScope()
     object slotExpr:
-        to getName():
-            return name
+        to getNoun():
+            return noun
         to subPrintOn(out, priority):
             out.print("&")
-            if (isIdentifier(name)):
-                out.print(name)
-            else:
-                out.print("::")
-                out.quote(name)
-    return astWrapper(slotExpr, makeSlotExpr, [name], span,
-        scope, term`SlotExpr`, fn f {[name]})
+            out.print(noun)
+    return astWrapper(slotExpr, makeSlotExpr, [noun], span,
+        scope, term`SlotExpr`, fn f {[noun.transform(f)]})
 
 def makeMetaContextExpr(span):
     def scope := emptyScope
@@ -278,20 +274,16 @@ def makeMetaStateExpr(span):
     return astWrapper(metaStateExpr, makeMetaStateExpr, [], span,
         scope, term`MetaStateExpr`, fn f {[]})
 
-def makeBindingExpr(name, span):
-    def scope := makeStaticScope([name], [], [], [], false)
+def makeBindingExpr(noun, span):
+    def scope := noun.getStaticScope()
     object bindingExpr:
-        to getName():
-            return name
+        to getNoun():
+            return noun
         to subPrintOn(out, priority):
             out.print("&&")
-            if (isIdentifier(name)):
-                out.print(name)
-            else:
-                out.print("::")
-                out.quote(name)
-    return astWrapper(bindingExpr, makeBindingExpr, [name], span,
-        scope, term`BindingExpr`, fn f {[name]})
+            out.print(noun)
+    return astWrapper(bindingExpr, makeBindingExpr, [noun], span,
+        scope, term`BindingExpr`, fn f {[noun.transform(f)]})
 
 def makeSeqExpr(exprs, span):
     def scope := sumScopes(exprs)
@@ -2021,19 +2013,21 @@ def test_tempNounExpr(assert):
     assert.notEqual(expr.getName(), makeTempNounExpr("foo", null).getName())
 
 def test_slotExpr(assert):
-    def expr := makeSlotExpr("foo", null)
-    assert.equal(expr._uncall(), [makeSlotExpr, "run", ["foo", null]])
+    def noun := makeNounExpr("foo", null)
+    def expr := makeSlotExpr(noun, null)
+    assert.equal(expr._uncall(), [makeSlotExpr, "run", [noun, null]])
     assert.equal(M.toString(expr), "&foo")
-    assert.equal(expr.asTerm(), term`SlotExpr("foo")`)
-    assert.equal(M.toString(makeSlotExpr("unwind-protect", null)),
+    assert.equal(expr.asTerm(), term`SlotExpr(NounExpr("foo"))`)
+    assert.equal(M.toString(makeSlotExpr(makeNounExpr("unwind-protect", null), null)),
                  "&::\"unwind-protect\"")
 
 def test_bindingExpr(assert):
-    def expr := makeBindingExpr("foo", null)
-    assert.equal(expr._uncall(), [makeBindingExpr, "run", ["foo", null]])
+    def noun := makeNounExpr("foo", null)
+    def expr := makeBindingExpr(noun, null)
+    assert.equal(expr._uncall(), [makeBindingExpr, "run", [noun, null]])
     assert.equal(M.toString(expr), "&&foo")
-    assert.equal(expr.asTerm(), term`BindingExpr("foo")`)
-    assert.equal(M.toString(makeBindingExpr("unwind-protect", null)),
+    assert.equal(expr.asTerm(), term`BindingExpr(NounExpr("foo"))`)
+    assert.equal(M.toString(makeBindingExpr(makeNounExpr("unwind-protect", null), null)),
                  "&&::\"unwind-protect\"")
 
 def test_metaContextExpr(assert):
