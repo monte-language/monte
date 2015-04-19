@@ -622,6 +622,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
                 advance()
                 return leaf("|=")
             if (nex == '|'):
+                advance()
                 return leaf("||")
             return leaf("|")
 
