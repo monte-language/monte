@@ -149,9 +149,10 @@ def parseMonte(lex, builder, mode, err):
 
     def expr
     def order
-    #def block
+    def blockExpr
     def prim
     def pattern
+    def assign
     def quasiliteral(id, isPattern, ej):
         def spanStart := if (id == null) {spanHere()} else {id.getSpan()}
         def name := if (id == null) {null} else {id.getData()}
@@ -212,6 +213,17 @@ def parseMonte(lex, builder, mode, err):
             def t := acceptTag(".String.", ej)
             return builder.NounExpr(t.getData(), spanFrom(spanStart))
 
+    def maybeGuard():
+        def origPosition := position
+        if (peekTag() == ":"):
+            advance(null)
+            escape e:
+                return guard(e)
+            catch _:
+                # might be suite-starting colon
+                position := origPosition
+                return null
+
     def namePattern(ej, tryQuasi):
         def spanStart := spanHere()
         def nex := peekTag()
@@ -224,23 +236,23 @@ def parseMonte(lex, builder, mode, err):
                 else:
                     throw.eject(ej, [nex2, spanHere()])
             else:
-                def g := if (nex2 == ":") {advance(ej); guard(ej)} else {null}
+                def g := maybeGuard()
                 return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "::"):
             advance(ej)
             def spanStart := spanHere()
             def t := acceptTag(".String.", ej)
-            def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+            def g := maybeGuard()
             return builder.FinalPattern(builder.NounExpr(t.getData(), t.getSpan()), g, spanFrom(spanStart))
         else if (nex == "var"):
             advance(ej)
             def n := noun(ej)
-            def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+            def g := maybeGuard()
             return builder.VarPattern(n, g, spanFrom(spanStart))
         else if (nex == "&"):
             advance(ej)
             def n := noun(ej)
-            def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+            def g := maybeGuard()
             return builder.SlotPattern(n, g, spanFrom(spanStart))
         else if (nex == "&&"):
             advance(ej)
@@ -336,8 +348,6 @@ def parseMonte(lex, builder, mode, err):
         else:
             return p
     "XXX buggy expander eats this line"
-    def blockExpr (indent, ej):
-        return expr(ej)
 
     def mapItem(ej):
         def spanStart := spanHere()
@@ -362,11 +372,12 @@ def parseMonte(lex, builder, mode, err):
         return next
 
     def seq(indent, ej):
+        def ex := if (indent) {blockExpr} else {expr}
         def start := spanHere()
-        def exprs := [blockExpr(indent, ej)].diverge()
+        def exprs := [ex(ej)].diverge()
         while (true):
             seqSep(__break)
-            exprs.push(blockExpr(__break))
+            exprs.push(ex(__break))
         opt(seqSep, ej)
         if (exprs.size() == 1):
             return exprs[0]
@@ -387,6 +398,7 @@ def parseMonte(lex, builder, mode, err):
         }
         if (indent):
             acceptTag("DEDENT", ej)
+            acceptEOLs()
         else:
             acceptTag("}", ej)
         acceptEOLs()
@@ -404,6 +416,7 @@ def parseMonte(lex, builder, mode, err):
         acceptEOLs()
         if (indent):
             acceptTag("DEDENT", ej)
+            acceptEOLs()
         else:
             acceptTag("}", ej)
         acceptEOLs()
@@ -435,7 +448,6 @@ def parseMonte(lex, builder, mode, err):
 
     def matchers(indent, ej):
         def spanStart := spanHere()
-        acceptEOLs()
         acceptTag("match", ej)
         return builder.Matcher(pattern(ej), block(indent, ej), spanFrom(spanStart))
 
@@ -501,9 +513,17 @@ def parseMonte(lex, builder, mode, err):
         }
         def meths := [].diverge()
         while (true):
+            acceptEOLs()
+            if (peekTag() == "pass"):
+                advance(ej)
+                continue
             meths.push(meth(indent, __break))
         def matchs := [].diverge()
         while (true):
+            acceptEOLs()
+            if (peekTag() == "pass"):
+                advance(ej)
+                continue
             matchs.push(matchers(indent, __break))
         return [doco, meths.snapshot(), matchs.snapshot()]
 
@@ -596,7 +616,6 @@ def parseMonte(lex, builder, mode, err):
         return [doco, params, resultguard]
 
     def messageDesc(indent, ej):
-        acceptEOLs()
         def spanStart := spanHere()
         acceptTag("to", ej)
         def verb := if (peekTag() == ".String.") {
@@ -616,10 +635,15 @@ def parseMonte(lex, builder, mode, err):
         }
         def msgs := [].diverge()
         while (true):
+            acceptEOLs()
+            if (peekTag() == "pass"):
+                advance(ej)
+                continue
             msgs.push(messageDesc(indent, __break))
         return [doco, msgs.snapshot()]
 
     def basic(indent, ej):
+        def origPosition := position
         def tag := peekTag()
         if (tag == "if"):
             def spanStart := spanHere()
@@ -711,6 +735,7 @@ def parseMonte(lex, builder, mode, err):
             acceptTag(")", ej)
             acceptTag("->", ej)
             if (indent):
+                acceptEOLs()
                 acceptTag("INDENT", ej)
             else:
                 acceptTag("{", ej)
@@ -721,6 +746,7 @@ def parseMonte(lex, builder, mode, err):
             }
             if (indent):
                 acceptTag("DEDENT", ej)
+                acceptEOLs()
             else:
                 acceptTag("}", ej)
             def catchers := [].diverge()
@@ -741,7 +767,8 @@ def parseMonte(lex, builder, mode, err):
             if (peekTag() == "("):
                 return objectFunction(name, indent, ej, spanStart)
             else if (peekTag() == ":="):
-                return null
+                position := origPosition
+                return assign(ej)
             else:
                 return objectExpr(name, indent, ej, spanStart)
 
@@ -762,7 +789,6 @@ def parseMonte(lex, builder, mode, err):
         if (tag == "def"):
             def spanStart := spanHere()
             advance(ej)
-            def origPosition := position
             def name := if (peekTag() == "bind") {
                 advance(ej)
                 builder.BindPattern(noun(ej), spanFrom(spanStart))
@@ -773,7 +799,7 @@ def parseMonte(lex, builder, mode, err):
                 return objectFunction(name, indent, ej, spanStart)
             else:
                 position := origPosition
-                return null
+                return assign(ej)
         if (tag == "interface"):
             def spanStart := spanHere()
             advance(ej)
@@ -824,7 +850,17 @@ def parseMonte(lex, builder, mode, err):
                 return builder.MetaStateExpr(spanFrom(spanStart))
             throw.eject(ej, [`Meta verbs are "context" or "getState"`, spanHere()])
 
+        if (indent && peekTag() == "pass"):
+            return builder.SeqExpr([], advance(ej).getSpan())
         throw.eject(ej, [`don't recognize $tag`, spanHere()])
+
+    bind blockExpr (ej):
+        def origPosition := position
+        escape e:
+            return basic(true, e)
+        position := origPosition
+        return expr(ej)
+    "XXX buggy expander eats this line"
 
     bind prim(ej):
         def tag := peekTag()
@@ -1064,7 +1100,7 @@ def parseMonte(lex, builder, mode, err):
     def infix(ej):
         return convertInfix(10, ej)
 
-    def assign(ej):
+    def _assign(ej):
         def spanStart := spanHere()
         def defStart := position
         if (peekTag() == "def"):
@@ -1119,6 +1155,7 @@ def parseMonte(lex, builder, mode, err):
                 return node
             throw.eject(ej, [`Invalid assignment target`, lt.getSpan()])
         return lval
+    bind assign := _assign
 
     def _expr(ej):
         if (["continue", "break", "return"].contains(peekTag())):
@@ -1137,8 +1174,6 @@ def parseMonte(lex, builder, mode, err):
         return assign(ej)
 
     bind expr := _expr
-    # would be different if we have toplevel-only syntax like pragmas
-    def topSeq := seq
 
     def module_(ej):
         def start := spanHere()
@@ -1147,18 +1182,18 @@ def parseMonte(lex, builder, mode, err):
         acceptEOLs()
         acceptTag("export", ej)
         def exports := acceptList(noun)
-        def body := topSeq(ej)
+        def body := seq(true, ej)
         return builder."Module"(imports, exports, body, spanFrom(start))
 
     def start(ej):
         if (peekTag() == "module"):
             return module_(ej)
         else:
-            return topSeq(ej)
+            return seq(true, ej)
     if (mode == "module"):
         return start(err)
     else if (mode == "expression"):
-        return expr(err)
+        return blockExpr(err)
     else if (mode == "pattern"):
         return pattern(err)
     return "broke"
@@ -1200,7 +1235,7 @@ def parsePattern(lex, builder, err):
 # Tests.
 
 def expr(s):
- return parseExpression(makeMonteLexer(s), astBuilder, throw).asTerm()
+ return parseExpression(makeMonteLexer(s + "\n"), astBuilder, throw).asTerm()
 
 def pattern(s):
  return parsePattern(makeMonteLexer(s), astBuilder, throw).asTerm()
@@ -1251,17 +1286,30 @@ def test_IfExpr(assert):
         term`IfExpr(LiteralExpr(1), LiteralExpr(2), IfExpr(LiteralExpr(3), LiteralExpr(4), LiteralExpr(5)))`)
     assert.equal(expr("if (1) {2} else {3}"), term`IfExpr(LiteralExpr(1), LiteralExpr(2), LiteralExpr(3))`)
     assert.equal(expr("if (1) {2}"), term`IfExpr(LiteralExpr(1), LiteralExpr(2), null)`)
+    assert.equal(expr("if (1):\n  2\nelse if (3):\n  4\nelse:\n  5"),
+        term`IfExpr(LiteralExpr(1), LiteralExpr(2), IfExpr(LiteralExpr(3), LiteralExpr(4), LiteralExpr(5)))`)
+    assert.equal(expr("if (1):\n  2\nelse:\n  3"), term`IfExpr(LiteralExpr(1), LiteralExpr(2), LiteralExpr(3))`)
+    assert.equal(expr("if (1):\n  2"), term`IfExpr(LiteralExpr(1), LiteralExpr(2), null)`)
+
 
 def test_EscapeExpr(assert):
     assert.equal(expr("escape e {1} catch p {2}"),
         term`EscapeExpr(FinalPattern(NounExpr("e"), null), LiteralExpr(1), FinalPattern(NounExpr("p"), null), LiteralExpr(2))`)
     assert.equal(expr("escape e {1}"),
         term`EscapeExpr(FinalPattern(NounExpr("e"), null), LiteralExpr(1), null, null)`)
+    assert.equal(expr("escape e:\n  1\ncatch p:\n  2"),
+        term`EscapeExpr(FinalPattern(NounExpr("e"), null), LiteralExpr(1), FinalPattern(NounExpr("p"), null), LiteralExpr(2))`)
+    assert.equal(expr("escape e:\n  1"),
+        term`EscapeExpr(FinalPattern(NounExpr("e"), null), LiteralExpr(1), null, null)`)
 
 def test_ForExpr(assert):
     assert.equal(expr("for v in foo {1}"), term`ForExpr(NounExpr("foo"), null, FinalPattern(NounExpr("v"), null), LiteralExpr(1), null, null)`)
     assert.equal(expr("for k => v in foo {1}"), term`ForExpr(NounExpr("foo"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), LiteralExpr(1), null, null)`)
     assert.equal(expr("for k => v in foo {1} catch p {2}"), term`ForExpr(NounExpr("foo"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), LiteralExpr(1), FinalPattern(NounExpr("p"), null), LiteralExpr(2))`)
+    assert.equal(expr("for v in foo:\n  1"), term`ForExpr(NounExpr("foo"), null, FinalPattern(NounExpr("v"), null), LiteralExpr(1), null, null)`)
+    assert.equal(expr("for k => v in foo:\n  1"), term`ForExpr(NounExpr("foo"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), LiteralExpr(1), null, null)`)
+    assert.equal(expr("for k => v in foo:\n  1\ncatch p:\n  2"), term`ForExpr(NounExpr("foo"), FinalPattern(NounExpr("k"), null), FinalPattern(NounExpr("v"), null), LiteralExpr(1), FinalPattern(NounExpr("p"), null), LiteralExpr(2))`)
+
 
 def test_FunctionExpr(assert):
     assert.equal(expr("fn {1}"), term`FunctionExpr([], LiteralExpr(1))`)
@@ -1269,6 +1317,7 @@ def test_FunctionExpr(assert):
 
 def test_SwitchExpr(assert):
     assert.equal(expr("switch (1) {match p {2} match q {3}}"), term`SwitchExpr(LiteralExpr(1), [Matcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2)), Matcher(FinalPattern(NounExpr("q"), null), LiteralExpr(3))])`)
+    assert.equal(expr("switch (1):\n  match p:\n    2\n  match q:\n    3"), term`SwitchExpr(LiteralExpr(1), [Matcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2)), Matcher(FinalPattern(NounExpr("q"), null), LiteralExpr(3))])`)
 
 def test_TryExpr(assert):
     assert.equal(expr("try {1} catch p {2} catch q {3} finally {4}"),
@@ -1277,10 +1326,16 @@ def test_TryExpr(assert):
         term`TryExpr(LiteralExpr(1), [], LiteralExpr(2))`)
     assert.equal(expr("try {1} catch p {2}"),
         term`TryExpr(LiteralExpr(1), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2))], null)`)
+    assert.equal(expr("try:\n  1\ncatch p:\n  2\ncatch q:\n  3\nfinally:\n  4"),
+        term`TryExpr(LiteralExpr(1), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2)), Catcher(FinalPattern(NounExpr("q"), null), LiteralExpr(3))], LiteralExpr(4))`)
+    assert.equal(expr("try:\n  1\nfinally:\n  2"),
+        term`TryExpr(LiteralExpr(1), [], LiteralExpr(2))`)
+    assert.equal(expr("try:\n  1\ncatch p:\n  2"),
+        term`TryExpr(LiteralExpr(1), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(2))], null)`)
 
 def test_WhileExpr(assert):
-    assert.equal(expr("while (1) {2}"), term`WhileExpr(LiteralExpr(1), LiteralExpr(2), null)`)
-    assert.equal(expr("while (1) {2} catch p {3}"), term`WhileExpr(LiteralExpr(1), LiteralExpr(2), Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3)))`)
+    assert.equal(expr("while (1):\n  2"), term`WhileExpr(LiteralExpr(1), LiteralExpr(2), null)`)
+    assert.equal(expr("while (1):\n  2\ncatch p:\n  3"), term`WhileExpr(LiteralExpr(1), LiteralExpr(2), Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3)))`)
 
 def test_WhenExpr(assert):
     assert.equal(expr("when (1) -> {2}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [], null)`)
@@ -1288,6 +1343,11 @@ def test_WhenExpr(assert):
     assert.equal(expr("when (1) -> {2} catch p {3}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3))], null)`)
     assert.equal(expr("when (1) -> {2} finally {3}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [], LiteralExpr(3))`)
     assert.equal(expr("when (1) -> {2} catch p {3} finally {4}"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3))], LiteralExpr(4))`)
+    assert.equal(expr("when (1) ->\n  2"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [], null)`)
+    assert.equal(expr("when (1, 2) ->\n  3"), term`WhenExpr([LiteralExpr(1), LiteralExpr(2)], LiteralExpr(3), [], null)`)
+    assert.equal(expr("when (1) ->\n  2\ncatch p:\n  3"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3))], null)`)
+    assert.equal(expr("when (1) ->\n  2\nfinally:\n  3"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [], LiteralExpr(3))`)
+    assert.equal(expr("when (1) ->\n  2\ncatch p:\n  3\nfinally:\n  4"), term`WhenExpr([LiteralExpr(1)], LiteralExpr(2), [Catcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3))], LiteralExpr(4))`)
 
 def test_ObjectExpr(assert):
     assert.equal(expr("object foo {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(null, [], []))`)
@@ -1301,9 +1361,22 @@ def test_ObjectExpr(assert):
     assert.equal(expr("object foo as A implements B, C {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), NounExpr("A"), [NounExpr("B"), NounExpr("C")], Script(null, [], []))`)
     assert.equal(expr("object foo extends baz {}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(NounExpr("baz"), [], []))`)
 
+    assert.equal(expr("object foo:\n  pass"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(null, [], []))`)
+    assert.equal(expr("object _:\n  pass"), term`ObjectExpr(null, IgnorePattern(null), null, [], Script(null, [], []))`)
+    assert.equal(expr("object ::\"object\":\n  pass"), term`ObjectExpr(null, FinalPattern(NounExpr("object"), null), null, [], Script(null, [], []))`)
+    assert.equal(expr("bind foo:\n  pass"), term`ObjectExpr(null, BindPattern(NounExpr("foo")), null, [], Script(null, [], []))`)
+    assert.equal(expr("object bind foo:\n  pass"), term`ObjectExpr(null, BindPattern(NounExpr("foo")), null, [], Script(null, [], []))`)
+    assert.equal(expr("object foo:\n  to doA(x, y) :z:\n    0\n  method blee():\n    1\n  to \"object\"():\n    2\n  match p:\n    3\n  match q:\n    4"),
+        term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(null, [To(null, "doA", [FinalPattern(NounExpr("x"), null), FinalPattern(NounExpr("y"), null)], NounExpr("z"), LiteralExpr(0)), Method(null, "blee", [], null, LiteralExpr(1)), To(null, "object", [], null, LiteralExpr(2))], [Matcher(FinalPattern(NounExpr("p"), null), LiteralExpr(3)), Matcher(FinalPattern(NounExpr("q"), null), LiteralExpr(4))]))`)
+    assert.equal(expr("object foo:\n  \"hello\"\n  to blee():\n    \"yes\"\n    1"), term`ObjectExpr("hello", FinalPattern(NounExpr("foo"), null), null, [], Script(null, [To("yes", "blee", [], null, LiteralExpr(1))], []))`)
+    assert.equal(expr("object foo as A implements B, C:\n  pass"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), NounExpr("A"), [NounExpr("B"), NounExpr("C")], Script(null, [], []))`)
+    assert.equal(expr("object foo extends baz:\n  pass"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], Script(NounExpr("baz"), [], []))`)
+
 def test_Function(assert):
     assert.equal(expr("def foo() {1}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], FunctionScript([], null, LiteralExpr(1)))`)
     assert.equal(expr("def foo(a, b) :c {1}"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], FunctionScript([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], NounExpr("c"), LiteralExpr(1)))`)
+    assert.equal(expr("def foo():\n  1"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], FunctionScript([], null, LiteralExpr(1)))`)
+    assert.equal(expr("def foo(a, b) :c:\n  1"), term`ObjectExpr(null, FinalPattern(NounExpr("foo"), null), null, [], FunctionScript([FinalPattern(NounExpr("a"), null), FinalPattern(NounExpr("b"), null)], NounExpr("c"), LiteralExpr(1)))`)
 
 def test_Interface(assert):
     assert.equal(expr("interface foo {\"yes\"}"), term`InterfaceExpr("yes", FinalPattern(NounExpr("foo"), null), null, [], [], [])`)
@@ -1315,6 +1388,15 @@ def test_Interface(assert):
     assert.equal(expr("interface foo {\"yes\"\nto run(a :int, b :float64) :any {\"msg docstring\"}}"), term`InterfaceExpr("yes", FinalPattern(NounExpr("foo"), null), null, [], [], [MessageDesc("msg docstring", "run", [ParamDesc("a", NounExpr("int")), ParamDesc("b", NounExpr("float64"))], NounExpr("any"))])`)
     assert.equal(expr("interface foo(a :int, b :float64) :any {\"msg docstring\"}"), term`FunctionInterfaceExpr(FinalPattern(NounExpr("foo"), null), null, [], [], MessageDesc("msg docstring", "run", [ParamDesc("a", NounExpr("int")), ParamDesc("b", NounExpr("float64"))], NounExpr("any")))`)
     assert.equal(expr("interface foo(a :int, b :float64) :any"), term`FunctionInterfaceExpr(FinalPattern(NounExpr("foo"), null), null, [], [], MessageDesc(null, "run", [ParamDesc("a", NounExpr("int")), ParamDesc("b", NounExpr("float64"))], NounExpr("any")))`)
+
+    assert.equal(expr("interface foo:\n  \"yes\""), term`InterfaceExpr("yes", FinalPattern(NounExpr("foo"), null), null, [], [], [])`)
+    assert.equal(expr("interface foo extends baz, blee:\n  \"yes\""), term`InterfaceExpr("yes", FinalPattern(NounExpr("foo"), null), null, [NounExpr("baz"), NounExpr("blee")], [], [])`)
+    assert.equal(expr("interface foo implements bar:\n  \"yes\""), term`InterfaceExpr("yes", FinalPattern(NounExpr("foo"), null), null, [], [NounExpr("bar")], [])`)
+    assert.equal(expr("interface foo extends baz implements boz, bar:\n  pass"), term`InterfaceExpr(null, FinalPattern(NounExpr("foo"), null), null, [NounExpr("baz")], [NounExpr("boz"), NounExpr("bar")], [])`)
+    assert.equal(expr("interface foo guards FooStamp extends boz, biz implements bar:\n  pass"), term`InterfaceExpr(null, FinalPattern(NounExpr("foo"), null), FinalPattern(NounExpr("FooStamp"), null), [NounExpr("boz"), NounExpr("biz")], [NounExpr("bar")], [])`)
+    assert.equal(expr("interface foo:\n  \"yes\"\n  to run(a :int, b :float64) :any"), term`InterfaceExpr("yes", FinalPattern(NounExpr("foo"), null), null, [], [], [MessageDesc(null, "run", [ParamDesc("a", NounExpr("int")), ParamDesc("b", NounExpr("float64"))], NounExpr("any"))])`)
+    assert.equal(expr("interface foo:\n  \"yes\"\n  to run(a :int, b :float64) :any:\n    \"msg docstring\""), term`InterfaceExpr("yes", FinalPattern(NounExpr("foo"), null), null, [], [], [MessageDesc("msg docstring", "run", [ParamDesc("a", NounExpr("int")), ParamDesc("b", NounExpr("float64"))], NounExpr("any"))])`)
+    assert.equal(expr("interface foo(a :int, b :float64) :any:\n  \"msg docstring\""), term`FunctionInterfaceExpr(FinalPattern(NounExpr("foo"), null), null, [], [], MessageDesc("msg docstring", "run", [ParamDesc("a", NounExpr("int")), ParamDesc("b", NounExpr("float64"))], NounExpr("any")))`)
 
 def test_Call(assert):
     assert.equal(expr("a.b(c, d)"), term`MethodCallExpr(NounExpr("a"), "b", [NounExpr("c"), NounExpr("d")])`)
