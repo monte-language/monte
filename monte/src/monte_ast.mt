@@ -163,14 +163,28 @@ def printListOn(left, nodes, sep, right, out, priority):
         nodes.last().subPrintOn(out, priority)
     out.print(right)
 
-def printSuiteOn(leaderFn, suite, cuddle, out, priority):
+def printDocstringOn(docstring, out, indentLastLine):
+    if (docstring == null):
+        return
+    out.print("\"")
+    def lines := docstring.split("\n")
+    for line in lines.slice(0, 0.max(lines.size() - 2)):
+        out.println(line)
+    if (lines.size() > 0):
+        out.print(lines.last())
+    if (indentLastLine):
+        out.println("\"")
+    else:
+        out.print("\"")
+
+def printSuiteOn(leaderFn, printContents, cuddle, out, priority):
     def indentOut := out.indent(INDENT)
     if (priorities["braceExpr"] < priority):
         if (cuddle):
             out.print(" ")
         leaderFn()
         indentOut.println(" {")
-        suite.subPrintOn(indentOut, priorities["braceExpr"])
+        printContents(indentOut, priorities["braceExpr"])
         out.println("")
         out.print("}")
     else:
@@ -178,19 +192,23 @@ def printSuiteOn(leaderFn, suite, cuddle, out, priority):
             out.println("")
         leaderFn()
         indentOut.println(":")
-        suite.subPrintOn(indentOut, priorities["indentExpr"])
+        printContents(indentOut, priorities["indentExpr"])
 
-def printDocstringOn(docstring, out):
-    if (docstring == null):
-        return
-    def indentOut := out.indent(INDENT)
-    indentOut.println("/**")
-    def lines := docstring.split("\n")
-    for line in lines.slice(0, 0.max(lines.size() - 2)):
-        indentOut.println(line)
-    if (lines.size() > 0):
-        out.println(lines.last())
-    out.println("*/")
+def printExprSuiteOn(leaderFn, suite, cuddle, out, priority):
+        printSuiteOn(leaderFn, suite.subPrintOn, cuddle, out, priority)
+
+def printDocExprSuiteOn(leaderFn, docstring, suite, out, priority):
+        printSuiteOn(leaderFn, fn o, p {
+            printDocstringOn(docstring, o, true)
+            suite.subPrintOn(o, p)
+            }, false, out, priority)
+
+def printObjectSuiteOn(leaderFn, docstring, suite, out, priority):
+        printSuiteOn(leaderFn, fn o, p {
+            printDocstringOn(docstring, o, false)
+            out.print("\n")
+            suite.subPrintOn(o, p)
+            }, false, out, priority)
 
 def astWrapper(node, maker, args, span, scope, termFunctor, transformArgs):
     return object astNode extends node:
@@ -869,11 +887,8 @@ def makeMethod(docstring, verb, patterns, resultGuard, body, span):
         to getBody():
             return body
         to subPrintOn(out, priority):
-            if (docstring != null):
-                printDocstringOn(docstring, out)
-            else:
-                out.println("")
-            printSuiteOn(fn {
+            out.println("")
+            printDocExprSuiteOn(fn {
                 out.print("method ")
                 if (isIdentifier(verb)) {
                     out.print(verb)
@@ -885,7 +900,7 @@ def makeMethod(docstring, verb, patterns, resultGuard, body, span):
                     out.print(" :")
                     resultGuard.subPrintOn(out, priorities["call"])
                 }
-            }, body, false, out, priority)
+            }, docstring, body, out, priority)
     return astWrapper(::"method", makeMethod, [docstring, verb, patterns, resultGuard, body], span,
         scope, term`Method`, fn f {[docstring, verb, transformAll(patterns, f), maybeTransform(resultGuard, f), body.transform(f)]})
 
@@ -903,11 +918,8 @@ def makeTo(docstring, verb, patterns, resultGuard, body, span):
         to getBody():
             return body
         to subPrintOn(out, priority):
-            if (docstring != null):
-                printDocstringOn(docstring, out)
-            else:
-                out.println("")
-            printSuiteOn(fn {
+            out.println("")
+            printDocExprSuiteOn(fn {
                 out.print("to ")
                 if (isIdentifier(verb)) {
                     out.print(verb)
@@ -919,7 +931,7 @@ def makeTo(docstring, verb, patterns, resultGuard, body, span):
                     out.print(" :")
                     resultGuard.subPrintOn(out, priorities["call"])
                 }
-            }, body, false, out, priority)
+            }, docstring, body, out, priority)
     return astWrapper(::"to", makeTo, [docstring, verb, patterns, resultGuard, body], span,
         scope, term`To`, fn f {[docstring, verb, transformAll(patterns, f), maybeTransform(resultGuard, f), body.transform(f)]})
 
@@ -932,7 +944,7 @@ def makeMatcher(pattern, body, span):
             return body
         to subPrintOn(out, priority):
             out.println("")
-            printSuiteOn(fn {
+            printExprSuiteOn(fn {
                 out.print("match ");
                 pattern.subPrintOn(out, priorities["pattern"]);
             }, body, false, out, priority)
@@ -947,7 +959,7 @@ def makeCatcher(pattern, body, span):
         to getBody():
             return body
         to subPrintOn(out, priority):
-            printSuiteOn(fn {
+            printExprSuiteOn(fn {
                 out.print("catch ");
                 pattern.subPrintOn(out, priorities["pattern"]);
             }, body, true, out, priority)
@@ -1016,7 +1028,7 @@ def makeFunctionExpr(patterns, body, span):
         to getBody():
             return body
         to subPrintOn(out, priority):
-            printSuiteOn(fn {
+            printExprSuiteOn(fn {
                 printListOn("fn ", patterns, ", ", "", out, priorities["pattern"])
             }, body, false, out, priority)
     return astWrapper(functionExpr, makeFunctionExpr, [patterns, body], span,
@@ -1149,7 +1161,7 @@ def makeForExpr(iterable, key, value, body, catchPattern, catchBody, span):
         to getCatchBody():
             return catchBody
         to subPrintOn(out, priority):
-            printSuiteOn(fn {
+            printExprSuiteOn(fn {
                 out.print("for ")
                 if (key != null) {
                     key.subPrintOn(out, priorities["pattern"])
@@ -1160,7 +1172,7 @@ def makeForExpr(iterable, key, value, body, catchPattern, catchBody, span):
                 iterable.subPrintOn(out, priorities["braceExpr"])
             }, body, false, out, priority)
             if (catchPattern != null):
-                printSuiteOn(fn {
+                printExprSuiteOn(fn {
                     out.print("catch ")
                     catchPattern.subPrintOn(out, priorities["pattern"])
                 }, catchBody, true, out, priority)
@@ -1182,10 +1194,14 @@ def makeObjectExpr(docstring, name, asExpr, auditors, script, span):
         to getScript():
             return script
         to subPrintOn(out, priority):
-            printDocstringOn(docstring, out)
-            printSuiteOn(fn {
+            def printIt := if (script._uncall()[0] == makeFunctionScript) {
+                printDocExprSuiteOn
+            } else {
+                printObjectSuiteOn
+            }
+            printIt(fn {
                 script.printObjectHeadOn(name, asExpr, auditors, out, priority)
-            }, script, false, out, priority)
+            }, docstring, script, out, priority)
     return astWrapper(ObjectExpr, makeObjectExpr, [docstring, name, asExpr, auditors, script], span,
         scope, term`ObjectExpr`, fn f {[docstring, name.transform(f), maybeTransform(asExpr, f), transformAll(auditors, f), script.transform(f)]})
 
@@ -1218,24 +1234,31 @@ def makeMessageDesc(docstring, verb, params, resultGuard, span):
             return params
         to getResultGuard():
             return resultGuard
-        to subPrintOn(head, printMsgName, out, priority):
-            if (docstring != null):
-                printDocstringOn(docstring, out)
-            else:
-                #XXX hacckkkkkk
-                if (head == "to"):
-                    out.println("")
+        to subPrintOn(head, out, priority):
+            #XXX hacckkkkkk
+            if (head == "to"):
+                out.println("")
             out.print(head)
             out.print(" ")
-            if (printMsgName):
-                if (isIdentifier(verb)):
-                    out.print(verb)
-                else:
-                    out.quote(verb)
+            if (isIdentifier(verb)):
+                out.print(verb)
+            else:
+                out.quote(verb)
             printListOn("(", params, ", ", ")", out, priorities["pattern"])
             if (resultGuard != null):
                 out.print(" :")
                 resultGuard.subPrintOn(out, priorities["call"])
+            if (docstring != null):
+                def bracey := priorities["braceExpr"] < priority
+                def indentOut := out.indent(INDENT)
+                if (bracey):
+                    indentOut.println(" {")
+                else:
+                    indentOut.println(":")
+                printDocstringOn(docstring, indentOut, bracey)
+                if (bracey):
+                    out.print("}")
+
     return astWrapper(messageDesc, makeMessageDesc, [docstring, verb, params, resultGuard], span,
         scope, term`MessageDesc`, fn f {[docstring, verb, transformAll(params, f), maybeTransform(resultGuard, f)]})
 
@@ -1256,7 +1279,6 @@ def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
         to getMessages():
             return messages
         to subPrintOn(out, priority):
-            printDocstringOn(docstring, out)
             out.print("interface ")
             out.print(name)
             if (stamp != null):
@@ -1271,19 +1293,20 @@ def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
                 indentOut.println(" {")
             else:
                 indentOut.println(":")
+            printDocstringOn(docstring, indentOut, false)
             for m in messages:
-                m.subPrintOn("to", true, indentOut, priority)
+                m.subPrintOn("to", indentOut, priority)
                 indentOut.print("\n")
             if (priorities["braceExpr"] < priority):
                 out.print("}")
     return astWrapper(interfaceExpr, makeInterfaceExpr, [docstring, name, stamp, parents, auditors, messages], span,
         scope, term`InterfaceExpr`, fn f {[docstring, name.transform(f), maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), transformAll(messages, f)]})
 
-def makeFunctionInterfaceExpr(doco, name, stamp, parents, auditors, messageDesc, span):
+def makeFunctionInterfaceExpr(docstring, name, stamp, parents, auditors, messageDesc, span):
     def scope := name.getStaticScope() + sumScopes(parents + [stamp] + auditors + [messageDesc])
     object functionInterfaceExpr:
         to getDocstring():
-            return doco
+            return docstring
         to getName():
             return name
         to getMessageDesc():
@@ -1295,19 +1318,38 @@ def makeFunctionInterfaceExpr(doco, name, stamp, parents, auditors, messageDesc,
         to getAuditors():
             return auditors
         to subPrintOn(out, priority):
-            printDocstringOn(doco, out)
             out.print("interface ")
             out.print(name)
+            var cuddle := true
             if (stamp != null):
                 out.print(" guards ")
                 stamp.subPrintOn(out, priorities["pattern"])
+                cuddle := false
             if (parents.size() > 0):
                 printListOn(" extends ", parents, ", ", "", out, priorities["call"])
+                cuddle := false
             if (auditors.size() > 0):
                 printListOn(" implements ", auditors, ", ", "", out, priorities["call"])
-            messageDesc.subPrintOn("", false, out, priority)
-    return astWrapper(functionInterfaceExpr, makeFunctionInterfaceExpr, [doco, name, stamp, parents, auditors, messageDesc], span,
-        scope, term`FunctionInterfaceExpr`, fn f {[doco, name.transform(f), maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), messageDesc.transform(f)]})
+                cuddle := false
+            if (!cuddle):
+                out.print(" ")
+            printListOn("(", messageDesc.getParams(), ", ", ")", out, priorities["pattern"])
+            if (messageDesc.getResultGuard() != null):
+                out.print(" :")
+                messageDesc.getResultGuard().subPrintOn(out, priorities["call"])
+            if (docstring != null):
+                def bracey := priorities["braceExpr"] < priority
+                def indentOut := out.indent(INDENT)
+                if (bracey):
+                    indentOut.println(" {")
+                else:
+                    indentOut.println(":")
+                printDocstringOn(docstring, indentOut, bracey)
+                if (bracey):
+                    out.print("}")
+            out.print("\n")
+    return astWrapper(functionInterfaceExpr, makeFunctionInterfaceExpr, [docstring, name, stamp, parents, auditors, messageDesc], span,
+        scope, term`FunctionInterfaceExpr`, fn f {[docstring, name.transform(f), maybeTransform(stamp, f), transformAll(parents, f), transformAll(auditors, f), messageDesc.transform(f)]})
 
 def makeCatchExpr(body, pattern, catcher, span):
     def scope := body.getStaticScope().hide() + (pattern.getStaticScope() + catcher.getStaticScope()).hide()
@@ -1319,8 +1361,8 @@ def makeCatchExpr(body, pattern, catcher, span):
         to getCatcher():
             return catcher
         to subPrintOn(out, priority):
-            printSuiteOn(fn {out.print("try")}, body, false, out, priority)
-            printSuiteOn(fn {
+            printExprSuiteOn(fn {out.print("try")}, body, false, out, priority)
+            printExprSuiteOn(fn {
                 out.print("catch ")
                 pattern.subPrintOn(out, priorities["pattern"])
             }, catcher, true, out, priority)
@@ -1336,8 +1378,8 @@ def makeFinallyExpr(body, unwinder, span):
         to getUnwinder():
             return unwinder
         to subPrintOn(out, priority):
-            printSuiteOn(fn {out.print("try")}, body, false, out, priority)
-            printSuiteOn(fn {out.print("finally")}, unwinder, true, out,
+            printExprSuiteOn(fn {out.print("try")}, body, false, out, priority)
+            printExprSuiteOn(fn {out.print("finally")}, unwinder, true, out,
                          priority)
     return astWrapper(finallyExpr, makeFinallyExpr, [body, unwinder], span,
         scope, term`FinallyExpr`, fn f {[body.transform(f), unwinder.transform(f)]})
@@ -1357,11 +1399,11 @@ def makeTryExpr(body, catchers, finallyBlock, span):
         to getFinally():
             return finallyBlock
         to subPrintOn(out, priority):
-            printSuiteOn(fn {out.print("try")}, body, false, out, priority)
+            printExprSuiteOn(fn {out.print("try")}, body, false, out, priority)
             for m in catchers:
                 m.subPrintOn(out, priority)
             if (finallyBlock != null):
-                printSuiteOn(fn {out.print("finally")},
+                printExprSuiteOn(fn {out.print("finally")},
                     finallyBlock, true, out, priority)
     return astWrapper(tryExpr, makeTryExpr, [body, catchers, finallyBlock], span,
         scope, term`TryExpr`, fn f {[body.transform(f), transformAll(catchers, f),maybeTransform(finallyBlock, f)]})
@@ -1383,12 +1425,12 @@ def makeEscapeExpr(ejectorPattern, body, catchPattern, catchBody, span):
         to getCatchBody():
             return catchBody
         to subPrintOn(out, priority):
-            printSuiteOn(fn {
+            printExprSuiteOn(fn {
                 out.print("escape ")
                 ejectorPattern.subPrintOn(out, priorities["pattern"])
             }, body, false, out, priority)
             if (catchPattern != null):
-                printSuiteOn(fn {
+                printExprSuiteOn(fn {
                     out.print("catch ")
                     catchPattern.subPrintOn(out, priorities["pattern"])
                 }, catchBody, true, out, priority)
@@ -1447,7 +1489,7 @@ def makeWhenExpr(args, body, catchers, finallyBlock, span):
             for c in catchers:
                 c.subPrintOn(out, priority)
             if (finallyBlock != null):
-                printSuiteOn(fn {
+                printExprSuiteOn(fn {
                     out.print("finally")
                 }, finallyBlock, true, out, priority)
     return astWrapper(whenExpr, makeWhenExpr, [args, body, catchers, finallyBlock], span,
@@ -1468,13 +1510,13 @@ def makeIfExpr(test, consq, alt, span):
         to getElse():
             return alt
         to subPrintOn(out, priority):
-            printSuiteOn(fn {
+            printExprSuiteOn(fn {
                 out.print("if (")
                 test.subPrintOn(out, priorities["braceExpr"])
                 out.print(")")
                 }, consq, false, out, priority)
             if (alt != null):
-                printSuiteOn(fn {out.print("else")}, alt, true, out, priority)
+                printExprSuiteOn(fn {out.print("else")}, alt, true, out, priority)
 
     return astWrapper(ifExpr, makeIfExpr, [test, consq, alt], span,
         scope, term`IfExpr`, fn f {[test.transform(f), consq.transform(f), maybeTransform(alt, f)]})
@@ -1489,7 +1531,7 @@ def makeWhileExpr(test, body, catcher, span):
         to getCatcher():
             return catcher
         to subPrintOn(out, priority):
-            printSuiteOn(fn {
+            printExprSuiteOn(fn {
                 out.print("while (")
                 test.subPrintOn(out, priorities["braceExpr"])
                 out.print(")")
@@ -2437,7 +2479,7 @@ def test_objectExpr(assert):
         [makeMethod, "run", ["method d", "d", methodParams, methGuard, methBody, null]])
     assert.equal(matcher._uncall(),
         [makeMatcher, "run", [matchPatt, matchBody, null]])
-    assert.equal(M.toString(expr), "/**\n    blee\n*/\nobject a as x implements b, c:\n    /**\n        method d\n    */\n    method d(e, f) :g:\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
+    assert.equal(M.toString(expr), "object a as x implements b, c:\n    \"blee\"\n\n    method d(e, f) :g:\n        \"method d\"\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
     assert.equal(expr.asTerm(),
                  term`ObjectExpr("blee",
                                  FinalPattern(NounExpr("a"), null),
@@ -2462,7 +2504,7 @@ def test_functionScript(assert):
     def funBody := makeFunctionScript(patterns, guard, body, null)
     def expr := makeObjectExpr("bloo", funName, asExpr, auditors, funBody, null)
     assert.equal(funBody._uncall(), [makeFunctionScript, "run", [patterns, guard, body, null]])
-    assert.equal(M.toString(expr), "/**\n    bloo\n*/\ndef a(d, e) :g as x implements b, c:\n    f\n")
+    assert.equal(M.toString(expr), "def a(d, e) :g as x implements b, c:\n    \"bloo\"\n    f\n")
     assert.equal(expr.asTerm(), term`ObjectExpr("bloo", FinalPattern(NounExpr("a"), null), NounExpr("x"), [NounExpr("b"), NounExpr("c")], FunctionScript([FinalPattern(NounExpr("d"), null), FinalPattern(NounExpr("e"), null)], NounExpr("g"), NounExpr("f")))`)
 
 def test_functionExpr(assert):
@@ -2490,7 +2532,7 @@ def test_interfaceExpr(assert):
     assert.equal(paramA._uncall(), [makeParamDesc, "run", ["a", guard, null]])
     assert.equal(messageD._uncall(), [makeMessageDesc, "run", ["foo", "d", [paramA, paramC], guard, null]])
     assert.equal(expr._uncall(), [makeInterfaceExpr, "run", ["blee", name, stamp, [ib, ic], [e, f], [messageD, messageJ], null]])
-    assert.equal(M.toString(expr), "/**\n    blee\n*/\ninterface IA guards h extends IB, IC implements e, f:\n    /**\n        foo\n    */\n    to d(a :B, c) :B\n\n    to j()\n")
+    assert.equal(M.toString(expr), "interface IA guards h extends IB, IC implements e, f:\n    \"blee\"\n    to d(a :B, c) :B:\n        \"foo\"\n\n    to j()\n")
     assert.equal(expr.asTerm(), term`InterfaceExpr("blee", FinalPattern(NounExpr("IA"), null), FinalPattern(NounExpr("h"), null), [NounExpr("IB"), NounExpr("IC")], [NounExpr("e"), NounExpr("f")], [MessageDesc("foo", "d", [ParamDesc("a", NounExpr("B")), ParamDesc("c", null)], NounExpr("B")), MessageDesc(null, "j", [], null)])`)
 
 def test_functionInterfaceExpr(assert):
@@ -2504,7 +2546,7 @@ def test_functionInterfaceExpr(assert):
     def msg := makeMessageDesc(null, "run", [paramA, paramC], guard, null)
     def expr := makeFunctionInterfaceExpr("blee", name, stamp, [ib, ic], [e, f], msg, null)
     assert.equal(expr._uncall(), [makeFunctionInterfaceExpr, "run", ["blee", name, stamp, [ib, ic], [e, f], msg, null]])
-    assert.equal(M.toString(expr), "/**\n    blee\n*/\ninterface IA guards d extends IB, IC implements e, f (a :B, c) :B")
+    assert.equal(M.toString(expr), "interface IA guards d extends IB, IC implements e, f (a :B, c) :B:\n    \"blee\"\n")
     assert.equal(expr.asTerm(), term`FunctionInterfaceExpr("blee", FinalPattern(NounExpr("IA"), null), FinalPattern(NounExpr("d"), null), [NounExpr("IB"), NounExpr("IC")], [NounExpr("e"), NounExpr("f")], MessageDesc(null, "run", [ParamDesc("a", NounExpr("B")), ParamDesc("c", null)], NounExpr("B")))`)
 
 def test_quasiParserExpr(assert):
