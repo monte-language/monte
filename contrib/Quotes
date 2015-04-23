@@ -19,3 +19,26 @@
 <simpson> Developers want to deploy HTTPS sites.
 <simpson> Origin of threat: Developers
 %
+<dash> simpson: clicking randomly through stackexchange, i think i know how other programmers feel during our design conversations: http://gaming.stackexchange.com/q/214975/2354
+<dash> "... i know _some_ of those words?"
+<mythmon> dash: can confirm
+%
+< froztbyte> simpson: a pet hate of mine in REPLs is when something doesn't allow forard/reverse word jumps, back-kill-word, etc
+< froztbyte> I don't know how much effort those are to implement without readline
+< dash> froztbyte: easy
+< froztbyte> but I guess since the parser already does some of that work, parts of it might be reused?
+< dash> froztbyte: make emacs your repl frontend
+< froztbyte> dash: snrk
+< dash> froztbyte: it's been done
+< dash> also, there's rlwrap
+< froztbyte> oh, I can believe that
+< mythmon> froztbyte: without readline? not easy. but then, why not just use readline?
+< froztbyte> readline, curses, and Tk
+< froztbyte> are some of the ingredients commonly found on a unix/linux system which I've actually very successfully managed to not learn things about
+< dash> who'd want to
+< froztbyte> heh
+< simpson> dash: Oh my. I did not know about rlwrap.
+< simpson> Holy fuck now e/rune doesn't suck!
+ * simpson *ahem*
+< simpson> I mean, yes. Very nifty. Quite. Capital.
+%
