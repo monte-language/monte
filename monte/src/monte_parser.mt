@@ -829,7 +829,9 @@ def parseMonte(lex, builder, mode, err):
             }
             if (peekTag() == "("):
                 def [doco, params, resultguard] := messageDescInner(indent, ej)
-                return builder.FunctionInterfaceExpr(name, guards_, extends_, implements_,
+                # XXX not sure whether `doco` actually refers to the correct
+                # docstring. dash?
+                return builder.FunctionInterfaceExpr(doco, name, guards_, extends_, implements_,
                      builder.MessageDesc(doco, "run", params, resultguard, spanFrom(spanStart)),
                      spanFrom(spanStart))
             def [doco, msgs] := suite(interfaceBody, indent, ej)
