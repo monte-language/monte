@@ -20,6 +20,7 @@ For users:
     design
     iteration
     guards
+    custom-guards
 
 For Developers: 
 
