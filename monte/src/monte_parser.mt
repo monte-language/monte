@@ -313,7 +313,11 @@ def parseMonte(lex, builder, mode, err):
         else if (nex == "_"):
             advance(ej)
             def spanStart := spanHere()
-            def g := if (peekTag() == ":") {advance(ej); guard(ej)} else {null}
+            def g := if (peekTag() == ":" && tokens[position + 2].getTag().getName() != "EOL") {
+                advance(ej); guard(ej)
+            } else {
+                null
+            }
             return builder.IgnorePattern(g, spanFrom(spanStart))
         else if (nex == "via"):
             advance(ej)
@@ -365,7 +369,7 @@ def parseMonte(lex, builder, mode, err):
             ej(null)
         advance(ej)
         while (true):
-            next := peekTag(ej)
+            next := peekTag()
             if (next != ";" && next != "EOL"):
                 break
             advance(ej)
@@ -398,10 +402,8 @@ def parseMonte(lex, builder, mode, err):
         }
         if (indent):
             acceptTag("DEDENT", ej)
-            acceptEOLs()
         else:
             acceptTag("}", ej)
-        acceptEOLs()
         return contents
 
     def suite(rule, indent, ej):
@@ -416,10 +418,8 @@ def parseMonte(lex, builder, mode, err):
         acceptEOLs()
         if (indent):
             acceptTag("DEDENT", ej)
-            acceptEOLs()
         else:
             acceptTag("}", ej)
-        acceptEOLs()
         return content
 
     def repeat(rule, indent, ej):
@@ -449,7 +449,10 @@ def parseMonte(lex, builder, mode, err):
     def matchers(indent, ej):
         def spanStart := spanHere()
         acceptTag("match", ej)
-        return builder.Matcher(pattern(ej), block(indent, ej), spanFrom(spanStart))
+        def pp := pattern(ej)
+        def bl := block(indent, ej)
+        acceptEOLs()
+        return builder.Matcher(pp, bl, spanFrom(spanStart))
 
     def catcher(indent, ej):
         def spanStart := spanHere()
@@ -520,7 +523,6 @@ def parseMonte(lex, builder, mode, err):
             meths.push(meth(indent, __break))
         def matchs := [].diverge()
         while (true):
-            acceptEOLs()
             if (peekTag() == "pass"):
                 advance(ej)
                 continue
@@ -642,7 +644,16 @@ def parseMonte(lex, builder, mode, err):
             msgs.push(messageDesc(indent, __break))
         return [doco, msgs.snapshot()]
 
-    def basic(indent, ej):
+    def blockLookahead(ej):
+        def origPosition := position
+        try:
+            acceptTag(":", ej)
+            acceptEOLs()
+            acceptTag("INDENT", ej)
+        finally:
+            position := origPosition
+
+    def basic(indent, tryAgain, ej):
         def origPosition := position
         def tag := peekTag()
         if (tag == "if"):
@@ -651,11 +662,12 @@ def parseMonte(lex, builder, mode, err):
             acceptTag("(", ej)
             def test := expr(ej)
             acceptTag(")", ej)
+            blockLookahead(tryAgain)
             def consq := block(indent, ej)
             def alt := if (peekTag() == "else") {
                 advance(ej)
                 if (peekTag() == "if") {
-                    basic(indent, ej)
+                    basic(indent, ej, ej)
                 } else {
                     block(indent, ej)
                 }}
@@ -664,6 +676,7 @@ def parseMonte(lex, builder, mode, err):
             def spanStart := spanHere()
             advance(ej)
             def p1 := pattern(ej)
+            blockLookahead(tryAgain)
             def e1 := block(indent, ej)
             if (peekTag() == "catch"):
                 advance(ej)
@@ -675,6 +688,7 @@ def parseMonte(lex, builder, mode, err):
             def spanStart := spanHere()
             advance(ej)
             def [k, v, it] := forExprHead(false, ej)
+            blockLookahead(tryAgain)
             def body := block(indent, ej)
             def [catchPattern, catchBody] := if (peekTag() == "catch") {
                 advance(ej)
@@ -695,6 +709,7 @@ def parseMonte(lex, builder, mode, err):
             acceptTag("(", ej)
             def spec := expr(ej)
             acceptTag(")", ej)
+            blockLookahead(tryAgain)
             return builder.SwitchExpr(
                 spec,
                 suite(fn i, j {repeat(matchers, i, j)}, indent, ej),
@@ -702,6 +717,7 @@ def parseMonte(lex, builder, mode, err):
         if (tag == "try"):
             def spanStart := spanHere()
             advance(ej)
+            blockLookahead(tryAgain)
             def tryblock := block(indent, ej)
             def catchers := [].diverge()
             while (true):
@@ -720,6 +736,7 @@ def parseMonte(lex, builder, mode, err):
             acceptTag("(", ej)
             def test := expr(ej)
             acceptTag(")", ej)
+            blockLookahead(tryAgain)
             def whileblock := block(indent, ej)
             def catchblock := if (peekTag() == "catch") {
                catcher(indent, ej)
@@ -736,7 +753,7 @@ def parseMonte(lex, builder, mode, err):
             acceptTag("->", ej)
             if (indent):
                 acceptEOLs()
-                acceptTag("INDENT", ej)
+                acceptTag("INDENT", tryAgain)
             else:
                 acceptTag("{", ej)
             def whenblock := escape e {
@@ -746,7 +763,6 @@ def parseMonte(lex, builder, mode, err):
             }
             if (indent):
                 acceptTag("DEDENT", ej)
-                acceptEOLs()
             else:
                 acceptTag("}", ej)
             def catchers := [].diverge()
@@ -754,6 +770,7 @@ def parseMonte(lex, builder, mode, err):
                catchers.push(catcher(indent, __break))
             def finallyblock := if (peekTag() == "finally") {
                 advance(ej)
+                blockLookahead(tryAgain)
                 block(indent, ej)
             } else {
                 null
@@ -784,7 +801,7 @@ def parseMonte(lex, builder, mode, err):
             } else {
                 builder.FinalPattern(noun(ej), null, spanFrom(spanStart))
             }
-            return objectExpr(name, indent, ej, spanStart)
+            return objectExpr(name, indent, fn err {if (indent) {ej(err)}}, spanStart)
 
         if (tag == "def"):
             def spanStart := spanHere()
@@ -803,12 +820,7 @@ def parseMonte(lex, builder, mode, err):
         if (tag == "interface"):
             def spanStart := spanHere()
             advance(ej)
-            def name := if (peekTag() == "bind") {
-                advance(ej)
-                builder.BindPattern(noun(ej), spanFrom(spanStart))
-            } else {
-                builder.FinalPattern(noun(ej), null, spanFrom(spanStart))
-            }
+            def name := namePattern(ej, false)
             def guards_ := if (peekTag() == "guards") {
                 advance(ej)
                 pattern(ej)
@@ -829,8 +841,6 @@ def parseMonte(lex, builder, mode, err):
             }
             if (peekTag() == "("):
                 def [doco, params, resultguard] := messageDescInner(indent, ej)
-                # XXX not sure whether `doco` actually refers to the correct
-                # docstring. dash?
                 return builder.FunctionInterfaceExpr(doco, name, guards_, extends_, implements_,
                      builder.MessageDesc(doco, "run", params, resultguard, spanFrom(spanStart)),
                      spanFrom(spanStart))
@@ -853,13 +863,14 @@ def parseMonte(lex, builder, mode, err):
             throw.eject(ej, [`Meta verbs are "context" or "getState"`, spanHere()])
 
         if (indent && peekTag() == "pass"):
+            advance(ej)
             return builder.SeqExpr([], advance(ej).getSpan())
-        throw.eject(ej, [`don't recognize $tag`, spanHere()])
+        throw.eject(tryAgain, [`don't recognize $tag`, spanHere()])
 
-    bind blockExpr (ej):
+    bind blockExpr(ej):
         def origPosition := position
         escape e:
-            return basic(true, e)
+            return basic(true, e, ej)
         position := origPosition
         return expr(ej)
     "XXX buggy expander eats this line"
@@ -868,7 +879,7 @@ def parseMonte(lex, builder, mode, err):
         def tag := peekTag()
         if ([".String.", ".int.", ".float64.", ".char."].contains(tag)):
             def t := advance(ej)
-            return builder.LiteralExpr(t, t.getSpan())
+            return builder.LiteralExpr(t.getData(), t.getSpan())
         if (tag == "IDENTIFIER"):
             def t := advance(ej)
             def nex := peekTag()
@@ -941,7 +952,7 @@ def parseMonte(lex, builder, mode, err):
                 return builder.MapExpr(items, spanFrom(spanStart))
             else:
                 return builder.ListExpr(items, spanFrom(spanStart))
-        return basic(false, ej)
+        return basic(false, ej, ej)
     "XXX buggy expander eats this line"
     def call(ej):
         def spanStart := spanHere()
@@ -1067,6 +1078,8 @@ def parseMonte(lex, builder, mode, err):
                 output.push(builder.SameExpr(lhs, rhs, true, tehSpan))
             else if (opName == "!="):
                 output.push(builder.SameExpr(lhs, rhs, false, tehSpan))
+            else if (opName == "=~"):
+                output.push(builder.MatchBindExpr(lhs, rhs, tehSpan))
             else:
                 output.push(builder.BinaryExpr(lhs, opName, rhs, tehSpan))
 
@@ -1121,7 +1134,7 @@ def parseMonte(lex, builder, mode, err):
             else:
                 # bail out!
                 position := defStart
-                return basic(false, ej)
+                return basic(false, ej, ej)
         if (["var", "bind"].contains(peekTag())):
             def patt := pattern(ej)
             if (peekTag() == ":="):
@@ -1130,7 +1143,7 @@ def parseMonte(lex, builder, mode, err):
             else:
                 # curses, foiled again
                 position := defStart
-                return basic(false, ej)
+                return basic(false, ej, ej)
         def lval := infix(ej)
         if (peekTag() == ":="):
             advance(ej)
@@ -1172,7 +1185,8 @@ def parseMonte(lex, builder, mode, err):
                 return builder.ExitExpr(ex, val, spanFrom(spanStart))
             if (peekTag() == "EOL" || peekTag() == null):
                 return builder.ExitExpr(ex, null, spanFrom(spanStart))
-            return builder.ExitExpr(ex, expr(ej), spanFrom(spanStart))
+            def val := blockExpr(ej)
+            return builder.ExitExpr(ex, val, spanFrom(spanStart))
         return assign(ej)
 
     bind expr := _expr
@@ -1182,8 +1196,14 @@ def parseMonte(lex, builder, mode, err):
         def modKw := acceptTag("module", ej)
         def imports := acceptList(pattern)
         acceptEOLs()
-        acceptTag("export", ej)
-        def exports := acceptList(noun)
+        def exports := if (peekTag() == "export") {
+            advance(ej)
+            acceptTag("(", ej)
+            def exports := acceptList(noun)
+            acceptTag(")", ej)
+            acceptEOLs()
+            exports
+        }
         def body := seq(true, ej)
         return builder."Module"(imports, exports, body, spanFrom(start))
 
@@ -1193,7 +1213,11 @@ def parseMonte(lex, builder, mode, err):
         else:
             return seq(true, ej)
     if (mode == "module"):
-        return start(err)
+        def val := start(err)
+        acceptEOLs()
+        if (position < (tokens.size() - 1)):
+            throw.eject(err, `Trailing garbage: ${tokens.slice(position, tokens.size())}`)
+        return val
     else if (mode == "expression"):
         return blockExpr(err)
     else if (mode == "pattern"):
@@ -1479,6 +1503,7 @@ def test_Infix(assert):
     assert.equal(expr("x && y && z"), term`BinaryExpr(NounExpr("x"), "&&", BinaryExpr(NounExpr("y"), "&&", NounExpr("z")))`)
     assert.equal(expr("x || y"), term`BinaryExpr(NounExpr("x"), "||", NounExpr("y"))`)
     assert.equal(expr("x || y || z"), term`BinaryExpr(NounExpr("x"), "||", BinaryExpr(NounExpr("y"), "||", NounExpr("z")))`)
+    assert.equal(expr("x =~ y"), term`MatchBindExpr(NounExpr("x"), FinalPattern(NounExpr("y"), null))`)
     assert.equal(expr("x && y || z"),  expr("(x && y) || z"))
     assert.equal(expr("x || y && z"),  expr("x || (y && z)"))
     assert.equal(expr("x =~ a || y == b && z != c"),

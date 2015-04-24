@@ -1850,8 +1850,9 @@ def quasiPrint(name, quasis, out, priority):
         var p := priorities["prim"]
         if (i + 1 < quasis.size()):
             def next := quasis[i + 1]
-            if (next._uncall()[0] == makeQuasiText && idPart(next.getText()[0])):
-                p := priorities["braceExpr"]
+            if (next._uncall()[0] == makeQuasiText):
+                if (next.getText().size() > 0 && idPart(next.getText()[0])):
+                    p := priorities["braceExpr"]
         q.subPrintOn(out, p)
     out.print("`")
 
