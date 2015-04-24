@@ -63,6 +63,6 @@ class FloatGuard(PrintFQN, Guard):
 floatGuard = FloatGuard()
 
 charGuard = PythonTypeGuard(Character, "char")
-stringGuard = PythonTypeGuard(String, "String")
-twineGuard = PythonTypeGuard(Twine, "Twine")
+stringGuard = PythonTypeGuard(Twine, "Str")
+twineGuard = PythonTypeGuard(Twine, "Str")
 bytesGuard = PythonTypeGuard(Bytestring, "Bytes")

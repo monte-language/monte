@@ -996,7 +996,7 @@ class LocatedTwine(AtomicTwine):
 
     def _uncall(self):
         from monte.runtime.tables import ConstList
-        return ConstList([theTwineMaker, String("fromString"),
+        return ConstList([theTwineMaker, String(u"fromString"),
                           ConstList([self.bare(), self.span])])
 
     def _m_infectOneToOne(self, other):
