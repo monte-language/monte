@@ -244,7 +244,7 @@ ViaPattern(@exprScope @patternScope) -> exprScope.add(patternScope)
 
 Script(@extends @methodScopes @matcherScopes) -> union(methodScopes + matcherScopes)
 Object(@doco @nameScope @auditorScope @scriptScope) -> nameScope.add(union(auditorScope).add(scriptScope))
-Method(@doco @verb @paramsScope @guardScope @blockScope) -> union(paramsScope + [guardScope, blockScope.hide()]).hide()
+Method(@doco @verb @paramsScope @guardScope @blockScope) -> union(paramsScope + [(guardScope or StaticScope()), blockScope.hide()]).hide()
 Matcher(@patternScope @blockScope) -> patternScope.add(blockScope).hide()
 
 If(@testScope @consqScope @altScope) -> testScope.add(consqScope).hide().add(altScope).hide()
