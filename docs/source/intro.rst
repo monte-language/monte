@@ -70,14 +70,11 @@ Indentation
 -----------
 
 Standardize your indentation to use spaces, because tabs are a syntax error in
-Monte.
+Monte. Monte core library code uses four-space indentation. However, any
+indentation can be used as long as it's consistent throughout the module.
 
-* 1 space: How can you read that?
-* 2 spaces: *sigh* you must be a Googler.
-* 3 spaces: What?
-* **4 spaces**: Yes. Good coder. Use 4 spaces.
-* 5 spaces: No, five is right out.
-* 8 spaces: How can you read that?
+Scoping Rules
+-------------
 
 No object created within a scope will be accessible outside of that scope,
 unless a message about it is passed out. In Monte, the only way for object A
@@ -133,8 +130,7 @@ changed, whereas a variable one can be changed later::
     trace("My final value: ")
     traceln(`$myFinalValue`)
 
-Everything is an object. Some objects are created automatically, such as
-variables and methods. Other objects are created explicitly::
+Everything is an object. New objects are created with a ``object`` keyword::
 
     object helloThere:
         to greet(whom):
@@ -159,7 +155,7 @@ Object Composition
 Monte has a simpler approach to object composition and inheritance than many
 other object-based and object-oriented languages. Instead of classes or
 prototypes, Monte has a simple single syntax for constructing objects, the
-object expression.::
+object expression::
 
     object myObject:
         pass
@@ -175,17 +171,17 @@ in behavior. However, Monte has a very simple idiom for class-like constructs.
         return object myObject:
             pass
 
-Methods can be attached to objects with the to keyword.::
+Methods can be attached to objects with the to keyword::
 
     object deck:
         to size():
             return 52
 
 Finally, just like with functions, methods can have guards on their parameters
-and return value.::
+and return value::
 
     object deck:
-        to size(suits :int, ranks :int) :int:
+        to size(suits :Int, ranks :Int) :Int:
             return suits * ranks
 
 Built-In Types
@@ -285,9 +281,10 @@ In lists and strings, special characters and unicode values can be escaped:
 
 .. note:: 
 
-    Monte intentionally avoids supporting ASCII vertical tabs (``\v``) and
-    octal values (``\o00``) because it is a language of the future and in the
-    future, nobody uses those. 
+    Monte intentionally avoids providing escape notation for ASCII vertical
+    tabs (``\v``) and octal values (``\o00``) because it is a language of the
+    future and in the future, nobody uses those. Hexadecimal escapes are still
+    valid for vertical tabs.
 
 .. note::
 
@@ -295,11 +292,10 @@ In lists and strings, special characters and unicode values can be escaped:
     escapes the newline and causes that line and its successor to be
     interpereted as one.
 
-
 Data Structures
 ---------------
 
-Monte has lists built in natively, and various other data structures
+Monte has native lists and maps, as well as various other data structures
 implemented in the language.
 
 Monte Modules
