@@ -406,10 +406,16 @@ def parseMonte(lex, builder, mode, err):
         else:
             acceptTag("{", ej)
         acceptEOLs()
-        def contents := escape e {
-            seq(indent, ej)
-        } catch _ {
+        def contents := if (peekTag() == "pass") {
+            advance(ej)
+            acceptEOLs()
             builder.SeqExpr([], null)
+        } else {
+            escape e {
+                seq(indent, ej)
+            } catch _ {
+                builder.SeqExpr([], null)
+            }
         }
         if (indent):
             acceptTag("DEDENT", ej)
@@ -639,8 +645,9 @@ def parseMonte(lex, builder, mode, err):
             null
         }
         def doco := if ([":", "{"].contains(peekTag())) {
-            if (indent):
+            if (indent) {
                 blockLookahead(tryAgain)
+            }
             suite(fn i, j {acceptEOLs(); acceptTag(".String.", j)}, indent, ej)
         } else {
             null
@@ -656,7 +663,7 @@ def parseMonte(lex, builder, mode, err):
             def t := acceptTag("IDENTIFIER", ej)
             __makeString.fromString(t.getData(), t.getSpan())
         }
-        def [doco, params, resultguard] := messageDescInner(indent, ej)
+        def [doco, params, resultguard] := messageDescInner(indent, ej, ej)
         return builder.MessageDesc(doco, verb, params, resultguard, spanFrom(spanStart))
 
     def interfaceBody(indent, ej):
@@ -835,6 +842,9 @@ def parseMonte(lex, builder, mode, err):
             def spanStart := spanHere()
             advance(ej)
             var isBind := false
+            if (!["IDENTIFIER", "::", "bind"].contains(peekTag())):
+                position := origPosition
+                return assign(ej)
             def name := if (peekTag() == "bind") {
                 advance(ej)
                 isBind := true
@@ -875,7 +885,7 @@ def parseMonte(lex, builder, mode, err):
                 []
             }
             if (peekTag() == "("):
-                def [doco, params, resultguard] := messageDescInner(indent, ej)
+                def [doco, params, resultguard] := messageDescInner(indent, tryAgain, ej)
                 return builder.FunctionInterfaceExpr(doco, name, guards_, extends_, implements_,
                      builder.MessageDesc(doco, "run", params, resultguard, spanFrom(spanStart)),
                      spanFrom(spanStart))
@@ -1115,6 +1125,12 @@ def parseMonte(lex, builder, mode, err):
                 output.push(builder.SameExpr(lhs, rhs, true, tehSpan))
             else if (opName == "!="):
                 output.push(builder.SameExpr(lhs, rhs, false, tehSpan))
+            else if (opName == "&&"):
+                output.push(builder.AndExpr(lhs, rhs, tehSpan))
+            else if (opName == "||"):
+                output.push(builder.OrExpr(lhs, rhs, tehSpan))
+            else if (["..", "..!"].contains(opName)):
+                output.push(builder.RangeExpr(lhs, opName, rhs, tehSpan))
             else if (opName == "=~"):
                 output.push(builder.MatchBindExpr(lhs, rhs, tehSpan))
             else if ([">", "<", ">=", "<=", "<=>"].contains(opName)):
@@ -1218,7 +1234,7 @@ def parseMonte(lex, builder, mode, err):
             if (peekTag() == "(" && tokens[position + 2].getTag().getName() == ")"):
                 position += 2
                 return builder.ExitExpr(ex, null, spanFrom(spanStart))
-            if (peekTag() == "EOL" || peekTag() == null):
+            if (["EOL", "#", ";", "DEDENT", null].contains(peekTag())):
                 return builder.ExitExpr(ex, null, spanFrom(spanStart))
             def val := blockExpr(ej)
             return builder.ExitExpr(ex, val, spanFrom(spanStart))
@@ -1243,6 +1259,7 @@ def parseMonte(lex, builder, mode, err):
         return builder."Module"(imports, exports, body, spanFrom(start))
 
     def start(ej):
+        acceptEOLs()
         if (peekTag() == "module"):
             return module_(ej)
         else:
@@ -1516,8 +1533,8 @@ def test_Infix(assert):
     assert.equal(expr("(x + y) + z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "+", NounExpr("y")), "+", NounExpr("z"))`)
     assert.equal(expr("x - y"), term`BinaryExpr(NounExpr("x"), "-", NounExpr("y"))`)
     assert.equal(expr("x - y + z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "-", NounExpr("y")), "+", NounExpr("z"))`)
-    assert.equal(expr("x..y"), term`BinaryExpr(NounExpr("x"), "..", NounExpr("y"))`)
-    assert.equal(expr("x..!y"), term`BinaryExpr(NounExpr("x"), "..!", NounExpr("y"))`)
+    assert.equal(expr("x..y"), term`RangeExpr(NounExpr("x"), "..", NounExpr("y"))`)
+    assert.equal(expr("x..!y"), term`RangeExpr(NounExpr("x"), "..!", NounExpr("y"))`)
     assert.equal(expr("x < y"), term`CompareExpr(NounExpr("x"), "<", NounExpr("y"))`)
     assert.equal(expr("x <= y"), term`CompareExpr(NounExpr("x"), "<=", NounExpr("y"))`)
     assert.equal(expr("x <=> y"), term`CompareExpr(NounExpr("x"), "<=>", NounExpr("y"))`)
@@ -1534,10 +1551,10 @@ def test_Infix(assert):
     assert.equal(expr("x & y & z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "&", NounExpr("y")), "&", NounExpr("z"))`)
     assert.equal(expr("x | y"), term`BinaryExpr(NounExpr("x"), "|", NounExpr("y"))`)
     assert.equal(expr("x | y | z"), term`BinaryExpr(BinaryExpr(NounExpr("x"), "|", NounExpr("y")), "|", NounExpr("z"))`)
-    assert.equal(expr("x && y"), term`BinaryExpr(NounExpr("x"), "&&", NounExpr("y"))`)
-    assert.equal(expr("x && y && z"), term`BinaryExpr(NounExpr("x"), "&&", BinaryExpr(NounExpr("y"), "&&", NounExpr("z")))`)
-    assert.equal(expr("x || y"), term`BinaryExpr(NounExpr("x"), "||", NounExpr("y"))`)
-    assert.equal(expr("x || y || z"), term`BinaryExpr(NounExpr("x"), "||", BinaryExpr(NounExpr("y"), "||", NounExpr("z")))`)
+    assert.equal(expr("x && y"), term`AndExpr(NounExpr("x"), NounExpr("y"))`)
+    assert.equal(expr("x && y && z"), term`AndExpr(NounExpr("x"), AndExpr(NounExpr("y"), NounExpr("z")))`)
+    assert.equal(expr("x || y"), term`OrExpr(NounExpr("x"), NounExpr("y"))`)
+    assert.equal(expr("x || y || z"), term`OrExpr(NounExpr("x"), OrExpr(NounExpr("y"), NounExpr("z")))`)
     assert.equal(expr("x =~ y"), term`MatchBindExpr(NounExpr("x"), FinalPattern(NounExpr("y"), null))`)
     assert.equal(expr("x && y || z"),  expr("(x && y) || z"))
     assert.equal(expr("x || y && z"),  expr("x || (y && z)"))
@@ -1550,7 +1567,7 @@ def test_Infix(assert):
     assert.equal(expr("x..y <=> a..!b"),  expr("(x..y) <=> (a..!b)"))
     assert.equal(expr("a << b..y >> z"),  expr("(a << b) .. (y >> z)"))
     assert.equal(expr("x.y() :List[Int] > a..!b"),
-                     expr("(x.y() :List[Int]) > a..!b"))
+                 expr("(x.y() :List[Int]) > a..!b"))
     assert.equal(expr("a + b >> z"),  expr("(a + b) >> z"))
     assert.equal(expr("a >> b + z"),  expr("a >> (b + z)"))
     assert.equal(expr("a + b * c"), expr("a + (b * c)"))
