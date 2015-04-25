@@ -137,7 +137,7 @@ def getExports(scope, used):
 
 def union(scopes, result=StaticScope()):
     for sc in scopes:
-        if sc:
+        if sc and not isinstance(sc, list):
             result = result.add(sc)
     return result
 
