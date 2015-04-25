@@ -291,7 +291,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
             else if (currentChar == '$' && peekChar() == '\\'):
                 # it's a character constant like $\u2603 or a line continuation like $\
                 advance()
-                def cc := charConstant()
+                def cc := charConstant(fail)
                 if (cc != null):
                     buf.push(cc)
             else:
@@ -326,12 +326,12 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
     def consumeWhitespaceAndComments():
         var spaces := skipSpaces()
         while (currentChar == '\n'):
-            queuedTokens.insert(0, leaf("EOL"))
-            startToken()
+            queuedTokens.insert(0, composite("EOL", null, input.slice(position, position + 1).getSpan()))
             advance()
             spaces := skipSpaces()
             if (currentChar == '#'):
                 queuedTokens.insert(0, consumeComment())
+                startToken()
                 spaces := null
         return spaces
 
