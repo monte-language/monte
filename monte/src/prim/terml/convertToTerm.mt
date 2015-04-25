@@ -32,15 +32,20 @@ def convertToTerm(val, ej) as DeepFrozen:
         return t
     switch (val):
         match v :List:
-            def l := [convertToTerm(item, ej) for item in v]
+            def ts := [].diverge()
+            for item in v:
+               ts.push(convertToTerm(item, ej))
+            def l := ts.snapshot()
             return makeTerm(makeTag(null, ".tuple.", Any), null, l, null)
         # match v :set:
-        #   return mkt(".bag.", null, [convertToTerm(item) for item in v])
+        #   return mkt(".bag.", null, [for item in (v) convertToTerm(item)])
         match m :Map:
+            def mm := [].diverge()
+            for k => v in m:
+                mm.push(makeTerm(makeTag(null, ".attr.", Any), null, [convertToTerm(k, ej),
+                       convertToTerm(v, ej)], null))
             return makeTerm(makeTag(null, ".bag.", Any), null,
-                       [makeTerm(makeTag(null, ".attr.", Any), null, [convertToTerm(k, ej),
-                       convertToTerm(v, ej)], null)
-                        for k => v in m], null)
+                       mm.snapshot(), null)
         match _:
             throw.eject(ej, `Could not coerce $val to term`)
 

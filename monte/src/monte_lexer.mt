@@ -175,7 +175,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
         if (currentChar == '\\'):
             def nex := advance()
             if (nex == 'U'):
-                def hexstr := __makeString.fromChars([advance() for _ in 0..!8])
+                def hexstr := __makeString.fromChars([advance(), advance(), advance(), advance(), advance(), advance(), advance(), advance(), advance()])
                 def v
                 try:
                     bind v := __makeInt(hexstr, 16)
@@ -184,7 +184,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
                 advance()
                 return __makeCharacter(v)
             if (nex == 'u'):
-                def hexstr := __makeString.fromChars([advance() for _ in 0..!4])
+                def hexstr := __makeString.fromChars([advance(), advance(), advance(), advance()])
                 def v
                 try:
                     bind v := __makeInt(hexstr, 16)
@@ -707,7 +707,7 @@ object makeMonteLexer:
 
 def lex(s):
     def l := makeMonteLexer(s)
-    def toks := [t for t in l]
+    def toks := __makeList.fromIterable(l)
     if ((def err := l.getSyntaxError()) != null):
         throw(err)
     if (toks.size() > 0 && toks.last().getTag().getName() == "EOL"):
