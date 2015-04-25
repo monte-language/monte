@@ -150,7 +150,7 @@ def transformAll(nodes, f):
     return results.snapshot()
 
 def isIdentifier(name):
-    if (MONTE_KEYWORDS.contains(name)):
+    if (MONTE_KEYWORDS.contains(name.toLowerCase())):
         return false
     return idStart(name[0]) && all(name.slice(1), idPart)
 
@@ -312,6 +312,8 @@ def makeSeqExpr(exprs, span):
             if (priority > priorities["braceExpr"]):
                 out.print("(")
             var first := true
+            if (priorities["braceExpr"] >= priority && exprs == []):
+                out.print("pass")
             for e in exprs:
                 if (!first):
                     out.println("")
@@ -1030,7 +1032,7 @@ def makeFunctionExpr(patterns, body, span):
         to subPrintOn(out, priority):
             printExprSuiteOn(fn {
                 printListOn("fn ", patterns, ", ", "", out, priorities["pattern"])
-            }, body, false, out, priority)
+            }, body, false, out, priorities["assign"])
     return astWrapper(functionExpr, makeFunctionExpr, [patterns, body], span,
         scope, term`FunctionExpr`, fn f {[transformAll(patterns, f), body.transform(f)]})
 
@@ -2514,7 +2516,7 @@ def test_functionExpr(assert):
     def body := makeNounExpr("c", null)
     def expr := makeFunctionExpr(patterns, body, null)
     assert.equal(expr._uncall(), [makeFunctionExpr, "run", [patterns, body, null]])
-    assert.equal(M.toString(expr), "fn a, b:\n    c")
+    assert.equal(M.toString(expr), "fn a, b {\n    c\n}")
     assert.equal(M.toString(makeDefExpr(makeIgnorePattern(null, null), null, expr, null)),
                  "def _ := fn a, b {\n    c\n}")
 

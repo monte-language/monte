@@ -86,7 +86,7 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
             nestLevel -= 1
 
     def inStatementPosition():
-        return ["{", "INDENT", null].contains(braceStack.last()[0])
+        return ["INDENT", null].contains(braceStack.last()[0])
 
     def skipSpaces():
         if (atEnd()):
@@ -687,6 +687,8 @@ def _makeMonteLexer(input, braceStack, var nestLevel):
                     return [count += 1, t]
                 catch msg:
                     errorMessage := msg
+                    if (msg == null && !atEnd()):
+                        throw.eject(ej, [`Trailing garbage: ${input.slice(position, input.size())}`, spanAtPoint()])
                     throw.eject(ej, msg)
             finally:
                 startPos := -1
