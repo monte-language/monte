@@ -12,7 +12,7 @@
 (defun monte-get-previous-line-indent ()
   (save-excursion
     (forward-line -1)
-    (while (string-match (thing-at-point 'line) "^ *$")
+    (while (string-match "^ +$" (thing-at-point 'line))
       (forward-line -1))
     (current-indentation)))
 
