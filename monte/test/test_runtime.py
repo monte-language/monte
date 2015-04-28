@@ -126,7 +126,7 @@ class EvalTest(unittest.TestCase):
         self.assertRaises(RuntimeError, monte_eval, 'switch (2) { match ==0 { 1} match ==1 { 2}}')
 
     def test_coerce(self):
-        self.assertEqual(monte_eval('true :boolean'), true)
+        self.assertEqual(monte_eval('true :Bool'), true)
 
     def test_simple_quasiParser_value(self):
         self.assertEqual(monte_eval('def x := 42; `($x)`'), String(u"(42)"))
@@ -320,7 +320,7 @@ class AuditingTest(unittest.TestCase):
             monte_eval,
             dedent("""
                 object approver:
-                    to audit(audition) :any:
+                    to audit(audition) :Any:
                         return 43
                 object auditSample implements approver {}
                 __auditedBy(approver, auditSample)
@@ -380,11 +380,11 @@ class BindingGuardTest(unittest.TestCase):
                 """
                 def FinalSlot := __makeFinalSlot.asType()
                 def x := 1
-                object doesNotGuardX implements CheckGuard["x", FinalSlot[int]]:
+                object doesNotGuardX implements CheckGuard["x", FinalSlot[Int]]:
                     to f():
                         return x
                 """), self.scope)
-        self.assertEqual(str(err), "x: expected FinalSlot[int], got FinalSlot[any]")
+        self.assertEqual(str(err), "x: expected FinalSlot[Int], got FinalSlot[Any]")
 
     def test_doesNotMention(self):
         err = self.assertRaises(
@@ -394,7 +394,7 @@ class BindingGuardTest(unittest.TestCase):
                 """
                 def FinalSlot := __makeFinalSlot.asType()
                 def x := 1
-                object doesNotMentionX implements CheckGuard["x", FinalSlot[int]]:
+                object doesNotMentionX implements CheckGuard["x", FinalSlot[Int]]:
                     to f():
                         return 0
                 """), self.scope)
@@ -404,8 +404,8 @@ class BindingGuardTest(unittest.TestCase):
         monte_eval(dedent(
             """
             def FinalSlot := __makeFinalSlot.asType()
-            def x :int := 1
-            object guardsX implements CheckGuard["x", FinalSlot[int]]:
+            def x :Int := 1
+            object guardsX implements CheckGuard["x", FinalSlot[Int]]:
                 to f():
                     return x
             """), self.scope)
@@ -415,7 +415,7 @@ class BindingGuardTest(unittest.TestCase):
             """
             def VarSlot := __makeVarSlot.asType()
             var x := 1
-            object guardsX implements CheckGuard["x", VarSlot[any]]:
+            object guardsX implements CheckGuard["x", VarSlot[Any]]:
                 to f():
                     return x
             """), self.scope)
@@ -424,8 +424,8 @@ class BindingGuardTest(unittest.TestCase):
         monte_eval(dedent(
             """
             def VarSlot := __makeVarSlot.asType()
-            var x :int := 1
-            object guardsX implements CheckGuard["x", VarSlot[int]]:
+            var x :Int := 1
+            object guardsX implements CheckGuard["x", VarSlot[Int]]:
                 to f():
                     return x
             """), self.scope)
@@ -435,7 +435,7 @@ class BindingGuardTest(unittest.TestCase):
             """
             def FinalSlot := __makeFinalSlot.asType()
             object x {}
-            object guardsX implements CheckGuard["x", FinalSlot[any]]:
+            object guardsX implements CheckGuard["x", FinalSlot[Any]]:
                 to f():
                     return x
             """), self.scope)
@@ -458,7 +458,7 @@ class BindingGuardTest(unittest.TestCase):
             """
             def s := __makeFinalSlot(1)
             def &x := s
-            object guardsX implements CheckGuard["x", any]:
+            object guardsX implements CheckGuard["x", Any]:
                 to f():
                     return x
             """), self.scope)
@@ -467,7 +467,7 @@ class BindingGuardTest(unittest.TestCase):
         monte_eval(dedent(
             """
             def s := __makeFinalSlot(1)
-            object g extends any {}
+            object g extends Any {}
             def &x :g := s
             object guardsX implements CheckGuard["x", g]:
                 to f():
@@ -660,25 +660,25 @@ class FlexListTest(unittest.TestCase):
         self.assertRaises(
             RuntimeError,
             monte_eval,
-            "def x := [1, 4, 3, 'b'].diverge(int)")
+            "def x := [1, 4, 3, 'b'].diverge(Int)")
 
         self.assertEqual(monte_eval(
-            "def x := [1, 4, 3].diverge(int); x[1] := 5; x.snapshot() == [1, 5, 3]"),
+            "def x := [1, 4, 3].diverge(Int); x[1] := 5; x.snapshot() == [1, 5, 3]"),
                          true)
 
         self.assertEqual(monte_eval(
-            "def x := [1, 4, 3].diverge(int); x.push(5); x.snapshot() == [1, 4, 3, 5]"),
+            "def x := [1, 4, 3].diverge(Int); x.push(5); x.snapshot() == [1, 4, 3, 5]"),
                          true)
 
         self.assertRaises(
             RuntimeError,
             monte_eval,
-            "def x := [1, 4, 3].diverge(int); x[1] := 'b'")
+            "def x := [1, 4, 3].diverge(Int); x[1] := 'b'")
 
         self.assertRaises(
             RuntimeError,
             monte_eval,
-            "def x := [1, 4, 3].diverge(int); x.push('b')")
+            "def x := [1, 4, 3].diverge(Int); x.push('b')")
 
 
 class ConstMapTests(unittest.TestCase):
@@ -845,26 +845,26 @@ class FlexMapTests(unittest.TestCase):
         self.assertRaises(
             RuntimeError,
             monte_eval,
-            "def x := [1 => 4, 3 => 'b'].diverge(int, char)")
+            "def x := [1 => 4, 3 => 'b'].diverge(Int, Char)")
 
         self.assertRaises(
             RuntimeError,
             monte_eval,
-            "def x := [3.5 => 'a', 3 => 'b'].diverge(int, char)")
+            "def x := [3.5 => 'a', 3 => 'b'].diverge(Int, Char)")
 
         self.assertEqual(monte_eval(
-            "def x := [4 => 'a', 3 => 'b'].diverge(int, char); x[5] := 'c'; x.snapshot() == [4 => 'a', 3 => 'b', 5 => 'c']"),
+            "def x := [4 => 'a', 3 => 'b'].diverge(Int, Char); x[5] := 'c'; x.snapshot() == [4 => 'a', 3 => 'b', 5 => 'c']"),
                          true)
 
         self.assertRaises(
             RuntimeError,
             monte_eval,
-            "def x := [4 => 'a', 3 => 'b'].diverge(int, char); x[4.5] := 'c'")
+            "def x := [4 => 'a', 3 => 'b'].diverge(Int, Char); x[4.5] := 'c'")
 
         self.assertRaises(
             RuntimeError,
             monte_eval,
-            "def x := [4 => 'a', 3 => 'b'].diverge(int, char); x[5] := 9")
+            "def x := [4 => 'a', 3 => 'b'].diverge(Int, Char); x[5] := 9")
 
 
 class ListGuardTests(unittest.TestCase):
@@ -878,13 +878,13 @@ class ListGuardTests(unittest.TestCase):
 
     def test_guardConst(self):
         self.assertEqual(monte_eval(
-            "escape e {def x :List[int] exit e := [1 => 2]; 1} catch v {2}"),
+            "escape e {def x :List[Int] exit e := [1 => 2]; 1} catch v {2}"),
                          Integer(2))
         self.assertEqual(monte_eval(
-            "escape e {def x :List[int] exit e := [3, 'b']; 1} catch v {2}"),
+            "escape e {def x :List[Int] exit e := [3, 'b']; 1} catch v {2}"),
                          Integer(2))
         self.assertEqual(monte_eval(
-            "escape e {def x :List[int] exit e := [3, 4]; 1} catch v {2}"),
+            "escape e {def x :List[Int] exit e := [3, 4]; 1} catch v {2}"),
                          Integer(1))
 
     def test_var(self):
@@ -892,7 +892,7 @@ class ListGuardTests(unittest.TestCase):
             "escape e {def x :List exit e := [3, 'b'].diverge(); 1} catch v {2}"),
                          Integer(2))
         self.assertEqual(monte_eval(
-            "escape e {def x :List[int] exit e := [3, 4].diverge(); 1} catch v {2}"),
+            "escape e {def x :List[Int] exit e := [3, 4].diverge(); 1} catch v {2}"),
                          Integer(2))
 
 
@@ -907,16 +907,16 @@ class MapGuardTests(unittest.TestCase):
 
     def test_guardConst(self):
         self.assertEqual(monte_eval(
-            "escape e {def x :Map[int, char] exit e := [1 => 'b', 2 => 'x']; 1} catch v {2}"),
+            "escape e {def x :Map[Int, Char] exit e := [1 => 'b', 2 => 'x']; 1} catch v {2}"),
                          Integer(1))
         self.assertEqual(monte_eval(
-            "escape e {def x :Map[int, char] exit e := [1 => 2, 3 => 'x']; 1} catch v {2}"),
+            "escape e {def x :Map[Int, Char] exit e := [1 => 2, 3 => 'x']; 1} catch v {2}"),
                          Integer(2))
         self.assertEqual(monte_eval(
-            "escape e {def x :Map[int, char] exit e := ['a' => 'b']; 1} catch v {2}"),
+            "escape e {def x :Map[Int, Char] exit e := ['a' => 'b']; 1} catch v {2}"),
                          Integer(2))
         self.assertEqual(monte_eval(
-            "escape e {def x :Map[int, char] exit e := 3; 1} catch v {2}"),
+            "escape e {def x :Map[Int, Char] exit e := 3; 1} catch v {2}"),
                          Integer(2))
 
     def test_var(self):
@@ -924,7 +924,7 @@ class MapGuardTests(unittest.TestCase):
             "escape e {def x :Map exit e := [3 => 'b'].diverge(); 1} catch v {2}"),
                          Integer(2))
         self.assertEqual(monte_eval(
-            "escape e {def x :Map[int, char] exit e := [3 => 'b'].diverge(); 1} catch v {2}"),
+            "escape e {def x :Map[Int, Char] exit e := [3 => 'b'].diverge(); 1} catch v {2}"),
                          Integer(2))
 
 class SameGuardTests(unittest.TestCase):
@@ -942,25 +942,25 @@ class SameGuardTests(unittest.TestCase):
 
 class SubrangeGuardTests(unittest.TestCase):
     def test_deepFrozen(self):
-        self.assertEqual(monte_eval("SubrangeGuard[int] =~ _ :DeepFrozen"), true)
-        self.assertEqual(monte_eval("Selfless.passes(SubrangeGuard[int])"), true)
+        self.assertEqual(monte_eval("SubrangeGuard[Int] =~ _ :DeepFrozen"), true)
+        self.assertEqual(monte_eval("Selfless.passes(SubrangeGuard[Int])"), true)
 
     def test_fail(self):
-        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] {}} catch p {p}")),
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[Int] {}} catch p {p}")),
                          "__main$x has no `coerce` method")
-        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) {return a}}} catch p {p}")),
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[Int] { to coerce(a, b) {return a}}} catch p {p}")),
                          "__main$x does not have a noun as its `coerce` result guard")
-        self.assertEqual(str(monte_eval("object z as DeepFrozen {}; try {object x implements SubrangeGuard[int] { to coerce(a, b) :z {return a}}} catch p {p}")),
+        self.assertEqual(str(monte_eval("object z as DeepFrozen {}; try {object x implements SubrangeGuard[Int] { to coerce(a, b) :z {return a}}} catch p {p}")),
                          "__main$x does not have a determinable result guard, but <& z> :FinalSlot[<DeepFrozen>]")
 
-        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) :boolean {return a}}} catch p {p}")),
-                         "__main$x does not have a result guard implying int, but boolean")
-        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[int] { to coerce(a, b) :(1 + 1) {return a}}} catch p {p}")),
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[Int] { to coerce(a, b) :Bool {return a}}} catch p {p}")),
+                         "__main$x does not have a result guard implying Int, but Bool")
+        self.assertEqual(str(monte_eval("try {object x implements SubrangeGuard[Int] { to coerce(a, b) :(1 + 1) {return a}}} catch p {p}")),
                          "__main$x does not have a noun as its `coerce` result guard")
 
     def test_success(self):
-        self.assertEqual(monte_eval("object x implements SubrangeGuard[int] { to coerce(a, b) :int {return 42}};def y :x := 3; y"), Integer(42))
-        self.assertEqual(monte_eval("object x implements SubrangeGuard[DeepFrozen] { to coerce(a, b) :int {return 42}}; def y :x := 3; y"), Integer(42))
+        self.assertEqual(monte_eval("object x implements SubrangeGuard[Int] { to coerce(a, b) :Int {return 42}};def y :x := 3; y"), Integer(42))
+        self.assertEqual(monte_eval("object x implements SubrangeGuard[DeepFrozen] { to coerce(a, b) :Int {return 42}}; def y :x := 3; y"), Integer(42))
 
 
 class DeepFrozenGuardTests(unittest.TestCase):
@@ -984,7 +984,7 @@ class DeepFrozenGuardTests(unittest.TestCase):
         self.assertEqual(monte_eval(dedent("""
             var w := 0
             def x := 1
-            def y :int := 1
+            def y :Int := 1
             object foo implements DeepFrozen:
                 to doStuff(z):
                     return y + z
@@ -1001,7 +1001,7 @@ class DeepFrozenGuardTests(unittest.TestCase):
             foo =~ _ :DeepFrozen
             """)), true)
         self.assertEqual(monte_eval(dedent("""
-            def baz :List[int] := []
+            def baz :List[Int] := []
             object foo implements DeepFrozen:
                 to doStuff(z):
                     return baz
@@ -1009,7 +1009,7 @@ class DeepFrozenGuardTests(unittest.TestCase):
             """)), true)
 
         self.assertEqual(monte_eval(dedent("""
-            def blee :int := 3
+            def blee :Int := 3
             def baz :Same[blee] := blee
             object foo implements DeepFrozen:
                 to doStuff(z):
@@ -1024,8 +1024,8 @@ class DeepFrozenGuardTests(unittest.TestCase):
             RuntimeError,
             monte_eval,
             dedent("""
-            var x :int := 0
-            def y :int := 1
+            var x :Int := 0
+            def y :Int := 1
             object foo implements DeepFrozen:
                 to doStuff(z):
                     return x + y
@@ -1058,15 +1058,15 @@ class DeepFrozenGuardTests(unittest.TestCase):
 class IntegerGuardTests(unittest.TestCase):
 
     def test_type(self):
-        monte_eval('def x :int := 1')
-        self.assertRaises(RuntimeError, monte_eval, 'def x :int := "foo"')
+        monte_eval('def x :Int := 1')
+        self.assertRaises(RuntimeError, monte_eval, 'def x :Int := "foo"')
 
 
 class FloatGuardTests(unittest.TestCase):
 
     def test_type(self):
-        monte_eval('def x :float := 1.0')
-        self.assertRaises(RuntimeError, monte_eval, 'def x :float := "foo"')
+        monte_eval('def x :Double := 1.0')
+        self.assertRaises(RuntimeError, monte_eval, 'def x :Double := "foo"')
 
 class TransparentGuardTests(unittest.TestCase):
     def test_reject(self):
