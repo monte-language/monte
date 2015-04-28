@@ -480,9 +480,9 @@ MessageDesc(@doco @type @verb @paramDescs @guard)
      -> t.HideExpr(mcall("__makeMessageDesc", "run",
                          doco and t.LiteralExpr(doco), t.LiteralExpr(verb),
                          mcall("__makeList", "run", *paramDescs),
-                         guard or t.NounExpr("void")))
+                         guard or t.NounExpr("Void")))
 
-ParamDesc(name:name @guard) -> mcall("__makeParamDesc", "run", t.LiteralExpr(name), guard or t.NounExpr("any"))
+ParamDesc(name:name @guard) -> mcall("__makeParamDesc", "run", t.LiteralExpr(name), guard or t.NounExpr("Any"))
 
 
 Lambda(@doco @patterns @block) -> t.Object(doco, t.IgnorePattern(None), [None],
