@@ -4,7 +4,7 @@ def tokenStart := 'a'..'z' | 'A'..'Z' | '_'..'_' | '$'..'$' | '.'..'.'
 
 
 def mkq(name, data):
-    return makeQFunctor(makeTag(null, name, any), data, null)
+    return makeQFunctor(makeTag(null, name, Any), data, null)
 
 object qBuilder:
     to leafInternal(tag, data, span):
@@ -110,7 +110,7 @@ def _parseTerm(lex, builder, err):
         accept(closer, fail)
         return args
     def namedTerm(name, args):
-        return builder.term(builder.leafInternal(makeTag(null, name, any), null, null), args)
+        return builder.term(builder.leafInternal(makeTag(null, name, Any), null, null), args)
     def extraTerm(fail):
         if (maybeAccept("[") != null):
             return namedTerm(".tuple.", arglist("]", fail))
@@ -231,7 +231,7 @@ object quasitermParser:
 
 def test_literal(assert):
     def mk(tag, val):
-        return makeTerm(makeTag(null, tag, any), val, [], null)
+        return makeTerm(makeTag(null, tag, Any), val, [], null)
     assert.equal(parseTerm("0xDECAFC0FFEEBAD"), mk(".int.", 0xDECAFC0FFEEBAD))
     assert.equal(parseTerm("3.14159E17"), mk(".float64.", 3.14159E17))
     assert.equal(parseTerm("1e9"), mk(".float64.", 1e9))
@@ -251,7 +251,7 @@ def test_literal(assert):
 
 def test_simpleTerm(assert):
     def mk(name, args):
-        return makeTerm(makeTag(null, name, any), null, args, null)
+        return makeTerm(makeTag(null, name, Any), null, args, null)
     assert.equal(parseTerm("x"), mk("x", []))
     assert.equal(parseTerm("x()"), mk("x", []))
     assert.equal(parseTerm("x(y)"), mk("x", [mk("y", [])]))
