@@ -9,7 +9,7 @@ from monte.runtime.guards.base import (PythonTypeGuard, Guard, PrintFQN,
 
 
 class VoidGuard(PrintFQN, Guard):
-    _m_fqn = "void"
+    _m_fqn = "Void"
     _m_auditorStamps = (deepFrozenGuard,)
     def _subCoerce(self, specimen, ej):
         if specimen in [None, null]:
@@ -20,7 +20,7 @@ voidGuard = VoidGuard()
 
 
 class BooleanGuard(PrintFQN, Guard):
-    _m_fqn = "boolean"
+    _m_fqn = "Bool"
     _m_auditorStamps = (deepFrozenGuard,)
     def _subCoerce(self, specimen, ej):
         if specimen is true or specimen is false:
@@ -35,7 +35,7 @@ booleanGuard = BooleanGuard()
 
 
 class IntegerGuard(PrintFQN, Guard):
-    _m_fqn = "int"
+    _m_fqn = "Int"
     _m_auditorStamps = (deepFrozenGuard,)
 
     def _subCoerce(self, specimen, ej):
@@ -48,7 +48,7 @@ intGuard = IntegerGuard()
 
 
 class FloatGuard(PrintFQN, Guard):
-    _m_fqn = "float"
+    _m_fqn = "Double"
     _m_auditorStamps = (deepFrozenGuard,)
 
     def _subCoerce(self, specimen, ej):
@@ -62,7 +62,7 @@ class FloatGuard(PrintFQN, Guard):
 
 floatGuard = FloatGuard()
 
-charGuard = PythonTypeGuard(Character, "char")
-stringGuard = PythonTypeGuard(Twine, "Str")
-twineGuard = PythonTypeGuard(Twine, "Str")
+charGuard = PythonTypeGuard(Character, "Char")
+stringGuard = PythonTypeGuard(String, "Str")
+twineGuard = PythonTypeGuard(Twine, "Twine")
 bytesGuard = PythonTypeGuard(Bytestring, "Bytes")

@@ -162,7 +162,7 @@ class PythonTypeGuard(PrintFQN, Guard):
 
 
 class AnyGuard(PrintFQN, MonteObject):
-    _m_fqn = "any"
+    _m_fqn = "Any"
     _m_auditorStamps = (deepFrozenGuard,)
     def coerce(self, specimen, ej):
         return specimen
@@ -186,7 +186,7 @@ class UnionGuard(MonteObject):
 
     def _printOn(self, out):
         #XXX pretty printing would be nice here too
-        out.raw_print(u'any[')
+        out.raw_print(u'Any[')
         it = iter(self.guards)
         out.quote(next(it))
         for g in it:
