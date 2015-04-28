@@ -187,7 +187,7 @@ object OrderedRegionMaker as DeepFrozen:
              * Returns the start or null. The start is the least element
              * which is *in* the region.
              */
-            to getOptStart() :nullOk[myType]:
+            to getOptStart() :NullOk[myType]:
                 if (myBoundedLeft && myLen >= 1):
                     return myEdges[0]
                 else:
@@ -197,7 +197,7 @@ object OrderedRegionMaker as DeepFrozen:
              * Note that the empty region is bounded right, but it doesn't
              * have a bound
              */
-            to isBoundedRight() :boolean:
+            to isBoundedRight() :Bool:
                 return myLen % 2 == myInParity
 
             /**

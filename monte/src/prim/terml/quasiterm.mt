@@ -72,7 +72,7 @@ def matchCoerce(val, isFunctorHole, tag):
                 result := mkt("true", null, [])
             match ==false:
                 result := mkt("false", null, [])
-            match v :str:
+            match v :Str:
                 result := mkt(v, null, [])
             match _:
                 return null
@@ -193,7 +193,7 @@ def makeQFunctor(tag, data, span):
                 if (otherData == null):
                     return -1
                 if (data != otherData):
-                    if ([data, otherData] =~ [_ :str, _ :str]):
+                    if ([data, otherData] =~ [_ :Str, _ :Str]):
                         if (data.bare() != otherData.bare()):
                             return -1
             if (max >= 1):

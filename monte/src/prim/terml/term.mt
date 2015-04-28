@@ -106,7 +106,7 @@ object makeTerm as DeepFrozen:
                                 label := "-%Infinity"
                         else:
                             label := `$data`
-                    match s :str:
+                    match s :Str:
                         label := s.quote().replace("\n", "\\n")
                     match _:
                         label := M.toQuote(data)

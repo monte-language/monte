@@ -1,10 +1,10 @@
 module unittest
 export (makeMaths)
-def makeMaths(a :int, b :int):
+def makeMaths(a :Int, b :Int):
     return object Maths:
-        to add() :int:
+        to add() :Int:
             return a + b
-        to subtract() :int:
+        to subtract() :Int:
             return a - b
 
 def mathTests(assert):
