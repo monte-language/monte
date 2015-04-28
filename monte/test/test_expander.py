@@ -902,7 +902,7 @@ class ExpanderTest(unittest.TestCase):
                                      "run",
                                      [["LiteralExpr", "c"],
                                       ["NounExpr", "int"]]]]],
-                                  ["NounExpr", "void"]]]],
+                                  ["NounExpr", "Void"]]]],
                                ["HideExpr",
                                 ["MethodCallExpr",
                                  ["NounExpr", "__makeMessageDesc"],
@@ -915,7 +915,7 @@ class ExpanderTest(unittest.TestCase):
                                      ["NounExpr", "__makeParamDesc"],
                                      "run",
                                      [["LiteralExpr", "d"],
-                                      ["NounExpr", "any"]]]]],
+                                      ["NounExpr", "Any"]]]]],
                                   ["NounExpr", "float64"]]]]
                                ]]]]]])
 
