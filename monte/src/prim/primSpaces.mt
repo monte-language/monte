@@ -1,9 +1,9 @@
 module OrderedSpaceMaker
 export (charSpace, intSpace, floatSpace, __makeOrderedSpace)
 
-def charSpace := OrderedSpaceMaker(Char, "char")
-def intSpace := OrderedSpaceMaker(Int, "int")
-def floatSpace := OrderedSpaceMaker(Double, "float")
+def charSpace := OrderedSpaceMaker(Char, "Char")
+def intSpace := OrderedSpaceMaker(Int, "Int")
+def floatSpace := OrderedSpaceMaker(Double, "Double")
 
 object __makeOrderedSpace extends OrderedSpaceMaker:
     /**

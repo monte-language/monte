@@ -32,7 +32,7 @@ object makeTag as DeepFrozen:
             to getDataGuard():
                 return dataGuard
 
-            to isTagForData(data) :boolean:
+            to isTagForData(data) :Bool:
                 if (data == null):
                     return true
                 if (dataGuard == null):
@@ -63,7 +63,7 @@ def optMakeTagFromData(val, mkt):
             return null
 
 def testPrint(assert):
-    def t1 := makeTag(1, "foo", int)
+    def t1 := makeTag(1, "foo", Int)
     assert.equal(M.toString(t1), "<foo:1:int>")
 
     def t2 := makeTag(null, "foo", null)
