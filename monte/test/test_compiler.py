@@ -67,9 +67,9 @@ class CompilerTest(unittest.TestCase):
         """)
 
     def test_guardedVar(self):
-        self.eq_("var x :int := 1",
+        self.eq_("var x :Int := 1",
         """
-        _g_guard1 = _m_outerScope["int"]
+        _g_guard1 = _m_outerScope["Int"]
         _g_x2 = _monte.wrap(1)
         x = _monte.VarSlot(_g_guard1, _g_x2, _monte.throw)
         _g_x2
@@ -89,9 +89,9 @@ class CompilerTest(unittest.TestCase):
         self.assertRaises(CompileError, ecompile, "x := 2", {})
 
     def test_guardpattern(self):
-        self.eq_("def x :float := 1",
+        self.eq_("def x :Double := 1",
                  """
-                 _g_guard1 = _m_outerScope["float"]
+                 _g_guard1 = _m_outerScope["Double"]
                  x = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
                  x
                  """)
@@ -109,7 +109,7 @@ class CompilerTest(unittest.TestCase):
                  _g_total_list1
                  """)
 
-        self.eq_('def [x :float, y :str, z] := "foo"',
+        self.eq_('def [x :Double, y :Str, z] := "foo"',
                  """
                  _g_total_list1 = _monte.wrap(u'foo')
                  try:
@@ -117,15 +117,15 @@ class CompilerTest(unittest.TestCase):
                  except ValueError, _g_e5:
                      _monte.throw(_g_e5)
                      raise RuntimeError("Ejector did not exit")
-                 _g_guard6 = _m_outerScope["float"]
+                 _g_guard6 = _m_outerScope["Double"]
                  x = _g_guard6.coerce(_g_list2, _monte.throw)
-                 _g_guard7 = _m_outerScope["str"]
+                 _g_guard7 = _m_outerScope["Str"]
                  y = _g_guard7.coerce(_g_list3, _monte.throw)
                  z = _g_list4
                  _g_total_list1
                  """)
 
-        self.eq_('def ej := 1; def [x :float, y :str, z] exit ej := "foo"',
+        self.eq_('def ej := 1; def [x :Double, y :Str, z] exit ej := "foo"',
                  """
                  ej = _monte.wrap(1)
                  _g_total_list1 = _monte.wrap(u'foo')
@@ -134,9 +134,9 @@ class CompilerTest(unittest.TestCase):
                  except ValueError, _g_e5:
                      ej(_g_e5)
                      raise RuntimeError("Ejector did not exit")
-                 _g_guard6 = _m_outerScope["float"]
+                 _g_guard6 = _m_outerScope["Double"]
                  x = _g_guard6.coerce(_g_list2, ej)
-                 _g_guard7 = _m_outerScope["str"]
+                 _g_guard7 = _m_outerScope["Str"]
                  y = _g_guard7.coerce(_g_list3, ej)
                  z = _g_list4
                  _g_total_list1
@@ -309,9 +309,9 @@ class CompilerTest(unittest.TestCase):
         self.eq_(
             '''
             object foo {
-                method baz(x :int, y) {
+                method baz(x :Int, y) {
                     def a := 2
-                    def b :(float >= 0) := 3.0
+                    def b :(Double >= 0) := 3.0
                     object boz {
                         method blee() { b.foo(a + x) }
                     }
@@ -336,10 +336,10 @@ class CompilerTest(unittest.TestCase):
              class _m_foo_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo'
                  def baz(foo, _g_Final1, y):
-                     _g_guard2 = _m_outerScope["int"]
+                     _g_guard2 = _m_outerScope["Int"]
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      a = _monte.wrap(2)
-                     _g_guard3 = _m_outerScope["__comparer"].geq(_m_outerScope["float"], _monte.wrap(0))
+                     _g_guard3 = _m_outerScope["__comparer"].geq(_m_outerScope["Double"], _monte.wrap(0))
                      b = _g_guard3.coerce(_monte.wrap(3.0), _monte.throw)
                      boz = _m_boz_Script((_monte.FinalSlot(a, _monte.null, unsafe=True), _monte.FinalSlot.asType().get(_monte.null)), (_monte.FinalSlot(b, _g_guard3, unsafe=True), _monte.FinalSlot.asType().get(_g_guard3)), (_monte.FinalSlot(x, _g_guard2, unsafe=True), _monte.FinalSlot.asType().get(_g_guard2)))
                      return boz
@@ -352,9 +352,9 @@ class CompilerTest(unittest.TestCase):
         self.eq_(
             '''
             object foo {
-                method baz(x :int, y) {
+                method baz(x :Int, y) {
                     var a := 1
-                    var b :int := 0
+                    var b :Int := 0
                     object left {
                         method inc() { a += 1; b }
                     }
@@ -398,11 +398,11 @@ class CompilerTest(unittest.TestCase):
              class _m_foo_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo'
                  def baz(foo, _g_Final1, y):
-                     _g_guard2 = _m_outerScope["int"]
+                     _g_guard2 = _m_outerScope["Int"]
                      x = _g_guard2.coerce(_g_Final1, _monte.throw)
                      _g_a3 = _monte.wrap(1)
                      a = _monte.VarSlot(_monte.null, _g_a3, _monte.throw)
-                     _g_guard4 = _m_outerScope["int"]
+                     _g_guard4 = _m_outerScope["Int"]
                      _g_b5 = _monte.wrap(0)
                      b = _monte.VarSlot(_g_guard4, _g_b5, _monte.throw)
                      left = _m_left_Script((a, _monte.VarSlot.asType().get(_monte.null)), (b, _monte.VarSlot.asType().get(_g_guard4)))
@@ -499,9 +499,9 @@ class CompilerTest(unittest.TestCase):
     def test_auditBindingGuards(self):
         self.eq_(
             '''
-            def x :int := 1
+            def x :Int := 1
             def y := 2
-            var z :float := 0
+            var z :Double := 0
             def &w := __makeFinalSlot(9)
             object foo implements DeepFrozen, Data {
                 method run() {
@@ -535,10 +535,10 @@ class CompilerTest(unittest.TestCase):
 
                 _m_objectExpr = "1 ;+##foo '# +#*DeepFrozen+#$Data2 '!3 ##run'  .+#*__makeList##run'$+#!x+#!y+#!z+#!w' "
 
-            _g_guard1 = _m_outerScope["int"]
+            _g_guard1 = _m_outerScope["Int"]
             x = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
             y = _monte.wrap(2)
-            _g_guard2 = _m_outerScope["float"]
+            _g_guard2 = _m_outerScope["Double"]
             _g_z3 = _monte.wrap(0)
             z = _monte.VarSlot(_g_guard2, _g_z3, _monte.throw)
             w = _m_outerScope["__slotToBinding"](_m_outerScope["__makeFinalSlot"].run(_monte.wrap(9)), _monte.wrapEjector(_monte.throw))
@@ -597,7 +597,7 @@ class CompilerTest(unittest.TestCase):
 
     def test_methGuard(self):
         self.eq_(
-            'object foo { method baz(x, y) :int { x }}',
+            'object foo { method baz(x, y) :Int { x }}',
              """
              class _m_foo_Script(_monte.MonteObject):
                  _m_fqn = '__main$foo'
@@ -608,7 +608,7 @@ class CompilerTest(unittest.TestCase):
                  def baz(foo, x, y):
                      return foo._m_guardForMethod('baz').coerce(x, _monte.throw)
 
-             foo = _m_foo_Script({'baz': _m_outerScope["int"]})
+             foo = _m_foo_Script({'baz': _m_outerScope["Int"]})
              foo
              """)
 
@@ -792,7 +792,7 @@ class CompilerTest(unittest.TestCase):
     def test_metastate_empty(self):
         self.eq_(
             '''
-            def _() :any { def x := 1; return meta.getState() }()
+            def _() :Any { def x := 1; return meta.getState() }()
             ''',
             """
             class _m__g_ignore1_Script(_monte.MonteObject):
@@ -813,7 +813,7 @@ class CompilerTest(unittest.TestCase):
                         _m___return.disable()
                     return _g_ignore1._m_guardForMethod('run').coerce(_g_escape4, _monte.throw)
 
-            _g_ignore2 = _m__g_ignore1_Script({'run': _m_outerScope["any"]})
+            _g_ignore2 = _m__g_ignore1_Script({'run': _m_outerScope["Any"]})
             _g_ignore2.run()
             """)
 
@@ -1044,12 +1044,12 @@ class CompilerTest(unittest.TestCase):
     def test_bindingpatt(self):
         self.eq_(
             '''
-            def a :int := 1
+            def a :Int := 1
             def &&x := &&a
             x
             ''',
             """
-            _g_guard1 = _m_outerScope["int"]
+            _g_guard1 = _m_outerScope["Int"]
             a = _g_guard1.coerce(_monte.wrap(1), _monte.throw)
             x = _monte.Binding(_monte.FinalSlot(a), _monte.FinalSlot.asType().get(_g_guard1))
             x.slot.get()
