@@ -1187,13 +1187,13 @@ def specimens := [
              y
      ",
      "
-     {def specimen__1 := x
+     def specimen__1 := x
      escape ej__2:
          def [a, b] exit ej__2 := specimen__1
          c
      catch failure__3:
          escape ej__4:
-             def ej__4 exit specimen__1 := y
+             def y exit ej__4 := specimen__1
          catch failure__5:
              __switchFailed.run(specimen__1, failure__3, failure__5)
      "],
@@ -1203,7 +1203,7 @@ def specimens := [
              'a'
      ",
      "
-     {def specimen__1 := x
+     def specimen__1 := x
      escape ej__2:
          def via (__matchSame.run(1)) exit ej__2 := specimen__1
          'a'
