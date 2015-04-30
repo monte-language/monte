@@ -216,6 +216,8 @@ def astWrapper(node, maker, args, span, scope, termFunctor, transformArgs):
             return scope
         to getSpan():
             return span
+        to getNodeName():
+            return termFunctor.getTag().getName()
         to asTerm():
             def termit(subnode, maker, args, span):
                 return subnode.asTerm()

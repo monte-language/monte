@@ -49,9 +49,9 @@ def parseMonte(lex, builder, mode, err):
          _toks.push(lex.next(__break)[1])
     catch p:
         if (p != null):
-            traceln(`lexer stopped: $p`)
             throw.eject(err, p)
     def tokens := _toks.snapshot()
+    traceln(`tokens: $tokens ${tokens.size()}`)
     var dollarHoleValueIndex := -1
     var atHoleValueIndex := -1
     var position := -1
@@ -945,7 +945,7 @@ def parseMonte(lex, builder, mode, err):
         if (tag == "("):
             advance(ej)
             acceptEOLs()
-            def e := expr(ej)
+            def e := seq(false, ej)
             acceptEOLs()
             acceptTag(")", ej)
             return e
@@ -957,7 +957,7 @@ def parseMonte(lex, builder, mode, err):
             if (peekTag() == "}"):
                 advance(ej)
                 return builder.HideExpr(builder.SeqExpr([], null), spanFrom(spanStart))
-            def e := expr(ej)
+            def e := seq(false, ej)
             acceptEOLs()
             acceptTag("}", ej)
             return builder.HideExpr(e, spanFrom(spanStart))
@@ -1008,7 +1008,7 @@ def parseMonte(lex, builder, mode, err):
 
         def callish(methodish, curryish):
             def verb := if (peekTag() == ".String.") {
-                advance(ej)
+                advance(ej).getData()
             } else {
                 def t := acceptTag("IDENTIFIER", ej)
                 __makeString.fromString(t.getData(), t.getSpan())
