@@ -478,7 +478,7 @@ def parseMonte(lex, builder, mode, err):
     def methBody(indent, ej):
         acceptEOLs()
         def doco := if (peekTag() == ".String.") {
-            advance(ej)
+            advance(ej).getData()
         } else {
             null
         }
@@ -526,7 +526,7 @@ def parseMonte(lex, builder, mode, err):
 
     def objectScript(indent, ej):
         def doco := if (peekTag() == ".String.") {
-            advance(ej)
+            advance(ej).getData()
         } else {
             null
         }
@@ -648,7 +648,7 @@ def parseMonte(lex, builder, mode, err):
             if (indent) {
                 blockLookahead(tryAgain)
             }
-            suite(fn i, j {acceptEOLs(); acceptTag(".String.", j)}, indent, ej)
+            suite(fn i, j {acceptEOLs(); acceptTag(".String.", j).getData()}, indent, ej)
         } else {
             null
         }
@@ -668,7 +668,7 @@ def parseMonte(lex, builder, mode, err):
 
     def interfaceBody(indent, ej):
         def doco := if (peekTag() == ".String.") {
-            advance(ej)
+            advance(ej).getData()
         } else {
             null
         }
@@ -854,7 +854,7 @@ def parseMonte(lex, builder, mode, err):
             }
             if (peekTag() == "("):
                 return objectFunction(name, indent, tryAgain, ej, spanStart)
-            else if (["exit", ":=", "QUASI_OPEN"].contains(peekTag())):
+            else if (["exit", ":=", "QUASI_OPEN", "?", ":"].contains(peekTag())):
                 position := origPosition
                 return assign(ej)
             else if (isBind):
@@ -1268,7 +1268,7 @@ def parseMonte(lex, builder, mode, err):
         def val := start(err)
         acceptEOLs()
         if (position < (tokens.size() - 1)):
-            throw.eject(err, `Trailing garbage: ${tokens.slice(position, tokens.size())}`)
+            throw.eject(err, `only got "$val". Trailing garbage: ${tokens.slice(position, tokens.size())}`)
         return val
     else if (mode == "expression"):
         return blockExpr(err)
