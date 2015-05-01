@@ -88,6 +88,9 @@ class EListMixin(object):
     def asSet(self):
         raise NotImplementedError()
 
+    def reversed(self):
+        return ConstList(reversed(self.l))
+
 
 class ConstList(EListMixin, MonteObject):
     _m_fqn = "__makeList$ConstList"
