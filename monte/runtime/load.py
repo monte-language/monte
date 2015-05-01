@@ -281,6 +281,14 @@ class TestCollector(MonteObject):
         self.tests = FlexMap({})
 
     def run(self, prefix, tests):
+        try:
+            tests = typecheck(tests, (ConstMap, FlexMap))
+        except RuntimeError:
+            pass
+        else:
+            self.tests.putAll(tests)
+            return null
+
         tests = typecheck(tests, (ConstList, FlexList))
         for item in tests.l:
             if prefix and not prefix.endswith('.'):

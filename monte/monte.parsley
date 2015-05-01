@@ -37,8 +37,8 @@ verb = identifier | string
 comprehension = 'for' forPattern:p 'in' br assign:a -> p + [a]
 listAndMap = "[" ( expr:e br comprehension:c ('if' expr)?:f  ']' -> t.ListComp(*(c + [f, e]))
                  | expr:k "=>" expr:v br comprehension:c ('if' expr)?:f ']' -> t.MapComp(*(c + [f, k, v]))
-                 | assoc:x ("," assoc)*:xs ","? ']' -> t.MapExpr([x] + xs)
-                 | (expr:s ("," expr)*:ss ","? ']')-> t.ListExpr([s] + ss)
+                 | assoc:x ("," assoc)*:xs ","? br ']' -> t.MapExpr([x] + xs)
+                 | (expr:s ("," expr)*:ss ","? br ']')-> t.ListExpr([s] + ss)
                  | ']' -> t.ListExpr([]))
 assoc = (expr:k "=>" expr:v -> t.MapExprAssoc(k, v)
           |"=>" (noun | reifyExpr):n -> t.MapExprExport(n)
