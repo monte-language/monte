@@ -854,7 +854,7 @@ def parseMonte(lex, builder, mode, err):
             }
             if (peekTag() == "("):
                 return objectFunction(name, indent, tryAgain, ej, spanStart)
-            else if (["exit", ":="].contains(peekTag())):
+            else if (["exit", ":=", "QUASI_OPEN"].contains(peekTag())):
                 position := origPosition
                 return assign(ej)
             else if (isBind):

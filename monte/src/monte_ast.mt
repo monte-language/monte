@@ -167,7 +167,7 @@ def printDocstringOn(docstring, out, indentLastLine):
     if (docstring == null):
         return
     out.print("\"")
-    def lines := docstring.split("\n")
+    def lines := docstring.getData().split("\n")
     for line in lines.slice(0, 0.max(lines.size() - 2)):
         out.println(line)
     if (lines.size() > 0):
@@ -1704,13 +1704,13 @@ def makeMapPatternAssoc(key, value, span):
 
 def makeMapPatternImport(value, span):
     def scope := value.getStaticScope()
-    object mapPatternExport:
+    object mapPatternImport:
         to getValue():
             return value
         to subPrintOn(out, priority):
             out.print("=> ")
             value.subPrintOn(out, priority)
-    return astWrapper(mapPatternExport, makeMapPatternImport, [value], span,
+    return astWrapper(mapPatternImport, makeMapPatternImport, [value], span,
         scope, term`MapPatternImport`, fn f {[value.transform(f)]})
 
 def makeMapPatternRequired(keyer, span):
