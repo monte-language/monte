@@ -291,7 +291,7 @@ def parseMonte(lex, builder, mode, err):
         } else {
             if ([".String.", ".int.", ".float64.", ".char."].contains(peekTag())) {
                 def t := advance(ej)
-                builder.LiteralExpr(t, t.getSpan())
+                builder.LiteralExpr(t.getData(), t.getSpan())
             } else {
                 throw.eject(ej, ["Map pattern keys must be literals or expressions in parens", spanHere()])
             }
@@ -371,7 +371,14 @@ def parseMonte(lex, builder, mode, err):
         def spanStart := spanHere()
         if (peekTag() == "=>"):
             advance(ej)
-            return builder.MapExprExport(prim(ej), spanFrom(spanStart))
+            if (peekTag() == "&"):
+                advance(ej)
+                return builder.MapExprExport(builder.SlotExpr(noun(ej), spanFrom(spanStart)), spanFrom(spanStart))
+            else if (peekTag() == "&&"):
+                advance(ej)
+                return builder.MapExprExport(builder.BindingExpr(noun(ej), spanFrom(spanStart)), spanFrom(spanStart))
+            else:
+                return builder.MapExprExport(noun(ej), spanFrom(spanStart))
         def k := expr(ej)
         acceptTag("=>", ej)
         def v := expr(ej)
