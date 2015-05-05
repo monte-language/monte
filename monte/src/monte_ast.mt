@@ -167,7 +167,7 @@ def printDocstringOn(docstring, out, indentLastLine):
     if (docstring == null):
         return
     out.print("\"")
-    def lines := docstring.getData().split("\n")
+    def lines := docstring.split("\n")
     for line in lines.slice(0, 0.max(lines.size() - 2)):
         out.println(line)
     if (lines.size() > 0):
@@ -205,10 +205,7 @@ def printDocExprSuiteOn(leaderFn, docstring, suite, out, priority):
 
 def printObjectSuiteOn(leaderFn, docstring, suite, out, priority):
         printSuiteOn(leaderFn, fn o, p {
-            printDocstringOn(docstring, o, false)
-            if (docstring != null) {
-                out.println("")
-            }
+            printDocstringOn(docstring, o, true)
             suite.subPrintOn(o, p)
             }, false, out, priority)
 
@@ -893,7 +890,6 @@ def makeMethod(docstring, verb, patterns, resultGuard, body, span):
         to getBody():
             return body
         to subPrintOn(out, priority):
-            #out.println("")
             printDocExprSuiteOn(fn {
                 out.print("method ")
                 if (isIdentifier(verb)) {
@@ -1522,7 +1518,15 @@ def makeIfExpr(test, consq, alt, span):
                 out.print(")")
                 }, consq, false, out, priority)
             if (alt != null):
-                printExprSuiteOn(fn {out.print("else")}, alt, true, out, priority)
+                if (alt.getNodeName() == "IfExpr"):
+                    if (priorities["braceExpr"] <= priority):
+                        out.print(" ")
+                    else:
+                        out.println("")
+                    out.print("else ")
+                    alt.subPrintOn(out, priority)
+                else:
+                    printExprSuiteOn(fn {out.print("else")}, alt, true, out, priority)
 
     return astWrapper(ifExpr, makeIfExpr, [test, consq, alt], span,
         scope, term`IfExpr`, fn f {[test.transform(f), consq.transform(f), maybeTransform(alt, f)]})
@@ -2486,7 +2490,9 @@ def test_objectExpr(assert):
         [makeMethod, "run", ["method d", "d", methodParams, methGuard, methBody, null]])
     assert.equal(matcher._uncall(),
         [makeMatcher, "run", [matchPatt, matchBody, null]])
-    assert.equal(M.toString(expr), "object a as x implements b, c:\n    \"blee\"\n\n    method d(e, f) :g:\n        \"method d\"\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
+    assert.equal(M.toString(expr), "object a as x implements b, c:\n    \"blee\"\n    method d(e, f) :g:\n        \"method d\"\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
+    def noDoco := makeObjectExpr(null, objName, asExpr, auditors, script, null)
+    assert.equal(M.toString(expr), "object a as x implements b, c:\n    method d(e, f) :g:\n        \"method d\"\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
     assert.equal(expr.asTerm(),
                  term`ObjectExpr("blee",
                                  FinalPattern(NounExpr("a"), null),
