@@ -61,8 +61,7 @@ def renameCycles(node, renamings, builder):
     def renamer(node, maker, args, span):
         return switch (node.getNodeName()) {
             match =="NounExpr" {
-                def [oldname] := args
-                builder.NounExpr(renamings[oldname], span)
+                renamings.fetch(args[0], fn {node})
             }
             match _ {
                 M.call(maker, "run", args + [span])
@@ -499,7 +498,7 @@ def expand(node, builder, fail):
                     def resPatt := builder.FinalPattern(resName, null, span)
                     def resDef := builder.DefExpr(resPatt, null,
                          builder.DefExpr(patt, renamedEj, renamedRval, span), span)
-                    return builder.SeqExpr(promises.snapshot() + [resDef] + resolvers, span)
+                    return builder.SeqExpr(promises.snapshot() + [resDef] + resolvers.snapshot(), span)
             match =="ForwardExpr":
                 def [patt] := args
                 def rname := builder.NounExpr(patt.getNoun().getName() + "__Resolver", span)
@@ -924,7 +923,8 @@ def specimens := [
      "
      def [$<temp x>, $<temp xR>] := Ref.promise()
      def $<temp value> := def [x, y] := __makeList.run(1, $<temp x>)
-     $<temp xR>.resolve(x, $<temp value>)"],
+     $<temp xR>.resolve(x)
+     $<temp value>"],
 
     ["def x",
      "
@@ -1336,11 +1336,11 @@ def expandit(code):
     def node := parseModule(makeMonteLexer(trim(code)), astBuilder, throw)
     return expand(node, astBuilder, throw)
 
-# for item in fixedPointSpecimens:
-#     tests.put(item, fn assert {
-#         traceln(`expanding $item`)
-#         assert.equal(M.toString(expandit(item + "\n")), trim(item))
-#     })
+for item in fixedPointSpecimens:
+    tests.put(item, fn assert {
+        traceln(`expanding $item`)
+        assert.equal(M.toString(expandit(item + "\n")), trim(item))
+    })
 
 for [specimen, result] in specimens:
     tests.put(specimen, fn assert {

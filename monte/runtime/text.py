@@ -152,3 +152,7 @@ class TextWriter(MonteObject):
     def println(self, obj):
         self._m_print(obj)
         self._m_print(self.newline)
+
+    def lnPrint(self, obj):
+        self._m_print(self.newline)
+        self._m_print(obj)

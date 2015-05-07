@@ -165,8 +165,10 @@ def printListOn(left, nodes, sep, right, out, priority):
 
 def printDocstringOn(docstring, out, indentLastLine):
     if (docstring == null):
+        if (indentLastLine):
+            out.println("")
         return
-    out.print("\"")
+    out.lnPrint("\"")
     def lines := docstring.split("\n")
     for line in lines.slice(0, 0.max(lines.size() - 2)):
         out.println(line)
@@ -177,13 +179,16 @@ def printDocstringOn(docstring, out, indentLastLine):
     else:
         out.print("\"")
 
-def printSuiteOn(leaderFn, printContents, cuddle, out, priority):
+def printSuiteOn(leaderFn, printContents, cuddle, noLeaderNewline, out, priority):
     def indentOut := out.indent(INDENT)
     if (priorities["braceExpr"] <= priority):
         if (cuddle):
             out.print(" ")
         leaderFn()
-        indentOut.println(" {")
+        if (noLeaderNewline):
+            indentOut.print(" {")
+        else:
+            indentOut.println(" {")
         printContents(indentOut, priorities["braceExpr"])
         out.println("")
         out.print("}")
@@ -191,23 +196,26 @@ def printSuiteOn(leaderFn, printContents, cuddle, out, priority):
         if (cuddle):
             out.println("")
         leaderFn()
-        indentOut.println(":")
+        if (noLeaderNewline):
+            indentOut.print(":")
+        else:
+            indentOut.println(":")
         printContents(indentOut, priorities["indentExpr"])
 
 def printExprSuiteOn(leaderFn, suite, cuddle, out, priority):
-        printSuiteOn(leaderFn, suite.subPrintOn, cuddle, out, priority)
+        printSuiteOn(leaderFn, suite.subPrintOn, cuddle, false, out, priority)
 
 def printDocExprSuiteOn(leaderFn, docstring, suite, out, priority):
         printSuiteOn(leaderFn, fn o, p {
             printDocstringOn(docstring, o, true)
             suite.subPrintOn(o, p)
-            }, false, out, priority)
+            }, false, true, out, priority)
 
 def printObjectSuiteOn(leaderFn, docstring, suite, out, priority):
         printSuiteOn(leaderFn, fn o, p {
-            printDocstringOn(docstring, o, true)
+            printDocstringOn(docstring, o, false)
             suite.subPrintOn(o, p)
-            }, false, out, priority)
+            }, false, true, out, priority)
 
 def astWrapper(node, maker, args, span, scope, termFunctor, transformArgs):
     return object astNode extends node:
@@ -260,7 +268,7 @@ def makeTempNounExpr(namePrefix, span):
     def scope := makeStaticScope([name], [], [], [], false)
     object tempNounExpr:
         to getName():
-            return name
+            return namePrefix
         to subPrintOn(out, priority):
             out.print(name)
     return astWrapper(tempNounExpr, makeTempNounExpr, [name], span,
@@ -891,7 +899,7 @@ def makeMethod(docstring, verb, patterns, resultGuard, body, span):
             return body
         to subPrintOn(out, priority):
             printDocExprSuiteOn(fn {
-                out.print("method ")
+                out.lnPrint("method ")
                 if (isIdentifier(verb)) {
                     out.print(verb)
                 } else {
@@ -920,9 +928,9 @@ def makeTo(docstring, verb, patterns, resultGuard, body, span):
         to getBody():
             return body
         to subPrintOn(out, priority):
-            out.println("")
+
             printDocExprSuiteOn(fn {
-                out.print("to ")
+                out.lnPrint("to ")
                 if (isIdentifier(verb)) {
                     out.print(verb)
                 } else {
@@ -945,9 +953,8 @@ def makeMatcher(pattern, body, span):
         to getBody():
             return body
         to subPrintOn(out, priority):
-            #out.println("")
             printExprSuiteOn(fn {
-                out.print("match ");
+                out.lnPrint("match ");
                 pattern.subPrintOn(out, priorities["pattern"]);
             }, body, false, out, priority)
     return astWrapper(matcher, makeMatcher, [pattern, body], span,
@@ -1254,9 +1261,9 @@ def makeMessageDesc(docstring, verb, params, resultGuard, span):
                 def bracey := priorities["braceExpr"] <= priority
                 def indentOut := out.indent(INDENT)
                 if (bracey):
-                    indentOut.println(" {")
+                    indentOut.print(" {")
                 else:
-                    indentOut.println(":")
+                    indentOut.print(":")
                 printDocstringOn(docstring, indentOut, bracey)
                 if (bracey):
                     out.print("}")
@@ -1292,9 +1299,9 @@ def makeInterfaceExpr(docstring, name, stamp, parents, auditors, messages, span)
                 printListOn(" implements ", auditors, ", ", "", out, priorities["call"])
             def indentOut := out.indent(INDENT)
             if (priorities["braceExpr"] <= priority):
-                indentOut.println(" {")
+                indentOut.print(" {")
             else:
-                indentOut.println(":")
+                indentOut.print(":")
             printDocstringOn(docstring, indentOut, false)
             for m in messages:
                 m.subPrintOn("to", indentOut, priority)
@@ -1343,9 +1350,9 @@ def makeFunctionInterfaceExpr(docstring, name, stamp, parents, auditors, message
                 def bracey := priorities["braceExpr"] <= priority
                 def indentOut := out.indent(INDENT)
                 if (bracey):
-                    indentOut.println(" {")
+                    indentOut.print(" {")
                 else:
-                    indentOut.println(":")
+                    indentOut.print(":")
                 printDocstringOn(docstring, indentOut, bracey)
                 if (bracey):
                     out.print("}")
@@ -1824,7 +1831,7 @@ def makeQuasiExprHole(expr, span):
             return expr
         to subPrintOn(out, priority):
             out.print("$")
-            if (priorities["braceExpr"] <= priority):
+            if (priorities["braceExpr"] < priority):
                 if (expr._uncall()[0] == makeNounExpr && isIdentifier(expr.getName())):
                     expr.subPrintOn(out, priority)
                     return
@@ -1842,7 +1849,7 @@ def makeQuasiPatternHole(pattern, span):
             return pattern
         to subPrintOn(out, priority):
             out.print("@")
-            if (priorities["braceExpr"] <= priority):
+            if (priorities["braceExpr"] < priority):
                 if (pattern._uncall()[0] == makeFinalPattern):
                     if (pattern.getGuard() == null && isIdentifier(pattern.getNoun().getName())):
                         pattern.subPrintOn(out, priority)
@@ -1852,6 +1859,7 @@ def makeQuasiPatternHole(pattern, span):
             out.print("}")
     return astWrapper(quasiPatternHole, makeQuasiPatternHole, [pattern], span,
         scope, term`QuasiPatternHole`, fn f {[pattern.transform(f)]})
+
 def quasiPrint(name, quasis, out, priority):
     if (name != null):
         out.print(name)
@@ -2076,7 +2084,6 @@ def test_tempNounExpr(assert):
     def expr := makeTempNounExpr("foo", null)
     assert.equal(M.toString(expr), "$<temp foo>")
     assert.equal(expr.asTerm(), term`TempNounExpr("foo")`)
-    assert.notEqual(expr.getName(), makeTempNounExpr("foo", null).getName())
 
 def test_slotExpr(assert):
     def noun := makeNounExpr("foo", null)
@@ -2492,7 +2499,7 @@ def test_objectExpr(assert):
         [makeMatcher, "run", [matchPatt, matchBody, null]])
     assert.equal(M.toString(expr), "object a as x implements b, c:\n    \"blee\"\n    method d(e, f) :g:\n        \"method d\"\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
     def noDoco := makeObjectExpr(null, objName, asExpr, auditors, script, null)
-    assert.equal(M.toString(expr), "object a as x implements b, c:\n    method d(e, f) :g:\n        \"method d\"\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
+    assert.equal(M.toString(noDoco), "object a as x implements b, c:\n    method d(e, f) :g:\n        \"method d\"\n        h\n\n    to i():\n        j\n\n    match k:\n        l\n")
     assert.equal(expr.asTerm(),
                  term`ObjectExpr("blee",
                                  FinalPattern(NounExpr("a"), null),
@@ -2711,24 +2718,24 @@ def test_quasiParserPattern(assert):
     assert.equal(M.toString(makeQuasiParserPattern("blee", [makeQuasiPatternHole(makeFinalPattern(makeNounExpr("a", null), null, null), null), makeQuasiText("b", null)], null)), "blee`@{a}b`")
     assert.equal(expr.asTerm(), term`QuasiParserPattern("blee", [QuasiText("hello "), QuasiPatternHole(FinalPattern(NounExpr("a"), null)), QuasiText(", your number is "), QuasiPatternHole(ListPattern([FinalPattern(NounExpr("b"), null), FinalPattern(NounExpr("c"), null)], null)), QuasiText(". Also, "), QuasiExprHole(NounExpr("d"))])`)
 
-# unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
-#           test_slotExpr, test_metaContextExpr, test_metaStateExpr,
-#           test_seqExpr, test_module, test_defExpr, test_methodCallExpr,
-#           test_funCallExpr, test_compareExpr, test_listExpr,
-#           test_listComprehensionExpr, test_mapExpr, test_mapComprehensionExpr,
-#           test_forExpr, test_functionScript, test_functionExpr,
-#           test_sendExpr, test_funSendExpr,
-#           test_interfaceExpr, test_functionInterfaceExpr,
-#           test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
-#           test_andExpr, test_orExpr, test_matchBindExpr, test_mismatchExpr,
-#           test_switchExpr, test_whenExpr, test_whileExpr,
-#           test_binaryExpr, test_quasiParserExpr, test_rangeExpr, test_sameExpr,
-#           test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
-#           test_escapeExpr, test_hideExpr, test_objectExpr, test_forwardExpr,
-#           test_valueHoleExpr, test_patternHoleExpr, test_getExpr,
-#           test_prefixExpr, test_coerceExpr, test_curryExpr, test_exitExpr,
-#           test_finalPattern, test_ignorePattern, test_varPattern,
-#           test_listPattern, test_mapPattern, test_bindingPattern,
-#           test_slotPattern, test_samePattern, test_quasiParserPattern,
-#           test_viaPattern, test_suchThatPattern, test_bindPattern,
-#           test_valueHolePattern, test_patternHolePattern])
+unittest([test_literalExpr, test_nounExpr, test_tempNounExpr, test_bindingExpr,
+          test_slotExpr, test_metaContextExpr, test_metaStateExpr,
+          test_seqExpr, test_module, test_defExpr, test_methodCallExpr,
+          test_funCallExpr, test_compareExpr, test_listExpr,
+          test_listComprehensionExpr, test_mapExpr, test_mapComprehensionExpr,
+          test_forExpr, test_functionScript, test_functionExpr,
+          test_sendExpr, test_funSendExpr,
+          test_interfaceExpr, test_functionInterfaceExpr,
+          test_assignExpr, test_verbAssignExpr, test_augAssignExpr,
+          test_andExpr, test_orExpr, test_matchBindExpr, test_mismatchExpr,
+          test_switchExpr, test_whenExpr, test_whileExpr,
+          test_binaryExpr, test_quasiParserExpr, test_rangeExpr, test_sameExpr,
+          test_ifExpr, test_catchExpr, test_finallyExpr, test_tryExpr,
+          test_escapeExpr, test_hideExpr, test_objectExpr, test_forwardExpr,
+          test_valueHoleExpr, test_patternHoleExpr, test_getExpr,
+          test_prefixExpr, test_coerceExpr, test_curryExpr, test_exitExpr,
+          test_finalPattern, test_ignorePattern, test_varPattern,
+          test_listPattern, test_mapPattern, test_bindingPattern,
+          test_slotPattern, test_samePattern, test_quasiParserPattern,
+          test_viaPattern, test_suchThatPattern, test_bindPattern,
+          test_valueHolePattern, test_patternHolePattern])
