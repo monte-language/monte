@@ -52,12 +52,17 @@ class Bool(MonteObject):
     def _m_not(self):
         return bwrap(not self._b)
 
+    def butNot(self, other):
+        from monte.runtime.guards.data import booleanGuard
+        other = booleanGuard.coerce(other, throw)
+        return bwrap(self._b and not other._b)
+
     def xor(self, other):
         from monte.runtime.guards.data import booleanGuard
         other = booleanGuard.coerce(other, throw)
         return bwrap(self._b != other._b)
 
-    def  op__cmp(self, other):
+    def op__cmp(self, other):
         from monte.runtime.guards.data import booleanGuard
         other = booleanGuard.coerce(other, throw)
         return Integer(cmp(self._b, other._b))
