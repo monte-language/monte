@@ -76,6 +76,36 @@ indentation can be used as long as it's consistent throughout the module.
 Scoping Rules
 -------------
 
+Monte is lexically scoped, with simple scoping rules. In general, names are
+only accessible within the scope in which they were defined.
+
+After an object has been created, the names visible to it aren't accessible
+from outside the object. This is because Monte objects cannot share their
+internal state; they can only respond to messages. For programmers coming from
+object-oriented languages with access modifiers, such as ``private`` and
+``protected``, this is somewhat like if there were only one access modifier
+for variables, ``private``. (And only one access modifier for methods,
+``public``.)
+
+Closing Over Bindings
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: monte
+
+    var x := 42
+    object obj:
+        to run():
+            return x += 1
+
+Here, ``obj`` can see ``x``, permitting the usage of ``x`` within ``obj``'s
+definition. When ``obj.run()`` is called, ``x`` will be mutated. Monte does
+not require any "global" or "nonlocal" keywords to do this.
+
+Capability Model
+----------------
+
+.. note:: Not sure whether this should be here, or in a separate page.
+
 No object created within a scope will be accessible outside of that scope,
 unless a message about it is passed out. In Monte, the only way for object A
 to know that B exists is:
