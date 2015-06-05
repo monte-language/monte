@@ -21,6 +21,7 @@ For users:
     iteration
     guards
     custom-guards
+    tubes
 
 For Developers: 
 
