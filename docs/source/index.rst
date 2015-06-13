@@ -21,6 +21,7 @@ For users:
     iteration
     guards
     custom-guards
+    patterns
     tubes
 
 For Developers: 
