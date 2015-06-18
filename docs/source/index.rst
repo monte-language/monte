@@ -28,6 +28,7 @@ For Developers:
 
 .. toctree:: 
 
+    montefesto
     tools
     wizard
 
