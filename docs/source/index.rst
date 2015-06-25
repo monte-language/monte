@@ -23,6 +23,7 @@ For users:
     custom-guards
     patterns
     tubes
+    miranda
 
 For Developers: 
 
