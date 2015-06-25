@@ -24,6 +24,7 @@ For users:
     patterns
     tubes
     miranda
+    quasiparsers
 
 For Developers: 
 
