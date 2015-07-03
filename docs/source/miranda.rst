@@ -51,22 +51,6 @@ Methods
     .. warning::
         We haven't implemented this one yet.
 
-``_uncall/0``
-    ``_uncall`` undoes the call that created this object. The default
-    implementation returns ``null``, because objects are, by default, not
-    uncallable. A good implementation of ``_uncall`` will return a list
-    containing ``[maker, verb, args]`` such that ``M.call(maker, verb, args)``
-    will produce a new object which is equal to this object.
-
-    Providing an instance of ``_uncall`` makes an object eligible for
-    uncall-based catamorphisms. In particular, uncallable objects are
-    comparable by value.
-
-    .. note::
-        At some point in the near future, you'll need to both implement
-        ``_uncall`` and also pass an audition proving that your uncall is
-        correct in order to gain the benefit of uncallability.
-
 ``_printOn/1``
     ``_printOn`` writes text representing this object onto the printer passed
     as an argument.
@@ -85,6 +69,51 @@ Methods
         Determining whether a given object responds to a given message is
         undecidable. Therefore, there are times when ``_respondsTo/2`` is
         unavoidably wrong, both with false positives and false negatives.
+
+``_sealedDispatch/1``
+    ``_sealedDispatch`` permits this object to discriminate its responses to
+    messages based on the capabilities of the calling object.
+
+    Occasionally, a calling object will wish to prove its capabilities by
+    passing some sort of key or token to a receiving object. The receiving
+    object may then examine the key, and return an object based on the
+    identity or value of the key.
+
+    We provide ``_sealedDispatch/1`` for a specific subset of these cases. The
+    caller should pass a brand, and the receiver dispatches on the brand,
+    returning either a sealed box guarded by the passed-in brand, or ``null``
+    if the brand wasn't recognized.
+
+    By default, ``_sealedDispatch`` returns ``null``. This makes it impossible
+    to determine whether an object actually has a customized
+    ``_sealedDispatch``.
+
+    A popular analogy for sealed dispatch is the story of the "Red Phone," a
+    direct line of communication between certain governments in the past. The
+    Red Phone doesn't ring often, but when it does, you generally know who's
+    calling. They'll identify themselves, and if you can confirm that it's
+    the correct caller, then you can have discussions with them that you
+    wouldn't have over an ordinary phone.
+
+    .. note::
+        Typhon currently has a bug which discloses whether an object has
+        custom sealed dispatch.
+
+``_uncall/0``
+    ``_uncall`` undoes the call that created this object. The default
+    implementation returns ``null``, because objects are, by default, not
+    uncallable. A good implementation of ``_uncall`` will return a list
+    containing ``[maker, verb, args]`` such that ``M.call(maker, verb, args)``
+    will produce a new object which is equal to this object.
+
+    Providing an instance of ``_uncall`` makes an object eligible for
+    uncall-based catamorphisms. In particular, uncallable objects are
+    comparable by value.
+
+    .. note::
+        At some point in the near future, you'll need to both implement
+        ``_uncall`` and also pass an audition proving that your uncall is
+        correct in order to gain the benefit of uncallability.
 
 ``_whenBroken/1``
     ``_whenBroken``, by default, does nothing on near objects and sends
