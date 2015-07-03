@@ -95,10 +95,6 @@ Methods
     the correct caller, then you can have discussions with them that you
     wouldn't have over an ordinary phone.
 
-    .. note::
-        Typhon currently has a bug which discloses whether an object has
-        custom sealed dispatch.
-
 ``_uncall/0``
     ``_uncall`` undoes the call that created this object. The default
     implementation returns ``null``, because objects are, by default, not
