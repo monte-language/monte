@@ -5,41 +5,36 @@ Guards
 ======
 
 .. note::
-    This section could be a lot better.
+    This section sucks less. It still has a harsh opening though. Maybe
+    something could be said about typical guard usage, or some more source
+    code examples could be written?
+
+::
+
+    def someName :SomeGuard exit ej := someExpr
 
 A guard is a syntactic element which ensures that an object has a certain
-property. Guards are used to informally prove that sections of code behave
+property. Guards are used to (in)formally prove that sections of code behave
 correctly. A guard examines a value and returns a (possibly different) value
 which satisfies its property, or ejects or otherwise aborts the computation.
 
-We call this process of a guard **coercion**.
+We call the process of a guard examining an object **coercion**. The object
+being examined and coerced is called the **specimen**.
 
 Builtin Guards
 ==============
 
 Monte comes equipped with several very useful guards.
 
-Void
-----
-
-The void guard, ``Void``, is one of the simplest guards. It coerces all values
-to ``null`` successfully. ``Void`` is used as the default return value guard;
-if a function or method exits without an explicit return value, then ``Void``
-destroys the implicit return value.
-
-.. note::
-    The above paragraph lies; currently Monte uses ``Any`` as the default
-    return value guard and uses syntactic expansion to force the implicit
-    return value to ``null``.
-
 Type-checking
 -------------
 
 Several builtin guards are used for asserting that a value is of a given type:
 
-* ``Bool`` for Booleans
-* ``Char`` for characters
-* ``Double`` for floating-point numbers
+* ``Void`` for ``null``, the only value of its type
+* ``Bool`` for the Boolean values ``true`` and ``false``
+* ``Char`` for Unicode code points
+* ``Double`` for IEEE 754 floating-point numbers
 * ``Int`` for integers
 * ``List`` for lists
 * ``Map`` for maps
@@ -68,3 +63,5 @@ Some other builtin guards are worth mentioning:
 * ``Any`` is a guard that accepts anything.
 * ``NullOk`` accepts ``null``. Specializing it creates a guard that accepts
   ``null`` or whatever the subguard accepts.
+* ``Same`` must be specialized, returning a guard which only accepts values
+  that are ``==`` to the value on which it was specialized.
