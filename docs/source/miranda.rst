@@ -103,7 +103,7 @@ Methods
     will produce a new object which is equal to this object.
 
     Providing an instance of ``_uncall`` makes an object eligible for
-    uncall-based catamorphisms. In particular, uncallable objects are
+    uncall-based catamorphisms (fold, reduce, ...). In particular, uncallable objects are
     comparable by value.
 
     .. note::
