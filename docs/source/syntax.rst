@@ -2,239 +2,239 @@
 module
 --------
 
-.. figure: rr_module.svg
+.. image:: _static/rr_module.svg
 
 
 imports
 --------
 
-.. figure: rr_imports.svg
+.. image:: _static/rr_imports.svg
 
 
 exports
 --------
 
-.. figure: rr_exports.svg
+.. image:: _static/rr_exports.svg
 
 
 block
 --------
 
-.. figure: rr_block.svg
+.. image:: _static/rr_block.svg
 
 
 blockExpr
 --------
 
-.. figure: rr_blockExpr.svg
+.. image:: _static/rr_blockExpr.svg
 
 
 if
 --------
 
-.. figure: rr_if.svg
+.. image:: _static/rr_if.svg
 
 
 escape
 --------
 
-.. figure: rr_escape.svg
+.. image:: _static/rr_escape.svg
 
 
 for
 --------
 
-.. figure: rr_for.svg
+.. image:: _static/rr_for.svg
 
 
 fn
 --------
 
-.. figure: rr_fn.svg
+.. image:: _static/rr_fn.svg
 
 
 switch
 --------
 
-.. figure: rr_switch.svg
+.. image:: _static/rr_switch.svg
 
 
 try
 --------
 
-.. figure: rr_try.svg
+.. image:: _static/rr_try.svg
 
 
 while
 --------
 
-.. figure: rr_while.svg
+.. image:: _static/rr_while.svg
 
 
 when
 --------
 
-.. figure: rr_when.svg
+.. image:: _static/rr_when.svg
 
 
 bind
 --------
 
-.. figure: rr_bind.svg
+.. image:: _static/rr_bind.svg
 
 
 object
 --------
 
-.. figure: rr_object.svg
+.. image:: _static/rr_object.svg
 
 
 def
 --------
 
-.. figure: rr_def.svg
+.. image:: _static/rr_def.svg
 
 
 interface
 --------
 
-.. figure: rr_interface.svg
+.. image:: _static/rr_interface.svg
 
 
 meta
 --------
 
-.. figure: rr_meta.svg
+.. image:: _static/rr_meta.svg
 
 
 pass
 --------
 
-.. figure: rr_pass.svg
+.. image:: _static/rr_pass.svg
 
 
 guard
 --------
 
-.. figure: rr_guard.svg
+.. image:: _static/rr_guard.svg
 
 
 expr
 --------
 
-.. figure: rr_expr.svg
+.. image:: _static/rr_expr.svg
 
 
 assign
 --------
 
-.. figure: rr_assign.svg
+.. image:: _static/rr_assign.svg
 
 
 lval
 --------
 
-.. figure: rr_lval.svg
+.. image:: _static/rr_lval.svg
 
 
 infix
 --------
 
-.. figure: rr_infix.svg
+.. image:: _static/rr_infix.svg
 
 
 comp
 --------
 
-.. figure: rr_comp.svg
+.. image:: _static/rr_comp.svg
 
 
 order
 --------
 
-.. figure: rr_order.svg
+.. image:: _static/rr_order.svg
 
 
 prefix
 --------
 
-.. figure: rr_prefix.svg
+.. image:: _static/rr_prefix.svg
 
 
 call
 --------
 
-.. figure: rr_call.svg
+.. image:: _static/rr_call.svg
 
 
 calls
 --------
 
-.. figure: rr_calls.svg
+.. image:: _static/rr_calls.svg
 
 
 getExpr
 --------
 
-.. figure: rr_getExpr.svg
+.. image:: _static/rr_getExpr.svg
 
 
 curry
 --------
 
-.. figure: rr_curry.svg
+.. image:: _static/rr_curry.svg
 
 
 prim
 --------
 
-.. figure: rr_prim.svg
+.. image:: _static/rr_prim.svg
 
 
 comprehension
 --------
 
-.. figure: rr_comprehension.svg
+.. image:: _static/rr_comprehension.svg
 
 
 iter
 --------
 
-.. figure: rr_iter.svg
+.. image:: _static/rr_iter.svg
 
 
 pattern
 --------
 
-.. figure: rr_pattern.svg
+.. image:: _static/rr_pattern.svg
 
 
 namePattern
 --------
 
-.. figure: rr_namePattern.svg
+.. image:: _static/rr_namePattern.svg
 
 
 noun
 --------
 
-.. figure: rr_noun.svg
+.. image:: _static/rr_noun.svg
 
 
 quasiliteral
 --------
 
-.. figure: rr_quasiliteral.svg
+.. image:: _static/rr_quasiliteral.svg
 
 
 mapPatternItem
 --------
 
-.. figure: rr_mapPatternItem.svg
+.. image:: _static/rr_mapPatternItem.svg
 
 
 mapItem
 --------
 
-.. figure: rr_mapItem.svg
+.. image:: _static/rr_mapItem.svg
 

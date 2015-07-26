@@ -367,8 +367,8 @@ add('mapItem',
 
 def figFile(name, d,
             static='_static/'):
-    fn = 'rr_%s.svg' % name
-    with open(static + fn, 'wb') as out:
+    fn = static + ('rr_%s.svg' % name)
+    with open(fn, 'wb') as out:
         d.writeSvg(out.write)
     return fn
 
@@ -380,7 +380,7 @@ def toReST(rst, ds):
 %(name)s
 --------
 
-.. figure: %(fn)s
+.. image:: %(fn)s
 
 '''
                   % dict(name=name, fn=fn))
