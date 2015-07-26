@@ -1,0 +1,41 @@
+<svg class="railroad-diagram" height="72" viewBox="0 0 329 72" width="329">
+<g transform="translate(.5 .5)">
+<path d="M 20 31 v 20 m 10 -20 v 20 m -10 -10 h 20.5">
+</path><g>
+<path d="M40 41h0">
+</path><path d="M288 41h0">
+</path><path d="M40 41h10">
+</path><g class="non-terminal">
+<path d="M50 41h0">
+</path><path d="M110 41h0">
+</path><rect height="22" width="60" x="50" y="30">
+</rect><text x="80" y="45">
+order</text></g><path d="M110 41h10">
+</path><g>
+<path d="M120 41h0">
+</path><path d="M288 41h0">
+</path><path d="M120 41a10 10 0 0 0 10 -10v0a10 10 0 0 1 10 -10">
+</path><g>
+<path d="M140 21h128">
+</path></g><path d="M268 21a10 10 0 0 1 10 10v0a10 10 0 0 0 10 10">
+</path><path d="M120 41h20">
+</path><g>
+<path d="M140 41h0">
+</path><path d="M268 41h0">
+</path><path d="M140 41h10">
+</path><g class="terminal">
+<path d="M150 41h0">
+</path><path d="M186 41h0">
+</path><rect height="22" rx="10" ry="10" width="36" x="150" y="30">
+</rect><text x="168" y="45">
+if</text></g><path d="M186 41h10">
+</path><path d="M196 41h10">
+</path><g class="non-terminal">
+<path d="M206 41h0">
+</path><path d="M258 41h0">
+</path><rect height="22" width="52" x="206" y="30">
+</rect><text x="232" y="45">
+comp</text></g><path d="M258 41h10">
+</path></g><path d="M268 41h20">
+</path></g></g><path d="M 288 41 h 20 m -10 -10 v 20 m 10 -20 v 20">
+</path></g></svg>
