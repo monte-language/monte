@@ -99,7 +99,10 @@ def wrapString(value):
 
 class Diagram(DiagramItem):
     def __init__(self, *items):
-        DiagramItem.__init__(self, 'svg', {'class': DIAGRAM_CLASS})
+        DiagramItem.__init__(self, 'svg',
+                             {'class': DIAGRAM_CLASS,
+                              'xmlns': "http://www.w3.org/2000/svg",
+                              'xmlns:xlink': "http://www.w3.org/1999/xlink"})
         self.items = [Start()] + [wrapString(item) for item in items] + [End()]
         self.width = 1 + sum(item.width + (20 if item.needsSpace else 0)
                              for item in self.items)
