@@ -26,6 +26,7 @@ For users:
     miranda
     quasiparsers
     interfaces
+    syntax
 
 For Developers: 
 
