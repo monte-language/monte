@@ -365,25 +365,29 @@ add('mapItem',
         Sequence(NonTerminal('expr'), "=>", NonTerminal('expr')))))
 
 
-def figFile(name, d,
-            static='_static/'):
-    fn = static + ('rr_%s.svg' % name)
-    with open(fn, 'wb') as out:
-        d.writeSvg(out.write)
-    return fn
-
-
 def toReST(rst, ds):
+    from StringIO import StringIO
+    rst.write('''
+Syntax Reference
+================
+
+''')
+
     for name, diagram in ds:
-        fn = figFile(name, diagram)
         rst.write('''
 %(name)s
---------
+%(underline)s
 
-.. image:: %(fn)s
+.. raw:: html
 
 '''
-                  % dict(name=name, fn=fn))
+                  % dict(name=name,
+                         underline='-' * len(name)))
+        buf = StringIO()
+        diagram.writeSvg(buf.write)
+        for line in buf.getvalue().split('\n'):
+            rst.write('   ' + line + '\n')
+
 
 def toHTML(out, ds):
     from railroad_diagrams import STYLE
