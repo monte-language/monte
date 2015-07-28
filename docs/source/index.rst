@@ -22,6 +22,7 @@ For users:
     guards
     custom-guards
     patterns
+    operators
     tubes
     miranda
     quasiparsers
