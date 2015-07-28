@@ -3,6 +3,7 @@ Syntax Reference
 ================
 
 .. raw:: html
+
     <style>
     svg.railroad-diagram {
         background-color: hsl(30,20%,95%);

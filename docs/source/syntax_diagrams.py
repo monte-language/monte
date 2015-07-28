@@ -405,7 +405,7 @@ Syntax Reference
 ''')
 
     # Write CSS inline 'cause RTFD can't deal. ~ C.
-    rst.write(".. raw:: html\n")
+    rst.write(".. raw:: html\n\n")
     for line in STYLE.split('\n'):
         if line:
             rst.write("    %s\n" % line)
