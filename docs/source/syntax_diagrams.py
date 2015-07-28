@@ -1,6 +1,37 @@
 '''syntax_diagrams.py -- generate railroad diagrams for Monte syntax
 '''
 
+STYLE = """
+<style>
+svg.railroad-diagram {
+    background-color: hsl(30,20%,95%);
+}
+svg.railroad-diagram path {
+    stroke-width: 3;
+    stroke: black;
+    fill: rgba(0,0,0,0);
+}
+svg.railroad-diagram text {
+    font: bold 14px monospace;
+    text-anchor: middle;
+}
+svg.railroad-diagram text.label {
+    text-anchor: start;
+}
+svg.railroad-diagram text.comment {
+    font: italic 12px monospace;
+}
+svg.railroad-diagram g.non-terminal text {
+    /*font-style: italic;*/
+}
+svg.railroad-diagram rect {
+    stroke-width: 3;
+    stroke: black;
+    fill: hsl(120,100%,90%);
+}
+</style>
+"""
+
 from railroad_diagrams import (
     Diagram,
     NonTerminal,
@@ -373,6 +404,12 @@ Syntax Reference
 
 ''')
 
+    # Write CSS inline 'cause RTFD can't deal. ~ C.
+    rst.write(".. raw:: html\n")
+    for line in STYLE.split('\n'):
+        if line:
+            rst.write("    %s\n" % line)
+
     for name, diagram in ds:
         rst.write('''
 %(name)s
@@ -403,4 +440,3 @@ if __name__ == '__main__':
     from sys import stdout
     #toHTML(stdout, diagrams)
     toReST(stdout, diagrams)
-
