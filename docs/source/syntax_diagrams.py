@@ -411,7 +411,6 @@ Syntax Reference
 
 
 def toHTML(out, ds):
-    from railroad_diagrams import STYLE
     from railroad_diagrams import e as esc
     out.write(
         "<!doctype html><title>Test</title><style>%s</style>" % STYLE)
@@ -421,6 +420,8 @@ def toHTML(out, ds):
 
 
 if __name__ == '__main__':
-    from sys import stdout
-    #toHTML(stdout, diagrams)
-    toReST(stdout, diagrams)
+    from sys import stdout, argv
+    if '--html' in argv:
+        toHTML(stdout, diagrams)
+    else:
+        toReST(stdout, diagrams)
