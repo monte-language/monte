@@ -1,9 +1,11 @@
 '''syntax_diagrams.py -- generate railroad diagrams for Monte syntax
+
+based on typhon/mast/lib/monte/monte_parser.mt
 '''
 
 from railroad_diagrams import (
     Diagram,
-    NonTerminal,
+    NonTerminal, Comment,
     Sequence, Choice,
     Skip, Optional, ZeroOrMore, OneOrMore)
 
@@ -53,7 +55,7 @@ add('blockExpr', Diagram(Choice(
 add('if', Diagram(Sequence(
     "if", "(", NonTerminal('expr'), ")", NonTerminal('block'),
     Optional(Sequence("else", Choice(
-        0, Sequence("if", NonTerminal('blockExpr@@')),
+        0, Sequence("if", Comment('blockExpr@@')),
         NonTerminal('block')))))))
 
 add('escape', Diagram(Sequence(
@@ -107,14 +109,14 @@ add('when', Diagram(Sequence(
 add('bind', Diagram(Sequence(
     "bind",
     NonTerminal("noun"),
-    Optional(Sequence(":", NonTerminal('guard'))), "objectExpr@@")))
+    Optional(Sequence(":", NonTerminal('guard'))), Comment("objectExpr@@"))))
 
 add('object', Diagram(Sequence(
     "object",
     Choice(0, Sequence("bind", NonTerminal('noun')),
            "_",
            NonTerminal("noun")),
-    Optional(Sequence(":", NonTerminal('guard'))), "objectExpr@@")))
+    Optional(Sequence(":", NonTerminal('guard'))), Comment("objectExpr@@"))))
 
 add('def', Diagram(Sequence(
     "def",
@@ -126,7 +128,7 @@ add('def', Diagram(Sequence(
                 Sequence("bind", NonTerminal("noun"),
                          Optional(Sequence(":", NonTerminal('guard')))),
                 NonTerminal("noun")),
-            Choice(0, "objectFunction@@", NonTerminal('assign'))),
+            Choice(0, Comment("objectFunction@@"), NonTerminal('assign'))),
         NonTerminal('assign')))))
 
 add('interface', Diagram(Sequence(
@@ -134,7 +136,7 @@ add('interface', Diagram(Sequence(
     NonTerminal('namePattern'),
     Optional(Sequence("guards", NonTerminal('pattern'))),
     Optional(Sequence("extends", OneOrMore(NonTerminal('order'), ','))),
-    "implements_@@", "msgs@@")))
+    Comment("implements_@@"), Comment("msgs@@"))))
 
 add('meta', Diagram(Sequence(
     "meta", ".",
@@ -172,8 +174,8 @@ add('assign', Diagram(Choice(
              # XXX the next two seem to be optional in the code.
              ":=", NonTerminal('assign')),
     Sequence(NonTerminal('lval'), ":=", NonTerminal('assign')),
-    "@op=...XXX",
-    "VERB_ASSIGN XXX")))
+    Comment("@op=...XXX"),
+    Comment("VERB_ASSIGN XXX"))))
 
 add('lval', Diagram(Choice(
     0,
@@ -320,7 +322,7 @@ add('quasiliteral', Diagram(Sequence(
     Optional("IDENTIFIER"),
     '`',
     ZeroOrMore(
-        Choice(0, '...',
+        Choice(0, Comment('...@@'),
                '$IDENT',
                Sequence('${', NonTerminal('expr'), '}'),
                '@IDENT',
@@ -369,7 +371,8 @@ svg.railroad-diagram text.comment {
     font: italic 12px monospace;
 }
 svg.railroad-diagram g.non-terminal text {
-    /*font-style: italic;*/
+    font-style: italic;
+    font-weight: normal;
 }
 svg.railroad-diagram rect {
     stroke-width: 3;
