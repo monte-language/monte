@@ -5,7 +5,7 @@ based on typhon/mast/lib/monte/monte_parser.mt
 
 from railroad_diagrams import (
     Diagram,
-    NonTerminal, Comment,
+    Terminal, NonTerminal, Comment,
     Sequence, Choice,
     Skip, Optional, ZeroOrMore, OneOrMore)
 
@@ -106,17 +106,19 @@ add('when', Diagram(Sequence(
                         NonTerminal('block'))),
     Optional(Sequence("finally", NonTerminal('block'))))))
 
+maybeGuard = lambda: Optional(Sequence(":", NonTerminal('guard')))
+
 add('bind', Diagram(Sequence(
     "bind",
     NonTerminal("noun"),
-    Optional(Sequence(":", NonTerminal('guard'))), Comment("objectExpr@@"))))
+    maybeGuard(), Comment("objectExpr@@"))))
 
 add('object', Diagram(Sequence(
     "object",
     Choice(0, Sequence("bind", NonTerminal('noun')),
            "_",
            NonTerminal("noun")),
-    Optional(Sequence(":", NonTerminal('guard'))), Comment("objectExpr@@"))))
+    maybeGuard(), Comment("objectExpr@@"))))
 
 add('def', Diagram(Sequence(
     "def",
@@ -125,8 +127,7 @@ add('def', Diagram(Sequence(
         Sequence(
             Choice(
                 0,
-                Sequence("bind", NonTerminal("noun"),
-                         Optional(Sequence(":", NonTerminal('guard')))),
+                Sequence("bind", NonTerminal("noun"), maybeGuard()),
                 NonTerminal("noun")),
             Choice(0, Comment("objectFunction@@"), NonTerminal('assign'))),
         NonTerminal('assign')))))
@@ -228,21 +229,21 @@ add('prefix', Diagram(Choice(
     Sequence(Choice(0, "~", "!"), NonTerminal('call')),
     Sequence('&', NonTerminal('noun')),
     Sequence('&&', NonTerminal('noun')),
-    Sequence(NonTerminal('call'),
-             Optional(Sequence(":", NonTerminal('guard')))))))
+    Sequence(NonTerminal('call'), maybeGuard()))))
 
 add('call', Diagram(Sequence(
     NonTerminal('calls'),
     Optional(Sequence(NonTerminal('curry'))))))
 
+
+verb = lambda: Choice(0, "IDENTIFIER", ".String.")
 add('calls', Diagram(
     Choice(
         0, NonTerminal('prim'),
         Sequence(
             NonTerminal('calls'),
             Optional(
-                Sequence(Choice(0, ".", "<-"),
-                         Choice(0, ".String.", "IDENTIFIER"))),
+                Sequence(Choice(0, ".", "<-"), verb())),
             Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
         NonTerminal('getExpr'))))
 
@@ -251,15 +252,14 @@ add('getExpr', Diagram(Sequence(
     Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))))
 
 add('curry', Diagram(Sequence(
-    Choice(0, '.', '<-'),
-    Choice(0, ".String.", "IDENTIFIER"))))
+    Choice(0, '.', '<-'), verb())))
 
+idString = lambda: Choice(0, "IDENTIFIER", Sequence("::", ".String."))
 add('prim', Diagram(Choice(
     0,
     ".String.", ".int.", ".float64.", ".char.",
     NonTerminal('quasiliteral'),
-    "IDENTIFIER",
-    Sequence("::", ".String."),
+    idString(),
     Sequence("(", NonTerminal('expr'), ")"),
     Sequence("{", ZeroOrMore(NonTerminal('expr'), ';'), "}"),
     Sequence("[",
@@ -292,41 +292,42 @@ add('pattern',
                NonTerminal('namePattern'),
                NonTerminal('quasiLiteral'),
                Sequence(Choice(0, "==", "!="), NonTerminal('prim')),
-               Sequence("_", ":", NonTerminal('guard')),
+               Sequence("_", maybeGuard()),
                Sequence("via", "(", NonTerminal('expr'), ')',
                         NonTerminal('pattern')),
                Sequence("[",
-                        OneOrMore(NonTerminal('mapPatternItem'), ','), ']')),
+                        ZeroOrMore(NonTerminal('pattern'), ','),
+                        ']',
+                        Optional(Sequence("+", NonTerminal('pattern')))),
+               Sequence("[",
+                        OneOrMore(NonTerminal('mapPatternItem'), ','),
+                        ']',
+                        Optional(Sequence("|", NonTerminal('pattern'))))),
         Optional(Sequence("?", "(", NonTerminal('expr'), ")")))))
 
 add('namePattern', Diagram(
     Choice(0,
-           Sequence(
-               Choice(0,
-                      Sequence("::", ".String."),
-                      "IDENTIFIER"),
-               Optional(Sequence(':', NonTerminal('guard')))),
-           Sequence("var", NonTerminal('noun'),
-                    Optional(Sequence(":", NonTerminal('guard')))),
-           Sequence("&", NonTerminal('noun'),
-                    Optional(Sequence(":", NonTerminal('guard')))),
-           Sequence("&&", NonTerminal('noun')),
-           Sequence("bind", NonTerminal('noun'),
-                    Optional(Sequence(":", NonTerminal('guard')))))))
+           Sequence(idString(), maybeGuard()),
+           Sequence("var", NonTerminal('noun'), maybeGuard()),
+           Sequence("&", NonTerminal('noun'), maybeGuard()),
+           Sequence("bind", NonTerminal('noun'), maybeGuard()),
+           Sequence("&&", NonTerminal('noun')))))
 
-add('noun', Diagram(Choice(
-    0, 'IDENTIFIER',
-    Sequence('::', '.String.'))))
+add('noun', Diagram(idString()))
 
 add('quasiliteral', Diagram(Sequence(
-    Optional("IDENTIFIER"),
+    Optional(Terminal("IDENTIFIER")),
     '`',
     ZeroOrMore(
-        Choice(0, Comment('...@@'),
-               '$IDENT',
-               Sequence('${', NonTerminal('expr'), '}'),
-               '@IDENT',
-               Sequence('@{', NonTerminal('expr'), '}'))),
+        Choice(0, Comment('...text...'),
+               Choice(
+                   0,
+                   Terminal('$IDENT'),
+                   Sequence('${', NonTerminal('expr'), '}')),
+               Choice(
+                   0,
+                   Terminal('@IDENT'),
+                   Sequence('@{', NonTerminal('pattern'), '}')))),
     '`')))
 
 add('mapPatternItem',
