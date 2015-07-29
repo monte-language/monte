@@ -27,12 +27,15 @@ add('exports', Diagram(Sequence(
     'export', "(", ZeroOrMore(NonTerminal('noun')), ")")))
 add('block', Diagram(Sequence(
     "{",
-    ZeroOrMore(
-        Choice(
-            0,
-            NonTerminal('blockExpr'),
-            NonTerminal('expr')),
-        ";"),
+    Choice(
+        0,
+        ZeroOrMore(
+            Choice(
+                0,
+                NonTerminal('blockExpr'),
+                NonTerminal('expr')),
+            ";"),
+        "pass"),
     "}")))
 
 add('blockExpr', Diagram(Choice(
@@ -49,8 +52,7 @@ add('blockExpr', Diagram(Choice(
     NonTerminal('object'),
     NonTerminal('def'),
     NonTerminal('interface'),
-    NonTerminal('meta'),
-    NonTerminal('pass'))))
+    NonTerminal('meta'))))
 
 add('if', Diagram(Sequence(
     "if", "(", NonTerminal('expr'), ")", NonTerminal('block'),
@@ -59,19 +61,21 @@ add('if', Diagram(Sequence(
         NonTerminal('block')))))))
 
 add('escape', Diagram(Sequence(
-    "escape", NonTerminal('pattern'), NonTerminal('block'),
-    Optional(Sequence("catch", NonTerminal('pattern'),
-                      NonTerminal('block'))))))
+    "escape", NonTerminal('pattern'),
+    NonTerminal('blockCatch'))))
+
+add('blockCatch', Diagram(Sequence(
+    NonTerminal('block'),
+    Optional(
+        Sequence("catch", NonTerminal('pattern'),
+                 NonTerminal('block'))))))
 
 add('for', Diagram(Sequence(
     "for",
     NonTerminal('pattern'),
     Optional(Sequence("=>", NonTerminal('pattern'))),
     "in", NonTerminal('comp'),
-    NonTerminal('block'),
-    Optional(Sequence("catch",
-                      NonTerminal('pattern'),
-                      NonTerminal('block'))))))
+    NonTerminal('blockCatch'))))
 
 add('fn', Diagram(Sequence(
     "fn",
@@ -85,7 +89,9 @@ add('switch', Diagram(Sequence(
                        NonTerminal('block'))), "}")))
 
 add('try', Diagram(Sequence(
-    "try", NonTerminal('block'),
+    "try", NonTerminal('block'), NonTerminal('catchers'))))
+
+add('catchers', Diagram(Sequence(
     ZeroOrMore(Sequence("catch",
                         NonTerminal('pattern'),
                         NonTerminal('block'))),
@@ -93,18 +99,13 @@ add('try', Diagram(Sequence(
 
 
 add('while', Diagram(Sequence(
-    "while", "(", NonTerminal('expr'), ")", NonTerminal('block'),
-    Optional(Sequence("catch",
-                      NonTerminal('pattern'),
-                      NonTerminal('block'))))))
+    "while", "(", NonTerminal('expr'), ")", NonTerminal('blockCatch'))))
 
 add('when', Diagram(Sequence(
     "when",
     "(", OneOrMore(NonTerminal('expr'), ','), ")",
-    ZeroOrMore(Sequence("catch",
-                        NonTerminal('pattern'),
-                        NonTerminal('block'))),
-    Optional(Sequence("finally", NonTerminal('block'))))))
+    "->", NonTerminal('block'),
+    NonTerminal('catchers'))))
 
 maybeGuard = lambda: Optional(Sequence(":", NonTerminal('guard')))
 
@@ -144,8 +145,6 @@ add('meta', Diagram(Sequence(
     Choice(0,
            Sequence("context", "(", ")"),
            Sequence("getState", "(", ")")))))
-
-add('pass', Diagram('pass'))
 
 add('guard', Diagram(Choice(
     0, Sequence('IDENTIFIER',
