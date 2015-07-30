@@ -13,6 +13,11 @@ that **secure distributed computing should not be hard**. It provides
 much of the expressive convenience of python but also robust
 composition using object capabilities in the tradition of E [#]_.
 
+.. note:: While Monte usable and most architectural issues are
+	  resolved, it is still undergoing rapid development.
+	  See :ref:`roadmap` for details.
+
+
 Why Monte?
 ----------
 
