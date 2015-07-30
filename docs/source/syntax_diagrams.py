@@ -82,11 +82,12 @@ add('fn', Diagram(Sequence(
     ZeroOrMore(NonTerminal('pattern'), ','),
     NonTerminal('block'))))
 
+matchers = lambda: OneOrMore(Sequence("match",
+                                      NonTerminal('pattern'),
+                                      NonTerminal('block')))
 add('switch', Diagram(Sequence(
     "switch", "(", NonTerminal('expr'), ")",
-    "{",
-    OneOrMore(Sequence("match", NonTerminal('pattern'),
-                       NonTerminal('block'))), "}")))
+    "{", matchers(), "}")))
 
 add('try', Diagram(Sequence(
     "try", NonTerminal('block'), NonTerminal('catchers'))))
@@ -107,7 +108,7 @@ add('when', Diagram(Sequence(
     "->", NonTerminal('block'),
     NonTerminal('catchers'))))
 
-maybeGuard = lambda: Optional(Sequence(":", NonTerminal('guard')))
+maybeGuard = lambda: Optional(NonTerminal('guard'))
 
 add('bind', Diagram(Sequence(
     "bind",
@@ -120,6 +121,18 @@ add('object', Diagram(Sequence(
            "_",
            NonTerminal("noun")),
     maybeGuard(), Comment("objectExpr@@"))))
+
+add('objectExpr', Diagram(Sequence(
+    Optional(Sequence('extends', NonTerminal('order'))),
+    NonTerminal('auditors'),
+    '{', ZeroOrMore(NonTerminal('objectScript'), ';'), '}')))
+
+add('objectScript', Diagram(Sequence(
+    Optional(NonTerminal('doco')),
+    Choice(0, "pass", ZeroOrMore("@@meth")),
+    Choice(0, "pass", ZeroOrMore("@@matchers")))))
+
+add('doco', Diagram(Terminal('.String')))
 
 add('def', Diagram(Sequence(
     "def",
@@ -146,12 +159,14 @@ add('meta', Diagram(Sequence(
            Sequence("context", "(", ")"),
            Sequence("getState", "(", ")")))))
 
-add('guard', Diagram(Choice(
-    0, Sequence('IDENTIFIER',
-                Optional(Sequence('[',
-                                  OneOrMore(NonTerminal('expr'), ','),
-                                  ']'))),
-    Sequence('(', NonTerminal('expr'), ')'))))
+add('guard', Diagram(Sequence(
+    ':',
+    Choice(
+        0, Sequence('IDENTIFIER',
+                    Optional(Sequence('[',
+                                      OneOrMore(NonTerminal('expr'), ','),
+                                      ']'))),
+        Sequence('(', NonTerminal('expr'), ')')))))
 
 add('expr', Diagram(Choice(
     0,
