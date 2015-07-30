@@ -2,6 +2,11 @@
 Syntax Reference
 ================
 
+.. syntax::
+
+   Diagram(Sequence('a', 'b', 'c'))
+
+
 .. raw:: html
 
     <style>
