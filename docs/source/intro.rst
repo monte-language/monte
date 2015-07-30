@@ -8,15 +8,25 @@ Introduction
 What's Monte?
 -------------
 
-Monte is a dynamic language designed to solve the problems of both Python and E.
+Monte is a high-level programming language whose design philosophy is
+that **secure distributed computing should not be hard**. It provides
+much of the expressive convenience of python but also robust
+composition using object capabilities in the tradition of E [#]_.
 
 Why Monte?
 ----------
 
-Python is great for usability, but has all the security vulnerabilities of its
-prececessors. E is a relatively obscure language whose fundamental design
-precludes many types of common vulnerability, but its syntax is difficult to
-use and its implementations don't perform competitively.
+Because `everything is broken`__. Python has great usability, borne
+out by a large developer community, but it shares a fundamentally
+brittle architecture with much of today's programming languages and
+platforms: *insecurity anywhere is a threat to security everywhere*.
+While E is comparatively obscure, its object capability discipline
+naturally supports the *principle of least authority* so that
+malicious or faulty code in one part of a system is straightforwardly
+contained. Monte provides the robust composition features of E
+in a form that's convenient to the Python developer community.
+
+__ https://medium.com/message/everything-is-broken-81e5f33a24e1
 
 Where do I start?
 -----------------
@@ -360,3 +370,9 @@ monte.test.test_ast`` (when run from the root of the project) will run the ast
 tests.
 
 .. _testing.mt: https://github.com/monte-language/monte/blob/master/monte/src/examples/testing.mt
+
+.. [#] Miller, M.S.: `Robust Composition: Towards a Unified Approach to
+       Access Control and Concurrency Control`__. PhD thesis, Johns
+       Hopkins University, Baltimore, Maryland, USA (May 2006)
+
+__ http://erights.org/talks/thesis/index.html
