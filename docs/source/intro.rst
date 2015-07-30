@@ -8,15 +8,73 @@ Introduction
 What's Monte?
 -------------
 
-Monte is a dynamic language designed to solve the problems of both Python and E.
+Monte is a high-level programming language whose design philosophy is
+that **secure distributed computing should not be hard**. It provides
+much of the expressive convenience of python but also robust
+composition using object capabilities in the tradition of E [#]_.
+
+.. note:: While Monte usable and most architectural issues are
+	  resolved, it is still undergoing rapid development.
+	  See :ref:`roadmap` for details.
+
 
 Why Monte?
 ----------
 
-Python is great for usability, but has all the security vulnerabilities of its
-prececessors. E is a relatively obscure language whose fundamental design
-precludes many types of common vulnerability, but its syntax is difficult to
-use and its implementations don't perform competitively.
+Because `everything is broken`__. Python has great usability, borne
+out by a large developer community, but it shares a fundamentally
+brittle architecture with much of today's programming languages and
+platforms: *insecurity anywhere is a threat to security everywhere*.
+While E is comparatively obscure, its object capability discipline
+naturally supports the *principle of least authority* so that
+malicious or faulty code in one part of a system is straightforwardly
+contained. Monte provides the robust composition features of E
+in a form that's convenient to the Python developer community.
+
+__ https://medium.com/message/everything-is-broken-81e5f33a24e1
+
+A Taste of Monte
+----------------
+
+Let's compose a simple web server from a main program...
+
+.. literalinclude:: tut/web1priv.mt
+    :linenos:
+    :language: monte
+
+... and an imported `web1` module:
+
+.. literalinclude:: tut/web1.mt
+    :linenos:
+    :language: monte
+
+The basics of defining functions and calling methods should be
+familiar to anyone with exposure to python or even ruby or the C/C++
+family (Java, JavaScript, PHP).
+
+.. note:: The import function returns a `ConstMap` (a la python
+	  dictionary, but immutable), and `def [=> smallBody] | _ :=
+	  import(...)` is a pattern-matching binding, where `[=>
+	  smallBody]` is short for `["smallBody" => smallBody]`.  The
+	  result is similar to `from lib.http.resource import
+	  smallBody`.
+
+We keep the main program to a minimum because it is loaded in the
+privileged "unsafe" scope. We can refer to `currentProcess` and
+`makeTCP4ServerEndpoint` in this scope.
+
+On the other hand, imported modules such as `web1` (and the various
+library modules) are loaded in the safe scope, so that executing them
+can do nothing more than create objects (including functions) in
+memory and export the value of the last expression (typically, a map
+of exported objects). Importing them cannot write to files, access the
+network, clobber global state, or launch missiles.
+
+Only when access to make an HTTP endpoint is passed to start() can
+this code interact with the network. And by inspection of
+`makeWebServer()`, we can see that it can only use the HTTP protocol,
+and only on the port given by the last command-line argument.
+
 
 Where do I start?
 -----------------
@@ -360,3 +418,9 @@ monte.test.test_ast`` (when run from the root of the project) will run the ast
 tests.
 
 .. _testing.mt: https://github.com/monte-language/monte/blob/master/monte/src/examples/testing.mt
+
+.. [#] Miller, M.S.: `Robust Composition: Towards a Unified Approach to
+       Access Control and Concurrency Control`__. PhD thesis, Johns
+       Hopkins University, Baltimore, Maryland, USA (May 2006)
+
+__ http://erights.org/talks/thesis/index.html
