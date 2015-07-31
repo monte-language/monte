@@ -21,9 +21,16 @@ To signal that you want a variable binding, use ``var``::
   Result: 8
 
 Note the use of ``:=`` rather than ``=`` for assignment.
-Comparison in Monte is `==` and the single-equals, `=`, has no meaning. This
-all but eliminates the common issue of `if (foo = baz)` suffered by all
-languages where you can compile after typo-ing `==`.
+Comparison in Monte is ``==`` and the single-equals, ``=``, has no meaning. This
+all but eliminates the common issue of ``if (foo = baz)`` suffered by all
+languages where you can compile after typo-ing ``==``.
+
+Monte has rich support for destructuring assignment using pattern matching::
+
+  ▲> { def [x, y] := [1, 2]; x }
+  Result: 1
+
+The :ref:`patterns` section discusses pattern matching in detail.
 
 
 Built-in Object Types
@@ -218,6 +225,18 @@ Use ``diverge`` and ``snapshot`` similarly::
   ▲> { def m := ["roses" => "red", "violets" => "blue"].diverge(); m["roses"] := 3 }
   Result: 3
 
+.. warning:: Maps in monte are ordered::
+
+               ▲> [ "a" => 1, "b" => 2] == [ "b" => 2, "a" => 1]
+               Result: false
+
+             See section :ref:`ocap` about why this is so.
+
+             To disregard order, use ``sortKeys``::
+
+               ▲> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
+               Result: true
+
 Operators
 ---------
 
@@ -280,6 +299,13 @@ Expression Syntax Summary
                ";",
                NonTerminal('blockExpr')))))
 
+.. seealso::
+
+   :ref:`loopExpr`
+      on ``continue``, ``break``, and ``return``
+   :ref:`blocks`
+      on *blockExpr*
+
 .. syntax:: assign
 
    Diagram(Choice(
@@ -297,6 +323,10 @@ Expression Syntax Summary
     Comment("VERB_ASSIGN XXX"),
     NonTerminal('logical')))
 
+.. seealso::
+
+   :ref:`patterns`
+
 .. syntax:: lval
 
    Diagram(Choice(
@@ -310,8 +340,6 @@ Expression Syntax Summary
     NonTerminal('comp'),
     Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical')))))
 
-*TODO: re-org binary expressions around sameExpr etc.*
-
 .. syntax:: comp
 
    Diagram(
@@ -323,8 +351,6 @@ Expression Syntax Summary
         "&!",
         Choice(0, "^", "&", "|")
     ), NonTerminal('comp'))))
-
-*TODO: what is "&!"?*
 
 .. syntax:: order
 
