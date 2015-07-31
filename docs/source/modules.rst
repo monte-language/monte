@@ -1,3 +1,5 @@
+.. _modules:
+
 Modules in Monte
 ================
 
@@ -86,6 +88,10 @@ The package provides these methods:
   its imports will be the names from the requirement objects contained
   in the configurations.
 
+.. note:: See also `safeScope`__ source.
+
+__ https://github.com/monte-language/typhon/blob/master/typhon/scopes/safe.py#L375
+
 
 Module Structures
 -----------------
@@ -93,3 +99,23 @@ Module Structures
 Module structures' ``run`` methods can be invoked with a mapping of
 names to configurations or requirements to create a new module
 configuration.
+
+Testing
+-------
+
+.. note:: Tests are not automatically discovered at present. You need to add
+    your test to a package.mt file for it to be run correctly.
+
+Unit tests are essential to writing good code. Monte's testing framework is
+designed to make it simple to write and run good tests. See the testing.mt_
+module for a simple example. Note that for more complex objects, you may need
+to implement an `_uncall()` method which describes how to recreate the object
+out of Monte's built-in primitives. Additionally, such objects will need to
+implement the Selfless interface in order to guarantee they won't have mutable
+state so that they can be compared.
+
+To test the Python tools surrounding Monte, use Trial. For instance, ``trial
+monte.test.test_ast`` (when run from the root of the project) will run the ast
+tests.
+
+.. _testing.mt: https://github.com/monte-language/monte/blob/master/monte/src/examples/testing.mt

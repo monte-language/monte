@@ -1,4 +1,5 @@
-========
+.. _patterns:
+
 Patterns
 ========
 
@@ -7,13 +8,13 @@ viewing objects, called the **pattern subsystem**. A *pattern* is a rule which
 conditionally matches objects and binds parts of the matched objects to names.
 
 Pronounciation
-==============
+--------------
 
 Speak the name of the pattern, followed by "pattern": "This is a via pattern
 with a such-that pattern inside."
 
 All Patterns
-============
+------------
 
 An exhaustive list of all patterns available in Monte is provided. They are
 all shown in the context of the ``def`` expression.
@@ -211,3 +212,62 @@ Slot
 
 The slot pattern, like the bind pattern, allows definition of the slot behind
 a name.
+
+Pattern Syntax Reference
+------------------------
+
+.. syntax:: pattern
+
+   Diagram(Sequence(
+        Choice(0,
+               NonTerminal('namePattern'),
+               NonTerminal('quasiLiteral'),
+               Sequence(Choice(0, "==", "!="), NonTerminal('prim')),
+               Sequence("_", Optional(NonTerminal('guard'))),
+               Sequence("via", "(", NonTerminal('expr'), ')',
+                        NonTerminal('pattern')),
+               Sequence("[",
+                        ZeroOrMore(NonTerminal('pattern'), ','),
+                        ']',
+                        Optional(Sequence("+", NonTerminal('pattern')))),
+               Sequence("[",
+                        OneOrMore(NonTerminal('mapPatternItem'), ','),
+                        ']',
+                        Optional(Sequence("|", NonTerminal('pattern'))))),
+        Optional(Sequence("?", "(", NonTerminal('expr'), ")"))))
+
+.. syntax:: namePattern
+
+   Diagram(
+    Choice(0,
+           Sequence(Choice(0, "IDENTIFIER", ".String.")),
+                    Optional(NonTerminal('guard'))),
+           Sequence("var", NonTerminal('noun'),
+                    Optional(NonTerminal('guard'))),
+           Sequence("&", NonTerminal('noun'),
+                    Optional(NonTerminal('guard'))),
+           Sequence("bind", NonTerminal('noun'),
+                    Optional(NonTerminal('guard'))),
+           Sequence("&&", NonTerminal('noun')))
+
+.. syntax:: mapPatternItem
+
+   Diagram(Sequence(
+        Choice(0,
+               Sequence("=>", NonTerminal('namePattern')),
+               Sequence(Choice(0,
+                               Sequence("(", NonTerminal('expr'), ")"),
+                               ".String.", ".int.", ".float64.", ".char."),
+                        "=>", NonTerminal('pattern'))),
+        Optional(Sequence(":=", NonTerminal('order')))))
+
+.. syntax:: mapItem
+
+   Diagram(Choice(
+        0,
+        Sequence("=>", Choice(
+            0,
+            Sequence("&", NonTerminal('noun')),
+            Sequence("&&", NonTerminal('noun')),
+            NonTerminal('noun'))),
+        Sequence(NonTerminal('expr'), "=>", NonTerminal('expr'))))

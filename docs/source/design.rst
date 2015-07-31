@@ -40,3 +40,35 @@ Object-Based Features
 Monte is descended from the Smalltalk family of languages, and as such,
 is an **object-based** language. "Object-oriented" styles of programming are
 largely available in Monte.
+
+.. _ocap:
+
+Capability Model
+================
+
+.. note:: Not sure whether this should be here, or in a separate page.
+
+No object created within a scope will be accessible outside of that scope,
+unless a message about it is passed out. In Monte, the only way for object A
+to know that B exists is:
+
+* If B created A or A was created with knowledge of B
+* If A created B
+* If any object that A knows about passed A a message about B
+
+For example::
+
+    def scope():
+        def a := 1
+        def innerScope():
+            def b := 2
+            traceln(`a is $a and b is $b`)
+
+        # This line would cause a compile-time error, since the name `b` isn't
+        # accessible in this scope!
+        # traceln(`I cannot access $b here`)
+
+        return innerScope
+
+    scope()()
+
