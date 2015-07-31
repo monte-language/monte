@@ -58,3 +58,25 @@ QLs can be used as patterns::
 
 Examine this carefully. This pattern is assigning to ``name``, asserting that
 the rest of the pattern (the "Hello, " and "!" fragments) match the specimen.
+
+Quasiliteral Syntax Summary
+===========================
+
+*TODO: split quasipattern out of quasiliteral*
+
+.. syntax:: quasiliteral
+
+   Diagram(Sequence(
+    Optional(Terminal("IDENTIFIER")),
+    '`',
+    ZeroOrMore(
+        Choice(0, Comment('...text...'),
+               Choice(
+                   0,
+                   Terminal('$IDENT'),
+                   Sequence('${', NonTerminal('expr'), '}')),
+               Choice(
+                   0,
+                   Terminal('@IDENT'),
+                   Sequence('@{', NonTerminal('pattern'), '}')))),
+    '`'))

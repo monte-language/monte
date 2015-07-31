@@ -1,8 +1,8 @@
 .. _roadmap:
 
-==========
-Montefesto
-==========
+===================
+Roadmap: Montefesto
+===================
 
 .. epigraph::
 
@@ -88,3 +88,52 @@ of new contributors.
 We currently don't know what we're going to do for 2016. Possibilities range
 from MonteCon to The Monte Foundation to nothing at all. Who knows? It is a
 mystery~
+
+Contributing
+============
+
+If you'd like to get involved with developing or using the Monte language,
+start by getting acquainted with Python_'s syntax and the computational
+concepts of E_. 
+
+Then clone the repo_ and follow the directions below to begin running Monte
+code. If you have problems, join us in #monte on irc.freenode.net, ask your
+question (use a pastebin_ to share any errors, rather than pasting into the
+channel), and wait a few hours if nobody is around. 
+
+If you'd like to contribute to Monte, check out the Monte_ and Typhon_ issue
+trackers and the `pipe dreams`_ wiki page. It's also worth grepping for
+``TODO`` in the source of both projects. 
+
+.. _Monte: https://github.com/monte-language/monte/issues
+.. _Typhon: https://github.com/monte-language/typhon/issues
+.. _pipe dreams: https://github.com/monte-language/monte/wiki/Pipe-Dreams
+.. _Python: https://docs.python.org/2/tutorial/
+.. _E: http://www.skyhunter.com/marcs/ewalnut.html
+.. _repo: https://github.com/monte-language/monte
+.. _pastebin: http://bpaste.net/
+
+
+Using Monte
+===========
+
+.. warning:: This section largely obsolete. The `monte wiki`__ may
+             have more up-to-date info.
+
+__ https://github.com/monte-language/monte/wiki
+
+To use the Monte implementation hosted in Python, it's best to set up a
+virtualenv:
+
+.. code-block:: console
+
+    $ virtualenv v
+    $ source v/bin/activate
+    $ pip install -r requirements.txt
+
+To run Monte code (with your virtualenv activated):
+
+.. code-block:: console
+
+    $ bin/monte monte/src/examples/hello.mt
+

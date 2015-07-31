@@ -33,12 +33,3 @@ of the commit message. There are more docs on skipping commits `here`_.
 .. _readthedocs: https://readthedocs.org/projects/monte/
 .. _Travis: https://travis-ci.org/monte-language/monte
 .. _here: http://docs.travis-ci.com/user/how-to-skip-a-build/
-
-
-Editor Syntax Highlighting
-==========================
-
-Atom
-----
-
-Use Atom to install the package language-monte

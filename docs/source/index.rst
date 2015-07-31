@@ -3,8 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+=========================
+Monte is Serious Business
+=========================
+
 Welcome to Monte's documentation!
-=================================
 
 Monte is a dynamic language inspired by Python and E. 
 
@@ -13,21 +16,22 @@ For users:
 .. toctree::
 
     intro
-    faq
     symbols
-    monte-for-wizards
-    modules
-    design
     iteration
-    guards
-    custom-guards
+    syntax
     patterns
     operators
-    tubes
-    miranda
-    quasiparsers
+    guards
+    glossary
     interfaces
-    syntax
+    modules
+    custom-guards
+    quasiparsers
+    miranda
+    tubes
+    design
+    wizard
+    faq
 
 For Developers: 
 
@@ -35,9 +39,6 @@ For Developers:
 
     montefesto
     tools
-    wizard
-    glossary
-
 
 
 Indices and tables
