@@ -2,6 +2,7 @@
 
 from docutils.parsers.rst import Directive
 from docutils import nodes
+from sphinx import addnodes
 
 import railroad_diagrams
 
@@ -37,10 +38,23 @@ class RailroadDirective(Directive):
     def run(self):
         env = self.state.document.settings.env
 
-        targetid = "syntax-%d" % env.new_serialno('syntax')
+        name = self.content[0].strip()
+        expr = '\n'.join(self.content[1:]).strip()
+
+        targetid = "syntax-%s" % name
         targetnode = nodes.target('', '', ids=[targetid])
+        label = nodes.paragraph('', '', nodes.strong(text=name))
+        ix = addnodes.index(entries=[
+            ("single", "syntax; " + name, targetid, False)])
 
-        diag = RailroadDiagram(eval(''.join(self.content),
-                                    railroad_diagrams.__dict__))
+        try:
+            it = eval(expr,
+                      railroad_diagrams.__dict__)
+        except Exception as ex:
+            print "@@eek!", self.content
+            print "@@", ex
+            raise
 
-        return [targetnode, diag]
+        diag = RailroadDiagram(it)
+
+        return [targetnode, ix, label, diag]
