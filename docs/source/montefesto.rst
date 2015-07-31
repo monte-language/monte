@@ -117,8 +117,10 @@ trackers and the `pipe dreams`_ wiki page. It's also worth grepping for
 Using Monte
 ===========
 
-*This is largely obsolete; move to the wiki until the transition to
- typhon is more complete?*
+.. warning:: This section largely obsolete. The `monte wiki`__ may
+             have more up-to-date info.
+
+__ https://github.com/monte-language/monte/wiki
 
 To use the Monte implementation hosted in Python, it's best to set up a
 virtualenv:
