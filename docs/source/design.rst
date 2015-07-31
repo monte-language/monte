@@ -72,3 +72,22 @@ For example::
 
     scope()()
 
+Object Capabilities
+~~~~~~~~~~~~~~~~~~~
+
+How do I know which capabilities I have?
+----------------------------------------
+
+Any object that you can access meets one of three criteria:
+
+* You created it,
+* You were born with it, or
+* You received it as a result of passing messages to something that met either
+  of the first two criteria.
+
+An object has the capabilities of all objects that it can access with these
+three rules.
+
+.. note::
+    This answer still isn't satisfying. Neither is this question, really.
+

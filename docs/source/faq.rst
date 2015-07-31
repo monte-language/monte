@@ -27,25 +27,6 @@ Dynamic Compiling
     Monte can compile and run Monte code at runtime, as part of its core
     language.
 
-Object Capabilities
-~~~~~~~~~~~~~~~~~~~
-
-How do I know which capabilities I have?
-----------------------------------------
-
-Any object that you can access meets one of three criteria:
-
-* You created it,
-* You were born with it, or
-* You received it as a result of passing messages to something that met either
-  of the first two criteria.
-
-An object has the capabilities of all objects that it can access with these
-three rules.
-
-.. note::
-    This answer still isn't satisfying. Neither is this question, really.
-
 Monte in Theory
 ~~~~~~~~~~~~~~~
 
@@ -134,26 +115,6 @@ they are near references. For example, all literals are near: ``def lue :=
 When in doubt, remember that there is a ``near`` guard which can be used to
 confirm that an object is in the same vat as you and thus available for
 synchronous calls.
-
-What are ejectors?
-------------------
-
-An ejector is an object that aborts the current computation and returns to
-where it was created. They are created by ``escape`` expressions.
-
-An ejector can be passed as deeply as one wants, but cannot be used outside of
-the ``escape`` that created it. This is called the **delimited** property of
-ejectors.
-
-Ejectors cannot be used multiple times. The first time an ejector is used, the
-``escape`` block aborts computation, resulting in the value of the ejector.
-Subsequent clever uses of the ejector will fail. This is called the **single
-use** property.
-
-Monte implements the ``return``, ``break``, and ``continue`` expressions with
-ejectors.
-
-To be fully technical, ejectors are "single-use delimited continuations".
 
 Monte in Practice
 ~~~~~~~~~~~~~~~~~
