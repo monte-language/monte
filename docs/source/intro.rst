@@ -99,8 +99,23 @@ __ https://github.com/monte-language/typhon/issues/17
 
 .. _trace:
 
+Editor Syntax Highlighting
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Atom
+++++
+
+Use Atom to install the package `language-monte`__.
+
+__ https://atom.io/packages/language-monte
+
+.. note:: See also `tooling ideas`__ in the wiki.
+
+__ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
+
+
 Diagnostics, Documentation, and Debugging
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------------------
 
 Monte strives to provide useful error messages and self-documenting objects::
 
@@ -116,6 +131,8 @@ Currently the most convenient way to print out messages from your program is
 with the ``trace()`` and ``traceln()`` built-in functions. The only difference
 between them is that ``traceln()`` automatically adds a newline.
 
+.. rubric:: Notes
+
 .. [#] Miller, M.S.: `Robust Composition: Towards a Unified Approach to
        Access Control and Concurrency Control`__. PhD thesis, Johns
        Hopkins University, Baltimore, Maryland, USA (May 2006)
@@ -124,19 +141,3 @@ between them is that ``traceln()`` automatically adds a newline.
        and ``traceln()``. See :ref:`trace`.
 
 __ http://erights.org/talks/thesis/index.html
-
-
-
-Editor Syntax Highlighting
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Atom
-++++
-
-Use Atom to install the package `language-monte`__.
-
-__ https://atom.io/packages/language-monte
-
-.. note:: See also `tooling ideas`__ in the wiki.
-
-__ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
