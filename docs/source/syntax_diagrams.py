@@ -222,6 +222,7 @@ Syntax Reference
         rst.write('''
 .. index::
    single: syntax; %(name)s
+
 **%(name)s**
 
 .. raw:: html
