@@ -22,6 +22,7 @@ For users:
     patterns
     operators
     guards
+    glossary
     interfaces
     modules
     custom-guards
@@ -29,7 +30,7 @@ For users:
     miranda
     tubes
     design
-    monte-for-wizards
+    wizard
     faq
 
 For Developers: 
@@ -38,9 +39,6 @@ For Developers:
 
     montefesto
     tools
-    wizard
-    glossary
-
 
 
 Indices and tables
