@@ -46,6 +46,14 @@ master_doc = 'index'
 project = u'Monte'
 copyright = u'2014, Monte Project'
 
+
+def setup(sphinx):
+    # for now, this is just to shut sphinx up
+    print "TODO: real monte lexer #53"
+    print "https://github.com/monte-language/monte/issues/53"
+    from pygments import lexers
+    sphinx.add_lexer('monte', lexers.get_lexer_by_name('python'))
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
