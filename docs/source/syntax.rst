@@ -36,6 +36,7 @@ Syntax Reference
 
 .. index::
    single: syntax; module
+
 **module**
 
 .. raw:: html
@@ -98,6 +99,7 @@ Syntax Reference
 
 .. index::
    single: syntax; imports
+
 **imports**
 
 .. raw:: html
@@ -133,6 +135,7 @@ Syntax Reference
 
 .. index::
    single: syntax; exports
+
 **exports**
 
 .. raw:: html
@@ -192,6 +195,7 @@ Syntax Reference
 
 .. index::
    single: syntax; block
+
 **block**
 
 .. raw:: html
@@ -271,6 +275,7 @@ Syntax Reference
 
 .. index::
    single: syntax; blockExpr
+
 **blockExpr**
 
 .. raw:: html
@@ -377,6 +382,7 @@ Syntax Reference
 
 .. index::
    single: syntax; if
+
 **if**
 
 .. raw:: html
@@ -474,6 +480,7 @@ Syntax Reference
 
 .. index::
    single: syntax; escape
+
 **escape**
 
 .. raw:: html
@@ -510,6 +517,7 @@ Syntax Reference
 
 .. index::
    single: syntax; blockCatch
+
 **blockCatch**
 
 .. raw:: html
@@ -565,6 +573,7 @@ Syntax Reference
 
 .. index::
    single: syntax; for
+
 **for**
 
 .. raw:: html
@@ -641,6 +650,7 @@ Syntax Reference
 
 .. index::
    single: syntax; fn
+
 **fn**
 
 .. raw:: html
@@ -696,6 +706,7 @@ Syntax Reference
 
 .. index::
    single: syntax; switch
+
 **switch**
 
 .. raw:: html
@@ -788,6 +799,7 @@ Syntax Reference
 
 .. index::
    single: syntax; try
+
 **try**
 
 .. raw:: html
@@ -824,6 +836,7 @@ Syntax Reference
 
 .. index::
    single: syntax; catchers
+
 **catchers**
 
 .. raw:: html
@@ -907,6 +920,7 @@ Syntax Reference
 
 .. index::
    single: syntax; while
+
 **while**
 
 .. raw:: html
@@ -957,6 +971,7 @@ Syntax Reference
 
 .. index::
    single: syntax; when
+
 **when**
 
 .. raw:: html
@@ -1033,6 +1048,7 @@ Syntax Reference
 
 .. index::
    single: syntax; bind
+
 **bind**
 
 .. raw:: html
@@ -1082,6 +1098,7 @@ Syntax Reference
 
 .. index::
    single: syntax; object
+
 **object**
 
 .. raw:: html
@@ -1160,6 +1177,7 @@ Syntax Reference
 
 .. index::
    single: syntax; objectExpr
+
 **objectExpr**
 
 .. raw:: html
@@ -1248,6 +1266,7 @@ Syntax Reference
 
 .. index::
    single: syntax; objectScript
+
 **objectScript**
 
 .. raw:: html
@@ -1347,6 +1366,7 @@ Syntax Reference
 
 .. index::
    single: syntax; doco
+
 **doco**
 
 .. raw:: html
@@ -1366,6 +1386,7 @@ Syntax Reference
 
 .. index::
    single: syntax; def
+
 **def**
 
 .. raw:: html
@@ -1462,6 +1483,7 @@ Syntax Reference
 
 .. index::
    single: syntax; interface
+
 **interface**
 
 .. raw:: html
@@ -1567,6 +1589,7 @@ Syntax Reference
 
 .. index::
    single: syntax; meta
+
 **meta**
 
 .. raw:: html
@@ -1651,6 +1674,7 @@ Syntax Reference
 
 .. index::
    single: syntax; guard
+
 **guard**
 
 .. raw:: html
