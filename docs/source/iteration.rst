@@ -3,22 +3,6 @@
 Building objects: blocks and scopes
 ===================================
 
-Comments
---------
-
-This is a single-line comment::
-
-    # Lines starting with a # are single-line comments.
-    # They only last until the end of the line.
-
-And this is a multi-line comment::
-
-    /** This comment is multi-line.
-        Yes, it starts with two stars,
-        but ends with only one.
-        These should only be used for docstrings. */
-
-
 Indentation
 -----------
 

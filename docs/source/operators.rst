@@ -1,12 +1,43 @@
-==================================
-Operators and Augmented Assignment
-==================================
+========================
+Operators and Assignment
+========================
 
 .. epigraph::
 
     Corporate accounts payable, Nina speaking! Just a moment!
 
     -- Nina, corporate accounts payable, *Office Space*
+
+Definitions bind objects to names::
+
+  ▲> { def x := 2; x * x }
+  Result: 4
+
+The ``def`` syntax makes final (aka immutable) bindings::
+
+  ▲> { def x := 2; x := 3 }
+  ...
+  Parse error: [Can't assign to final nouns, [x].asSet()]
+
+To signal that you want a variable binding, use ``var``::
+
+  ▲> { var v := 6; v := 12; v - 4 }
+  Result: 8
+
+Note the use of ``:=`` rather than ``=`` for assignment.
+Comparison in Monte is ``==`` and the single-equals, ``=``, has no meaning. This
+all but eliminates the common issue of ``if (foo = baz)`` suffered by all
+languages where you can compile after typo-ing ``==``.
+
+Monte has rich support for destructuring assignment using pattern matching::
+
+  ▲> { def [x, y] := [1, 2]; x }
+  Result: 1
+
+The :ref:`patterns` section discusses pattern matching in detail.
+
+Operators
+---------
 
 Monte has a rich set of operators above and beyond those in Kernel-Monte. All
 operators are overloadable, but overloading follows a very simple set of
@@ -15,9 +46,6 @@ passed to the left-hand operand, except for a few cases where the message is
 passed to a *helper object* which implements the operation. In object
 capability shorthand, we are asking the object on the left what it thinks of
 the object on the right.
-
-Operators
----------
 
 Comparison
 ~~~~~~~~~~

@@ -1,42 +1,15 @@
 Simple expressions, definitions, and variables
 ==============================================
 
-Everything is an object. The expression ``1 + 1`` is actually
-short-hand for a method call: ``1.plus(1)``.
-
-Definitions bind objects to names::
-
-  ▲> { def x := 2; x * x }
-  Result: 4
-
-The ``def`` syntax makes final (aka immutable) bindings::
-
-  ▲> { def x := 2; x := 3 }
-  ...
-  Parse error: [Can't assign to final nouns, [x].asSet()]
-
-To signal that you want a variable binding, use ``var``::
-
-  ▲> { var v := 6; v := 12; v - 4 }
-  Result: 8
-
-Note the use of ``:=`` rather than ``=`` for assignment.
-Comparison in Monte is ``==`` and the single-equals, ``=``, has no meaning. This
-all but eliminates the common issue of ``if (foo = baz)`` suffered by all
-languages where you can compile after typo-ing ``==``.
-
-Monte has rich support for destructuring assignment using pattern matching::
-
-  ▲> { def [x, y] := [1, 2]; x }
-  Result: 1
-
-The :ref:`patterns` section discusses pattern matching in detail.
-
-
 Built-in Object Types
 ---------------------
 
 Monte provides some classic and common value types.
+
+.. note:: Lexical details of monte syntax are currently specified
+	  only by implementation; see `lib/monte/monte_lexer.mt`__
+
+__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
 
 Int
 ~~~
@@ -58,11 +31,6 @@ mathematical methods are available::
   Method: aboveZero/0
   Method: atLeastZero/0
   ...
-
-.. note:: Lexical details of monte syntax are currently specified
-	  only by implementation; see `lib/monte/monte_lexer.mt`__
-
-__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
 
 Double
 ~~~~~~
@@ -234,6 +202,21 @@ Use ``diverge`` and ``snapshot`` similarly::
 
                ▲> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
                Result: true
+
+Comments
+--------
+
+This is a single-line comment::
+
+    # Lines starting with a # are single-line comments.
+    # They only last until the end of the line.
+
+And this is a multi-line comment::
+
+    /** This comment is multi-line.
+        Yes, it starts with two stars,
+        but ends with only one.
+        These should only be used for docstrings. */
 
 Syntax Summary
 --------------
