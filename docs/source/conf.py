@@ -50,7 +50,7 @@ copyright = u'2014, Monte Project'
 
 
 def setup(sphinx):
-    app.add_stylesheet(rr_stylesheet)
+    sphinx.add_stylesheet(rr_stylesheet)
     # for now, this is just to shut sphinx up
     print "TODO: real monte lexer #53"
     print "https://github.com/monte-language/monte/issues/53"
