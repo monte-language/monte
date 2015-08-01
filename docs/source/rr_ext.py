@@ -55,6 +55,6 @@ class RailroadDirective(Directive):
             print "@@", ex
             raise
 
-        diag = RailroadDiagram(it)
+        diag = RailroadDiagram(railroad_diagrams.Diagram(it))
 
         return [targetnode, ix, label, diag]
