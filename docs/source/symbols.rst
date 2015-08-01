@@ -273,6 +273,30 @@ Logical
     True && False == False
     False && False == False
 
+How do I perform a conditional expression? What is Monte's ternary operator?
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+Monte does not have a ternary operator. However, in exchange, the ``if``
+expression can be used where any other expression might be placed. As an
+example, consider a function that tests whether an argument is even::
+
+    def even(i :Int) :Str:
+        if (i % 2 == 0):
+            return "yes"
+        else:
+            return "no"
+
+Monte lacks the ternary operator, but permits using regular conditional
+expressions in its place. We can refactor this example to pull the ``return``
+outside of the ``if``::
+
+    def even(i :Int) :Str:
+        return if (i % 2 == 0) {"yes"} else {"no"}
+
+Don't forget that Monte requires ``if`` expressions to evaluate their
+condition to a ``Bool``.
+
+
 Boolean Operators
 -----------------
 

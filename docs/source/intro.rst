@@ -13,6 +13,12 @@ composition using object capabilities in the tradition of E [#]_.
 	  resolved, it is still undergoing rapid development.
 	  See :ref:`roadmap` for details.
 
+.. sidebar:: The origin of Monte's name
+
+   The Monte language has its roots in the E and Python languages. We
+   took "Monty" from "Monty Python", and put an "e" in there. Thus,
+   "Monte".
+
 
 Why Monte?
 ----------
