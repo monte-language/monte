@@ -1,5 +1,10 @@
-Simple expressions, definitions, and variables
-==============================================
+Simple expressions
+==================
+
+Expressions evaluate to objects and definitions bind objects to names::
+
+  ▲> { def x := 2; x * x }
+  Result: 4
 
 Built-in Object Types
 ---------------------

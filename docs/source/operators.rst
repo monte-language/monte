@@ -8,11 +8,6 @@ Operators and Assignment
 
     -- Nina, corporate accounts payable, *Office Space*
 
-Definitions bind objects to names::
-
-  ▲> { def x := 2; x * x }
-  Result: 4
-
 The ``def`` syntax makes final (aka immutable) bindings::
 
   ▲> { def x := 2; x := 3 }
