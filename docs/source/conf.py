@@ -30,8 +30,7 @@ sys.path.insert(0, os.path.abspath('.'))
 # ones.
 extensions = ['rr_ext']
 
-def setup(app):
-    app.add_stylesheet('railroad-diagrams.css')
+rr_stylesheet = 'railroad-diagrams.css'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -51,6 +50,7 @@ copyright = u'2014, Monte Project'
 
 
 def setup(sphinx):
+    app.add_stylesheet(rr_stylesheet)
     # for now, this is just to shut sphinx up
     print "TODO: real monte lexer #53"
     print "https://github.com/monte-language/monte/issues/53"
