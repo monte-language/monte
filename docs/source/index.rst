@@ -18,7 +18,6 @@ For users:
     intro
     symbols
     iteration
-    syntax
     patterns
     operators
     guards

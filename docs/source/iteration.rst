@@ -312,3 +312,173 @@ Monte implements the ``return``, ``break``, and ``continue`` expressions with
 ejectors.
 
 To be fully technical, ejectors are "single-use delimited continuations".
+
+Block Syntax Summary
+--------------------
+
+.. syntax:: block
+
+   Sequence(
+    "{",
+    Choice(
+        0,
+        ZeroOrMore(
+            Choice(
+                0,
+                NonTerminal('blockExpr'),
+                NonTerminal('expr')),
+            ";"),
+        "pass"),
+    "}")
+
+.. syntax:: blockExpr
+
+   Choice(
+    0,
+    NonTerminal('if'),
+    NonTerminal('escape'),
+    NonTerminal('for'),
+    NonTerminal('fn'),
+    NonTerminal('switch'),
+    NonTerminal('try'),
+    NonTerminal('while'),
+    NonTerminal('when'),
+    NonTerminal('bind'),
+    NonTerminal('object'),
+    NonTerminal('def'),
+    NonTerminal('interface'),
+    NonTerminal('meta'))
+
+.. syntax:: if
+
+   Sequence(
+    "if", "(", NonTerminal('expr'), ")", NonTerminal('block'),
+    Optional(Sequence("else", Choice(
+        0, Sequence("if", Comment('blockExpr@@')),
+        NonTerminal('block')))))
+
+.. syntax:: escape
+
+   Sequence(
+    "escape", NonTerminal('pattern'),
+    NonTerminal('blockCatch'))
+
+.. syntax:: blockCatch
+
+   Sequence(
+    NonTerminal('block'),
+    Optional(
+        Sequence("catch", NonTerminal('pattern'),
+                 NonTerminal('block'))))
+
+.. syntax:: for
+
+   Sequence(
+    "for",
+    NonTerminal('pattern'),
+    Optional(Sequence("=>", NonTerminal('pattern'))),
+    "in", NonTerminal('comp'),
+    NonTerminal('blockCatch'))
+
+.. syntax:: fn
+
+   Sequence(
+    "fn",
+    ZeroOrMore(NonTerminal('pattern'), ','),
+    NonTerminal('block'))
+
+.. syntax:: switch
+
+   Sequence(
+    "switch", "(", NonTerminal('expr'), ")",
+    "{", NonTerminal('matchers'), "}")
+
+.. syntax:: matchers
+
+   OneOrMore(Sequence("match",
+             NonTerminal('pattern'),
+             NonTerminal('block')))
+
+.. syntax:: try
+
+   Sequence(
+    "try", NonTerminal('block'), NonTerminal('catchers'))
+
+.. syntax:: catchers
+
+   Sequence(
+    ZeroOrMore(Sequence("catch",
+                        NonTerminal('pattern'),
+                        NonTerminal('block'))),
+    Optional(Sequence("finally", NonTerminal('block'))))
+
+
+.. syntax:: while
+
+   Sequence(
+    "while", "(", NonTerminal('expr'), ")", NonTerminal('blockCatch'))
+
+.. syntax:: when
+
+   Sequence(
+    "when",
+    "(", OneOrMore(NonTerminal('expr'), ','), ")",
+    "->", NonTerminal('block'),
+    NonTerminal('catchers'))
+
+.. syntax:: bind
+
+   Sequence(
+    "bind",
+    NonTerminal("noun"),
+    Optional(NonTerminal('guard')), Comment("objectExpr@@"))
+
+.. syntax:: object
+
+   Sequence(
+    "object",
+    Choice(0, Sequence("bind", NonTerminal('noun')),
+           "_",
+           NonTerminal("noun")),
+    Optional(NonTerminal('guard')), Comment("objectExpr@@"))
+
+.. syntax:: objectExpr
+
+   Sequence(
+    Optional(Sequence('extends', NonTerminal('order'))),
+    NonTerminal('auditors'),
+    '{', ZeroOrMore(NonTerminal('objectScript'), ';'), '}')
+
+.. syntax:: objectScript
+
+   Sequence(
+    Optional(NonTerminal('doco')),
+    Choice(0, "pass", ZeroOrMore("@@meth")),
+    Choice(0, "pass", ZeroOrMore(NonTerminal('matchers'))))
+
+.. syntax:: doco
+
+   Terminal('.String')
+
+.. syntax:: def
+
+   Sequence(
+    "def",
+    Choice(
+        0,
+        Sequence(
+            Choice(
+                0,
+                Sequence("bind", NonTerminal("noun"),
+                         Optional(NonTerminal('guard'))),
+                NonTerminal("noun")),
+            Choice(0, Comment("objectFunction@@"), NonTerminal('assign'))),
+        NonTerminal('assign')))
+
+.. syntax:: meta
+
+   Sequence(
+    "meta", ".",
+    Choice(0,
+           Sequence("context", "(", ")"),
+           Sequence("getState", "(", ")")))

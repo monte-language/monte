@@ -65,3 +65,19 @@ Some other builtin guards are worth mentioning:
   ``null`` or whatever the subguard accepts.
 * ``Same`` must be specialized, returning a guard which only accepts values
   that are ``==`` to the value on which it was specialized.
+
+
+Guard Syntax Summary
+--------------------
+
+.. syntax:: guard
+
+   Sequence(
+    ':',
+    Choice(
+        0, Sequence('IDENTIFIER',
+                    Optional(Sequence('[',
+                                      OneOrMore(NonTerminal('expr'), ','),
+                                      ']'))),
+        Sequence('(', NonTerminal('expr'), ')')))
+
