@@ -56,3 +56,5 @@ be composed with other tubes::
 
 This pump uses a mapping function to negate every element that flows through
 it, without any concern over flow control.
+
+.. module:: tubes
