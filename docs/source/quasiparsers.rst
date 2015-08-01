@@ -66,7 +66,7 @@ Quasiliteral Syntax Summary
 
 .. syntax:: quasiliteral
 
-   Diagram(Sequence(
+   Sequence(
     Optional(Terminal("IDENTIFIER")),
     '`',
     ZeroOrMore(
@@ -79,4 +79,4 @@ Quasiliteral Syntax Summary
                    0,
                    Terminal('@IDENT'),
                    Sequence('@{', NonTerminal('pattern'), '}')))),
-    '`'))
+    '`')

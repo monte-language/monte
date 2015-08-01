@@ -218,7 +218,7 @@ Pattern Syntax Reference
 
 .. syntax:: pattern
 
-   Diagram(Sequence(
+   Sequence(
         Choice(0,
                NonTerminal('namePattern'),
                NonTerminal('quasiLiteral'),
@@ -234,13 +234,12 @@ Pattern Syntax Reference
                         OneOrMore(NonTerminal('mapPatternItem'), ','),
                         ']',
                         Optional(Sequence("|", NonTerminal('pattern'))))),
-        Optional(Sequence("?", "(", NonTerminal('expr'), ")"))))
+        Optional(Sequence("?", "(", NonTerminal('expr'), ")")))
 
 .. syntax:: namePattern
 
-   Diagram(
-    Choice(0,
-           Sequence(Choice(0, "IDENTIFIER", ".String.")),
+   Choice(0,
+           Sequence(Choice(0, "IDENTIFIER", ".String."),
                     Optional(NonTerminal('guard'))),
            Sequence("var", NonTerminal('noun'),
                     Optional(NonTerminal('guard'))),
@@ -252,22 +251,22 @@ Pattern Syntax Reference
 
 .. syntax:: mapPatternItem
 
-   Diagram(Sequence(
+   Sequence(
         Choice(0,
                Sequence("=>", NonTerminal('namePattern')),
                Sequence(Choice(0,
                                Sequence("(", NonTerminal('expr'), ")"),
                                ".String.", ".int.", ".float64.", ".char."),
                         "=>", NonTerminal('pattern'))),
-        Optional(Sequence(":=", NonTerminal('order')))))
+        Optional(Sequence(":=", NonTerminal('order'))))
 
 .. syntax:: mapItem
 
-   Diagram(Choice(
+   Choice(
         0,
         Sequence("=>", Choice(
             0,
             Sequence("&", NonTerminal('noun')),
             Sequence("&&", NonTerminal('noun')),
             NonTerminal('noun'))),
-        Sequence(NonTerminal('expr'), "=>", NonTerminal('expr'))))
+        Sequence(NonTerminal('expr'), "=>", NonTerminal('expr')))

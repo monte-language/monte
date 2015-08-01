@@ -287,7 +287,7 @@ Expression Syntax Summary
 
 .. syntax:: expr
 
-   Diagram(Choice(
+   Choice(
     0,
     NonTerminal('assign'),
     Sequence(
@@ -295,7 +295,7 @@ Expression Syntax Summary
         Choice(0,
                Sequence("(", ")"),
                ";",
-               NonTerminal('blockExpr')))))
+               NonTerminal('blockExpr'))))
 
 .. seealso::
 
@@ -306,7 +306,7 @@ Expression Syntax Summary
 
 .. syntax:: assign
 
-   Diagram(Choice(
+   Choice(
     0,
     Sequence('def',
              NonTerminal('pattern'),
@@ -319,7 +319,7 @@ Expression Syntax Summary
     Sequence(NonTerminal('lval'), ":=", NonTerminal('assign')),
     Comment("@op=...XXX"),
     Comment("VERB_ASSIGN XXX"),
-    NonTerminal('logical')))
+    NonTerminal('logical'))
 
 .. seealso::
 
@@ -327,20 +327,20 @@ Expression Syntax Summary
 
 .. syntax:: lval
 
-   Diagram(Choice(
+   Choice(
     0,
     NonTerminal('noun'),
-    NonTerminal('getExpr')))
+    NonTerminal('getExpr'))
 
 .. syntax:: logical
 
-   Diagram(Sequence(
+   Sequence(
     NonTerminal('comp'),
-    Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical')))))
+    Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical'))))
 
 .. syntax:: comp
 
-   Diagram(
+   Sequence(
     NonTerminal('order'),
     Optional(Sequence(Choice(
         0,
@@ -352,7 +352,7 @@ Expression Syntax Summary
 
 .. syntax:: order
 
-   Diagram(
+   Sequence(
     NonTerminal('prefix'),
     Optional(Sequence(Choice(
         0,
@@ -366,25 +366,25 @@ Expression Syntax Summary
 
 .. syntax:: prefix
 
-   Diagram(Choice(
+   Choice(
     0,
     Sequence('-', NonTerminal('prim')),
     Sequence(Choice(0, "~", "!"), NonTerminal('call')),
     Sequence('&', NonTerminal('noun')),
     Sequence('&&', NonTerminal('noun')),
-    Sequence(NonTerminal('call'), Optional(NonTerminal('guard')))))
+    Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
 
 .. syntax:: call
 
-   Diagram(Sequence(
+   Sequence(
     NonTerminal('calls'),
-    Optional(Sequence(NonTerminal('curry')))))
+    Optional(Sequence(NonTerminal('curry'))))
 
 *TODO: subordinate calls, as it's a purely syntactic notion*
 
 .. syntax:: calls
 
-    Diagram(Choice(
+    Choice(
         0, NonTerminal('prim'),
         Sequence(
             NonTerminal('calls'),
@@ -392,23 +392,23 @@ Expression Syntax Summary
                 Sequence(Choice(0, ".", "<-"),
                          Choice(0, "IDENTIFIER", ".String."))),
             Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
-        NonTerminal('getExpr')))
+        NonTerminal('getExpr'))
 
 .. syntax:: getExpr
 
-   Diagram(Sequence(
+   Sequence(
     NonTerminal('calls'),
-    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]")))
+    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))
 
 .. syntax:: curry
 
-   Diagram(Sequence(
+   Sequence(
     Choice(0, '.', '<-'),
-    Choice(0, "IDENTIFIER", ".String.")))
+    Choice(0, "IDENTIFIER", ".String."))
 
 .. syntax:: prim
 
-   Diagram(Choice(
+   Choice(
     0,
     ".String.", ".int.", ".float64.", ".char.",
     NonTerminal('quasiliteral'),
@@ -424,25 +424,25 @@ Expression Syntax Summary
                                     "=>", NonTerminal('expr')),
                            ','),
                  Sequence("for", NonTerminal('comprehension'))),
-             "]")))
+             "]"))
 
 .. syntax:: comprehension
 
-   Diagram(Choice(
+   Choice(
     0,
     Sequence(NonTerminal('pattern'),
              "in", NonTerminal('iter'),
              NonTerminal('expr')),
     Sequence(NonTerminal('pattern'), "=>", NonTerminal('pattern'),
              "in", NonTerminal('iter'),
-             NonTerminal('expr'), "=>", NonTerminal('expr'))))
+             NonTerminal('expr'), "=>", NonTerminal('expr')))
 
 .. syntax:: iter
 
-   Diagram(Sequence(
+   Sequence(
     NonTerminal('order'),
-    Optional(Sequence("if", NonTerminal('comp')))))
+    Optional(Sequence("if", NonTerminal('comp'))))
 
 .. syntax:: noun
 
-   Diagram(Choice(0, "IDENTIFIER", Sequence("::", ".String.")))
+   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
