@@ -230,9 +230,7 @@ Use ``diverge`` and ``snapshot`` similarly::
                ▲> [ "a" => 1, "b" => 2] == [ "b" => 2, "a" => 1]
                Result: false
 
-             See section :ref:`ocap` about why this is so.
-
-             To disregard order, use ``sortKeys``::
+             To compare without regard to order, use ``sortKeys``::
 
                ▲> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
                Result: true
