@@ -419,6 +419,18 @@ Block Syntax Summary
     NonTerminal('interface'),
     NonTerminal('meta'))
 
+.. syntax:: expr
+
+   Choice(
+    0,
+    NonTerminal('assign'),
+    Sequence(
+        Choice(0, "continue", "break", "return"),
+        Choice(0,
+               Sequence("(", ")"),
+               ";",
+               NonTerminal('blockExpr'))))
+
 .. syntax:: if
 
    Sequence(
