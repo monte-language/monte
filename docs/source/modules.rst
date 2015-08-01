@@ -119,3 +119,21 @@ monte.test.test_ast`` (when run from the root of the project) will run the ast
 tests.
 
 .. _testing.mt: https://github.com/monte-language/monte/blob/master/monte/src/examples/testing.mt
+
+Module Syntax Summary
+---------------------
+
+.. syntax:: module
+   Sequence(
+    Optional(Sequence("module",
+                      NonTerminal('imports'),
+                      Optional(NonTerminal('exports')))),
+    NonTerminal('block'))
+
+.. syntax:: imports
+
+   ZeroOrMore(NonTerminal('pattern'))
+
+.. syntax:: exports
+
+   Sequence('export', "(", ZeroOrMore(NonTerminal('noun')), ")")

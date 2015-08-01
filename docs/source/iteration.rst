@@ -3,22 +3,6 @@
 Building objects: blocks and scopes
 ===================================
 
-Comments
---------
-
-This is a single-line comment::
-
-    # Lines starting with a # are single-line comments.
-    # They only last until the end of the line.
-
-And this is a multi-line comment::
-
-    /** This comment is multi-line.
-        Yes, it starts with two stars,
-        but ends with only one.
-        These should only be used for docstrings. */
-
-
 Indentation
 -----------
 
@@ -44,6 +28,25 @@ Objects can also be created by functions::
     def hi := makeSalutation("morning")
 
     hi.greet("Student")
+
+Does Monte have functions?
+--------------------------
+
+No. Since everything in Monte is an object, you're always calling methods
+rather than functions.
+
+Monte does have a convention that objects with a single method with the verb
+``run`` are functions. There is no difference, to Monte, between this
+function::
+
+    def f():
+        pass
+
+And this object::
+
+    object f:
+        to run():
+            pass
 
 Object Composition
 ------------------
@@ -79,6 +82,57 @@ and return value::
     object deck:
         to size(suits :Int, ranks :Int) :Int:
             return suits * ranks
+
+Where did ``self`` go?
+----------------------
+
+Newcomers to Monte are often surprised to learn that Monte lacks a ``this`` or
+``self`` keyword. In fact, Monte does have ways to refer to the current object,
+but there's a deeper conceptual difference between Monte and other object-based
+languages.
+
+Monte does not have a ``this`` or ``self`` keyword because Monte objects can
+refer to their "member" or "private" names without qualification. This is a
+consequence of how Monte objects are built. Consider this object maker::
+
+    def makeMyObject():
+        return object myObject:
+            pass
+
+Let's modify it slightly. We want to give this object a "private" value secret
+which cannot be accessed directly, and a method ``getSecret/0`` which will
+return it. We put "private" in quotation marks to emphasize that Monte does not
+have private names. Instead, all names are private in Monte; if one cannot see
+a name, then one cannot access it.
+
+::
+
+    def makeMyObject(secret):
+        return object myObject:
+            to getSecret():
+                return secret
+
+And that's it. No declarations of object contents or special references to ``this``
+or ``self``.
+
+We can also simulate "member" names for objects. As before, we can achieve
+this effect without ``this``.
+
+::
+
+    def makeMyObject():
+        var counter :Int := 0
+        return object myObject:
+            to getCounter():
+                return counter += 1
+
+Here, ``counter`` is not visible outside of ``makeMyObject()``, which means
+that no other object can directly modify it. Each time we call
+``makeMyObject()``, we get a new object called ``myObject`` with a new counter.
+
+.. note::
+    Remember, Monte is an expression language. ``counter += 1`` returns the
+    value of ``counter``. That's why ``return counter += 1`` works.
 
 for loops
 ---------
@@ -312,3 +366,185 @@ Monte implements the ``return``, ``break``, and ``continue`` expressions with
 ejectors.
 
 To be fully technical, ejectors are "single-use delimited continuations".
+
+Block Syntax Summary
+--------------------
+
+.. syntax:: block
+
+   Sequence(
+    "{",
+    Choice(
+        0,
+        ZeroOrMore(
+            Choice(
+                0,
+                NonTerminal('blockExpr'),
+                NonTerminal('expr')),
+            ";"),
+        "pass"),
+    "}")
+
+.. syntax:: blockExpr
+
+   Choice(
+    0,
+    NonTerminal('if'),
+    NonTerminal('escape'),
+    NonTerminal('for'),
+    NonTerminal('fn'),
+    NonTerminal('switch'),
+    NonTerminal('try'),
+    NonTerminal('while'),
+    NonTerminal('when'),
+    NonTerminal('bind'),
+    NonTerminal('object'),
+    NonTerminal('def'),
+    NonTerminal('interface'),
+    NonTerminal('meta'))
+
+.. syntax:: expr
+
+   Choice(
+    0,
+    NonTerminal('assign'),
+    Sequence(
+        Choice(0, "continue", "break", "return"),
+        Choice(0,
+               Sequence("(", ")"),
+               ";",
+               NonTerminal('blockExpr'))))
+
+.. syntax:: if
+
+   Sequence(
+    "if", "(", NonTerminal('expr'), ")", NonTerminal('block'),
+    Optional(Sequence("else", Choice(
+        0, Sequence("if", Comment('blockExpr@@')),
+        NonTerminal('block')))))
+
+.. syntax:: escape
+
+   Sequence(
+    "escape", NonTerminal('pattern'),
+    NonTerminal('blockCatch'))
+
+.. syntax:: blockCatch
+
+   Sequence(
+    NonTerminal('block'),
+    Optional(
+        Sequence("catch", NonTerminal('pattern'),
+                 NonTerminal('block'))))
+
+.. syntax:: for
+
+   Sequence(
+    "for",
+    NonTerminal('pattern'),
+    Optional(Sequence("=>", NonTerminal('pattern'))),
+    "in", NonTerminal('comp'),
+    NonTerminal('blockCatch'))
+
+.. syntax:: fn
+
+   Sequence(
+    "fn",
+    ZeroOrMore(NonTerminal('pattern'), ','),
+    NonTerminal('block'))
+
+.. syntax:: switch
+
+   Sequence(
+    "switch", "(", NonTerminal('expr'), ")",
+    "{", NonTerminal('matchers'), "}")
+
+.. syntax:: matchers
+
+   OneOrMore(Sequence("match",
+             NonTerminal('pattern'),
+             NonTerminal('block')))
+
+.. syntax:: try
+
+   Sequence(
+    "try", NonTerminal('block'), NonTerminal('catchers'))
+
+.. syntax:: catchers
+
+   Sequence(
+    ZeroOrMore(Sequence("catch",
+                        NonTerminal('pattern'),
+                        NonTerminal('block'))),
+    Optional(Sequence("finally", NonTerminal('block'))))
+
+
+.. syntax:: while
+
+   Sequence(
+    "while", "(", NonTerminal('expr'), ")", NonTerminal('blockCatch'))
+
+.. syntax:: when
+
+   Sequence(
+    "when",
+    "(", OneOrMore(NonTerminal('expr'), ','), ")",
+    "->", NonTerminal('block'),
+    NonTerminal('catchers'))
+
+.. syntax:: bind
+
+   Sequence(
+    "bind",
+    NonTerminal("noun"),
+    Optional(NonTerminal('guard')), Comment("objectExpr@@"))
+
+.. syntax:: object
+
+   Sequence(
+    "object",
+    Choice(0, Sequence("bind", NonTerminal('noun')),
+           "_",
+           NonTerminal("noun")),
+    Optional(NonTerminal('guard')), Comment("objectExpr@@"))
+
+.. syntax:: objectExpr
+
+   Sequence(
+    Optional(Sequence('extends', NonTerminal('order'))),
+    NonTerminal('auditors'),
+    '{', ZeroOrMore(NonTerminal('objectScript'), ';'), '}')
+
+.. syntax:: objectScript
+
+   Sequence(
+    Optional(NonTerminal('doco')),
+    Choice(0, "pass", ZeroOrMore("@@meth")),
+    Choice(0, "pass", ZeroOrMore(NonTerminal('matchers'))))
+
+.. syntax:: doco
+
+   Terminal('.String')
+
+.. syntax:: def
+
+   Sequence(
+    "def",
+    Choice(
+        0,
+        Sequence(
+            Choice(
+                0,
+                Sequence("bind", NonTerminal("noun"),
+                         Optional(NonTerminal('guard'))),
+                NonTerminal("noun")),
+            Choice(0, Comment("objectFunction@@"), NonTerminal('assign'))),
+        NonTerminal('assign')))
+
+.. syntax:: meta
+
+   Sequence(
+    "meta", ".",
+    Choice(0,
+           Sequence("context", "(", ")"),
+           Sequence("getState", "(", ")")))

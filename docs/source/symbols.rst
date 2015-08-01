@@ -1,42 +1,20 @@
-Basics: expressions, definitions, and variables
-===============================================
+Simple expressions
+==================
 
-Everything is an object. The expression ``1 + 1`` is actually
-short-hand for a method call: ``1.plus(1)``.
-
-Definitions bind objects to names::
+Expressions evaluate to objects and definitions bind objects to names::
 
   ▲> { def x := 2; x * x }
   Result: 4
-
-The ``def`` syntax makes final (aka immutable) bindings::
-
-  ▲> { def x := 2; x := 3 }
-  ...
-  Parse error: [Can't assign to final nouns, [x].asSet()]
-
-To signal that you want a variable binding, use ``var``::
-
-  ▲> { var v := 6; v := 12; v - 4 }
-  Result: 8
-
-Note the use of ``:=`` rather than ``=`` for assignment.
-Comparison in Monte is ``==`` and the single-equals, ``=``, has no meaning. This
-all but eliminates the common issue of ``if (foo = baz)`` suffered by all
-languages where you can compile after typo-ing ``==``.
-
-Monte has rich support for destructuring assignment using pattern matching::
-
-  ▲> { def [x, y] := [1, 2]; x }
-  Result: 1
-
-The :ref:`patterns` section discusses pattern matching in detail.
-
 
 Built-in Object Types
 ---------------------
 
 Monte provides some classic and common value types.
+
+.. note:: Lexical details of monte syntax are currently specified
+	  only by implementation; see `lib/monte/monte_lexer.mt`__
+
+__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
 
 Int
 ~~~
@@ -58,11 +36,6 @@ mathematical methods are available::
   Method: aboveZero/0
   Method: atLeastZero/0
   ...
-
-.. note:: Lexical details of monte syntax are currently specified
-	  only by implementation; see `lib/monte/monte_lexer.mt`__
-
-__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
 
 Double
 ~~~~~~
@@ -230,163 +203,50 @@ Use ``diverge`` and ``snapshot`` similarly::
                ▲> [ "a" => 1, "b" => 2] == [ "b" => 2, "a" => 1]
                Result: false
 
-             See section :ref:`ocap` about why this is so.
-
-             To disregard order, use ``sortKeys``::
+             To compare without regard to order, use ``sortKeys``::
 
                ▲> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
                Result: true
 
-Operators
----------
+Comments
+--------
 
-Comparison
-~~~~~~~~~~
+This is a single-line comment::
 
-  `<=>`
-    "As big as". Think of it as merging `<=` with `>=`
-  `==`
-    Equality comparison. Can compare references, integers, etc.
-  `<`
-    Less than
-  `>`
-    Greater than. 
-  `<=`
-    Less than or equal to
-  `>=`
-    Greater than or equal to. 
+    # Lines starting with a # are single-line comments.
+    # They only last until the end of the line.
 
-.. code-block:: monte
+And this is a multi-line comment::
 
-    3 < 2 == False
-    3 > 2 == True
-    3 < 3 == False
-    3 <= 3 == True
+    /** This comment is multi-line.
+        Yes, it starts with two stars,
+        but ends with only one.
+        These should only be used for docstrings. */
 
-Logical
-~~~~~~~
-
-  `&&`
-    And. 
-
-.. code-block:: monte
-
-    True && True == True
-    True && False == False
-    False && False == False
-
-Boolean Operators
------------------
-
-  `**`
-    Exponentiation. `2 ** 3 == 8`
-  `*`
-    Multiplication. `2 * 3 == 6`
-
-
-Expression Syntax Summary
--------------------------
-
-.. syntax:: expr
-
-   Diagram(Choice(
-    0,
-    NonTerminal('assign'),
-    Sequence(
-        Choice(0, "continue", "break", "return"),
-        Choice(0,
-               Sequence("(", ")"),
-               ";",
-               NonTerminal('blockExpr')))))
-
-.. seealso::
-
-   :ref:`loopExpr`
-      on ``continue``, ``break``, and ``return``
-   :ref:`blocks`
-      on *blockExpr*
-
-.. syntax:: assign
-
-   Diagram(Choice(
-    0,
-    Sequence('def',
-             NonTerminal('pattern'),
-             Optional(Sequence("exit", NonTerminal('order'))),
-             Optional(Sequence(":=", NonTerminal('assign')))),
-    Sequence(Choice(0, 'var', 'bind'),
-             NonTerminal('pattern'),
-             # XXX the next two seem to be optional in the code.
-             ":=", NonTerminal('assign')),
-    Sequence(NonTerminal('lval'), ":=", NonTerminal('assign')),
-    Comment("@op=...XXX"),
-    Comment("VERB_ASSIGN XXX"),
-    NonTerminal('logical')))
-
-.. seealso::
-
-   :ref:`patterns`
-
-.. syntax:: lval
-
-   Diagram(Choice(
-    0,
-    NonTerminal('noun'),
-    NonTerminal('getExpr')))
-
-.. syntax:: logical
-
-   Diagram(Sequence(
-    NonTerminal('comp'),
-    Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical')))))
-
-.. syntax:: comp
-
-   Diagram(
-    NonTerminal('order'),
-    Optional(Sequence(Choice(
-        0,
-	Choice(0, "=~", "!~"),
-        Choice(0, "==", "!="),
-        "&!",
-        Choice(0, "^", "&", "|")
-    ), NonTerminal('comp'))))
-
-.. syntax:: order
-
-   Diagram(
-    NonTerminal('prefix'),
-    Optional(Sequence(Choice(
-        0,
-        "**",
-        Choice(0, "*", "/", "//", "%"),
-        Choice(0, "+", "-"),
-        Choice(0, "<<", ">>"),
-        Choice(0, "..", "..!"),
-        Choice(0, ">", "<", ">=", "<=", "<=>")
-    ), NonTerminal('order'))))
+Syntax Summary
+--------------
 
 .. syntax:: prefix
 
-   Diagram(Choice(
+   Choice(
     0,
     Sequence('-', NonTerminal('prim')),
     Sequence(Choice(0, "~", "!"), NonTerminal('call')),
     Sequence('&', NonTerminal('noun')),
     Sequence('&&', NonTerminal('noun')),
-    Sequence(NonTerminal('call'), Optional(NonTerminal('guard')))))
+    Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
 
 .. syntax:: call
 
-   Diagram(Sequence(
+   Sequence(
     NonTerminal('calls'),
-    Optional(Sequence(NonTerminal('curry')))))
+    Optional(Sequence(NonTerminal('curry'))))
 
 *TODO: subordinate calls, as it's a purely syntactic notion*
 
 .. syntax:: calls
 
-    Diagram(Choice(
+    Choice(
         0, NonTerminal('prim'),
         Sequence(
             NonTerminal('calls'),
@@ -394,23 +254,23 @@ Expression Syntax Summary
                 Sequence(Choice(0, ".", "<-"),
                          Choice(0, "IDENTIFIER", ".String."))),
             Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
-        NonTerminal('getExpr')))
+        NonTerminal('getExpr'))
 
 .. syntax:: getExpr
 
-   Diagram(Sequence(
+   Sequence(
     NonTerminal('calls'),
-    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]")))
+    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))
 
 .. syntax:: curry
 
-   Diagram(Sequence(
+   Sequence(
     Choice(0, '.', '<-'),
-    Choice(0, "IDENTIFIER", ".String.")))
+    Choice(0, "IDENTIFIER", ".String."))
 
 .. syntax:: prim
 
-   Diagram(Choice(
+   Choice(
     0,
     ".String.", ".int.", ".float64.", ".char.",
     NonTerminal('quasiliteral'),
@@ -426,25 +286,25 @@ Expression Syntax Summary
                                     "=>", NonTerminal('expr')),
                            ','),
                  Sequence("for", NonTerminal('comprehension'))),
-             "]")))
+             "]"))
 
 .. syntax:: comprehension
 
-   Diagram(Choice(
+   Choice(
     0,
     Sequence(NonTerminal('pattern'),
              "in", NonTerminal('iter'),
              NonTerminal('expr')),
     Sequence(NonTerminal('pattern'), "=>", NonTerminal('pattern'),
              "in", NonTerminal('iter'),
-             NonTerminal('expr'), "=>", NonTerminal('expr'))))
+             NonTerminal('expr'), "=>", NonTerminal('expr')))
 
 .. syntax:: iter
 
-   Diagram(Sequence(
+   Sequence(
     NonTerminal('order'),
-    Optional(Sequence("if", NonTerminal('comp')))))
+    Optional(Sequence("if", NonTerminal('comp'))))
 
 .. syntax:: noun
 
-   Diagram(Choice(0, "IDENTIFIER", Sequence("::", ".String.")))
+   Choice(0, "IDENTIFIER", Sequence("::", ".String."))

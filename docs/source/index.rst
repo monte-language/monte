@@ -7,33 +7,30 @@
 Monte is Serious Business
 =========================
 
-Welcome to Monte's documentation!
-
 Monte is a dynamic language inspired by Python and E. 
-
-For users: 
 
 .. toctree::
 
     intro
     symbols
-    iteration
-    syntax
-    patterns
     operators
+    iteration
+    patterns
+    quasiparsers
     guards
-    glossary
     interfaces
     modules
     custom-guards
-    quasiparsers
+    faq
     miranda
     tubes
     design
     wizard
-    faq
 
-For Developers: 
+.. note:: The monte developer material would perhaps fit better in the
+          wiki__.
+
+__ https://github.com/monte-language/monte/wiki
 
 .. toctree:: 
 

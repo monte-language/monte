@@ -59,6 +59,16 @@ QLs can be used as patterns::
 Examine this carefully. This pattern is assigning to ``name``, asserting that
 the rest of the pattern (the "Hello, " and "!" fragments) match the specimen.
 
+What's the difference between the ``m`` and ``M`` objects?
+----------------------------------------------------------
+
+``M`` is a helper object that provides several runtime services. It can pass
+messages on behalf of other objects and quote strings.
+
+``m`` is a quasiparser which parses Monte source code. It is part of the
+runtime Monte compiler.
+
+
 Quasiliteral Syntax Summary
 ===========================
 
@@ -66,7 +76,7 @@ Quasiliteral Syntax Summary
 
 .. syntax:: quasiliteral
 
-   Diagram(Sequence(
+   Sequence(
     Optional(Terminal("IDENTIFIER")),
     '`',
     ZeroOrMore(
@@ -79,4 +89,4 @@ Quasiliteral Syntax Summary
                    0,
                    Terminal('@IDENT'),
                    Sequence('@{', NonTerminal('pattern'), '}')))),
-    '`'))
+    '`')

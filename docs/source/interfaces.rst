@@ -48,3 +48,17 @@ signatures**.
 We can see that ``getAndPut`` implements the ``GetPut`` interface, but it
 isn't very faithful to that interface. Interfaces cannot enforce behavior,
 only signatures.
+
+
+Interface Syntax Summary
+------------------------
+
+.. syntax:: interface
+
+   Sequence(
+    "interface",
+    NonTerminal('namePattern'),
+    Optional(Sequence("guards", NonTerminal('pattern'))),
+    Optional(Sequence("extends", OneOrMore(NonTerminal('order'), ','))),
+    Comment("implements_@@"), Comment("msgs@@"))
+
