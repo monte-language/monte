@@ -16,15 +16,6 @@ diagrams = []
 def add(name, diagram):
     diagrams.append((name, diagram))
 
-add('module', Diagram(Sequence(
-    Optional(Sequence("module",
-                      NonTerminal('imports'),
-                      Optional(NonTerminal('exports')))),
-    NonTerminal('block'))))
-
-add('imports', Diagram(ZeroOrMore(NonTerminal('pattern'))))
-add('exports', Diagram(Sequence(
-    'export', "(", ZeroOrMore(NonTerminal('noun')), ")")))
 add('block', Diagram(Sequence(
     "{",
     Choice(
