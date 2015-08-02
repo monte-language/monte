@@ -12,10 +12,12 @@ Monte is a dynamic language inspired by Python and E.
 .. toctree::
 
     intro
+    design
+    wizard
+    patterns
     symbols
     operators
     iteration
-    patterns
     quasiparsers
     guards
     interfaces
@@ -24,10 +26,8 @@ Monte is a dynamic language inspired by Python and E.
     faq
     miranda
     tubes
-    design
-    wizard
 
-.. note:: The monte developer material would perhaps fit better in the
+.. todo:: The monte developer material would perhaps fit better in the
           wiki__.
 
 __ https://github.com/monte-language/monte/wiki
@@ -36,6 +36,8 @@ __ https://github.com/monte-language/monte/wiki
 
     montefesto
     tools
+
+.. todolist::
 
 
 Indices and tables

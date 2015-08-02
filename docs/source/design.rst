@@ -5,6 +5,44 @@ Design of Monte
 This is a gentle overview of the design features of Monte and how it fits into
 the larger genealogy of programming languages.
 
+E and Python
+------------
+
+Monte is based on E, a language intended for secure distributed computation.
+Monte also incorporates many syntactic ideas from Python, a language designed
+for readability and simplicity. The design of Monte incorporates both of these
+languages' philosophies, with the goal of supporting environments that are
+orders of magnitude more complex than existing systems.
+
+For a history of E's ideas, see http://www.erights.org/history/index.html
+
+Networking
+----------
+
+Unlike many other contemporary programming languages, Monte does not need an
+additional networking library to provide solid primitive and high-level
+networking operations. This is because Monte was designed to handle networking
+as easily as any other kind of input or output.
+
+Distributed Systems
+-------------------
+
+Monte comes with builtin explicit parallelism suitable for scaling to
+arbitrary numbers of processes or machines, and a well-defined concurrency
+system that simplifies and streamlines the task of writing event-driven code.
+
+Monte has one parallel primitive: the **vat**. Vats are objects which
+encapsulate an entire Monte runtime and isolate other objects from objects in
+other vats. Vats are able to communicate across a variety of gulfs, from
+inter-process threads to separate machines on a network.
+
+Monte also has one concurrent operation. Monte permits messages to be passed
+as **eventual sends**. An eventually-sent message will be passed to the target
+object at a later time, generating a **promise** which can have more messages
+sent to it. Unlike similar mechanisms in Twisted, Node.js, etc., Monte builds
+promises and eventual sending directly into the language and runtime, removing
+the need for extraneous libraries.
+
 Types
 =====
 
