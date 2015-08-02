@@ -136,4 +136,4 @@ Module Syntax Summary
 
 .. syntax:: exports
 
-   Sequence('export', "(", ZeroOrMore(NonTerminal('noun')), ")")
+   Sequence('export', "(", ZeroOrMore(NonTerminal('name')), ")")

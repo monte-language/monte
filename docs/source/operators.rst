@@ -31,6 +31,19 @@ Monte has rich support for destructuring assignment using pattern matching::
 
 The :ref:`patterns` section discusses pattern matching in detail.
 
+.. _message_passing:
+
+Message Passing
+---------------
+
+There are two ways to pass a message. First, the **immediate call**::
+
+    def result := obj.message(argument)
+
+And, second, the **eventual send**::
+
+    def promisedResult := obj<-message(argument)
+
 Operators
 ---------
 
@@ -181,7 +194,7 @@ Syntax Summary
 
 .. syntax:: ForwardDeclaration
 
-   Sequence('def', NonTerminal('noun'))
+   Sequence('def', NonTerminal('name'))
 
 .. todo:: find forward declaration in ``monte_parser.mt``; doctest
 
@@ -200,7 +213,7 @@ Syntax Summary
 
    Choice(
     0,
-    NonTerminal('noun'),
+    NonTerminal('name'),
     NonTerminal('getExpr'))
 
 .. syntax:: logical
@@ -235,3 +248,22 @@ Syntax Summary
         Choice(0, ">", "<", ">=", "<=", "<=>")
     ), NonTerminal('order'))))
 
+.. syntax:: call
+
+   Sequence(
+    NonTerminal('calls'),
+    Optional(Sequence(NonTerminal('curry'))))
+
+*TODO: subordinate calls, as it's a purely syntactic notion*
+
+.. syntax:: calls
+
+    Choice(
+        0, NonTerminal('prim'),
+        Sequence(
+            NonTerminal('calls'),
+            Optional(
+                Sequence(Choice(0, ".", "<-"),
+                         Choice(0, "IDENTIFIER", ".String."))),
+            Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
+        NonTerminal('getExpr'))

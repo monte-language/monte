@@ -161,7 +161,7 @@ VarPattern (kernel)
 
 .. syntax:: VarPattern
 
-   Sequence("var", NonTerminal('noun'),
+   Sequence("var", NonTerminal('name'),
             Optional(NonTerminal('guard')))
 
 Var patterns match an object and bind a mutable name to them,
@@ -199,7 +199,7 @@ BindPattern
 
 .. syntax:: BindPattern
 
-   Sequence("bind", NonTerminal('noun'),
+   Sequence("bind", NonTerminal('name'),
        Optional(NonTerminal('guard')))
 
 ::
@@ -226,7 +226,7 @@ SlotPattern
 
 .. syntax:: SlotPattern
 
-   Sequence("&", NonTerminal('noun'),
+   Sequence("&", NonTerminal('name'),
        Optional(NonTerminal('guard')))
 
 ::
@@ -254,7 +254,7 @@ BindingPattern (kernel)
 
 .. syntax:: BindingPattern
 
-   Sequence("&&", NonTerminal('noun'))
+   Sequence("&&", NonTerminal('name'))
 
 ::
 
@@ -363,9 +363,9 @@ MapPattern
         0,
         Sequence("=>", Choice(
             0,
-            Sequence("&", NonTerminal('noun')),
-            Sequence("&&", NonTerminal('noun')),
-            NonTerminal('noun'))),
+            Sequence("&", NonTerminal('name')),
+            Sequence("&&", NonTerminal('name')),
+            NonTerminal('name'))),
         Sequence(NonTerminal('expr'), "=>", NonTerminal('expr')))
 
 ::

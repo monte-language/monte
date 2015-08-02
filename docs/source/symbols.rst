@@ -266,6 +266,10 @@ examples::
     NonTerminal('BindingExpression'),
     Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
 
+.. seealso::
+
+   :ref:`message_passing`
+
 .. syntax:: unary
 
    Choice(
@@ -284,26 +288,6 @@ examples::
    Sequence('&&', NonTerminal('noun'))
 
 .. todo:: discuss, doctest BindingExpression ``&&x``
-
-.. syntax:: call
-
-   Sequence(
-    NonTerminal('calls'),
-    Optional(Sequence(NonTerminal('curry'))))
-
-*TODO: subordinate calls, as it's a purely syntactic notion*
-
-.. syntax:: calls
-
-    Choice(
-        0, NonTerminal('prim'),
-        Sequence(
-            NonTerminal('calls'),
-            Optional(
-                Sequence(Choice(0, ".", "<-"),
-                         Choice(0, "IDENTIFIER", ".String."))),
-            Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
-        NonTerminal('getExpr'))
 
 .. index:: Indexing
 
