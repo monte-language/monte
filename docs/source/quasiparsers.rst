@@ -72,8 +72,6 @@ runtime Monte compiler.
 Quasiliteral Syntax Summary
 ===========================
 
-*TODO: split quasipattern out of quasiliteral*
-
 .. syntax:: quasiliteral
 
    Sequence(
@@ -84,9 +82,5 @@ Quasiliteral Syntax Summary
                Choice(
                    0,
                    Terminal('$IDENT'),
-                   Sequence('${', NonTerminal('expr'), '}')),
-               Choice(
-                   0,
-                   Terminal('@IDENT'),
-                   Sequence('@{', NonTerminal('pattern'), '}')))),
+                   Sequence('${', NonTerminal('expr'), '}')))),
     '`')

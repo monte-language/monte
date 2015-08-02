@@ -139,6 +139,29 @@ of parentheses::
     var x := 7
     x modPow= (129, 3)
 
+Assignment operators
+~~~~~~~~~~~~~~~~~~~~
+
+.. todo:: find these in ``monte_parser.mt``; doctest
+
+::
+
+  a := b
+  a += b
+  a -= b
+  a *= b
+  a /= b
+  a //= b
+  a %= b
+  a %%= b
+  a **= b
+  a >>= b
+  a <<= b
+  a &= b
+  a |= b
+  a ^= b
+  a foo= b
+
 Syntax Summary
 --------------
 
@@ -146,10 +169,7 @@ Syntax Summary
 
    Choice(
     0,
-    Sequence('def',
-             NonTerminal('pattern'),
-             Optional(Sequence("exit", NonTerminal('order'))),
-             Optional(Sequence(":=", NonTerminal('assign')))),
+    NonTerminal('PatternBinding'),
     Sequence(Choice(0, 'var', 'bind'),
              NonTerminal('pattern'),
              # XXX the next two seem to be optional in the code.
@@ -158,6 +178,19 @@ Syntax Summary
     Comment("@op=...XXX"),
     Comment("VERB_ASSIGN XXX"),
     NonTerminal('logical'))
+
+.. syntax:: ForwardDeclaration
+
+   Sequence('def', NonTerminal('noun'))
+
+.. todo:: find forward declaration in ``monte_parser.mt``; doctest
+
+.. syntax:: PatternBinding
+
+   Sequence('def',
+             NonTerminal('pattern'),
+             Optional(Sequence("exit", NonTerminal('order'))),
+             Optional(Sequence(":=", NonTerminal('assign'))))
 
 .. seealso::
 

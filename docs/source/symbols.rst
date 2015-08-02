@@ -11,11 +11,6 @@ Built-in Object Types
 
 Monte provides some classic and common value types.
 
-.. note:: Lexical details of monte syntax are currently specified
-	  only by implementation; see `lib/monte/monte_lexer.mt`__
-
-__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
-
 Int
 ~~~
 
@@ -226,15 +221,69 @@ And this is a multi-line comment::
 Syntax Summary
 --------------
 
+.. note:: Lexical details of monte syntax are currently specified
+	  only by implementation; see `lib/monte/monte_lexer.mt`__
+
+__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
+
+.. syntax:: Literal
+
+   Choice(0,
+     ".int.", ".float64.", ".char.", ".String.",
+     Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"),
+     Sequence("[", ZeroOrMore(Sequence(NonTerminal('expr'),
+                                       "=>", NonTerminal('expr')), ','), "]"))
+
+examples::
+
+  1
+  0x1
+  1.0
+  'a'
+  '\u23b6'
+  "some unicode text"
+  [1, 2, 'x']
+  [1 => 'a', 2 => "b"]
+
+.. syntax:: noun
+
+   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
+
+examples::
+
+  foo
+  __equalizer
+  ::"hello, world"
+
+.. index: Unary operators
+
 .. syntax:: prefix
 
    Choice(
     0,
-    Sequence('-', NonTerminal('prim')),
-    Sequence(Choice(0, "~", "!"), NonTerminal('call')),
-    Sequence('&', NonTerminal('noun')),
-    Sequence('&&', NonTerminal('noun')),
+    NonTerminal('unary'),
+    NonTerminal('SlotExpression'),
+    NonTerminal('BindingExpression'),
     Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
+
+.. syntax:: unary
+
+   Choice(
+    0,
+    Sequence('-', NonTerminal('prim')),
+    Sequence(Choice(0, "~", "!"), NonTerminal('call')))
+
+.. syntax:: SlotExpression
+
+   Sequence('&', NonTerminal('noun'))
+
+.. todo:: discuss, doctest SlotExpression ``&x``
+
+.. syntax:: BindingExpression
+
+   Sequence('&&', NonTerminal('noun'))
+
+.. todo:: discuss, doctest BindingExpression ``&&x``
 
 .. syntax:: call
 
@@ -256,6 +305,8 @@ Syntax Summary
             Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
         NonTerminal('getExpr'))
 
+.. index:: Indexing
+
 .. syntax:: getExpr
 
    Sequence(
@@ -272,39 +323,18 @@ Syntax Summary
 
    Choice(
     0,
-    ".String.", ".int.", ".float64.", ".char.",
+    NonTerminal('Literal'),
     NonTerminal('quasiliteral'),
-    Choice(0, "IDENTIFIER", Sequence("::", ".String.")),
+    NonTerminal('noun'),
     Sequence("(", NonTerminal('expr'), ")"),
     Sequence("{", ZeroOrMore(NonTerminal('expr'), ';'), "}"),
     Sequence("[",
-             Choice(
-                 0,
-                 Skip(),
-                 OneOrMore(NonTerminal('expr'), ','),
-                 OneOrMore(Sequence(NonTerminal('expr'),
-                                    "=>", NonTerminal('expr')),
-                           ','),
-                 Sequence("for", NonTerminal('comprehension'))),
+             "for", NonTerminal('comprehension'),
              "]"))
 
-.. syntax:: comprehension
+.. seealso::
 
-   Choice(
-    0,
-    Sequence(NonTerminal('pattern'),
-             "in", NonTerminal('iter'),
-             NonTerminal('expr')),
-    Sequence(NonTerminal('pattern'), "=>", NonTerminal('pattern'),
-             "in", NonTerminal('iter'),
-             NonTerminal('expr'), "=>", NonTerminal('expr')))
+   :ref:`quasiliteral <quasiliteral>`,
+   :ref:`comprehension <comprehension>`
 
-.. syntax:: iter
-
-   Sequence(
-    NonTerminal('order'),
-    Optional(Sequence("if", NonTerminal('comp'))))
-
-.. syntax:: noun
-
-   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
+.. todo:: figure out how to make the quasiliteral, comprehension links work

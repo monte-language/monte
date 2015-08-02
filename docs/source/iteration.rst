@@ -548,3 +548,20 @@ Block Syntax Summary
     Choice(0,
            Sequence("context", "(", ")"),
            Sequence("getState", "(", ")")))
+
+.. syntax:: comprehension
+
+   Choice(
+    0,
+    Sequence(NonTerminal('pattern'),
+             "in", NonTerminal('iter'),
+             NonTerminal('expr')),
+    Sequence(NonTerminal('pattern'), "=>", NonTerminal('pattern'),
+             "in", NonTerminal('iter'),
+             NonTerminal('expr'), "=>", NonTerminal('expr')))
+
+.. syntax:: iter
+
+   Sequence(
+    NonTerminal('order'),
+    Optional(Sequence("if", NonTerminal('comp'))))
