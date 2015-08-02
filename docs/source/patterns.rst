@@ -7,6 +7,10 @@ Patterns attempt to match objects and either succeed or fail.
 
 .. todo:: blend wizards text with doc text
 
+.. todo:: change pseudocode into real code (updoc/doctest style)
+
+.. todo:: document expansion of non-kernel patterns
+
 Monte comes with a powerful and extensible subsystem for destructuring and
 viewing objects, called the **pattern subsystem**. A *pattern* is a rule which
 conditionally matches objects and binds parts of the matched objects to names.
@@ -116,11 +120,6 @@ Patterns
            NonTerminal('SlotPattern'),
            NonTerminal('BindingPattern'))
 
-
-.. todo:: change pseudocode into real code (updoc/doctest style)
-          in the sections below, if not above
-
-.. todo:: document expansion of non-kernel patterns
 
 FinalPattern (kernel)
 ~~~~~~~~~~~~~~~~~~~~~
