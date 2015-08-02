@@ -28,7 +28,9 @@ sys.path.insert(0, os.path.abspath('.'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['rr_ext']
+extensions = ['sphinx.ext.todo', 'rr_ext']
+
+todo_include_todos = True
 
 rr_stylesheet = 'railroad-diagrams.css'
 
