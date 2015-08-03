@@ -103,8 +103,6 @@ exploration. For example::
 
 __ https://github.com/monte-language/typhon/issues/17
 
-.. _trace:
-
 Editor Syntax Highlighting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -119,6 +117,8 @@ __ https://atom.io/packages/language-monte
 
 __ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
 
+
+.. _trace:
 
 Diagnostics, Documentation, and Debugging
 -----------------------------------------
