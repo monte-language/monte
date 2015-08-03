@@ -74,14 +74,3 @@ How do I force an object to be a certain type?
 Use a guard that coerces objects to be of that type. Guards for all of the
 primitive types in Monte are already builtin; see the documentation on
 :doc:`guards` for more details.
-
-How do I pass a message to an object?
--------------------------------------
-
-There are two ways to pass a message. First, the **immediate call**::
-
-    def result := obj.message(argument)
-
-And, second, the **eventual send**::
-
-    def promisedResult := obj<-message(argument)

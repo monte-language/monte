@@ -31,6 +31,19 @@ Monte has rich support for destructuring assignment using pattern matching::
 
 The :ref:`patterns` section discusses pattern matching in detail.
 
+.. _message_passing:
+
+Message Passing
+---------------
+
+There are two ways to pass a message. First, the **immediate call**::
+
+    def result := obj.message(argument)
+
+And, second, the **eventual send**::
+
+    def promisedResult := obj<-message(argument)
+
 Operators
 ---------
 
@@ -139,6 +152,29 @@ of parentheses::
     var x := 7
     x modPow= (129, 3)
 
+Assignment operators
+~~~~~~~~~~~~~~~~~~~~
+
+.. todo:: find these in ``monte_parser.mt``; doctest
+
+::
+
+  a := b
+  a += b
+  a -= b
+  a *= b
+  a /= b
+  a //= b
+  a %= b
+  a %%= b
+  a **= b
+  a >>= b
+  a <<= b
+  a &= b
+  a |= b
+  a ^= b
+  a foo= b
+
 Syntax Summary
 --------------
 
@@ -146,10 +182,7 @@ Syntax Summary
 
    Choice(
     0,
-    Sequence('def',
-             NonTerminal('pattern'),
-             Optional(Sequence("exit", NonTerminal('order'))),
-             Optional(Sequence(":=", NonTerminal('assign')))),
+    NonTerminal('PatternBinding'),
     Sequence(Choice(0, 'var', 'bind'),
              NonTerminal('pattern'),
              # XXX the next two seem to be optional in the code.
@@ -159,6 +192,19 @@ Syntax Summary
     Comment("VERB_ASSIGN XXX"),
     NonTerminal('logical'))
 
+.. syntax:: ForwardDeclaration
+
+   Sequence('def', NonTerminal('name'))
+
+.. todo:: find forward declaration in ``monte_parser.mt``; doctest
+
+.. syntax:: PatternBinding
+
+   Sequence('def',
+             NonTerminal('pattern'),
+             Optional(Sequence("exit", NonTerminal('order'))),
+             Optional(Sequence(":=", NonTerminal('assign'))))
+
 .. seealso::
 
    :ref:`patterns`
@@ -167,7 +213,7 @@ Syntax Summary
 
    Choice(
     0,
-    NonTerminal('noun'),
+    NonTerminal('name'),
     NonTerminal('getExpr'))
 
 .. syntax:: logical
@@ -202,3 +248,22 @@ Syntax Summary
         Choice(0, ">", "<", ">=", "<=", "<=>")
     ), NonTerminal('order'))))
 
+.. syntax:: call
+
+   Sequence(
+    NonTerminal('calls'),
+    Optional(Sequence(NonTerminal('curry'))))
+
+*TODO: subordinate calls, as it's a purely syntactic notion*
+
+.. syntax:: calls
+
+    Choice(
+        0, NonTerminal('prim'),
+        Sequence(
+            NonTerminal('calls'),
+            Optional(
+                Sequence(Choice(0, ".", "<-"),
+                         Choice(0, "IDENTIFIER", ".String."))),
+            Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
+        NonTerminal('getExpr'))
