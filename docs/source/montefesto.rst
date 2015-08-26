@@ -36,13 +36,13 @@ of new contributors.
 * Finish key language features
 
   * Records
-  * Named arguments
-  * m``
-  * Bytes
+  * ✓ Named arguments
+  * ✓ m``
+  * ✓ Bytes
   * Finalize on-disk (on-wire) compiled code format
   * printer features
   * Tubes
-  * Auditors
+  * ✓ Auditors
   * Farrefs
   * Arity overloading deprecation
 
@@ -52,6 +52,7 @@ of new contributors.
     to user-level code:
 
     * libsodium
+    * ✓ libuv
     * sqlite
 
 * Finish key compiler features
@@ -75,7 +76,7 @@ of new contributors.
 
   * Profiling
 
-    * Time
+    * ✓ Time (vmprof)
     * Space
     * Coverage
     * Turns
