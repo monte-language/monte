@@ -76,6 +76,11 @@ and only on the port given by the last command-line argument.
 
 This aspect of monte's design is discussed further in :ref:`ocap`.
 
+.. todo:: use new `main(=> makeTCP4ServerEndpoint)` idiom (`issue 33`__).
+
+__ https://github.com/monte-language/typhon/issues/33
+
+
 Getting Started
 ---------------
 
@@ -99,10 +104,6 @@ exploration. For example::
   >>> "abc".size()
   3
 
-.. note:: repl.mt doesn't keep bindings
-          `#17`__
-
-__ https://github.com/monte-language/typhon/issues/17
 
 Editor Syntax Highlighting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
