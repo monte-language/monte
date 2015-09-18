@@ -29,6 +29,13 @@ Monte has rich support for destructuring assignment using pattern matching::
   >>> { def [x, y] := [1, 2]; x }
   1
 
+.. syntax:: PatternBinding
+
+   Sequence('def',
+             NonTerminal('pattern'),
+             Optional(Sequence("exit", NonTerminal('order'))),
+             Optional(Sequence(":=", NonTerminal('assign'))))
+
 The :ref:`patterns` section discusses pattern matching in detail.
 
 .. _message_passing:
@@ -38,11 +45,41 @@ Message Passing
 
 There are two ways to pass a message. First, the **immediate call**::
 
-    def result := obj.message(argument)
+  >>> { def x := 2; def result := x.add(3) }
+  5
 
 And, second, the **eventual send**::
 
-    def promisedResult := obj<-message(argument)
+  >>> { def x; def prom := x<-message(3); null }
+  null
+
+.. syntax:: call
+
+   Sequence(
+    NonTerminal('calls'),
+    Optional(Sequence(NonTerminal('curry'))))
+
+*TODO: subordinate calls, as it's a purely syntactic notion*
+
+.. syntax:: calls
+
+    Choice(
+        0, NonTerminal('prim'),
+        Sequence(
+            NonTerminal('calls'),
+            Optional(
+                Sequence(Choice(0, ".", "<-"),
+                         Choice(0, "IDENTIFIER", ".String."))),
+            Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
+        NonTerminal('getExpr'))
+
+.. todo:: document curry
+
+.. syntax:: curry
+
+   Sequence(
+    Choice(0, '.', '<-'),
+    Choice(0, "IDENTIFIER", ".String."))
 
 Operators
 ---------
@@ -71,12 +108,31 @@ Comparison
   `>=`
     Greater than or equal to. 
 
-.. code-block:: monte
+  >>> 3 < 2
+  false
+  >>> 3 > 2
+  true
+  >>> 3 < 3
+  false
+  >>> 3 <= 3
+  true
 
-    3 < 2 == False
-    3 > 2 == True
-    3 < 3 == False
-    3 <= 3 == True
+.. syntax:: comp
+
+   Sequence(
+    NonTerminal('order'),
+    Optional(Sequence(Choice(
+        0,
+	Choice(0, "=~", "!~"),
+        Choice(0, "==", "!="),
+        "&!",
+        Choice(0, "^", "&", "|")
+    ), NonTerminal('comp'))))
+
+.. todo:: document match bind `x =~ p`
+
+.. todo:: what is `&!`?
+
 
 Logical
 ~~~~~~~
@@ -84,11 +140,18 @@ Logical
   `&&`
     And. 
 
-.. code-block:: monte
+   >>> true && true
+   true
+   >>> true && false
+   false
+   >>> false && false
+   false
 
-    True && True == True
-    True && False == False
-    False && False == False
+.. syntax:: logical
+
+   Sequence(
+    NonTerminal('comp'),
+    Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical'))))
 
 How do I perform a conditional expression? What is Monte's ternary operator?
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -118,9 +181,30 @@ Boolean Operators
 -----------------
 
   `**`
-    Exponentiation. `2 ** 3 == 8`
+    Exponentiation.
   `*`
-    Multiplication. `2 * 3 == 6`
+    Multiplication.
+
+  >>> 2 ** 3
+  8
+  >>> 2 * 3
+  6
+
+.. syntax:: order
+
+   Sequence(
+    NonTerminal('prefix'),
+    Optional(Sequence(Choice(
+        0,
+        "**",
+        Choice(0, "*", "/", "//", "%"),
+        Choice(0, "+", "-"),
+        Choice(0, "<<", ">>"),
+        Choice(0, "..", "..!"),
+        Choice(0, ">", "<", ">=", "<=", "<=>")
+    ), NonTerminal('order'))))
+
+.. todo:: document `..` and `..!` (ranges?)
 
 
 Augmented Assignment
@@ -129,28 +213,28 @@ Augmented Assignment
 All binary operators which pass a message to the left-hand operand can be used
 as augmented assignment operators. For example, augmented addition is legal::
 
-    var x := "augmenting "
-    x += "addition!"
+  >>> { var x := "augmenting "; x += "addition!"; x }
+  "augmenting addition!"
 
 Behind the scenes, the compiler transforms augmented operators into standard
 operator usage, and then into calls::
 
-    var x := "augmenting "
-    x := x.add("addition!")
+  >>> { var x := "augmenting "; x := x.add("addition!") }
+  "augmenting addition!"
 
 Monte permits this augmented construction for any verb, not just those used by
 operators. For example, the ``with`` verb of lists can be used to
 incrementally build a list::
 
-    var l := []
-    for i in 1..10:
-        l with= (i)
+  >>> { var l := []; for i in 1..10 { l with= (i) }; l }
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 And even non-unary messages can get in on the fun, with a properly placed pair
 of parentheses::
 
-    var x := 7
-    x modPow= (129, 3)
+  >>> { var x := 7; x modPow= (129, 3) }
+  1
+
 
 Assignment operators
 ~~~~~~~~~~~~~~~~~~~~
@@ -175,9 +259,6 @@ Assignment operators
   a ^= b
   a foo= b
 
-Syntax Summary
---------------
-
 .. syntax:: assign
 
    Choice(
@@ -198,17 +279,6 @@ Syntax Summary
 
 .. todo:: find forward declaration in ``monte_parser.mt``; doctest
 
-.. syntax:: PatternBinding
-
-   Sequence('def',
-             NonTerminal('pattern'),
-             Optional(Sequence("exit", NonTerminal('order'))),
-             Optional(Sequence(":=", NonTerminal('assign'))))
-
-.. seealso::
-
-   :ref:`patterns`
-
 .. syntax:: lval
 
    Choice(
@@ -216,54 +286,92 @@ Syntax Summary
     NonTerminal('name'),
     NonTerminal('getExpr'))
 
-.. syntax:: logical
 
-   Sequence(
-    NonTerminal('comp'),
-    Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical'))))
+Primitive Expressions
+---------------------
 
-.. syntax:: comp
+.. syntax:: prim
 
-   Sequence(
-    NonTerminal('order'),
-    Optional(Sequence(Choice(
-        0,
-	Choice(0, "=~", "!~"),
-        Choice(0, "==", "!="),
-        "&!",
-        Choice(0, "^", "&", "|")
-    ), NonTerminal('comp'))))
+   Choice(
+    0,
+    NonTerminal('Literal'),
+    NonTerminal('quasiliteral'),
+    NonTerminal('noun'),
+    Sequence("(", NonTerminal('expr'), ")"),
+    Sequence("{", ZeroOrMore(NonTerminal('expr'), ';'), "}"),
+    Sequence("[",
+             "for", NonTerminal('comprehension'),
+             "]"))
 
-.. syntax:: order
+.. seealso::
 
-   Sequence(
-    NonTerminal('prefix'),
-    Optional(Sequence(Choice(
-        0,
-        "**",
-        Choice(0, "*", "/", "//", "%"),
-        Choice(0, "+", "-"),
-        Choice(0, "<<", ">>"),
-        Choice(0, "..", "..!"),
-        Choice(0, ">", "<", ">=", "<=", "<=>")
-    ), NonTerminal('order'))))
+   :ref:`quasiliteral <quasiliteral>`,
+   :ref:`comprehension <comprehension>`
 
-.. syntax:: call
+.. todo:: figure out how to make the quasiliteral, comprehension links work
+
+Noun
+~~~~
+
+.. syntax:: noun
+
+   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
+
+examples::
+
+  >>> Int
+  Int
+
+  .>> __equalizer
+  <Equalizer>
+
+Any string literal prefixed by `::` can be used as an identifier::
+
+  >>> { def ::"hello, world" := 1; ::"hello, world" }
+  1
+
+
+Unary operators
+~~~~~~~~~~~~~~~
+
+.. syntax:: prefix
+
+   Choice(
+    0,
+    NonTerminal('unary'),
+    NonTerminal('SlotExpression'),
+    NonTerminal('BindingExpression'),
+    Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
+
+.. seealso::
+
+   :ref:`message_passing`
+
+.. syntax:: unary
+
+   Choice(
+    0,
+    Sequence('-', NonTerminal('prim')),
+    Sequence(Choice(0, "~", "!"), NonTerminal('call')))
+
+.. syntax:: SlotExpression
+
+   Sequence('&', NonTerminal('noun'))
+
+.. todo:: discuss, doctest SlotExpression ``&x``
+
+.. syntax:: BindingExpression
+
+   Sequence('&&', NonTerminal('noun'))
+
+.. todo:: discuss, doctest BindingExpression ``&&x``
+
+
+Indexing
+~~~~~~~~
+
+.. syntax:: getExpr
 
    Sequence(
     NonTerminal('calls'),
-    Optional(Sequence(NonTerminal('curry'))))
-
-*TODO: subordinate calls, as it's a purely syntactic notion*
-
-.. syntax:: calls
-
-    Choice(
-        0, NonTerminal('prim'),
-        Sequence(
-            NonTerminal('calls'),
-            Optional(
-                Sequence(Choice(0, ".", "<-"),
-                         Choice(0, "IDENTIFIER", ".String."))),
-            Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
-        NonTerminal('getExpr'))
+    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))

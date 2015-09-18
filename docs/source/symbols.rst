@@ -1,28 +1,28 @@
-Simple expressions
-==================
+Primitive Data Types
+====================
 
-Expressions evaluate to objects and definitions bind objects to names::
-
-  >>> { def x := 2; x * x }
-  4
-
-Built-in Object Types
----------------------
+Scalars
+-------
 
 Monte provides some classic and common value types.
 
 Int
 ~~~
 
-Monte integer literals are written as usual:
+Monte integer literals are written as usual::
 
-.. code-block:: monte
+  >>> 5
+  5
 
-    def x := 5
-    def x := 128 ** 128 ** 128
+  >>> 0xF
+  15
 
-Integers may be arbitrarily large (a la python long). A variety of
-mathematical methods are available::
+Integers may be arbitrarily large (a la python long)::
+
+  >>> 128 ** 20
+  1393796574908163946345982392040522594123776
+
+A variety of mathematical methods are available::
 
   ▲> help(5)
   Result: Object type: IntObject
@@ -31,6 +31,10 @@ mathematical methods are available::
   Method: aboveZero/0
   Method: atLeastZero/0
   ...
+
+  >>> 5 < 2
+  false
+
 
 Double
 ~~~~~~
@@ -70,20 +74,22 @@ Monte's character type represents unicode characters; it is distinct
 from the string type. Character literals are always delimited by
 apostrophes (``'``).
 
-.. code-block:: monte
-
-    def u := '☃'
-
-Characters are permitted to be adorable.
-
-.. warning:: 
+.. warning::
 
     In Python, you may be accustomed to 'single' and "double" quotes
     functioning interchangeably. In Monte, double quotes can contain any
     number of letters, but single quotes can only hold a single character. 
 
-Structured Types
-----------------
+Characters are permitted to be adorable::
+
+  >>> '☃'
+  '☃'
+  >>> '\u23b6'
+  '⎶'
+
+
+Collections
+-----------
 
 Monte has native lists and maps, as well as various other data structures
 implemented in the language.
@@ -94,13 +100,13 @@ String
 Strings are objects with built-in methods and capabilities, rather than
 character arrays. Monte's strings are always unicode, like Python 3 (but
 unlike Python 2). String literals are always delimited by
-double-quotes (``"``).
+double-quotes (``"``)::
 
-.. code-block:: monte
+    >>> "Hello World!".replace("World", "Monte hackers")
+    "Hello Monte hackers!"
+    >>> "¿Dónde aquí habla Monte o español?".size()
+    34
 
-    def s := "Hello World!"
-    def t := s.replace("World", "Monte hackers") # Hello Monte hackers!
-    def u := "¿Dónde aquí habla Monte o español?"
 
 String Escapes
 ++++++++++++++
@@ -158,7 +164,7 @@ heterogenous ordered unsorted collections with sequencing and indexing, and
 have the performance characteristics of arrays in C, vectors in C++, or lists
 in Python::
 
-  >>> { def l := ['I', "love", "Monte", 42, 0.5]; l[3] }
+  >>> ['I', "love", "Monte", 42, 0.5][3]
   42
 
 A list expression evaluates to a ``ConstList``::
@@ -237,92 +243,3 @@ __ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lex
      Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"),
      Sequence("[", ZeroOrMore(Sequence(NonTerminal('expr'),
                                        "=>", NonTerminal('expr')), ','), "]"))
-
-examples::
-
-  1
-  0x1
-  1.0
-  'a'
-  '\u23b6'
-  "some unicode text"
-  [1, 2, 'x']
-  [1 => 'a', 2 => "b"]
-
-.. syntax:: noun
-
-   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
-
-examples::
-
-  foo
-  __equalizer
-  ::"hello, world"
-
-.. index: Unary operators
-
-.. syntax:: prefix
-
-   Choice(
-    0,
-    NonTerminal('unary'),
-    NonTerminal('SlotExpression'),
-    NonTerminal('BindingExpression'),
-    Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
-
-.. seealso::
-
-   :ref:`message_passing`
-
-.. syntax:: unary
-
-   Choice(
-    0,
-    Sequence('-', NonTerminal('prim')),
-    Sequence(Choice(0, "~", "!"), NonTerminal('call')))
-
-.. syntax:: SlotExpression
-
-   Sequence('&', NonTerminal('noun'))
-
-.. todo:: discuss, doctest SlotExpression ``&x``
-
-.. syntax:: BindingExpression
-
-   Sequence('&&', NonTerminal('noun'))
-
-.. todo:: discuss, doctest BindingExpression ``&&x``
-
-.. index:: Indexing
-
-.. syntax:: getExpr
-
-   Sequence(
-    NonTerminal('calls'),
-    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))
-
-.. syntax:: curry
-
-   Sequence(
-    Choice(0, '.', '<-'),
-    Choice(0, "IDENTIFIER", ".String."))
-
-.. syntax:: prim
-
-   Choice(
-    0,
-    NonTerminal('Literal'),
-    NonTerminal('quasiliteral'),
-    NonTerminal('noun'),
-    Sequence("(", NonTerminal('expr'), ")"),
-    Sequence("{", ZeroOrMore(NonTerminal('expr'), ';'), "}"),
-    Sequence("[",
-             "for", NonTerminal('comprehension'),
-             "]"))
-
-.. seealso::
-
-   :ref:`quasiliteral <quasiliteral>`,
-   :ref:`comprehension <comprehension>`
-
-.. todo:: figure out how to make the quasiliteral, comprehension links work
