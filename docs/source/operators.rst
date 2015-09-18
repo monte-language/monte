@@ -16,8 +16,8 @@ The ``def`` syntax makes final (aka immutable) bindings::
 
 To signal that you want a variable binding, use ``var``::
 
-  ▲> { var v := 6; v := 12; v - 4 }
-  Result: 8
+  >>> { var v := 6; v := 12; v - 4 }
+  8
 
 Note the use of ``:=`` rather than ``=`` for assignment.
 Comparison in Monte is ``==`` and the single-equals, ``=``, has no meaning. This
@@ -26,8 +26,8 @@ languages where you can compile after typo-ing ``==``.
 
 Monte has rich support for destructuring assignment using pattern matching::
 
-  ▲> { def [x, y] := [1, 2]; x }
-  Result: 1
+  >>> { def [x, y] := [1, 2]; x }
+  1
 
 The :ref:`patterns` section discusses pattern matching in detail.
 

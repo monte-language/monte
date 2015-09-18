@@ -93,10 +93,11 @@ Interacting with the Monte REPL
 Monte has a traditional "Read - Evaluate - Print Loop", or REPL, for
 exploration. For example::
 
-  ▲> 1 + 1
-  Result: 2
-  ▲> "abc".size()
-  Result: 3
+  >>> 1 + 1
+  2
+
+  >>> "abc".size()
+  3
 
 .. note:: repl.mt doesn't keep bindings
           `#17`__

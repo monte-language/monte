@@ -3,8 +3,8 @@ Simple expressions
 
 Expressions evaluate to objects and definitions bind objects to names::
 
-  ▲> { def x := 2; x * x }
-  Result: 4
+  >>> { def x := 2; x * x }
+  4
 
 Built-in Object Types
 ---------------------
@@ -52,16 +52,16 @@ Note that integers do not automatically coerce to doubles::
   ...
   Parse error: [Failed guard (Double):, 1]
 
-  ▲> def x :Double := 1.0
-  Result: 1.000000
+  >>> def x :Double := 1.0
+  1.000000
 
 To convert::
 
-  ▲> 4.0.floor()
-  Result: 4
+  >>> 4.0.floor()
+  4
 
-  ▲> 4 * 1.0
-  Result: 4.000000
+  >>> 4 * 1.0
+  4.000000
 
 Char
 ~~~~
@@ -158,8 +158,8 @@ heterogenous ordered unsorted collections with sequencing and indexing, and
 have the performance characteristics of arrays in C, vectors in C++, or lists
 in Python::
 
-  ▲> { def l := ['I', "love", "Monte", 42, 0.5]; l[3] }
-  Result: 42
+  >>> { def l := ['I', "love", "Monte", 42, 0.5]; l[3] }
+  42
 
 A list expression evaluates to a ``ConstList``::
 
@@ -170,16 +170,20 @@ A list expression evaluates to a ``ConstList``::
 Use ``diverge`` and ``snapshot`` to go from ``ConstList`` to mutable
 ``FlexList`` and back::
 
-  ▲> { def l := ['I', "love", "Monte", 42, 0.5].diverge(); l[3] := 0 }
-  Result: 0
+  >>> { def l := ['I', "love", "Monte", 42, 0.5].diverge(); l[3] := 0 }
+  0
 
 Maps: ConstMap and FlexMap
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Monte uses the "fat arrow", ``=>`` for map syntax::
 
-  ▲> { def m := ["roses" => "red", "violets" => "blue"]; m["roses"] }
-  Result: red
+  >>> { def m := ["roses" => "red", "violets" => "blue"]; m["roses"] }
+  "red"
+
+.. todo:: output of repl should be quoted like this.
+
+.. todo:: handle multi-line REPL examples when generating tests
 
 Like list expressions, a map expressions evaluates to an immutable
 data structures, a ``ConstMap``::
@@ -190,18 +194,18 @@ data structures, a ``ConstMap``::
 
 Use ``diverge`` and ``snapshot`` similarly::
 
-  ▲> { def m := ["roses" => "red", "violets" => "blue"].diverge(); m["roses"] := 3 }
-  Result: 3
+  >>> { def m := ["roses" => "red", "violets" => "blue"].diverge(); m["roses"] := 3 }
+  3
 
 .. warning:: Maps in monte are ordered::
 
-               ▲> [ "a" => 1, "b" => 2] == [ "b" => 2, "a" => 1]
-               Result: false
+               >>> [ "a" => 1, "b" => 2] == [ "b" => 2, "a" => 1]
+               false
 
              To compare without regard to order, use ``sortKeys``::
 
-               ▲> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
-               Result: true
+               >>> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
+               true
 
 Comments
 --------
