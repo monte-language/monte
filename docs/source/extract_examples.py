@@ -2,9 +2,9 @@
 
 Usage:
 
-  extract_examples output_dir section1.rst section2.rst ...
+  extract_examples dest.mt section1.rst section2.rst ...
 
-Results are section1_0.mt, section1_0_expected.txt etc. in output_dir.
+Examples are converted to monte unit tests.
 '''
 import logging
 import doctest
@@ -13,36 +13,51 @@ log = logging.getLogger(__name__)
 
 
 def main(access):
-    inputs, output = access()
+    inputs, write = access()
 
     p = doctest.DocTestParser()
     for (section, txt) in inputs:
+        caseNames = []
         for (ix, ex) in enumerate(p.get_examples(txt)):
-            output('%s_%s.mt' % (section, ix), ex.source)
-            output('%s_%s_expected.txt' % (section, ix), ex.want)
+            name = 'test%s_%s' % (section, ix)
+            case = caseTemplate.format(name=name,
+                                       source=ex.source.strip(),
+                                       # TODO: string quoting
+                                       want=ex.want.strip())
+            caseNames.append(name)
+            write(case)
+
+        write(suiteTemplate.format(cases=',\n    '.join(caseNames)))
+
+caseTemplate = u"""
+def {name}(assert):
+    # assert.equal(M.toString({source}), "{want}")
+    assert.equal({source}, {want})
+
+"""
+
+suiteTemplate = u"""
+unittest([
+    {cases}
+])
+"""
 
 
 def mkInputs(argv, open, splitext):
     return [(splitext(arg)[0], open(arg).read()) for arg in argv[2:]]
 
 
-def mkOutput(argv, open, join):
-    where = argv[1]
-
-    def output(fn, txt):
-        log.info('output: %s', (where, fn))
-        open(join(where, fn), 'w').write(txt)
-    return output
-
 if __name__ == '__main__':
     def _script():
         from io import open
         from sys import argv
-        from os.path import splitext, join
+        from os.path import splitext
 
         def access():
             logging.basicConfig(level=logging.INFO)
-            return mkInputs(argv, open, splitext), mkOutput(argv, open, join)
+            dest = argv[1]
+            write = open(dest, 'w').write
+            return mkInputs(argv, open, splitext), write
 
         main(access)
 
