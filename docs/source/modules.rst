@@ -3,6 +3,9 @@
 Modules in Monte
 ================
 
+Modules are units of compilation. They are single files of Monte source code
+which can be compiled on a per-file basis.
+
 Concepts and Terms
 ------------------
 
@@ -11,10 +14,10 @@ script
   command line).
 
 module file
-  Source files starting with a ``module`` declaration.
+  Source files starting with an ``imports`` declaration.
 
 module structure
-  An object representing imported  and exported names of a module.
+  An object representing imported and exported names of a module.
 
 module configuration
   An object representing a the association of a module's import names
@@ -35,28 +38,49 @@ requirement
 Module Declaration Syntax
 -------------------------
 
-Module files start with a `module` declaration of the form::
-    module dependency1, dependency2, ...
-    export (name1, name2, ...)
+Module files start with a **module header**, which is a declaration of the
+form::
 
-Names specified on the `module` line are imports and may have guards
-on them (particularly useful so that their bindings can be specified
-as ``DeepFrozen``). The `export` line is optional; names included on
-this line will be listed as exports of the module.
+    imports => dependency1, => dependency2, ...
+    exports (name1, name2, ...)
+
+Names specified on the `imports` line are import declarations. Each import
+declaration should be a named parameter. Imports can have guards on them::
+
+    imports => preChilled :DeepFrozen
+    exports ()
+
+This is extremely useful for ensuring that imported names are ``DeepFrozen``.
+
+Export declarations are names defined in the module. Every exported name must
+pass audition by ``DeepFrozen``::
+
+    imports
+    exports (f)
+
+    def f() as DeepFrozen:
+        return 42
 
 Mechanics
 ---------
 
-Scripts are run in a scope with an ``import(name, parameters)``
-function, which can be invoked to load modules. The name is used to
-locate either a module file or a directory containing a package script
-(currently required to be named ``package.mt``). A configuration is
-created from the structure read from this, and then loaded with the
-parameters given, and its exports are returned as a map.
+.. note::
+    Packages currently are being reworked. The ``name`` parameter of
+    ``import()`` currently selects modules from a single global namespace.
 
+Scripts are run in a scope by ``import(name :Str, parameters :Map[Str,
+Any])``,
+which can be invoked to load modules. The name is used to locate either a
+module file or a directory containing a package script (currently required to
+be named ``package.mt``). A configuration is created from the structure read
+from this, and then loaded with the parameters given, and its exports are
+returned as a map.
 
 Package Scripts
 ---------------
+
+.. note::
+    This all is obsolete. Sorry.
 
 Package scripts are run in the safe scope with the addition of a
 package loader object ``pkg``.
@@ -103,8 +127,12 @@ configuration.
 Testing
 -------
 
-.. note:: Tests are not automatically discovered at present. You need to add
-    your test to a package.mt file for it to be run correctly.
+.. note::
+    Tests are not automatically discovered at present. You need to add your
+    test to a package.mt file for it to be run correctly.
+
+.. note::
+    Corbin was too lazy to rewrite this, but it is quite old.
 
 Unit tests are essential to writing good code. Monte's testing framework is
 designed to make it simple to write and run good tests. See the testing.mt_
@@ -124,16 +152,17 @@ Module Syntax Summary
 ---------------------
 
 .. syntax:: module
+
    Sequence(
-    Optional(Sequence("module",
+    Optional(Sequence("imports",
                       NonTerminal('imports'),
                       Optional(NonTerminal('exports')))),
     NonTerminal('block'))
 
 .. syntax:: imports
 
-   ZeroOrMore(NonTerminal('pattern'))
+   ZeroOrMore(NonTerminal('namedPattern'))
 
 .. syntax:: exports
 
-   Sequence('export', "(", ZeroOrMore(NonTerminal('name')), ")")
+   Sequence("exports", "(", ZeroOrMore(NonTerminal('name')), ")")
