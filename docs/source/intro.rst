@@ -38,15 +38,9 @@ __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 A Taste of Monte
 ----------------
 
-Let's compose a simple web server from a main program...
+Let's compose a simple web server from a main program and a handler:
 
-.. literalinclude:: tut/web1priv.mt
-    :linenos:
-    :language: monte
-
-... and an imported ``web1`` module:
-
-.. literalinclude:: tut/web1.mt
+.. literalinclude:: tut/web1mt
     :linenos:
     :language: monte
 
@@ -58,21 +52,19 @@ family (Java, JavaScript, PHP).
 	  lib.http.resource import smallBody`` and likewise for the
 	  others. See :ref:`modules` and :ref:`patterns` for details.
 
-We keep the main program to a minimum because it is loaded in the
-privileged "unsafe" scope. We can refer to `currentProcess` and
-`makeTCP4ServerEndpoint` in this scope.
-
-On the other hand, imported modules such as `web1` (and the various
-library modules) are loaded in the safe scope, so that executing them
-can do nothing more than create objects (including functions) in
-memory and export the value of the last expression (typically, a map
-of exported objects). Importing them cannot write to files [#]_,
-access the network, clobber global state, or launch missiles.
+The powerful objects `currentProcess` and `makeTCP4ServerEndpoint` are
+provided explicitly to the main function. Unless these powerful
+objects are passed explicitly to other code (such as the various
+library modules) executing it can do nothing more than create objects
+(including functions) in memory. It cannot write to files [#]_, access
+the network, clobber global state, or launch missiles.
 
 Only when access to make an HTTP endpoint is passed to start() can
 this code interact with the network. And by inspection of
 `makeWebServer()`, we can see that it can only use the HTTP protocol,
 and only on the port given by the last command-line argument.
+
+.. todo:: rewrite the two previous paragraphs.
 
 This aspect of monte's design is discussed further in :ref:`ocap`.
 
