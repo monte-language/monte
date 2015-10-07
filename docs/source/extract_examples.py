@@ -17,6 +17,7 @@ def main(access):
 
     p = doctest.DocTestParser()
     for (section, txt) in inputs:
+        write(u'\n# {section}\n'.format(section=section))
         caseNames = []
         for (ix, ex) in enumerate(p.get_examples(txt)):
             name = 'test%s_%s' % (section, ix)
@@ -27,7 +28,8 @@ def main(access):
             caseNames.append(name)
             write(case)
 
-        write(suiteTemplate.format(cases=',\n    '.join(caseNames)))
+        write(suiteTemplate.format(section=section,
+                                   cases=',\n    '.join(caseNames)))
 
 caseTemplate = u"""
 def {name}(assert):
@@ -40,6 +42,7 @@ suiteTemplate = u"""
 unittest([
     {cases}
 ])
+
 """
 
 
