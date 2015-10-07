@@ -1,3 +1,41 @@
+===
+FAQ
+===
+
+Unusual Monteisms
+=================
+
+Do I have to specify a default matcher for a switch expression?
+---------------------------------------------------------------
+
+The short answer: No. You might want to read on for the consequences of
+omitting it, though.
+
+Switch expressions expand to a tree of possibilities, with each matcher being
+tried in turn until one matches. If none of them match, then an exception is
+thrown with a short description of the failing specimen.
+
+To override this behavior, specify a matcher that cannot fail. Examples of
+patterns that cannot fail include final and var patterns without guards, and
+ignore patterns::
+
+    switch (specimen):
+        match ==x:
+            traceln(`$specimen was just like $x`)
+        match i :Int:
+            traceln(`$i is an Int`)
+        match _:
+            traceln(`Default matcher!`)
+
+In this example, since the final matcher always succeeds, the default behavior
+of throwing an exception is effectively overridden.
+
+The long answer: When Monte expands ``switch`` expressions into Kernel-Monte, the
+entire expression becomes a long series of ``if`` expressions. The final
+``else`` throws an exception using the ``_switchFailed`` helper object. If the
+penultimate ``if`` test cannot fail, then the final ``else`` is unreachable,
+and it will be pruned by the optimizer during compilation.
+
 Turns, References, and Vats
 ===========================
 
