@@ -39,17 +39,14 @@ Methods
     Overriding this method lets an object become other objects when under
     scrutiny by guards.
 
-``_getAllegedType/0``
-    ``_getAllegedType`` returns an interface describing this object. If not
-    specified, an interface which represents the object faithfully will be
+``_getAllegedInterface/0``
+    ``_getAllegedInterface`` returns an interface describing this object. If
+    not specified, an interface which represents the object faithfully will be
     created and returned.
 
-    .. note::
-        We're gonna rename this to something that doesn't use the word "type"
-        at some point in the near future. Probably "shape" or "interface"?
-
-    .. warning::
-        We haven't implemented this one yet.
+    The allegedness of the interface hinges on the ability to override this
+    method; the returned interface can be just as untrustworthy as the object
+    that returns it.
 
 ``_printOn/1``
     ``_printOn`` writes text representing this object onto the printer passed
@@ -99,17 +96,18 @@ Methods
     ``_uncall`` undoes the call that created this object. The default
     implementation returns ``null``, because objects are, by default, not
     uncallable. A good implementation of ``_uncall`` will return a list
-    containing ``[maker, verb, args]`` such that ``M.call(maker, verb, args)``
-    will produce a new object which is equal to this object.
+    containing ``[maker, verb :Str, args :List, namedArgs :Map]`` such that
+    ``M.call(maker, verb, args, namedArgs)`` will produce a new object which
+    is equal to this object.
 
     Providing an instance of ``_uncall`` makes an object eligible for
-    uncall-based catamorphisms (fold, reduce, ...). In particular, uncallable objects are
-    comparable by value.
+    uncall-based catamorphisms (fold, reduce, ...). In particular, uncallable
+    objects are comparable by value.
 
     .. note::
-        At some point in the near future, you'll need to both implement
-        ``_uncall`` and also pass an audition proving that your uncall is
-        correct in order to gain the benefit of uncallability.
+        In order to be eligible for value comparisons, you'll need to both
+        implement ``_uncall`` and also pass an audition proving that your
+        uncall is correct. See ``Selfless`` and ``Transparent`` for details.
 
 ``_whenBroken/1``
     ``_whenBroken``, by default, does nothing on near objects and sends
