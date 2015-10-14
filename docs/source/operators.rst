@@ -8,6 +8,8 @@ Operators and Assignment
 
     -- Nina, corporate accounts payable, *Office Space*
 
+.. _def:
+
 The ``def`` syntax makes final (aka immutable) bindings::
 
   ▲> { def x := 2; x := 3 }

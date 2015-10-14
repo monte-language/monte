@@ -38,39 +38,51 @@ __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 A Taste of Monte
 ----------------
 
-Let's compose a simple web server from a main program and a handler:
+Let's see what a simple web server looks like in monte:
 
-.. literalinclude:: tut/web1mt
+.. literalinclude:: tut/web1.mt
     :linenos:
     :language: monte
 
-The basics of defining functions and calling methods should be
-familiar to anyone with exposure to python or even ruby or the C/C++
-family (Java, JavaScript, PHP).
+The ``imports`` line begins a :ref:`module <modules>` and we declare
+that this module ``exports`` its ``main`` function, as is conventional
+for executable programs.
 
-.. note:: You can read the ``smallBody`` import as: ``from
-	  lib.http.resource import smallBody`` and likewise for the
-	  others. See :ref:`modules` and :ref:`patterns` for details.
+The :ref:`def expression<def>` for defining the ``helloWeb`` function is
+similar to python and the like.
 
-The powerful objects `currentProcess` and `makeTCP4ServerEndpoint` are
-provided explicitly to the main function. Unless these powerful
-objects are passed explicitly to other code (such as the various
-library modules) executing it can do nothing more than create objects
-(including functions) in memory. It cannot write to files [#]_, access
-the network, clobber global state, or launch missiles.
+.. todo:: Forward ref :ref:`auditors` or find a way to elide
+          ``DeepFrozen``. (Issue #43).
 
-Only when access to make an HTTP endpoint is passed to start() can
-this code interact with the network. And by inspection of
-`makeWebServer()`, we can see that it can only use the HTTP protocol,
-and only on the port given by the last command-line argument.
+The ``smallBody`` import works much like python's ``from
+lib.http.resource import smallBody``, using :ref:`pattern matching
+<patterns>` to bind names to objects imported from :ref:`modules
+<modules>`.
 
-.. todo:: rewrite the two previous paragraphs.
+.. todo:: hoist imports to toplevel once these library modules
+          have gone through the module migration.
 
-This aspect of monte's design is discussed further in :ref:`ocap`.
+The ``escape`` expression introduces an :ref:`ejector <ejector>` called
+``badRequest``, which we use to deal with ill-formed requests in a
+fail-stop manner in case the ``request`` doesn't match the
+``[[verb, path], headers]`` pattern.
 
-.. todo:: use new `main(=> makeTCP4ServerEndpoint)` idiom (`issue 33`__).
+The ``body`` is defined using :ref:`method calls<message_passing>`
+on the imported ``tag`` object.
 
-__ https://github.com/monte-language/typhon/issues/33
+The critical distinction between monte and other memory-safe dynamic
+languages is that monte is an :ref:`object capability <ocap>`
+lanugage. Powerful objects such as ``currentProcess`` and
+``makeTCP4ServerEndpoint`` are not in any global namespace; they
+cannot be imported. Rather, they are provided explicitly to the
+``main`` function. Except by explicit delegation, no code can do
+anything more more than create objects (including functions) in
+memory. It cannot read from nor write to files [#]_, access the
+network, clobber global state, or launch missiles.
+
+By straightforward inspection, we can see that
+  - only one TCP port is ever created;
+  - its port number is taken from the last command-line argument.
 
 
 Getting Started

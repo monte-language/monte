@@ -349,6 +349,8 @@ Note that the ejector is threaded through ``to next(ej)`` into the inner
 iterator in order to allow iteration to terminate if/when the inner iterator
 becomes exhausted.
 
+.. _ejector:
+
 What are ejectors?
 ------------------
 
