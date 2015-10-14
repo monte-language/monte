@@ -213,21 +213,6 @@ Use ``diverge`` and ``snapshot`` similarly::
                >>> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
                true
 
-Comments
---------
-
-This is a single-line comment::
-
-    # Lines starting with a # are single-line comments.
-    # They only last until the end of the line.
-
-And this is a multi-line comment::
-
-    /** This comment is multi-line.
-        Yes, it starts with two stars,
-        but ends with only one.
-        These should only be used for docstrings. */
-
 Syntax Summary
 --------------
 

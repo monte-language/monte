@@ -143,6 +143,21 @@ Currently the most convenient way to print out messages from your program is
 with the ``trace()`` and ``traceln()`` built-in functions. The only difference
 between them is that ``traceln()`` automatically adds a newline.
 
+Comments
+~~~~~~~~
+
+This is a single-line comment::
+
+    # Lines starting with a # are single-line comments.
+    # They only last until the end of the line.
+
+And this is a multi-line comment::
+
+    /** This comment is multi-line.
+        Yes, it starts with two stars,
+        but ends with only one.
+        These should only be used for docstrings. */
+
 .. rubric:: Notes
 
 .. [#] Miller, M.S.: `Robust Composition: Towards a Unified Approach to
