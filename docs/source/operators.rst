@@ -26,7 +26,8 @@ Comparison in Monte is ``==`` and the single-equals, ``=``, has no meaning. This
 all but eliminates the common issue of ``if (foo = baz)`` suffered by all
 languages where you can compile after typo-ing ``==``.
 
-Monte has rich support for destructuring assignment using pattern matching::
+Monte has rich support for destructuring assignment using
+:ref:`pattern matching <patterns>`::
 
   >>> { def [x, y] := [1, 2]; x }
   1
@@ -37,8 +38,6 @@ Monte has rich support for destructuring assignment using pattern matching::
              NonTerminal('pattern'),
              Optional(Sequence("exit", NonTerminal('order'))),
              Optional(Sequence(":=", NonTerminal('assign'))))
-
-The :ref:`patterns` section discusses pattern matching in detail.
 
 .. _message_passing:
 
@@ -55,13 +54,27 @@ And, second, the **eventual send**::
   >>> { def x; def prom := x<-message(3); null }
   null
 
+Function call syntax elaborates to a call to ``run`` (
+and likewise :ref:`vice-versa<def-fun>`)::
+
+  >>> m`f(x)`.expand()
+  m`f.run(x)`
+
+Indexing elaborates to a call to ``get``::
+
+  >>> { object parity { to get(n) { return n % 2 }}; parity[3] }
+  1
+
+Calls may be curried::
+
+  >>> { def x := 2; def xplus := x.add; xplus(4) }
+  6
+
 .. syntax:: call
 
    Sequence(
     NonTerminal('calls'),
     Optional(Sequence(NonTerminal('curry'))))
-
-*TODO: subordinate calls, as it's a purely syntactic notion*
 
 .. syntax:: calls
 
@@ -75,7 +88,11 @@ And, second, the **eventual send**::
             Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
         NonTerminal('getExpr'))
 
-.. todo:: document curry
+.. syntax:: getExpr
+
+   Sequence(
+    NonTerminal('calls'),
+    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))
 
 .. syntax:: curry
 
@@ -94,31 +111,6 @@ passed to a *helper object* which implements the operation. In object
 capability shorthand, we are asking the object on the left what it thinks of
 the object on the right.
 
-Comparison
-~~~~~~~~~~
-
-  `<=>`
-    "As big as". Think of it as merging `<=` with `>=`
-  `==`
-    Equality comparison. Can compare references, integers, etc.
-  `<`
-    Less than
-  `>`
-    Greater than. 
-  `<=`
-    Less than or equal to
-  `>=`
-    Greater than or equal to. 
-
-  >>> 3 < 2
-  false
-  >>> 3 > 2
-  true
-  >>> 3 < 3
-  false
-  >>> 3 <= 3
-  true
-
 .. syntax:: comp
 
    Sequence(
@@ -131,66 +123,11 @@ Comparison
         Choice(0, "^", "&", "|")
     ), NonTerminal('comp'))))
 
-.. todo:: document match bind `x =~ p`
-
-.. todo:: what is `&!`?
-
-
-Logical
-~~~~~~~
-
-  `&&`
-    And. 
-
-   >>> true && true
-   true
-   >>> true && false
-   false
-   >>> false && false
-   false
-
 .. syntax:: logical
 
    Sequence(
     NonTerminal('comp'),
     Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical'))))
-
-How do I perform a conditional expression? What is Monte's ternary operator?
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-Monte does not have a ternary operator. However, in exchange, the ``if``
-expression can be used where any other expression might be placed. As an
-example, consider a function that tests whether an argument is even::
-
-    def even(i :Int) :Str:
-        if (i % 2 == 0):
-            return "yes"
-        else:
-            return "no"
-
-Monte lacks the ternary operator, but permits using regular conditional
-expressions in its place. We can refactor this example to pull the ``return``
-outside of the ``if``::
-
-    def even(i :Int) :Str:
-        return if (i % 2 == 0) {"yes"} else {"no"}
-
-Don't forget that Monte requires ``if`` expressions to evaluate their
-condition to a ``Bool``.
-
-
-Boolean Operators
------------------
-
-  `**`
-    Exponentiation.
-  `*`
-    Multiplication.
-
-  >>> 2 ** 3
-  8
-  >>> 2 * 3
-  6
 
 .. syntax:: order
 
@@ -206,7 +143,112 @@ Boolean Operators
         Choice(0, ">", "<", ">=", "<=", "<=>")
     ), NonTerminal('order'))))
 
-.. todo:: document `..` and `..!` (ranges?)
+
+Comparison
+~~~~~~~~~~
+
+Monte has the usual comparison operators::
+
+  >>> 3 < 2
+  false
+  >>> 3 > 2
+  true
+  >>> 3 < 3
+  false
+  >>> 3 <= 3
+  true
+
+They expand to use of a helper object::
+
+  >>> m`x == y`.expand()
+  m`__equalizer.sameEver(x, y)`
+
+  >>> m`3 < 2`.expand()
+  m`_comparer.lessThan(3, 2)`
+
+.. todo:: elaborate on sameness
+
+Comparison is more strict than you might expect::
+
+  >>> 3 == "3"
+  false
+  >>> 1 + 1 == 2.0
+  false
+  >>> 3 < "3"
+  Parse error: Object was wrong type: Not an integer!
+
+Use ``<=>`` aka ``asBigAs`` to compare magnitudes::
+
+  >>> 2.0 <=> 1 + 1
+  true
+  >>> 2 + 1 <=> 3.0
+  true
+  >>> m`2.0 <=> 1 + 1`.expand()
+  m`_comparer.asBigAs(2.000000, 1.add(1))`
+
+You can also compare with a pattern::
+
+  >>> [1, 2] =~ [a, b]
+  true
+  >>> [1, "x"] =~ [_ :Int, _ :Str]
+  true
+  >>> "abc" =~ `a@rest`
+  true
+  >>> "xbc" =~ `a@rest`
+  false
+  >>> "xbc" !~ `a@rest`
+  Result: true
+
+Logical
+~~~~~~~
+
+.. sidebar:: ternary conditional expression
+
+   While monte does not have the ``c ? x : y`` ternary conditional
+   operator, the ``if`` expression works just as well. For example, to
+   tests whether ``i`` is even::
+
+     >>> { def i := 3; if (i % 2 == 0) { "yes" } else { "no" } }
+     "no"
+
+   Don't forget that Monte requires ``if`` expressions to evaluate
+   their condition to a ``Bool``::
+
+     ▲> if (1) { "yes" } else { "no" }
+     Parse error: Not a boolean!
+
+Monte uses C syntax for the basic logical operators::
+   >>> true && true
+   true
+
+We also have negated implication operator::
+   >>> true &! false
+   true
+   >>> m`x &! y`.expand()
+   m`x.butNot(y)`
+
+
+Boolean Operators
+-----------------
+
+We have the usual exponentiation, multiplication, etc.::
+
+  >>> 2 ** 3
+  8
+  >>> 2 * 3
+  6
+
+We can build a half-open interval with the range operator::
+
+  >>> [for x in (1..!4) x * 2]
+  [2, 4, 6]
+
+The inclusive range operator is a syntactic shortcut::
+
+  >>> 1..4
+  1..!5
+  >>> [for x in (1..4) x * 2]
+  [2, 4, 6, 8]
 
 
 Augmented Assignment
@@ -292,6 +334,8 @@ Assignment operators
 Primitive Expressions
 ---------------------
 
+Parentheses, braces, and square brackets set off primitive expressions.
+
 .. syntax:: prim
 
    Choice(
@@ -305,15 +349,28 @@ Primitive Expressions
              "for", NonTerminal('comprehension'),
              "]"))
 
+A sequence expressions evaluates to the value of its last item::
+
+  >>> { 4; "x"; "y" }
+  "y"
+
+Parentheses override normal precedence rules::
+
+  >>> 4 + 2 * 3
+  10
+  >>> (4 + 2) * 3
+  18
+
 .. seealso::
 
    :ref:`quasiliteral <quasiliteral>`,
    :ref:`comprehension <comprehension>`
 
-.. todo:: figure out how to make the quasiliteral, comprehension links work
 
 Noun
-~~~~
+----
+
+A noun is a reference to a final or variable slot.
 
 .. syntax:: noun
 
@@ -334,7 +391,23 @@ Any string literal prefixed by `::` can be used as an identifier::
 
 
 Unary operators
-~~~~~~~~~~~~~~~
+---------------
+
+Monte has logical, bitwise, and arithmetic negation operators::
+
+  >>> - (1 + 3)
+  -4
+  >>> ~ 0xff
+  -256
+  >>> ! true
+  false
+
+A guard can be used as an operator to coerce a value::
+
+  >>> 1 :Int
+  1
+
+.. todo:: discuss, doctest SlotExpression ``&x``, BindingExpression ``&&x``
 
 .. syntax:: prefix
 
@@ -344,10 +417,6 @@ Unary operators
     NonTerminal('SlotExpression'),
     NonTerminal('BindingExpression'),
     Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
-
-.. seealso::
-
-   :ref:`message_passing`
 
 .. syntax:: unary
 
@@ -360,20 +429,6 @@ Unary operators
 
    Sequence('&', NonTerminal('noun'))
 
-.. todo:: discuss, doctest SlotExpression ``&x``
-
 .. syntax:: BindingExpression
 
    Sequence('&&', NonTerminal('noun'))
-
-.. todo:: discuss, doctest BindingExpression ``&&x``
-
-
-Indexing
-~~~~~~~~
-
-.. syntax:: getExpr
-
-   Sequence(
-    NonTerminal('calls'),
-    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))

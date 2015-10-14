@@ -31,6 +31,8 @@ expressions and returns a code object. ``m`` is useful for code generation::
 
     def expr := m`2 + 2`
 
+.. _quasiliteral:
+
 Values
 ------
 

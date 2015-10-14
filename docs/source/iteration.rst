@@ -31,6 +31,8 @@ Objects can also be created by functions::
 
     hi.greet("Student")
 
+.. _def-fun:
+
 Does Monte have functions?
 --------------------------
 
@@ -280,6 +282,8 @@ Since ``break`` was used, the loop exits on its first iteration, returning
     The syntax of ``break`` permits parentheses around the return value, like
     ``break(this)``, and also an empty pair of parentheses to indicate a null
     return value, like so: ``break()``.
+
+.. _comprehension:
 
 Comprehensions
 ~~~~~~~~~~~~~~
