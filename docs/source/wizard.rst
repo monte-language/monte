@@ -12,11 +12,18 @@ blocks and separate expressions in general, but use indentation and
 newlines for this in "statement position", which is chiefly the
 toplevel of the file and inside an indented block.
 
+  >>> { def f(x) { return x * x }; f(4) }
+  16
+
 Expansion
 ---------
 
 Monte's syntax is sugar over a kernel language, Kernel-E. Every Monte
 syntax construct expands to a Kernel-E expression.
+
+  >>> m`1 + 1`.expand()
+  m`1.add(1)`
+
 
 The Semantics
 =============
@@ -73,5 +80,8 @@ interface.
 Network's View
 --------------
 
-This is a big topic and you should read
-http://www.erights.org/elib/concurrency/refmech.html for now.
+.. todo:: This is a big topic; for now, see the `Reference
+          Mechanics`__ section from `ELib`__ for now.
+
+__ http://www.erights.org/elib/concurrency/refmech.html
+__ http://www.erights.org/elib/index.html
