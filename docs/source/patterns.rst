@@ -211,14 +211,13 @@ BindPattern
 Bind patterns match an object and bind it to a forward-declared name,
 optionally testing for guard conformance.
 
-Bind
-****
+Expansion
+*********
 
 ::
 
-    def &&name := binding
-
-A bind pattern does not bind a name, but binds a *binding*.
+  >>> m`def bind x := 2`.expand()
+  m`def via (_bind.run(x_Resolver, null)) _ := 2`
 
 
 SlotPattern
@@ -231,23 +230,18 @@ SlotPattern
 
 ::
 
-  &x
-  &::"hello, world"
-  &x :G
+    def &name := slot
 
 Slot patterns match an object and bind them to the slot of the
 pattern's name, optionally testing the object for guard conformance.
 
-Slot
-****
+Expansion
+*********
 
 ::
 
-    def &name := slot
-
-The slot pattern, like the bind pattern, allows definition of the slot behind
-a name.
-
+  >>> m`def &x := 1`.expand()
+  m`def via (__slotToBinding) &&x := 1`
 
 BindingPattern (kernel)
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -263,6 +257,14 @@ BindingPattern (kernel)
 
 Binding patterns match an object and use it as the binding for the
 given name.
+
+::
+
+    def &&name := binding
+
+A bind pattern does not bind a name, but binds a *binding*.
+
+
 
 IgnorePattern (kernel)
 ~~~~~~~~~~~~~~~~~~~~~~

@@ -12,17 +12,17 @@ Monte is a dynamic language inspired by Python and E.
 .. toctree::
 
     intro
-    design
     wizard
-    patterns
     symbols
     operators
     iteration
+    patterns
     quasiparsers
     guards
     interfaces
     modules
     custom-guards
+    design
     faq
     miranda
     tubes

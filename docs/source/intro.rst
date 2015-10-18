@@ -38,43 +38,52 @@ __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 A Taste of Monte
 ----------------
 
-Let's compose a simple web server from a main program...
-
-.. literalinclude:: tut/web1priv.mt
-    :linenos:
-    :language: monte
-
-... and an imported ``web1`` module:
+Let's see what a simple web server looks like in monte:
 
 .. literalinclude:: tut/web1.mt
     :linenos:
     :language: monte
 
-The basics of defining functions and calling methods should be
-familiar to anyone with exposure to python or even ruby or the C/C++
-family (Java, JavaScript, PHP).
+The ``imports`` line begins a :ref:`module <modules>` and we declare
+that this module ``exports`` its ``main`` function, as is conventional
+for executable programs.
 
-.. note:: You can read the ``smallBody`` import as: ``from
-	  lib.http.resource import smallBody`` and likewise for the
-	  others. See :ref:`modules` and :ref:`patterns` for details.
+The :ref:`def expression<def>` for defining the ``helloWeb`` function is
+similar to python and the like.
 
-We keep the main program to a minimum because it is loaded in the
-privileged "unsafe" scope. We can refer to `currentProcess` and
-`makeTCP4ServerEndpoint` in this scope.
+.. todo:: Forward ref :ref:`auditors` or find a way to elide
+          ``DeepFrozen``. (Issue #43).
 
-On the other hand, imported modules such as `web1` (and the various
-library modules) are loaded in the safe scope, so that executing them
-can do nothing more than create objects (including functions) in
-memory and export the value of the last expression (typically, a map
-of exported objects). Importing them cannot write to files [#]_,
-access the network, clobber global state, or launch missiles.
+The ``smallBody`` import works much like python's ``from
+lib.http.resource import smallBody``, using :ref:`pattern matching
+<patterns>` to bind names to objects imported from :ref:`modules
+<modules>`.
 
-Only when access to make an HTTP endpoint is passed to start() can
-this code interact with the network. And by inspection of
-`makeWebServer()`, we can see that it can only use the HTTP protocol,
-and only on the port given by the last command-line argument.
+.. todo:: hoist imports to toplevel once these library modules
+          have gone through the module migration.
 
-This aspect of monte's design is discussed further in :ref:`ocap`.
+The ``escape`` expression introduces an :ref:`ejector <ejector>` called
+``badRequest``, which we use to deal with ill-formed requests in a
+fail-stop manner in case the ``request`` doesn't match the
+``[[verb, path], headers]`` pattern.
+
+The ``body`` is defined using :ref:`method calls<message_passing>`
+on the imported ``tag`` object.
+
+The critical distinction between monte and other memory-safe dynamic
+languages is that monte is an :ref:`object capability <ocap>`
+lanugage. Powerful objects such as ``currentProcess`` and
+``makeTCP4ServerEndpoint`` are not in any global namespace; they
+cannot be imported. Rather, they are provided explicitly to the
+``main`` function. Except by explicit delegation, no code can do
+anything more more than create objects (including functions) in
+memory. It cannot read from nor write to files [#]_, access the
+network, clobber global state, or launch missiles.
+
+By straightforward inspection, we can see that
+  - only one TCP port is ever created;
+  - its port number is taken from the last command-line argument.
+
 
 Getting Started
 ---------------
@@ -93,17 +102,12 @@ Interacting with the Monte REPL
 Monte has a traditional "Read - Evaluate - Print Loop", or REPL, for
 exploration. For example::
 
-  ▲> 1 + 1
-  Result: 2
-  ▲> "abc".size()
-  Result: 3
+  >>> 1 + 1
+  2
 
-.. note:: repl.mt doesn't keep bindings
-          `#17`__
+  >>> "abc".size()
+  3
 
-__ https://github.com/monte-language/typhon/issues/17
-
-.. _trace:
 
 Editor Syntax Highlighting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -119,6 +123,8 @@ __ https://atom.io/packages/language-monte
 
 __ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
 
+
+.. _trace:
 
 Diagnostics, Documentation, and Debugging
 -----------------------------------------
@@ -136,6 +142,21 @@ Monte strives to provide useful error messages and self-documenting objects::
 Currently the most convenient way to print out messages from your program is
 with the ``trace()`` and ``traceln()`` built-in functions. The only difference
 between them is that ``traceln()`` automatically adds a newline.
+
+Comments
+~~~~~~~~
+
+This is a single-line comment::
+
+    # Lines starting with a # are single-line comments.
+    # They only last until the end of the line.
+
+And this is a multi-line comment::
+
+    /** This comment is multi-line.
+        Yes, it starts with two stars,
+        but ends with only one.
+        These should only be used for docstrings. */
 
 .. rubric:: Notes
 
