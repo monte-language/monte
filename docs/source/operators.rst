@@ -57,7 +57,7 @@ And, second, the **eventual send**::
 Function call syntax elaborates to a call to ``run`` (
 and likewise :ref:`vice-versa<def-fun>`)::
 
-  >>> m`f(x)`.expand()
+  ▲> m`f(x)`.expand()
   m`f.run(x)`
 
 Indexing elaborates to a call to ``get``::
@@ -99,6 +99,8 @@ Calls may be curried::
    Sequence(
     Choice(0, '.', '<-'),
     Choice(0, "IDENTIFIER", ".String."))
+
+.. _operators:
 
 Operators
 ---------
@@ -160,10 +162,10 @@ Monte has the usual comparison operators::
 
 They expand to use of a helper object::
 
-  >>> m`x == y`.expand()
+  ▲> m`x == y`.expand()
   m`__equalizer.sameEver(x, y)`
 
-  >>> m`3 < 2`.expand()
+  ▲> m`3 < 2`.expand()
   m`_comparer.lessThan(3, 2)`
 
 .. todo:: elaborate on sameness
@@ -172,32 +174,41 @@ Comparison is more strict than you might expect::
 
   >>> 3 == "3"
   false
+
   >>> 1 + 1 == 2.0
   false
-  >>> 3 < "3"
+
+  ▲> 3 < "3"
   Parse error: Object was wrong type: Not an integer!
 
 Use ``<=>`` aka ``asBigAs`` to compare magnitudes::
 
   >>> 2.0 <=> 1 + 1
   true
+
   >>> 2 + 1 <=> 3.0
   true
-  >>> m`2.0 <=> 1 + 1`.expand()
+
+expansion::
+  ▲> m`2.0 <=> 1 + 1`.expand()
   m`_comparer.asBigAs(2.000000, 1.add(1))`
 
 You can also compare with a pattern::
 
   >>> [1, 2] =~ [a, b]
   true
+
   >>> [1, "x"] =~ [_ :Int, _ :Str]
   true
+
   >>> "abc" =~ `a@rest`
   true
+
   >>> "xbc" =~ `a@rest`
   false
+
   >>> "xbc" !~ `a@rest`
-  Result: true
+  true
 
 Logical
 ~~~~~~~
@@ -224,7 +235,8 @@ Monte uses C syntax for the basic logical operators::
 We also have negated implication operator::
    >>> true &! false
    true
-   >>> m`x &! y`.expand()
+
+   ▲> m`x &! y`.expand()
    m`x.butNot(y)`
 
 
@@ -245,8 +257,9 @@ We can build a half-open interval with the range operator::
 
 The inclusive range operator is a syntactic shortcut::
 
-  >>> 1..4
+  ▲> 1..4
   1..!5
+
   >>> [for x in (1..4) x * 2]
   [2, 4, 6, 8]
 

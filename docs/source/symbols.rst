@@ -4,7 +4,7 @@ Primitive Data Types
 Scalars
 -------
 
-Monte provides some classic and common value types.
+Monte provides some classic and common value types [#e_scalars]_.
 
 Int
 ~~~
@@ -19,21 +19,25 @@ Monte integer literals are written as usual::
 
 Integers may be arbitrarily large (a la python long)::
 
-  >>> 128 ** 20
+  ▲> 128 ** 20
   1393796574908163946345982392040522594123776
 
-A variety of mathematical methods are available::
+.. todo:: un-mask failing test cases such as .expan(), bigint parsing, ...
+
+Integers respond to a variety of mathematical methods,
+and :ref:`operators<operators>` provide traditional syntax::
 
   ▲> help(5)
   Result: Object type: IntObject
   A numeric value in ℤ.
   Method: op__cmp/1
   Method: aboveZero/0
-  Method: atLeastZero/0
+  ...
+  Method: add/1
   ...
 
-  >>> 5 < 2
-  false
+  >>> 5 + 2
+  7
 
 
 Double
@@ -66,6 +70,61 @@ To convert::
 
   >>> 4 * 1.0
   4.000000
+
+
+Bool
+~~~~
+
+There are only two boolean values, known as `true` and `false`. Here
+are the applicable operators in precedence order.
+
+Logical Or::
+
+  >>> false || true
+  true
+
+Evaluates left to right until it finds a true condition.
+
+  >>> {((1 =~ x) || (2 =~ x)); x}
+  1
+  >>> {((1 =~ [x, y]) || (2 =~ x)); x}
+  2
+
+Logical And::
+
+  >>> false && true
+  false
+
+Boolean Comparisons (non-associative)::
+
+  >>> false == true
+  false
+
+  >>> false != true
+  true
+
+  >>> false & true
+  false
+
+  >>> false | true
+  true
+
+  >>> false ^ true
+  true
+
+Unary::
+
+  >>> ! false
+  true
+
+Expansions::
+
+  ▲> m`! false`.expand()
+  m`false.not()`
+
+  ▲> m`false & true`.expand()
+  m`false.and(true)`
+
 
 Char
 ~~~~
@@ -213,8 +272,8 @@ Use ``diverge`` and ``snapshot`` similarly::
                >>> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
                true
 
-Syntax Summary
---------------
+Literal Syntax Summary
+----------------------
 
 .. note:: Lexical details of monte syntax are currently specified
 	  only by implementation; see `lib/monte/monte_lexer.mt`__
@@ -228,3 +287,10 @@ __ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lex
      Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"),
      Sequence("[", ZeroOrMore(Sequence(NonTerminal('expr'),
                                        "=>", NonTerminal('expr')), ','), "]"))
+
+.. rubric:: Footnotes
+
+.. [#e_scalars] Sclar types in monte are thes same as the `Scalar Data
+                Types in E`__.
+
+__ http://erights.org/elang/scalars/index.html
