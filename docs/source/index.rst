@@ -27,6 +27,7 @@ Monte is a dynamic language inspired by Python and E.
     faq
     miranda
     tubes
+    semantics
 
 .. todo:: The monte developer material would perhaps fit better in the
           wiki__.
