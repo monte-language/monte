@@ -19,7 +19,7 @@ Monte integer literals are written as usual::
 
 Integers may be arbitrarily large (a la python long)::
 
-  ▲> 128 ** 20
+  >>> 128 ** 20
   1393796574908163946345982392040522594123776
 
 .. todo:: un-mask failing test cases such as .expan(), bigint parsing, ...
@@ -119,10 +119,10 @@ Unary::
 
 Expansions::
 
-  ▲> m`! false`.expand()
+  >>> m`! false`.expand()
   m`false.not()`
 
-  ▲> m`false & true`.expand()
+  >>> m`false & true`.expand()
   m`false.and(true)`
 
 

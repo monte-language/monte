@@ -214,7 +214,7 @@ Expansion
 
 ::
 
-  ▲> m`def bind x := 2`.expand()
+  >>> m`def bind x := 2`.expand()
   m`def via (_bind.run(x_Resolver, null)) _ := 2`
 
 
@@ -238,7 +238,7 @@ Expansion
 
 ::
 
-  ▲> m`def &x := 1`.expand()
+  >>> m`def &x := 1`.expand()
   m`def via (__slotToBinding) &&x := 1`
 
 BindingPattern (kernel)

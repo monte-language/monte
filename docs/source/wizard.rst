@@ -12,8 +12,19 @@ blocks and separate expressions in general, but use indentation and
 newlines for this in "statement position", which is chiefly the
 toplevel of the file and inside an indented block.
 
-  >>> { def f(x) { return x * x }; f(4) }
+  >>> def f(x) { def y := x * x; return y }
+  ... f(4)
   16
+
+  >>> def f(x):
+  ...     def y := x * x
+  ...     return y
+  ... f(5)
+  25
+
+Monte syntax consists of expressions and patterns. Primitive expressions @@like statments
+and operators.
+
 
 Expansion
 ---------
@@ -21,7 +32,7 @@ Expansion
 Monte's syntax is sugar over a kernel language, Kernel-E. Every Monte
 syntax construct expands to a Kernel-E expression::
 
-  ▲> m`1 + 1`.expand()
+  >>> m`1 + 1`.expand()
   m`1.add(1)`
 
 
