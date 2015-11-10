@@ -21,9 +21,10 @@ def main(access):
         caseNames = []
         for (ix, ex) in enumerate(p.get_examples(txt)):
             name = 'test%s_%s' % (section, ix)
+            fixup = '.canonical()' if 'm`' in ex.source else ''
             case = caseTemplate.format(name=name,
-                                       source=ex.source.strip(),
-                                       # TODO: string quoting
+                                       source=indent(ex.source, levels=3),
+                                       fixup=fixup,
                                        want=ex.want.strip())
             caseNames.append(name)
             write(case)
@@ -31,10 +32,19 @@ def main(access):
         write(suiteTemplate.format(section=section,
                                    cases=',\n    '.join(caseNames)))
 
+def indent(source, levels):
+    lines = source.split('\n')
+    indent = ' ' * (levels * 4)
+    return '\n'.join(indent + line for line in lines)
+
 caseTemplate = u"""
 def {name}(assert):
-    # assert.equal(M.toString({source}), "{want}")
-    assert.equal({source}, {want})
+    object example:
+        method test():
+            "doc"
+{source}
+
+    assert.equal(example.test(){fixup}, {want}{fixup})
 
 """
 
