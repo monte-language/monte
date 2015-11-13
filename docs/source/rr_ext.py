@@ -1,10 +1,13 @@
 # cribbed from http://sphinx-doc.org/extdev/tutorial.html
 
+from sys import stderr
+
 from docutils.parsers.rst import Directive
 from docutils import nodes
 from sphinx import addnodes
 
 import railroad_diagrams
+import rr_happy
 
 
 def setup(app):
@@ -56,5 +59,8 @@ class RailroadDirective(Directive):
             raise
 
         diag = RailroadDiagram(railroad_diagrams.Diagram(it))
+
+        for line in rr_happy.gen_rule(name, it, expr):
+            print >>stderr, line
 
         return [targetnode, ix, label, diag]
