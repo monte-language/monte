@@ -25,9 +25,9 @@ Monte as a Tree
 ===============
 
 Kernel-Monte is specified as an abstract syntax tree. Each node in the tree
-represents either an **expression** or a **pattern**. Expressions can be
-evaluated to product an object; patterns do not produce values but alter the
-current scope.
+is either an **expression** or a **pattern**. Expressions can be evaluated to
+product an object; patterns do not produce values but **unify** with values to
+introduce names into scopes.
 
 Along with every node, there is a **static scope**, a compile-time constant
 mapping of names to declaration and usage sites. For every expression, it is
@@ -71,13 +71,14 @@ At the highest level are nouns. Nouns refer directly to values. Nouns in
 patterns match values, and nouns in expressions evaluate to the values to
 which they refer.
 
-Next are slots. Slots refer to nouns and also the guard which guards the noun.
-Slots are also objects which can be accessed and manipulated with slot
-patterns and slot expressions. This level of indirection permits access to
-guards, and also enables pointer-like reification of nouns.
+Next are slots. Slots are objects which contain nouns; a slot contains the
+value which its noun refers to, and also the guard which guards the noun.
+Slots can be accessed and manipulated with slot patterns and slot expressions.
+This level of indirection permits access to guards, and also enables
+pointer-like reification of nouns.
 
 Finally, at the bottom, Monte has bindings. A binding is a slot for a slot; it
-refers to a slot and also the slot guard, which guards that the slot is a
+contains the slot and also the slot guard, which guards that the slot is a
 final slot, var slot, etc. Bindings are essential to auditors.
 
 Expressions
@@ -96,22 +97,33 @@ Produces ``null``.
 Char
 ~~~~
 
-Produces an object which passes ``Char``.
+Produces an object which passes ``Char`` and corresponds to the char-expr's
+Unicode codepoint.
 
 Double
 ~~~~~~
 
-Produces an object which passes ``Double``.
+Produces an object which passes ``Double`` and corresponds to the
+double-expr's IEEE 754 double-precision floating-point number.
+
+.. note::
+    Implementations may, at their discretion, substitute any higher-precision
+    IEEE 754 number for the given one.
 
 Int
 ~~~
 
-Produces an object which passes ``Int``.
+Produces an object which passes ``Int`` and corresponds to the int-expr's
+integer.
 
 Str
 ~~~
 
-Produces an object which passes ``Str``.
+Produces an object which passes ``Str`` and corresponds to the str-expr's
+Unicode codepoints.
+
+The string of codepoints is not normalized; it corresponds one-to-one with the
+codepoints in the Monte source literal.
 
 Names
 -----
@@ -268,6 +280,10 @@ unified against the message. Each argument pattern is unified against each
 argument, and then each named argument pattern is unified against each named
 argument.
 
+If the number of arguments in the message differs from the number of argument
+patterns in the method, an error is thrown. Informally, the method and message
+must have the same arity.
+
 If unification fails, an error is thrown.
 
 After unification, the guard expression is evaluated and its produced value is
@@ -311,11 +327,11 @@ Ignore
 
 Ignore-patts coerce their specimen with a guard.
 
-Bind
-~~~~
+Binding
+~~~~~~~
 
-Bind-patts coerce their specimen with a guard and bind the resulting prize as
-a binding.
+Binding-patts coerce their specimen with ``Binding`` and bind the resulting
+prize as a binding.
 
 Final
 ~~~~~
