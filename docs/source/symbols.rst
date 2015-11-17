@@ -39,6 +39,10 @@ and :ref:`operators<operators>` provide traditional syntax::
   >>> 5 + 2
   7
 
+.. syntax:: IntExpr
+
+   Sequence(".int.")
+
 
 Double
 ~~~~~~
@@ -71,6 +75,10 @@ To convert::
   >>> 4 * 1.0
   4.000000
 
+
+.. syntax:: DoubleExpr
+
+   Sequence(".float64.")
 
 Bool
 ~~~~
@@ -146,6 +154,9 @@ Characters are permitted to be adorable::
   >>> '\u23b6'
   '⎶'
 
+.. syntax:: CharExpr
+
+   Sequence(".char.")
 
 Collections
 -----------
@@ -215,6 +226,10 @@ Monte has string escape syntax much like python or Java:
     escapes the newline and causes that line and its successor to be
     interpereted as one.
 
+.. syntax:: StrExpr
+
+   Sequence(".String.")
+
 Lists: ConstList and FlexList
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -280,13 +295,122 @@ Literal Syntax Summary
 
 __ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
 
-.. syntax:: Literal
+.. syntax:: literal
 
    Choice(0,
-     ".int.", ".float64.", ".char.", ".String.",
+	  NonTerminal('IntExpr'),
+	  NonTerminal('DoubleExpr'),
+	  NonTerminal('CharExpr'),
+	  NonTerminal('StringExpr'))
+
+.. todo:: list "literals"
      Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"),
      Sequence("[", ZeroOrMore(Sequence(NonTerminal('expr'),
                                        "=>", NonTerminal('expr')), ','), "]"))
+
+
+Monte Syntax Builder
+--------------------
+
+stuff from `monte_parser.mt`:
+
+AndExpr(lhs, rhs
+AssignExpr(lval, assign(ej)
+AugAssignExpr(op, lval, assign(ej)
+BinaryExpr(lhs, opName, rhs
+BindingExpr(noun(ej)
+BindingExpr(noun(ej)
+BindingPattern(n
+BindPattern(n, g
+BindPattern(n, null
+Catcher(cp, cb
+CatchExpr(n, cp, cb
+CoerceExpr(base, guard(ej)
+CompareExpr(lhs, opName, rhs
+DefExpr(patt, ex, assign(ej)
+DefExpr(patt, null, assign(ej)
+EscapeExpr(p1, e1, null, null
+EscapeExpr(p1, e1, p2, e2
+ExitExpr(ex, null
+ExitExpr(ex, val
+FinallyExpr(n, finallyblock
+FinalPattern(
+FinalPattern(noun(ej), null
+ForExpr(it, k, v, body, catchPattern, catchBody
+ForwardExpr(name
+FunctionExpr(patt, body
+FunctionInterfaceExpr(doco, name, guards_, extends_, implements_,
+FunctionScript(patts, namedPatts, resultguard, body, span), span)
+GetExpr(n, g
+HideExpr(e
+IfExpr(test, consq, alt
+IgnorePattern(g
+IgnorePattern(null
+InterfaceExpr(doco, name, guards_, extends_, implements_, msgs,
+ListComprehensionExpr(it, filt, k, v, body,
+ListExpr(items
+ListPattern(items, tail
+LiteralExpr(sub.getName(), null)
+LiteralExpr("&" + sub.getNoun().getName(), null)
+LiteralExpr("&&" + sub.getNoun().getName(), null)
+LiteralExpr(t[1], t[2])
+MapComprehensionExpr(it, filt, k, v, body, vbody,
+MapExprAssoc, ej)
+MapExpr(items
+MapPatternImport, ej)
+MapPattern(items, tail
+MatchBindExpr(lhs, rhs
+Matcher(pp, bl
+MessageDesc(doco, "run", params, resultguard
+MessageDesc(doco, verb, params, resultguard
+MetaContextExpr(
+MetaStateExpr(
+"Method"
+MismatchExpr(lhs, rhs
+"Module"(importsList, exportsList, body,
+NamedArg, ej)
+NamedParamImport, ej)
+NamedParam(null, p, null
+NounExpr(t[1]
+NounExpr(t[1], t[2])
+ObjectExpr(doco, name, oAs, oImplements,
+OrExpr(lhs, rhs
+ParamDesc(name, g
+PatternHoleExpr(advance(ej)[1]
+PrefixExpr(op, call(ej)
+PrefixExpr("-", prim(ej)
+QuasiExprHole(
+QuasiExprHole(subexpr
+QuasiParserExpr(name, parts.snapshot()
+QuasiParserPattern(name, parts.snapshot()
+QuasiPatternHole(patt, t[2]))
+QuasiPatternHole(subpatt
+QuasiText(t[1], t[2]))
+RangeExpr(lhs, opName, rhs
+SameExpr(lhs, rhs, false
+SameExpr(lhs, rhs, true
+SamePattern(prim(ej), false
+SamePattern(prim(ej), true
+Script(oExtends, methods, matchers
+SeqExpr([], advance(ej)[2])
+SeqExpr(exprs.snapshot()
+SeqExpr([], null)
+SeqExpr([], null)
+SlotExpr(noun(ej)
+SlotExpr(noun(ej)
+SlotPattern(n, g
+SuchThatPattern(p, e
+SwitchExpr(
+"To"
+ValueHoleExpr(advance(ej)[1]
+ValueHoleExpr(advance(ej)[1]
+ValueHolePattern(advance(ej)[1]
+VarPattern(n, g
+VerbAssignExpr(verb, lval, acceptList(expr),
+ViaPattern(e, pattern(ej)
+WhenExpr(exprs, whenblock, catchers.snapshot(),
+WhileExpr(test, whileblock, catchblock
+
 
 .. rubric:: Footnotes
 

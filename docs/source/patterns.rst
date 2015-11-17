@@ -112,14 +112,14 @@ Patterns
 .. syntax:: namePattern
 
    Choice(0,
-           NonTerminal('FinalPattern'),
+           NonTerminal('FinalPatt'),
            NonTerminal('VarPattern'),
            NonTerminal('BindPattern'),
            NonTerminal('SlotPattern'),
            NonTerminal('BindingPattern'))
 
 
-FinalPattern (kernel)
+FinalPatt (kernel)
 ~~~~~~~~~~~~~~~~~~~~~
 
 ::
@@ -128,10 +128,10 @@ FinalPattern (kernel)
   ::"hello, world"
   x :G
 
-.. syntax:: FinalPattern
+.. syntax:: FinalPatt
 
    Sequence(Choice(0, "IDENTIFIER", ".String."),
-                    Optional(NonTerminal('guard')))
+	    NonTerminal('guardOpt'))
 
 Final patterns match an object and bind a name to them, optionally
 testing them for guard conformance. Guard conformance

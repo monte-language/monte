@@ -87,14 +87,15 @@ Glossary
 Guard Syntax Summary
 --------------------
 
-.. syntax:: guard
+.. syntax:: guardOpt
 
-   Sequence(
+   Optional(Sequence(
     ':',
     Choice(
-        0, Sequence('IDENTIFIER',
+        0,
+	Sequence('IDENTIFIER',
                     Optional(Sequence('[',
                                       OneOrMore(NonTerminal('expr'), ','),
                                       ']'))),
-        Sequence('(', NonTerminal('expr'), ')')))
+        Sequence('(', NonTerminal('expr'), ')'))))
 

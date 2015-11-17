@@ -394,7 +394,7 @@ Block Syntax Summary
     Choice(0, Sequence("bind", NonTerminal('name')),
            "_",
            NonTerminal('name')),
-    Optional(NonTerminal('guard')), Comment("objectExpr"))
+    NonTerminal('guardOpt'), Comment("objectExpr"))
 
 .. syntax:: objectExpr
 
@@ -602,7 +602,7 @@ Block Syntax Summary
     NonTerminal('FunctionExpr'),
     NonTerminal('ObjectExpr'),
     NonTerminal('bind'),
-    NonTerminal('def'),
+    NonTerminal('DefExpr'),
     NonTerminal('InterfaceExpr'),
     NonTerminal('IfExpr'),
     NonTerminal('ForExpr'),
@@ -631,26 +631,11 @@ Block Syntax Summary
    Sequence(
     "bind",
     NonTerminal('name'),
-    Optional(NonTerminal('guard')), Comment("objectExpr@@"))
+    NonTerminal('guardOpt'), Comment("objectExpr@@"))
 
 .. syntax:: name
 
    Choice(0, "IDENTIFIER", Sequence("::", ".String."))
-
-.. syntax:: def
-
-   Sequence(
-    "def",
-    Choice(
-        0,
-        Sequence(
-            Choice(
-                0,
-                Sequence("bind", NonTerminal("name"),
-                         Optional(NonTerminal('guard'))),
-                NonTerminal("name")),
-            Choice(0, Comment("objectFunction@@"), NonTerminal('assign'))),
-        NonTerminal('assign')))
 
 .. todo:: refactor w.r.t. FunctionExpr
 

@@ -32,7 +32,14 @@ Monte has rich support for destructuring assignment using
   >>> { def [x, y] := [1, 2]; x }
   1
 
-.. syntax:: PatternBinding
+.. syntax:: DefExpr
+
+   Sequence('def',
+             NonTerminal('pattern'),
+             Optional(Sequence("exit", NonTerminal('order'))),
+             Sequence(":=", NonTerminal('assign')))
+
+.. syntax:: ForwardExpr
 
    Sequence('def',
              NonTerminal('pattern'),
@@ -429,7 +436,7 @@ A guard can be used as an operator to coerce a value::
     NonTerminal('unary'),
     NonTerminal('SlotExpression'),
     NonTerminal('BindingExpression'),
-    Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
+    Sequence(NonTerminal('call'), NonTerminal('guardOpt')))
 
 .. syntax:: unary
 
