@@ -1,4 +1,4 @@
-'''rr_happy -- generate haskell happy parser from railroad diagrams
+'''rr_happy -- generate haskell parser from railroad diagrams
 
 TODO:
   1. lexical stuff
@@ -20,12 +20,33 @@ def gen_rule(name, body, expr):
     yield name + ' ::= ' + expr
     yield '-}'
 
-    for name, choices in rules:
+    def unCtor(name):
+        # IntExpr -> intExpr
+        return name[0].lower() + name[1:]
+
+    def doRule(name, choices, indent='', ctor=None):
         if choices:
-            firstSeq, rest = choices[0], choices[1:]
-            yield '%s : %s' % (name, ' '.join(firstSeq))
+            firstSeq, rest = map(unCtor, choices[0]), choices[1:]
+
+            if ctor:
+                yield indent + '%s = %s <$> %s' % (
+                    name, ctor, ' <*> '.join(firstSeq))
+            else:
+                yield indent + '%s = %s' % (name, ' '.join(firstSeq))
             for seq in rest:
-                yield '    | %s' % ' '.join(seq)
+                yield indent + '  <|> %s' % ' '.join(map(unCtor, seq))
+
+    if rules:
+        (_, choices), more = rules[0], rules[1:]
+
+        for chunk in doRule(unCtor(name), choices,
+                            ctor=name if name[0].isupper() else None):
+            yield chunk
+        if more:
+            yield '  where'
+            for name, choices in more:
+                for chunk in doRule(unCtor(name), choices, indent='    '):
+                    yield chunk
 
 
 def logged(label, val, logging=False):
@@ -56,7 +77,7 @@ def expand(expr, hint=''):
     if isinstance(expr, rrd.Terminal):
         # @@TODO: non-literal terminals
         return logged('terminal ' + hint + ' =>',
-                      [("'%s'" % expr.text, None)])
+                      [('(tok "%s")' % expr.text, None)])
     elif isinstance(expr, rrd.NonTerminal):
         return logged('nonterminal ' + hint + ' =>', [(expr.text, None)])
     elif isinstance(expr, rrd.Skip):
