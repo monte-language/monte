@@ -178,6 +178,10 @@ class Sigil(Sequence):
     pass
 
 
+class Pair(Sequence):
+    pass
+
+
 class Brackets(Sequence):
     pass
 
@@ -262,6 +266,12 @@ class Choice(DiagramItem):
 
 def Optional(item, skip=False):
     return Choice(0 if skip else 1, Skip(), item)
+
+
+class SepBy(Choice):
+    def __init__(self, item, repeat, fun='sepBy'):
+        Choice.__init__(self, 0, Skip(), OneOrMore(item, repeat))
+        self.fun = fun
 
 
 class OneOrMore(DiagramItem):

@@ -39,6 +39,10 @@ and :ref:`operators<operators>` provide traditional syntax::
   >>> 5 + 2
   7
 
+.. syntax:: IntExpr
+
+   Sequence(Terminal(".int."))
+
 
 Double
 ~~~~~~
@@ -70,6 +74,10 @@ To convert::
 
   >>> 4 * 1.0
   4.000000
+
+.. syntax:: DoubleExpr
+
+   Sequence(Terminal(".float64."))
 
 
 Bool
@@ -146,6 +154,11 @@ Characters are permitted to be adorable::
   >>> '\u23b6'
   '⎶'
 
+.. syntax:: CharExpr
+
+   Sequence(Terminal(".char."))
+
+
 Collections
 -----------
 
@@ -214,6 +227,11 @@ Monte has string escape syntax much like python or Java:
     escapes the newline and causes that line and its successor to be
     interpereted as one.
 
+.. syntax:: StrExpr
+
+   Sequence(Terminal(".String."))
+
+
 Lists: ConstList and FlexList
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -240,7 +258,7 @@ Use ``diverge`` and ``snapshot`` to go from ``ConstList`` to mutable
 
 .. syntax:: ListExpr
 
-     Brackets("[", ZeroOrMore(NonTerminal('expr'), ','), "]")
+     Brackets("[", SepBy(NonTerminal('expr'), ','), "]")
 
 
 
@@ -281,12 +299,12 @@ Use ``diverge`` and ``snapshot`` similarly::
 .. syntax:: MapExpr
 
      Brackets("[",
-              OneOrMore(Sequence(NonTerminal('expr'),
-                                 Sigil("=>", NonTerminal('expr'))),
-                        ','), "]")
+              SepBy(Pair(NonTerminal('expr'), "=>", NonTerminal('expr')),
+                    ','),
+              "]")
 
-Literal Syntax Summary
-----------------------
+Lexical Syntax
+--------------
 
 .. note:: Lexical details of monte syntax are currently specified
 	  only by implementation; see `lib/monte/monte_lexer.mt`__
@@ -296,10 +314,10 @@ __ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lex
 .. syntax:: LiteralExpr
 
    Choice(0,
-	  Terminal('.String.'),
-	  Terminal('.int.'),
-	  Terminal('.float64.'),
-	  Terminal('.char.'))
+          NonTerminal('StrExpr'),
+	  NonTerminal('IntExpr'),
+          NonTerminal('DoubleExpr'),
+	  NonTerminal('CharExpr'))
 
 .. rubric:: Footnotes
 

@@ -12,9 +12,14 @@ from pprint import pformat
 import railroad_diagrams as rrd
 
 converted = ['prim',
-             'LiteralExpr', 'NounExpr', 'HideExpr',
+             'DefExpr', 'FinalPatt',
+             'LiteralExpr', 'IntExpr', 'DoubleExpr', 'CharExpr', 'StrExpr',
+             'NounExpr', 'HideExpr',
              'MapExpr', 'MapComprehensionExpr',
-             'ListExpr', 'ListComprehensionExpr']
+             'ListExpr', 'ListComprehensionExpr',
+             'order',
+             'BinaryExpr', 'RangeExpr', 'CompareExpr',
+             'prefix']
 
 
 def gen_rule(name, body, expr):
@@ -31,11 +36,11 @@ def gen_rule(name, body, expr):
         return name[0].lower() + name[1:]
 
     def fmtRule(items, lhs=None, ctor=None):
-        pfx, sep = ((ctor + ' <$>', ' <*> ') if ctor
+        pfx, sep = ((ctor + ' <$> ', ' <*> ') if ctor
                     else ('', ' '))
         rhs = sep.join(items)
         rhs = rhs.replace('*> <*>', '*>').replace('<*> <*', '<*')
-        return (lhs + ' = ' if lhs else '  <|> ') + rhs
+        return (lhs + ' = ' if lhs else '  <|> ') + pfx + rhs
 
     def doRules(name, choices, indent='', ctor=None):
         if choices:
@@ -69,6 +74,13 @@ def logged(label, val, logging=False):
     return val
 
 
+RAW = {'.int.': 'parseint',
+       '.float64.': 'parsefloat64',
+       '.String.': 'parseString',
+       '.char.': 'parseChar',
+       'IDENTIFIER': 'parseIdentifier'}
+
+
 def expand(expr, hint=''):
     '''Expand expression, if necessary, to further choice-of-sequences rules.
     '''
@@ -81,18 +93,20 @@ def expand(expr, hint=''):
                                  [expand(item, mkName())
                                   for item in items
                                   if not isinstance(item, rrd.Comment)])
-    more = lambda first, rest: logged('more', (
+    more = lambda first, rest, exclude=[]: logged('more', (
         [first] +
         [(name, rule)
          for rules in rest
-         for (name, rule) in rules if rule is not None]))
+         for (name, rule) in rules
+         if rule is not None
+         and name not in exclude]))
 
     logged("expr class of " + hint, expr.__class__.__name__)
 
     if isinstance(expr, rrd.Terminal):
         tag = expr.text
-        p = ('parse{tag}'.format(tag=tag[1:-1]) if '.' in tag
-             else '(tok "{tag}")'.format(tag=tag))
+        p = (RAW[tag] if tag in RAW
+             else '(symbol "{tag}")'.format(tag=tag))
 
         return logged('terminal ' + hint + ' =>',
                       [(p, None)])
@@ -106,10 +120,24 @@ def expand(expr, hint=''):
 
     elif isinstance(expr, rrd.Choice):
         expanded = recur(expr.items)
-        thisRule = (hint, [[name]
-                           for rules in expanded
-                           for (name, _) in [rules[0]]])
-        return more(thisRule, expanded)
+        exclude = []
+
+        rhs = [[name]
+               for rules in expanded
+               for (name, _) in [rules[0]]]
+
+        if isinstance(expr, rrd.SepBy):
+            itemplus = expr.items[1]
+            item = expand(itemplus.item, hint + '_2_1')[0][0]
+            rep = expand(itemplus.rep, hint + '_2_2')[0][0]
+            unCtor = lambda s: s[:1].lower() + s[1:]
+            rhs = [['({fun} {item} {rep})'
+                    .format(fun=expr.fun, item=unCtor(item), rep=rep)]]
+            exclude = [hint + '_1', hint + '_2']
+
+        thisRule = (hint, rhs)
+
+        return more(thisRule, expanded, exclude)
 
     elif isinstance(expr, rrd.Sequence):
         expanded = recur(expr.items)
@@ -118,13 +146,18 @@ def expand(expr, hint=''):
                     for (name, _) in [rules[0]]]]
         if isinstance(expr, rrd.Sigil):
             rhs = choices[0]
-            rhs = [rhs[0] + ' *>'] + rhs[1:]
+            rhs = ['(' + rhs[0] + ' *>', rhs[1] + ')']
+            choices = [rhs]
+        elif isinstance(expr, rrd.Pair):
+            rhs = choices[0]
+            rhs = ['pair <$> {k} <*> ({arr} *> {v})'
+                   .format(k=rhs[0], arr=rhs[1], v=rhs[2])]
             choices = [rhs]
         elif isinstance(expr, rrd.Brackets):
             rhs = choices[0]
-            rhs = ([rhs[0] + ' *>']
+            rhs = (['(' + rhs[0] + ' *>']
                    + rhs[1:-1] +
-                   ['<* ' + rhs[-1]])
+                   ['<* ' + rhs[-1] + ')'])
             choices = [rhs]
 
         thisRule = (hint, choices)
@@ -132,6 +165,7 @@ def expand(expr, hint=''):
         return more(thisRule, expanded)
 
     elif isinstance(expr, rrd.OneOrMore):
+        #@@TODO: seq1 expr
         expanded = recur([expr.item])
         (item, _) = expanded[0][0]
 

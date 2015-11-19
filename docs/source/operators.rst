@@ -34,10 +34,11 @@ Monte has rich support for destructuring assignment using
 
 .. syntax:: DefExpr
 
-   Sequence('def',
-             NonTerminal('pattern'),
-             Optional(Sequence("exit", NonTerminal('order'))),
-             Sequence(":=", NonTerminal('assign')))
+   Sequence(Sigil('def', NonTerminal('pattern')),
+            Optional(Sigil("exit", NonTerminal('order'))),
+            Sigil(":=", NonTerminal('assign')))
+
+
 
 .. syntax:: ForwardExpr
 
@@ -140,17 +141,35 @@ the object on the right.
 
 .. syntax:: order
 
-   Sequence(
-    NonTerminal('prefix'),
-    Optional(Sequence(Choice(
-        0,
-        "**",
-        Choice(0, "*", "/", "//", "%"),
-        Choice(0, "+", "-"),
-        Choice(0, "<<", ">>"),
-        Choice(0, "..", "..!"),
-        Choice(0, ">", "<", ">=", "<=", "<=>")
-    ), NonTerminal('order'))))
+   Choice(0,
+     NonTerminal('BinaryExpr'),
+     NonTerminal('RangeExpr'),
+     NonTerminal('CompareExpr'),
+     NonTerminal('prefix'))
+
+.. syntax:: BinaryExpr
+
+   Choice(0,
+     Sequence(NonTerminal('prefix'),
+              "**", NonTerminal('order')),
+     Sequence(NonTerminal('prefix'),
+              Choice(0, "*", "/", "//", "%"), NonTerminal('order')),
+     Sequence(NonTerminal('prefix'),
+              Choice(0, "+", "-"), NonTerminal('order')),
+     Sequence(NonTerminal('prefix'),
+              Choice(0, "<<", ">>"), NonTerminal('order')))
+
+@@TODO: precedence, associativity
+
+.. syntax:: CompareExpr
+
+   Sequence(NonTerminal('prefix'),
+            Choice(0, ">", "<", ">=", "<=", "<=>"), NonTerminal('order'))
+
+.. syntax:: RangeExpr
+
+   Sequence(NonTerminal('prefix'),
+            Choice(0, "..", "..!"), NonTerminal('order'))
 
 
 Comparison
@@ -377,7 +396,7 @@ A sequence expressions evaluates to the value of its last item::
 
 .. syntax:: HideExpr
 
-   Brackets("{", ZeroOrMore(NonTerminal('expr'), ';'), "}")
+   Brackets("{", SepBy(NonTerminal('expr'), ';', fun='wrapSequence'), "}")
 
 Parentheses override normal precedence rules::
 
