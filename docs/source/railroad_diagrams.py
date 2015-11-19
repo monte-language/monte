@@ -174,6 +174,14 @@ class Sequence(DiagramItem):
         return self
 
 
+class Sigil(Sequence):
+    pass
+
+
+class Brackets(Sequence):
+    pass
+
+
 class Choice(DiagramItem):
     def __init__(self, default, *items):
         DiagramItem.__init__(self, 'g')

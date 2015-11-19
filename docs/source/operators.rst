@@ -360,19 +360,24 @@ Parentheses, braces, and square brackets set off primitive expressions.
 
    Choice(
     0,
-    NonTerminal('Literal'),
+    NonTerminal('LiteralExpr'),
     NonTerminal('quasiliteral'),
-    NonTerminal('noun'),
-    Sequence("(", NonTerminal('expr'), ")"),
-    Sequence("{", ZeroOrMore(NonTerminal('expr'), ';'), "}"),
-    Sequence("[",
-             "for", NonTerminal('comprehension'),
-             "]"))
+    NonTerminal('NounExpr'),
+    Brackets("(", NonTerminal('expr'), ")"),
+    NonTerminal('HideExpr'),
+    NonTerminal('MapComprehensionExpr'),
+    NonTerminal('ListComprehensionExpr'),
+    NonTerminal('MapExpr'),
+    NonTerminal('ListExpr'))
 
 A sequence expressions evaluates to the value of its last item::
 
   >>> { 4; "x"; "y" }
   "y"
+
+.. syntax:: HideExpr
+
+   Brackets("{", ZeroOrMore(NonTerminal('expr'), ';'), "}")
 
 Parentheses override normal precedence rules::
 
@@ -392,9 +397,9 @@ Noun
 
 A noun is a reference to a final or variable slot.
 
-.. syntax:: noun
+.. syntax:: NounExpr
 
-   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
+   Choice(0, "IDENTIFIER", Sigil("::", ".String."))
 
 examples::
 

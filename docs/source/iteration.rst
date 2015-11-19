@@ -639,6 +639,10 @@ Block Syntax Summary
 
 .. todo:: refactor w.r.t. FunctionExpr
 
+@@    Sequence("[",
+             "for", NonTerminal('comprehension'),
+             "]"))
+
 .. syntax:: comprehension
 
    Choice(
