@@ -35,6 +35,80 @@ defExpr = DefExpr <$> defExpr_1 <*> defExpr_2 <*> defExpr_3
     defExpr_3 = ((symbol ":=") *> assign)
 
 {-
+calls ::= Ap('callExpr',
+    NonTerminal('prim'),
+    SepBy(
+      Choice(0,
+        Ap('Right',
+          Choice(0,
+            Ap('Right', NonTerminal('call')),
+            Ap('Left', NonTerminal('send')))),
+        Ap('Left', NonTerminal('index')))),
+    Maybe(NonTerminal('curry')))
+-}
+calls = callExpr <$> prim <*> calls_2 <*> calls_3
+  where
+    calls_2 = (many0 calls_2_1_1)
+    calls_2_1_1 = calls_2_1_1_1
+      <|> calls_2_1_1_2
+    calls_2_1_1_1 = Right <$> calls_2_1_1_1_1
+    calls_2_1_1_1_1 = calls_2_1_1_1_1_1
+      <|> calls_2_1_1_1_1_2
+    calls_2_1_1_1_1_1 = Right <$> call
+    calls_2_1_1_1_1_2 = Left <$> send
+    calls_2_1_1_2 = Left <$> index
+    calls_3 = optionMaybe curry
+
+{-
+call ::= Sigil(".", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))
+-}
+call = ((symbol ".") *> call_2)
+  where
+    call_2 = pair <$> call_2_1 <*> argList
+    call_2_1 = optionMaybe verb
+
+{-
+send ::= Sigil("<-", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))
+-}
+send = ((symbol "<-") *> send_2)
+  where
+    send_2 = pair <$> send_2_1 <*> argList
+    send_2_1 = optionMaybe verb
+
+{-
+curry ::= Choice(0,
+  Ap('Right', Sigil(".", NonTerminal('verb'))),
+  Ap('Left', Sigil("<-", NonTerminal('verb'))))
+-}
+curry = curry_1
+  <|> curry_2
+  where
+    curry_1 = Right <$> curry_1_1
+    curry_1_1 = ((symbol ".") *> verb)
+    curry_2 = Left <$> curry_2_1
+    curry_2_1 = ((symbol "<-") *> verb)
+
+{-
+index ::= Brackets("[", SepBy(NonTerminal('expr'), ','), "]")
+-}
+index = ((bra "[") *> index_2 <* (ket "]"))
+  where
+    index_2 = (sepBy expr (symbol ","))
+
+{-
+verb ::= Choice(0, "IDENTIFIER", ".String.")
+-}
+verb = parseIdentifier
+  <|> parseString
+
+{-
+argList ::= Brackets("(", SepBy(NonTerminal('expr'), ","), ")")
+-}
+argList = ((bra "(") *> argList_2 <* (ket ")"))
+  where
+    argList_2 = (sepBy expr (symbol ","))
+
+{-
 order ::= Choice(0,
   NonTerminal('BinaryExpr'),
   NonTerminal('RangeExpr'),

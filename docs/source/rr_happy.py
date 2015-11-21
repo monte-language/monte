@@ -17,8 +17,10 @@ converted = ['prim', 'quasiliteral',
              'NounExpr', 'HideExpr',
              'MapExpr', 'MapComprehensionExpr',
              'ListExpr', 'ListComprehensionExpr',
+             'BinaryExpr', 'RangeExpr', 'CompareExpr',
              'order',
-             'BinaryExpr', 'RangeExpr', 'CompareExpr']
+             'calls', 'call', 'send', 'curry', 'index',
+             'verb', 'argList']
 
 
 def gen_rule(name, body, expr):

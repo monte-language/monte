@@ -75,35 +75,46 @@ Calls may be curried::
   >>> { def x := 2; def xplus := x.add; xplus(4) }
   6
 
-.. syntax:: call
-
-   Sequence(
-    NonTerminal('calls'),
-    Optional(Sequence(NonTerminal('curry'))))
-
 .. syntax:: calls
 
-    Choice(
-        0, NonTerminal('prim'),
-        Sequence(
-            NonTerminal('calls'),
-            Optional(
-                Sequence(Choice(0, ".", "<-"),
-                         Choice(0, "IDENTIFIER", ".String."))),
-            Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
-        NonTerminal('getExpr'))
+   Ap('callExpr',
+       NonTerminal('prim'),
+       SepBy(
+         Choice(0,
+           Ap('Right',
+             Choice(0,
+               Ap('Right', NonTerminal('call')),
+               Ap('Left', NonTerminal('send')))),
+           Ap('Left', NonTerminal('index')))),
+       Maybe(NonTerminal('curryTail')))
 
-.. syntax:: getExpr
+.. syntax:: call
 
-   Sequence(
-    NonTerminal('calls'),
-    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))
+   Sigil(".", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))
 
-.. syntax:: curry
+.. syntax:: send
 
-   Sequence(
-    Choice(0, '.', '<-'),
-    Choice(0, "IDENTIFIER", ".String."))
+   Sigil("<-", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))
+
+.. syntax:: curryTail
+
+   Choice(0,
+     Ap('Right', Sigil(".", NonTerminal('verb'))),
+     Ap('Left', Sigil("<-", NonTerminal('verb'))))
+
+.. syntax:: index
+
+   Brackets("[", SepBy(NonTerminal('expr'), ','), "]")
+
+.. syntax:: verb
+
+   Choice(0, "IDENTIFIER", ".String.")
+
+.. syntax:: argList
+
+   Brackets("(", SepBy(NonTerminal('expr'), ","), ")")
+
+.. todo:: named args in argList
 
 .. _operators:
 
