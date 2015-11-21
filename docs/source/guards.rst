@@ -87,15 +87,16 @@ Glossary
 Guard Syntax Summary
 --------------------
 
+@@ TODO: rename to maybeGuard
+
 .. syntax:: guardOpt
 
-   Optional(Sequence(
-    ':',
+   Maybe(Sigil(':',
     Choice(
         0,
-	Sequence('IDENTIFIER',
-                    Optional(Sequence('[',
-                                      OneOrMore(NonTerminal('expr'), ','),
-                                      ']'))),
-        Sequence('(', NonTerminal('expr'), ')'))))
+        Ap('GetExpr',
+           Ap('NounExpr', 'IDENTIFIER'),
+           Brackets('[', SepBy(NonTerminal('expr'), ','), ']')),
+	Ap('NounExpr', 'IDENTIFIER'),
+        Brackets('(', NonTerminal('expr'), ')'))))
 

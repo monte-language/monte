@@ -130,7 +130,7 @@ FinalPatt (kernel)
 
 .. syntax:: FinalPatt
 
-   Sequence(Choice(0, "IDENTIFIER", Sigil("::", ".String.")),
+   Ap('FinalPatt', Choice(0, "IDENTIFIER", Sigil("::", ".String.")),
 	    NonTerminal('guardOpt'))
 
 Final patterns match an object and bind a name to them, optionally

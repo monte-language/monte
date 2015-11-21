@@ -41,7 +41,7 @@ and :ref:`operators<operators>` provide traditional syntax::
 
 .. syntax:: IntExpr
 
-   Sequence(Terminal(".int."))
+   Ap('IntExpr', Terminal(".int."))
 
 
 Double
@@ -77,7 +77,7 @@ To convert::
 
 .. syntax:: DoubleExpr
 
-   Sequence(Terminal(".float64."))
+   Ap('DoubleExpr', Terminal(".float64."))
 
 
 Bool
@@ -156,7 +156,7 @@ Characters are permitted to be adorable::
 
 .. syntax:: CharExpr
 
-   Sequence(Terminal(".char."))
+   Ap('CharExpr', Terminal(".char."))
 
 
 Collections
@@ -229,7 +229,7 @@ Monte has string escape syntax much like python or Java:
 
 .. syntax:: StrExpr
 
-   Sequence(Terminal(".String."))
+   Ap('StrExpr', Terminal(".String."))
 
 
 Lists: ConstList and FlexList
@@ -258,7 +258,7 @@ Use ``diverge`` and ``snapshot`` to go from ``ConstList`` to mutable
 
 .. syntax:: ListExpr
 
-     Brackets("[", SepBy(NonTerminal('expr'), ','), "]")
+     Ap('ListExpr', Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))
 
 
 
@@ -298,10 +298,13 @@ Use ``diverge`` and ``snapshot`` similarly::
 
 .. syntax:: MapExpr
 
+   Ap('MapExpr',
      Brackets("[",
-              SepBy(Pair(NonTerminal('expr'), "=>", NonTerminal('expr')),
+              SepBy(Ap('pair', NonTerminal('expr'),
+                               Sigil("=>", NonTerminal('expr'))),
                     ','),
-              "]")
+              "]"))
+
 
 Lexical Syntax
 --------------

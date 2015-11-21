@@ -34,18 +34,15 @@ Monte has rich support for destructuring assignment using
 
 .. syntax:: DefExpr
 
-   Sequence(Sigil('def', NonTerminal('pattern')),
-            Optional(Sigil("exit", NonTerminal('order'))),
+   Ap('DefExpr', Sigil('def', NonTerminal('pattern')),
+            Maybe(Sigil("exit", NonTerminal('order'))),
             Sigil(":=", NonTerminal('assign')))
 
 
 
 .. syntax:: ForwardExpr
 
-   Sequence('def',
-             NonTerminal('pattern'),
-             Optional(Sequence("exit", NonTerminal('order'))),
-             Optional(Sequence(":=", NonTerminal('assign'))))
+   Ap('ForwardExpr', 'def', NonTerminal('pattern'))
 
 .. _message_passing:
 
@@ -150,25 +147,25 @@ the object on the right.
 .. syntax:: BinaryExpr
 
    Choice(0,
-     Sequence(NonTerminal('prefix'),
+     Ap('BinaryExpr', NonTerminal('prefix'),
               "**", NonTerminal('order')),
-     Sequence(NonTerminal('prefix'),
+     Ap('BinaryExpr', NonTerminal('prefix'),
               Choice(0, "*", "/", "//", "%"), NonTerminal('order')),
-     Sequence(NonTerminal('prefix'),
+     Ap('BinaryExpr', NonTerminal('prefix'),
               Choice(0, "+", "-"), NonTerminal('order')),
-     Sequence(NonTerminal('prefix'),
+     Ap('BinaryExpr', NonTerminal('prefix'),
               Choice(0, "<<", ">>"), NonTerminal('order')))
 
 @@TODO: precedence, associativity
 
 .. syntax:: CompareExpr
 
-   Sequence(NonTerminal('prefix'),
+   Ap('CompareExpr', NonTerminal('prefix'),
             Choice(0, ">", "<", ">=", "<=", "<=>"), NonTerminal('order'))
 
 .. syntax:: RangeExpr
 
-   Sequence(NonTerminal('prefix'),
+   Ap('RangeExpr', NonTerminal('prefix'),
             Choice(0, "..", "..!"), NonTerminal('order'))
 
 
@@ -356,12 +353,6 @@ Assignment operators
     Comment("VERB_ASSIGN XXX"),
     NonTerminal('logical'))
 
-.. syntax:: ForwardDeclaration
-
-   Sequence('def', NonTerminal('name'))
-
-.. todo:: find forward declaration in ``monte_parser.mt``; doctest
-
 .. syntax:: lval
 
    Choice(
@@ -396,7 +387,8 @@ A sequence expressions evaluates to the value of its last item::
 
 .. syntax:: HideExpr
 
-   Brackets("{", SepBy(NonTerminal('expr'), ';', fun='wrapSequence'), "}")
+   Ap('HideExpr',
+      Brackets("{", SepBy(NonTerminal('expr'), ';', fun='wrapSequence'), "}"))
 
 Parentheses override normal precedence rules::
 
@@ -418,7 +410,7 @@ A noun is a reference to a final or variable slot.
 
 .. syntax:: NounExpr
 
-   Choice(0, "IDENTIFIER", Sigil("::", ".String."))
+   Ap('NounExpr', Choice(0, "IDENTIFIER", Sigil("::", ".String.")))
 
 examples::
 
