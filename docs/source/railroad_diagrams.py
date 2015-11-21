@@ -178,8 +178,10 @@ class Sigil(Sequence):
     pass
 
 
-class Pair(Sequence):
-    pass
+class Ap(Sequence):
+    def __init__(self, fun, *items):
+        Sequence.__init__(self, *items)
+        self.fun = fun
 
 
 class Brackets(Sequence):
@@ -265,12 +267,17 @@ class Choice(DiagramItem):
 
 
 def Optional(item, skip=False):
-    return Choice(0 if skip else 1, Skip(), item)
+    return Choice(0 if skip else 1, item, Skip())
+
+
+class Maybe(Choice):
+    def __init__(self, item):
+        Choice.__init__(self, 0, item, Skip())
 
 
 class SepBy(Choice):
-    def __init__(self, item, repeat, fun='sepBy'):
-        Choice.__init__(self, 0, Skip(), OneOrMore(item, repeat))
+    def __init__(self, item, repeat=None, fun='sepBy'):
+        Choice.__init__(self, 0, OneOrMore(item, repeat), Skip())
         self.fun = fun
 
 

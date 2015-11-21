@@ -11,15 +11,14 @@ from pprint import pformat
 
 import railroad_diagrams as rrd
 
-converted = ['prim',
-             'DefExpr', 'FinalPatt',
+converted = ['prim', 'quasiliteral',
+             'DefExpr', 'FinalPatt', 'guardOpt',
              'LiteralExpr', 'IntExpr', 'DoubleExpr', 'CharExpr', 'StrExpr',
              'NounExpr', 'HideExpr',
              'MapExpr', 'MapComprehensionExpr',
              'ListExpr', 'ListComprehensionExpr',
              'order',
-             'BinaryExpr', 'RangeExpr', 'CompareExpr',
-             'prefix']
+             'BinaryExpr', 'RangeExpr', 'CompareExpr']
 
 
 def gen_rule(name, body, expr):
@@ -31,41 +30,43 @@ def gen_rule(name, body, expr):
     yield name + ' ::= ' + expr
     yield '-}'
 
-    def unCtor(name):
-        # IntExpr -> intExpr
-        return name[0].lower() + name[1:]
+    def fmtRule(items, lhs=None):
+        pfx, sep = ('', ' ')
 
-    def fmtRule(items, lhs=None, ctor=None):
-        pfx, sep = ((ctor + ' <$> ', ' <*> ') if ctor
-                    else ('', ' '))
-        rhs = sep.join(items)
+        if items and '<$>' in items[0]:
+            pfx, sep, items = (items[0], ' <*> ', items[1:])
+        rhs = sep.join(items) if items else 'return'
+
+        # fixup: a *> <*> b to a *> b
         rhs = rhs.replace('*> <*>', '*>').replace('<*> <*', '<*')
+
         return (lhs + ' = ' if lhs else '  <|> ') + pfx + rhs
 
-    def doRules(name, choices, indent='', ctor=None):
+    def doRules(name, choices, indent=''):
         if choices:
-            firstSeq, rest = map(unCtor, choices[0]), choices[1:]
+            firstSeq, rest = choices[0], choices[1:]
 
-            yield indent + fmtRule(firstSeq, lhs=name, ctor=ctor)
+            yield indent + fmtRule(firstSeq, lhs=name)
             for seq in rest:
-                yield indent + fmtRule(map(unCtor, seq), lhs='', ctor=ctor)
+                yield indent + fmtRule(map(unCtor, seq), lhs='')
 
-    rules = expand(body, hint=name)
+    rules = expand(body, hint=unCtor(name))
 
     if rules:
         (_, choices), more = rules[0], rules[1:]
 
-        for chunk in doRules(unCtor(name), choices,
-                             ctor=(name
-                                   if name[0].isupper()
-                                   and name != 'LiteralExpr'
-                                   else None)):
+        for chunk in doRules(unCtor(name), choices):
             yield chunk
         if more:
             yield '  where'
             for name, choices in more:
                 for chunk in doRules(unCtor(name), choices, indent='    '):
                     yield chunk
+
+
+def unCtor(name):
+    # IntExpr -> intExpr
+    return name[0].lower() + name[1:]
 
 
 def logged(label, val, logging=False):
@@ -78,7 +79,10 @@ RAW = {'.int.': 'parseint',
        '.float64.': 'parsefloat64',
        '.String.': 'parseString',
        '.char.': 'parseChar',
-       'IDENTIFIER': 'parseIdentifier'}
+       'IDENTIFIER': 'parseIdentifier',
+       'DOLLAR_IDENT': 'parseDollarIdent',
+       'AT_IDENT': 'parseAtIdent',
+       'QUASI_TEXT': 'parseQuasiText'}
 
 
 def expand(expr, hint=''):
@@ -109,13 +113,14 @@ def expand(expr, hint=''):
              else '(symbol "{tag}")'.format(tag=tag))
 
         return logged('terminal ' + hint + ' =>',
-                      [(p, None)])
+                      [(unCtor(p), None)])
 
     elif isinstance(expr, rrd.NonTerminal):
-        return logged('nonterminal ' + hint + ' =>', [(expr.text, None)])
+        return logged('nonterminal ' + hint + ' =>',
+                      [(unCtor(expr.text), None)])
 
     elif isinstance(expr, rrd.Skip):
-        thisRule = (hint, [[]])  # One choice; no items in sequence
+        thisRule = (hint, [['@@@@@']])  # What value?
         return logged('Skip', [thisRule])
 
     elif isinstance(expr, rrd.Choice):
@@ -127,13 +132,20 @@ def expand(expr, hint=''):
                for (name, _) in [rules[0]]]
 
         if isinstance(expr, rrd.SepBy):
-            itemplus = expr.items[1]
-            item = expand(itemplus.item, hint + '_2_1')[0][0]
-            rep = expand(itemplus.rep, hint + '_2_2')[0][0]
-            unCtor = lambda s: s[:1].lower() + s[1:]
-            rhs = [['({fun} {item} {rep})'
-                    .format(fun=expr.fun, item=unCtor(item), rep=rep)]]
-            exclude = [hint + '_1', hint + '_2']
+            itemplus = expr.items[0]
+            item = expand(itemplus.item, hint + '_1_1')[0][0]
+            if not isinstance(itemplus.rep, rrd.Skip):
+                rep = expand(itemplus.rep, hint + '_1_2')[0][0]
+                rhs = [['({fun} {item} {rep})'
+                        .format(fun=expr.fun, item=item, rep=rep)]]
+                exclude = [hint + '_1', hint + '_2']
+            else:
+                rhs = [['(many0 {item})'.format(item=item)]]
+            exclude = [hint + '_1', hint + '_2', hint + '_1_2']
+        elif isinstance(expr, rrd.Maybe):
+            item = expand(expr.items[0], hint + '_1')[0][0]
+            rhs = [['optionMaybe', item]]
+            exclude = [hint + '_2']
 
         thisRule = (hint, rhs)
 
@@ -148,16 +160,14 @@ def expand(expr, hint=''):
             rhs = choices[0]
             rhs = ['(' + rhs[0] + ' *>', rhs[1] + ')']
             choices = [rhs]
-        elif isinstance(expr, rrd.Pair):
-            rhs = choices[0]
-            rhs = ['pair <$> {k} <*> ({arr} *> {v})'
-                   .format(k=rhs[0], arr=rhs[1], v=rhs[2])]
+        elif isinstance(expr, rrd.Ap):
+            rhs = [expr.fun + " <$> "] + choices[0]
             choices = [rhs]
         elif isinstance(expr, rrd.Brackets):
             rhs = choices[0]
-            rhs = (['(' + rhs[0] + ' *>']
+            rhs = (['(' + rhs[0].replace('symbol', 'bra') + ' *>']
                    + rhs[1:-1] +
-                   ['<* ' + rhs[-1] + ')'])
+                   ['<* ' + rhs[-1].replace('symbol', 'ket') + ')'])
             choices = [rhs]
 
         thisRule = (hint, choices)
