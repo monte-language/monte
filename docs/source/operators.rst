@@ -90,7 +90,7 @@ Calls may be curried::
 
 .. syntax:: call
 
-   Sigil(".", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))
+   Ap('pair', Maybe(Sigil(".", NonTerminal('verb'))), NonTerminal('argList'))
 
 .. syntax:: send
 

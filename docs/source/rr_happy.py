@@ -19,7 +19,7 @@ converted = ['prim', 'quasiliteral',
              'ListExpr', 'ListComprehensionExpr',
              'BinaryExpr', 'RangeExpr', 'CompareExpr',
              'order',
-             'calls', 'call', 'send', 'curry', 'index',
+             'calls', 'call', 'send', 'curryTail', 'index',
              'verb', 'argList']
 
 

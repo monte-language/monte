@@ -44,7 +44,7 @@ calls ::= Ap('callExpr',
             Ap('Right', NonTerminal('call')),
             Ap('Left', NonTerminal('send')))),
         Ap('Left', NonTerminal('index')))),
-    Maybe(NonTerminal('curry')))
+    Maybe(NonTerminal('curryTail')))
 -}
 calls = callExpr <$> prim <*> calls_2 <*> calls_3
   where
@@ -57,15 +57,15 @@ calls = callExpr <$> prim <*> calls_2 <*> calls_3
     calls_2_1_1_1_1_1 = Right <$> call
     calls_2_1_1_1_1_2 = Left <$> send
     calls_2_1_1_2 = Left <$> index
-    calls_3 = optionMaybe curry
+    calls_3 = optionMaybe curryTail
 
 {-
-call ::= Sigil(".", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))
+call ::= Ap('pair', Maybe(Sigil(".", NonTerminal('verb'))), NonTerminal('argList'))
 -}
-call = ((symbol ".") *> call_2)
+call = pair <$> call_1 <*> argList
   where
-    call_2 = pair <$> call_2_1 <*> argList
-    call_2_1 = optionMaybe verb
+    call_1 = optionMaybe call_1_1
+    call_1_1 = ((symbol ".") *> verb)
 
 {-
 send ::= Sigil("<-", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))
@@ -76,17 +76,17 @@ send = ((symbol "<-") *> send_2)
     send_2_1 = optionMaybe verb
 
 {-
-curry ::= Choice(0,
+curryTail ::= Choice(0,
   Ap('Right', Sigil(".", NonTerminal('verb'))),
   Ap('Left', Sigil("<-", NonTerminal('verb'))))
 -}
-curry = curry_1
-  <|> curry_2
+curryTail = curryTail_1
+  <|> curryTail_2
   where
-    curry_1 = Right <$> curry_1_1
-    curry_1_1 = ((symbol ".") *> verb)
-    curry_2 = Left <$> curry_2_1
-    curry_2_1 = ((symbol "<-") *> verb)
+    curryTail_1 = Right <$> curryTail_1_1
+    curryTail_1_1 = ((symbol ".") *> verb)
+    curryTail_2 = Left <$> curryTail_2_1
+    curryTail_2_1 = ((symbol "<-") *> verb)
 
 {-
 index ::= Brackets("[", SepBy(NonTerminal('expr'), ','), "]")
