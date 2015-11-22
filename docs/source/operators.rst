@@ -32,17 +32,33 @@ Monte has rich support for destructuring assignment using
   >>> { def [x, y] := [1, 2]; x }
   1
 
-.. syntax:: DefExpr
+.. syntax:: assign
 
-   Ap('DefExpr', Sigil('def', NonTerminal('pattern')),
-            Maybe(Sigil("exit", NonTerminal('order'))),
-            Sigil(":=", NonTerminal('assign')))
+   Choice(0,
+     Ap('DefExpr',
+       Sigil("def", NonTerminal("pattern")),
+       Maybe(Sigil("exit", NonTerminal("order"))),
+       Sigil("::=", NonTerminal("assign"))),
+    Ap('DefExpr',
+      Choice(0, NonTerminal('VarPatt'), NonTerminal('BindPatt')),
+      Ap('return Nothing', Skip()),
+      Sigil("::=", NonTerminal("assign"))),
+    Ap('AssignExpr',
+       NonTerminal('lval'),
+       Sigil("::=", NonTerminal("assign"))),
+    NonTerminal('VerbAssignExpr'),
+    NonTerminal('order'))
 
+.. syntax:: lval
 
+   Choice(0,
+    Ap('Right', NonTerminal('name')),
+    Ap('Left', Ap('pair',
+      NonTerminal('order'),
+      Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))))
 
-.. syntax:: ForwardExpr
+@@order? infix?/index ok?
 
-   Ap('ForwardExpr', 'def', NonTerminal('pattern'))
 
 .. _message_passing:
 
@@ -131,15 +147,16 @@ the object on the right.
 
 .. syntax:: comp
 
-   Sequence(
-    NonTerminal('order'),
-    Optional(Sequence(Choice(
-        0,
-	Choice(0, "=~", "!~"),
-        Choice(0, "==", "!="),
-        "&!",
-        Choice(0, "^", "&", "|")
-    ), NonTerminal('comp'))))
+   Choice(0,
+     Ap('BinaryExpr',
+       NonTerminal('order'),
+       Choice(0,
+	 Choice(0, "=~", "!~"),
+         Choice(0, "==", "!="),
+         "&!",
+         Choice(0, "^", "&", "|")),
+       NonTerminal('comp')),
+    NonTerminal('order'))
 
 .. syntax:: logical
 
@@ -326,11 +343,17 @@ of parentheses::
   >>> { var x := 7; x modPow= (129, 3) }
   1
 
+.. syntax:: VerbAssignExpr
+
+   Ap('VerbAssignExpr',
+      NonTerminal('lval'),
+      Sigil("VERB_ASSIGN", NonTerminal("assign")))
+
+.. todo:: AugAssignExpr? Lexer.hs loses the distinction between += and add=
+
 
 Assignment operators
 ~~~~~~~~~~~~~~~~~~~~
-
-.. todo:: find these in ``monte_parser.mt``; doctest
 
 ::
 
@@ -349,27 +372,6 @@ Assignment operators
   a |= b
   a ^= b
   a foo= b
-
-.. syntax:: assign
-
-   Choice(
-    0,
-    NonTerminal('PatternBinding'),
-    Sequence(Choice(0, 'var', 'bind'),
-             NonTerminal('pattern'),
-             # XXX the next two seem to be optional in the code.
-             ":=", NonTerminal('assign')),
-    Sequence(NonTerminal('lval'), ":=", NonTerminal('assign')),
-    Comment("@op=...XXX"),
-    Comment("VERB_ASSIGN XXX"),
-    NonTerminal('logical'))
-
-.. syntax:: lval
-
-   Choice(
-    0,
-    NonTerminal('name'),
-    NonTerminal('getExpr'))
 
 
 Primitive Expressions
@@ -421,7 +423,12 @@ A noun is a reference to a final or variable slot.
 
 .. syntax:: NounExpr
 
-   Ap('NounExpr', Choice(0, "IDENTIFIER", Sigil("::", ".String.")))
+   Ap('NounExpr', NonTerminal('name'))
+
+.. syntax:: name
+
+   Choice(0, "IDENTIFIER", Sigil("::", ".String."))
+
 
 examples::
 
@@ -460,22 +467,22 @@ A guard can be used as an operator to coerce a value::
 
    Choice(
     0,
-    NonTerminal('unary'),
-    NonTerminal('SlotExpression'),
-    NonTerminal('BindingExpression'),
-    Sequence(NonTerminal('call'), NonTerminal('guardOpt')))
+    Ap("PrefixExpr", '-', NonTerminal('prim')),
+    Ap("PrefixExpr", Choice(0, "~", "!"), NonTerminal('calls')),
+    NonTerminal('SlotExpr'),
+    NonTerminal('BindingExpr'),
+    NonTerminal('CoerceExpr'),
+    NonTerminal('calls'))
 
-.. syntax:: unary
 
-   Choice(
-    0,
-    Sequence('-', NonTerminal('prim')),
-    Sequence(Choice(0, "~", "!"), NonTerminal('call')))
+.. syntax:: SlotExpr
 
-.. syntax:: SlotExpression
+   Ap('SlotExpr', Sigil('&', NonTerminal('name')))
 
-   Sequence('&', NonTerminal('noun'))
+.. syntax:: BindingExpr
 
-.. syntax:: BindingExpression
+   Ap('BindingExpr', Sigil('&&', NonTerminal('name')))
 
-   Sequence('&&', NonTerminal('noun'))
+.. syntax:: CoerceExpr
+
+   Ap("CoerceExpr", NonTerminal('calls'), Sigil(":", NonTerminal('guard')))

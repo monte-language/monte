@@ -306,6 +306,18 @@ Use ``diverge`` and ``snapshot`` similarly::
               "]"))
 
 
+@@@.. syntax:: mapItem
+
+   Choice(
+        0,
+        Sequence("=>", Choice(
+            0,
+            Sequence("&", NonTerminal('name')),
+            Sequence("&&", NonTerminal('name')),
+            NonTerminal('name'))),
+        Sequence(NonTerminal('expr'), "=>", NonTerminal('expr')))
+
+
 Lexical Syntax
 --------------
 

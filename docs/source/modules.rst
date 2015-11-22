@@ -61,6 +61,15 @@ pass audition by ``DeepFrozen``::
     def f() as DeepFrozen:
         return 42
 
+.. syntax:: module_
+
+   Ap('Module',
+    Sigil("imports", SepBy(NonTerminal('namePatt'))),
+    Maybe(
+      Sigil('exports', Brackets("(", SepBy(NonTerminal('name'), ","), ")"))),
+    NonTerminal('block'))
+
+
 Mechanics
 ---------
 
@@ -147,22 +156,3 @@ monte.test.test_ast`` (when run from the root of the project) will run the ast
 tests.
 
 .. _testing.mt: https://github.com/monte-language/monte/blob/master/monte/src/examples/testing.mt
-
-Module Syntax Summary
----------------------
-
-.. syntax:: module
-
-   Sequence(
-    Optional(Sequence("imports",
-                      NonTerminal('imports'),
-                      Optional(NonTerminal('exports')))),
-    NonTerminal('block'))
-
-.. syntax:: imports
-
-   ZeroOrMore(NonTerminal('namedPattern'))
-
-.. syntax:: exports
-
-   Sequence("exports", "(", ZeroOrMore(NonTerminal('name')), ")")

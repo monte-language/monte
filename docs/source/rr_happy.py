@@ -11,26 +11,20 @@ from pprint import pformat
 
 import railroad_diagrams as rrd
 
-converted = ['prim', 'quasiliteral',
-             'DefExpr', 'FinalPatt', 'guardOpt',
-             'LiteralExpr', 'IntExpr', 'DoubleExpr', 'CharExpr', 'StrExpr',
-             'NounExpr', 'HideExpr',
-             'MapExpr', 'MapComprehensionExpr',
-             'ListExpr', 'ListComprehensionExpr',
-             'BinaryExpr', 'RangeExpr', 'CompareExpr',
-             'order',
-             'calls', 'call', 'send', 'curryTail', 'index',
-             'verb', 'argList']
+todo= ['interface', 'InterfaceExpr', 'FunctionExpr',
+       'comp', 'logical',
+       'ObjectExpr', 'objectExpr', 'objectScript', 'matchers', 'doco']
 
 
 def gen_rule(name, body, expr):
-    if name not in converted:
-        return
-
     yield ''
     yield '{-'
     yield name + ' ::= ' + expr
     yield '-}'
+
+    if name in todo:
+        yield '{name} = failure -- TODO'.format(name=unCtor(name))
+        return
 
     def fmtRule(items, lhs=None):
         pfx, sep = ('', ' ')
@@ -122,7 +116,7 @@ def expand(expr, hint=''):
                       [(unCtor(expr.text), None)])
 
     elif isinstance(expr, rrd.Skip):
-        thisRule = (hint, [['@@@@@']])  # What value?
+        thisRule = (hint, [['(return ())']])
         return logged('Skip', [thisRule])
 
     elif isinstance(expr, rrd.Choice):
@@ -160,7 +154,7 @@ def expand(expr, hint=''):
                     for (name, _) in [rules[0]]]]
         if isinstance(expr, rrd.Sigil):
             rhs = choices[0]
-            rhs = ['(' + rhs[0] + ' *>', rhs[1] + ')']
+            rhs = ['(' + rhs[0] + ' *>'] + rhs[1:] + [')']
             choices = [rhs]
         elif isinstance(expr, rrd.Ap):
             rhs = [expr.fun + " <$> "] + choices[0]

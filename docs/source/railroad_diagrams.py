@@ -277,7 +277,11 @@ class Maybe(Choice):
 
 class SepBy(Choice):
     def __init__(self, item, repeat=None, fun='sepBy'):
-        Choice.__init__(self, 0, OneOrMore(item, repeat), Skip())
+        if repeat:
+            Choice.__init__(self, 0, OneOrMore(item, repeat), Skip())
+        else:
+            # at least one, if no separator
+            Choice.__init__(self, 0, OneOrMore(item, repeat))
         self.fun = fun
 
 
