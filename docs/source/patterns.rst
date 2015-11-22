@@ -487,7 +487,7 @@ Any quasiliteral can be used as a pattern.
 	  Ap('Left', Terminal('QUASI_TEXT')),
           Ap('Right',
             Choice(0,
-              Ap('FinalPatt', Terminal('AT_IDENT')),
+              Ap('(\\n -> FinalPatt n Nothing)', Terminal('AT_IDENT')),
               Brackets('@{', NonTerminal('pattern'), '}'))))),
     '`'))
 

@@ -589,7 +589,7 @@ Block Syntax Summary
 
    Brackets("{",
     Choice(0,
-      Ap('passExpr', Sigil("pass")),
+      Ap('passExpr', "pass"),
       Ap('SequenceExpr',
         SepBy(
           Choice(0,
@@ -604,7 +604,6 @@ Block Syntax Summary
     0,
     NonTerminal('FunctionExpr'),
     NonTerminal('ObjectExpr'),
-    NonTerminal('bind'),
     NonTerminal('InterfaceExpr'),
     NonTerminal('IfExpr'),
     NonTerminal('ForExpr'),
@@ -615,6 +614,8 @@ Block Syntax Summary
     NonTerminal('WhenExpr'),
     NonTerminal('LambdaExpr'),
     NonTerminal('metaExpr'))
+
+@@ bindExpr? (cf. ForwardExpr)
 
 .. syntax:: expr
 

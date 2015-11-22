@@ -1,3 +1,11 @@
+module Masque.SyntaxDiagrams where
+
+import Control.Applicative (Applicative(..), Alternative(..),
+                            (<$>), (<*), (*>))
+
+import Masque.Parsing
+import Masque.ParseUtil
+import Masque.FullSyntax
 
 {-
 guard ::= Choice(0,
@@ -39,7 +47,7 @@ interface = failure -- TODO
 FunctionExpr ::= Sequence('def', '(', ZeroOrMore(NonTerminal('pattern'), ','), ')',
   NonTerminal('block'))
 -}
-FunctionExpr = failure -- TODO
+functionExpr = failure -- TODO
 
 {-
 ObjectExpr ::= Sequence(
@@ -49,15 +57,15 @@ ObjectExpr ::= Sequence(
         NonTerminal('name')),
  NonTerminal('guardOpt'), Comment("objectExpr"))
 -}
-ObjectExpr = failure -- TODO
+objectExpr = failure -- TODO
 
 {-
-objectExpr ::= Sequence(
+objectExpr2 ::= Sequence(
  Optional(Sequence('extends', NonTerminal('order'))),
  NonTerminal('auditors'),
  '{', ZeroOrMore(NonTerminal('objectScript'), ';'), '}')
 -}
-objectExpr = failure -- TODO
+objectExpr2 = failure -- TODO
 
 {-
 objectScript ::= Sequence(
@@ -66,13 +74,6 @@ objectScript ::= Sequence(
  Choice(0, "pass", ZeroOrMore(NonTerminal('matchers'))))
 -}
 objectScript = failure -- TODO
-
-{-
-matchers ::= OneOrMore(Sequence("match",
-          NonTerminal('pattern'),
-          NonTerminal('block')))
--}
-matchers = failure -- TODO
 
 {-
 doco ::= Terminal('.String')
@@ -93,14 +94,16 @@ objectFunction = ObjectExpr <$> objectFunction_1 <*> objectFunction_2 <*> guardO
     objectFunction_2_2 = (sepBy pattern (symbol ","))
 
 {-
-ForwardExpr ::= Ap('ForwardExpr', 'def', NonTerminal('FinalPattern'))
+ForwardExpr ::= Ap('ForwardExpr', Sigil('def', NonTerminal('name')))
 -}
-forwardExpr = ForwardExpr <$> (symbol "def") <*> finalPattern
+forwardExpr = ForwardExpr <$> forwardExpr_1
+  where
+    forwardExpr_1 = ((symbol "def") *> name )
 
 {-
 InterfaceExpr ::= Sequence('@@@@@')
 -}
-InterfaceExpr = failure -- TODO
+interfaceExpr = failure -- TODO
 
 {-
 IfExpr ::= Ap('IfExpr',
@@ -157,14 +160,15 @@ whileExpr = WhileExpr <$> whileExpr_1 <*> block <*> whileExpr_3
     whileExpr_3 = optionMaybe catcher
 
 {-
-SwitchExpr ::= Sequence(
- "switch", Brackets("(", NonTerminal('expr'), ")"),
- Brackets("{", NonTerminal('matchers'), "}"))
+SwitchExpr ::= Ap('SwitchExpr',
+          Sigil("switch", Brackets("(", NonTerminal('expr'), ")")),
+          Brackets("{", NonTerminal('matchers'), "}"))
 -}
-switchExpr = (symbol "switch") switchExpr_2 switchExpr_3
+switchExpr = SwitchExpr <$> switchExpr_1 <*> switchExpr_2
   where
-    switchExpr_2 = ((bra "(") *> expr <* (ket ")"))
-    switchExpr_3 = ((bra "{") *> matchers <* (ket "}"))
+    switchExpr_1 = ((symbol "switch") *> switchExpr_1_2 )
+    switchExpr_1_2 = ((bra "(") *> expr <* (ket ")"))
+    switchExpr_2 = ((bra "{") *> matchers <* (ket "}"))
 
 {-
 matchers ::= SepBy(
@@ -226,19 +230,21 @@ lambdaExpr = LambdaExpr <$> lambdaExpr_1 <*> block
 {-
 metaExpr ::= Sigil("meta", Sigil(".",
   Choice(0,
-    Ap('MetaContextExpr', Sigil("context", Brackets("(", Skip(), ")"))),
-    Ap('MetaStateExpr', Sigil("getState", Brackets("(", Skip(), ")"))))))
+    Ap('return MetaContextExpr',
+      Sigil("context", Brackets("(", Skip(), ")"))),
+    Ap('return MetaStateExpr',
+      Sigil("getState", Brackets("(", Skip(), ")"))))))
 -}
 metaExpr = ((symbol "meta") *> metaExpr_2 )
   where
     metaExpr_2 = ((symbol ".") *> metaExpr_2_2 )
     metaExpr_2_2 = metaExpr_2_2_1
       <|> metaExpr_2_2_2
-    metaExpr_2_2_1 = MetaContextExpr <$> metaExpr_2_2_1_1
+    metaExpr_2_2_1 = return MetaContextExpr <$> metaExpr_2_2_1_1
     metaExpr_2_2_1_1 = ((symbol "context") *> metaExpr_2_2_1_1_2 )
     metaExpr_2_2_1_1_2 = ((bra "(") *> metaExpr_2_2_1_1_2_2 <* (ket ")"))
     metaExpr_2_2_1_1_2_2 = (return ())
-    metaExpr_2_2_2 = MetaStateExpr <$> metaExpr_2_2_2_1
+    metaExpr_2_2_2 = return MetaStateExpr <$> metaExpr_2_2_2_1
     metaExpr_2_2_2_1 = ((symbol "getState") *> metaExpr_2_2_2_1_2 )
     metaExpr_2_2_2_1_2 = ((bra "(") *> metaExpr_2_2_2_1_2_2 <* (ket ")"))
     metaExpr_2_2_2_1_2_2 = (return ())
@@ -246,8 +252,8 @@ metaExpr = ((symbol "meta") *> metaExpr_2 )
 {-
 block ::= Brackets("{",
  Choice(0,
-   Ap('passExpr', Sigil("pass")),
-   Ap('SeqExpr',
+   Ap('passExpr', "pass"),
+   Ap('SequenceExpr',
      SepBy(
        Choice(0,
          NonTerminal('blockExpr'),
@@ -259,9 +265,8 @@ block = ((bra "{") *> block_2 <* (ket "}"))
   where
     block_2 = block_2_1
       <|> block_2_2
-    block_2_1 = passExpr <$> block_2_1_1
-    block_2_1_1 = ((symbol "pass") *> )
-    block_2_2 = SeqExpr <$> block_2_2_1
+    block_2_1 = passExpr <$> (symbol "pass")
+    block_2_2 = SequenceExpr <$> block_2_2_1
     block_2_2_1 = (sepBy block_2_2_1_1_1 (symbol ";"))
     block_2_2_1_1_1 = blockExpr
       <|> expr
@@ -271,8 +276,6 @@ blockExpr ::= Choice(
  0,
  NonTerminal('FunctionExpr'),
  NonTerminal('ObjectExpr'),
- NonTerminal('bind'),
- NonTerminal('DefExpr'),
  NonTerminal('InterfaceExpr'),
  NonTerminal('IfExpr'),
  NonTerminal('ForExpr'),
@@ -286,8 +289,6 @@ blockExpr ::= Choice(
 -}
 blockExpr = functionExpr
   <|> objectExpr
-  <|> bind
-  <|> defExpr
   <|> interfaceExpr
   <|> ifExpr
   <|> forExpr
@@ -326,14 +327,6 @@ exitExpr = ExitExpr <$> exitExpr_1 <*> exitExpr_2
     exitExpr_2_2 = Just <$> blockExpr
 
 {-
-bind ::= Sequence(
- "bind",
- NonTerminal('name'),
- NonTerminal('guardOpt'), Comment("objectExpr@@"))
--}
-bind = (symbol "bind") name guardOpt
-
-{-
 ListComprehensionExpr ::= Brackets("[",
   Ap('ListComprehensionExpr',
     Sigil("for", NonTerminal('pattern')),
@@ -354,7 +347,7 @@ listComprehensionExpr = ((bra "[") *> listComprehensionExpr_2 <* (ket "]"))
 
 {-
 MapComprehensionExpr ::= Brackets("[",
-  Ap('ListComprehensionExpr',
+  Ap('MapComprehensionExpr',
     Sigil("for", NonTerminal('pattern')),
     Sigil("=>", NonTerminal('pattern')),
     Sigil("in", Brackets("(", NonTerminal('order'), ")")),
@@ -364,7 +357,7 @@ MapComprehensionExpr ::= Brackets("[",
 -}
 mapComprehensionExpr = ((bra "[") *> mapComprehensionExpr_2 <* (ket "]"))
   where
-    mapComprehensionExpr_2 = ListComprehensionExpr <$> mapComprehensionExpr_2_1 <*> mapComprehensionExpr_2_2 <*> mapComprehensionExpr_2_3 <*> mapComprehensionExpr_2_4 <*> expr
+    mapComprehensionExpr_2 = MapComprehensionExpr <$> mapComprehensionExpr_2_1 <*> mapComprehensionExpr_2_2 <*> mapComprehensionExpr_2_3 <*> mapComprehensionExpr_2_4 <*> expr
     mapComprehensionExpr_2_1 = ((symbol "for") *> pattern )
     mapComprehensionExpr_2_2 = ((symbol "=>") *> pattern )
     mapComprehensionExpr_2_3 = ((symbol "in") *> mapComprehensionExpr_2_3_2 )
@@ -397,7 +390,7 @@ assign ::= Choice(0,
     Sigil("::=", NonTerminal("assign"))),
  Ap('DefExpr',
    Choice(0, NonTerminal('VarPatt'), NonTerminal('BindPatt')),
-   Ap('Nothing', Skip()),
+   Ap('return Nothing', Skip()),
    Sigil("::=", NonTerminal("assign"))),
  Ap('AssignExpr',
     NonTerminal('lval'),
@@ -419,7 +412,7 @@ assign = assign_1
     assign_2 = DefExpr <$> assign_2_1 <*> assign_2_2 <*> assign_2_3
     assign_2_1 = varPatt
       <|> bindPatt
-    assign_2_2 = Nothing <$> assign_2_2_1
+    assign_2_2 = return Nothing <$> assign_2_2_1
     assign_2_2_1 = (return ())
     assign_2_3 = ((symbol "::=") *> assign )
     assign_3 = AssignExpr <$> lval <*> assign_3_2
@@ -428,16 +421,18 @@ assign = assign_1
 {-
 lval ::= Choice(0,
  Ap('Right', NonTerminal('name')),
- Ap('Left', NonTerminal('order'),
-            Brackets("[", SepBy(NonTerminal('expr'), ','), "]")))
+ Ap('Left', Ap('pair',
+   NonTerminal('order'),
+   Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))))
 -}
 lval = lval_1
   <|> lval_2
   where
     lval_1 = Right <$> name
-    lval_2 = Left <$> order <*> lval_2_2
-    lval_2_2 = ((bra "[") *> lval_2_2_2 <* (ket "]"))
-    lval_2_2_2 = (sepBy expr (symbol ","))
+    lval_2 = Left <$> lval_2_1
+    lval_2_1 = pair <$> order <*> lval_2_1_2
+    lval_2_1_2 = ((bra "[") *> lval_2_1_2_2 <* (ket "]"))
+    lval_2_1_2_2 = (sepBy expr (symbol ","))
 
 {-
 calls ::= Ap('callExpr',
@@ -514,47 +509,25 @@ argList = ((bra "(") *> argList_2 <* (ket ")"))
     argList_2 = (sepBy expr (symbol ","))
 
 {-
-comp ::= Sequence(
- NonTerminal('order'),
- Optional(Sequence(Choice(
-     0,
-     Choice(0, "=~", "!~"),
-     Choice(0, "==", "!="),
-     "&!",
-     Choice(0, "^", "&", "|")
- ), NonTerminal('comp'))))
+comp ::= Choice(0,
+  Ap('BinaryExpr',
+    NonTerminal('order'),
+    Choice(0,
+      Choice(0, "=~", "!~"),
+      Choice(0, "==", "!="),
+      "&!",
+      Choice(0, "^", "&", "|")),
+    NonTerminal('comp')),
+ NonTerminal('order'))
 -}
-comp = order comp_2
-  where
-    comp_2 = comp_2_1
-      <|> comp_2_2
-    comp_2_1 = comp_2_1_1 comp
-    comp_2_1_1 = comp_2_1_1_1
-      <|> comp_2_1_1_2
-      <|> (symbol "&!")
-      <|> comp_2_1_1_4
-    comp_2_1_1_1 = (symbol "=~")
-      <|> (symbol "!~")
-    comp_2_1_1_2 = (symbol "==")
-      <|> (symbol "!=")
-    comp_2_1_1_4 = (symbol "^")
-      <|> (symbol "&")
-      <|> (symbol "|")
-    comp_2_2 = (return ())
+comp = failure -- TODO
 
 {-
 logical ::= Sequence(
  NonTerminal('comp'),
  Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical'))))
 -}
-logical = comp logical_2
-  where
-    logical_2 = logical_2_1
-      <|> logical_2_2
-    logical_2_1 = logical_2_1_1 logical
-    logical_2_1_1 = (symbol "||")
-      <|> (symbol "&&")
-    logical_2_2 = (return ())
+logical = failure -- TODO
 
 {-
 order ::= Choice(0,
@@ -678,21 +651,21 @@ name = parseIdentifier
 prefix ::= Choice(
  0,
  Ap("PrefixExpr", '-', NonTerminal('prim')),
- Ap("PrefixExpr", Choice(0, "~", "!"), NonTerminal('call')),
+ Ap("PrefixExpr", Choice(0, "~", "!"), NonTerminal('calls')),
  NonTerminal('SlotExpr'),
  NonTerminal('BindingExpr'),
  NonTerminal('CoerceExpr'),
- NonTerminal('call'))
+ NonTerminal('calls'))
 -}
 prefix = prefix_1
   <|> prefix_2
   <|> slotExpr
   <|> bindingExpr
   <|> coerceExpr
-  <|> call
+  <|> calls
   where
     prefix_1 = PrefixExpr <$> (symbol "-") <*> prim
-    prefix_2 = PrefixExpr <$> prefix_2_1 <*> call
+    prefix_2 = PrefixExpr <$> prefix_2_1 <*> calls
     prefix_2_1 = (symbol "~")
       <|> (symbol "!")
 
@@ -711,9 +684,9 @@ bindingExpr = BindingExpr <$> bindingExpr_1
     bindingExpr_1 = ((symbol "&&") *> name )
 
 {-
-CoerceExpr ::= Ap("CoerceExpr", NonTerminal('call'), Sigil(":", NonTerminal('guard')))
+CoerceExpr ::= Ap("CoerceExpr", NonTerminal('calls'), Sigil(":", NonTerminal('guard')))
 -}
-coerceExpr = CoerceExpr <$> call <*> coerceExpr_2
+coerceExpr = CoerceExpr <$> calls <*> coerceExpr_2
   where
     coerceExpr_2 = ((symbol ":") *> guard )
 
@@ -869,8 +842,8 @@ QuasiliteralPatt ::= Ap('QuasiliteralPatt',
        Ap('Left', Terminal('QUASI_TEXT')),
        Ap('Right',
          Choice(0,
-           Ap('NounExpr', Terminal('AT_IDENT')),
-           Brackets('@{', NonTerminal('expr'), '}'))))),
+           Ap('(\\n -> FinalPatt n Nothing)', Terminal('AT_IDENT')),
+           Brackets('@{', NonTerminal('pattern'), '}'))))),
  '`'))
 -}
 quasiliteralPatt = QuasiliteralPatt <$> quasiliteralPatt_1 <*> quasiliteralPatt_2
@@ -884,8 +857,8 @@ quasiliteralPatt = QuasiliteralPatt <$> quasiliteralPatt_1 <*> quasiliteralPatt_
     quasiliteralPatt_2_2_1_1_2 = Right <$> quasiliteralPatt_2_2_1_1_2_1
     quasiliteralPatt_2_2_1_1_2_1 = quasiliteralPatt_2_2_1_1_2_1_1
       <|> quasiliteralPatt_2_2_1_1_2_1_2
-    quasiliteralPatt_2_2_1_1_2_1_1 = NounExpr <$> parseAtIdent
-    quasiliteralPatt_2_2_1_1_2_1_2 = ((bra "@{") *> expr <* (ket "}"))
+    quasiliteralPatt_2_2_1_1_2_1_1 = (\n -> FinalPatt n Nothing) <$> parseAtIdent
+    quasiliteralPatt_2_2_1_1_2_1_2 = ((bra "@{") *> pattern <* (ket "}"))
 
 {-
 ViaPatt ::= Ap('ViaPatt',

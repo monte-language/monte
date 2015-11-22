@@ -13,7 +13,8 @@ import railroad_diagrams as rrd
 
 todo= ['interface', 'InterfaceExpr', 'FunctionExpr',
        'comp', 'logical',
-       'ObjectExpr', 'objectExpr', 'objectScript', 'matchers', 'doco']
+       'auditors',
+       'ObjectExpr', 'objectExpr2', 'objectScript', 'matchers', 'doco']
 
 
 def gen_rule(name, body, expr):
