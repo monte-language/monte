@@ -15,6 +15,7 @@ def setup(app):
                  html=(visit, depart))
 
     app.add_directive('syntax', RailroadDirective)
+    app.add_config_value('syntax_file', None, 'html')
 
     return {'version': '0.1'}
 
@@ -54,13 +55,15 @@ class RailroadDirective(Directive):
             it = eval(expr,
                       railroad_diagrams.__dict__)
         except Exception as ex:
-            print "@@eek!", self.content
-            print "@@", ex
+            print >>stderr, "@@eek!", self.content
+            print >>stderr, "@@", ex
             raise
 
         diag = RailroadDiagram(railroad_diagrams.Diagram(it))
 
-        for line in rr_happy.gen_rule(name, it, expr):
-            print >>stderr, line
+        if env.config.syntax_file:
+            with open(env.config.syntax_file, 'a') as out:
+                for line in rr_happy.gen_rule(name, it, expr):
+                    print >>out, line
 
         return [targetnode, ix, label, diag]
