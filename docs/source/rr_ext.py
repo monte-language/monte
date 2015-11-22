@@ -11,13 +11,24 @@ import rr_happy
 
 
 def setup(app):
+    app.connect('builder-inited', start_module)
     app.add_node(RailroadDiagram,
                  html=(visit, depart))
 
     app.add_directive('syntax', RailroadDirective)
-    app.add_config_value('syntax_file', None, 'html')
+    app.add_config_value('syntax_header', None, 'html')
+    app.add_config_value('syntax_dest', None, 'html')
+    app.add_config_value('syntax_fp', None, None)
 
     return {'version': '0.1'}
+
+
+def start_module(app):
+    if app.config.syntax_dest:
+        fp = app.config.syntax_fp = open(app.config.syntax_dest, 'w')
+        if app.config.syntax_header:
+            top = open(app.config.syntax_header).read()
+            fp.write(top)
 
 
 class RailroadDiagram(nodes.hint):
@@ -61,9 +72,9 @@ class RailroadDirective(Directive):
 
         diag = RailroadDiagram(railroad_diagrams.Diagram(it))
 
-        if env.config.syntax_file:
-            with open(env.config.syntax_file, 'a') as out:
-                for line in rr_happy.gen_rule(name, it, expr):
-                    print >>out, line
+        if env.config.syntax_fp:
+            out = env.config.syntax_fp
+            for line in rr_happy.gen_rule(name, it, expr):
+                print >>out, line
 
         return [targetnode, ix, label, diag]
