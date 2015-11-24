@@ -21,6 +21,7 @@ Monte is a dynamic language inspired by Python and E.
     guards
     slots
     interfaces
+    promises
     modules
     custom-guards
     design
