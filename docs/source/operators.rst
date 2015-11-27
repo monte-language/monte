@@ -38,14 +38,14 @@ Monte has rich support for destructuring assignment using
      Ap('DefExpr',
        Sigil("def", NonTerminal("pattern")),
        Maybe(Sigil("exit", NonTerminal("order"))),
-       Sigil("::=", NonTerminal("assign"))),
+       Sigil(":=", NonTerminal("assign"))),
     Ap('DefExpr',
       Choice(0, NonTerminal('VarPatt'), NonTerminal('BindPatt')),
       Ap('return Nothing', Skip()),
-      Sigil("::=", NonTerminal("assign"))),
+      Sigil(":=", NonTerminal("assign"))),
     Ap('AssignExpr',
        NonTerminal('lval'),
-       Sigil("::=", NonTerminal("assign"))),
+       Sigil(":=", NonTerminal("assign"))),
     NonTerminal('VerbAssignExpr'),
     NonTerminal('order'))
 
@@ -390,8 +390,8 @@ Parentheses, braces, and square brackets set off primitive expressions.
     NonTerminal('HideExpr'),
     NonTerminal('MapComprehensionExpr'),
     NonTerminal('ListComprehensionExpr'),
-    NonTerminal('MapExpr'),
-    NonTerminal('ListExpr'))
+    NonTerminal('ListExpr'),
+    NonTerminal('MapExpr'))
 
 A sequence expressions evaluates to the value of its last item::
 

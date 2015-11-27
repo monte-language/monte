@@ -98,16 +98,25 @@ Patterns
 .. syntax:: pattern
 
    Choice(0,
-          NonTerminal('namePatt'),
-	  Choice(0,
-	    NonTerminal('SamePatt'),
-	    NonTerminal('NotSamePatt')),
+          NonTerminal('postfixPatt'))
+
+.. syntax:: postfixPatt
+
+   Choice(0,
+          NonTerminal('SuchThatPatt'),
+          NonTerminal('prefixPatt'))
+
+.. syntax:: prefixPatt
+
+   Choice(0,
+          NonTerminal('MapPatt'),
+          NonTerminal('ListPatt'),
+	  NonTerminal('SamePatt'),
+	  NonTerminal('NotSamePatt'),
           NonTerminal('QuasiliteralPatt'),
           NonTerminal('ViaPatt'),
           NonTerminal('IgnorePatt'),
-          NonTerminal('ListPatt'),
-          NonTerminal('MapPatt'),
-          NonTerminal('SuchThatPatt'))
+          NonTerminal('namePatt'))
 
 .. syntax:: namePatt
 
@@ -386,10 +395,8 @@ the value corresponding to ``"key"``, or ``"default value"``.
 .. syntax:: MapPatt
 
    Ap('MapPatt',
-     Brackets("[", SepBy(NonTerminal('mapPattItem'), ','), ']'),
+     Brackets("[", OneOrMore(NonTerminal('mapPattItem'), ','), ']'),
      Maybe(Sigil("|", NonTerminal('pattern'))))
-
-@@at least one item
 
 .. syntax:: mapPattItem
 
@@ -542,5 +549,5 @@ or fails based on whether the condition evaluates to ``true`` or ``false``.
 
 .. syntax:: SuchThatPatt
 
-   Ap('SuchThatPatt', NonTerminal('pattern'),
+   Ap('SuchThatPatt', NonTerminal('prefixPatt'),
       Sigil("?", Brackets("(", NonTerminal('expr'), ")")))

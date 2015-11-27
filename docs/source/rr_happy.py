@@ -172,23 +172,16 @@ def expand(expr, hint=''):
         return more(thisRule, expanded)
 
     elif isinstance(expr, rrd.OneOrMore):
-        #@@TODO: seq1 expr
-        expanded = recur([expr.item])
-        (item, _) = expanded[0][0]
+        expanded = recur([expr.item, expr.rep])
+        item = expand(expr.item, hint + '_1')[0][0]
+        rep = expand(expr.rep, hint + '_2')[0][0]
+        rhs = [['({fun} {item} {rep})'
+                .format(fun='sepBy1', item=item, rep=rep)]]
+        exclude = [hint + '_2']
 
-        sep = []
-        if expr.rep:
-            expSep = recur([expr.rep])
-            (s, _) = expSep[0][0]
-            sep = [s]
-            expanded = expanded + expSep
+        thisRule = (hint, rhs)
 
-        # left recursion per 2.2. Parsing sequences in Using Happy
-        # https://www.haskell.org/happy/doc/html/sec-sequences.html
-        thisRule = (hint, [[item],
-                           [hint] + sep + [item]])
-
-        return more(thisRule, expanded)
+        return more(thisRule, expanded, exclude)
     else:
         raise NotImplementedError(expr)
 

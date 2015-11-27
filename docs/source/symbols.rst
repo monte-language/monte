@@ -300,7 +300,7 @@ Use ``diverge`` and ``snapshot`` similarly::
 
    Ap('MapExpr',
      Brackets("[",
-              SepBy(Ap('pair', NonTerminal('expr'),
+              OneOrMore(Ap('pair', NonTerminal('expr'),
                                Sigil("=>", NonTerminal('expr'))),
                     ','),
               "]"))

@@ -387,14 +387,14 @@ assign ::= Choice(0,
   Ap('DefExpr',
     Sigil("def", NonTerminal("pattern")),
     Maybe(Sigil("exit", NonTerminal("order"))),
-    Sigil("::=", NonTerminal("assign"))),
+    Sigil(":=", NonTerminal("assign"))),
  Ap('DefExpr',
    Choice(0, NonTerminal('VarPatt'), NonTerminal('BindPatt')),
    Ap('return Nothing', Skip()),
-   Sigil("::=", NonTerminal("assign"))),
+   Sigil(":=", NonTerminal("assign"))),
  Ap('AssignExpr',
     NonTerminal('lval'),
-    Sigil("::=", NonTerminal("assign"))),
+    Sigil(":=", NonTerminal("assign"))),
  NonTerminal('VerbAssignExpr'),
  NonTerminal('order'))
 -}
@@ -408,15 +408,15 @@ assign = assign_1
     assign_1_1 = ((symbol "def") *> pattern )
     assign_1_2 = optionMaybe assign_1_2_1
     assign_1_2_1 = ((symbol "exit") *> order )
-    assign_1_3 = ((symbol "::=") *> assign )
+    assign_1_3 = ((symbol ":=") *> assign )
     assign_2 = DefExpr <$> assign_2_1 <*> assign_2_2 <*> assign_2_3
     assign_2_1 = varPatt
       <|> bindPatt
     assign_2_2 = return Nothing <$> assign_2_2_1
     assign_2_2_1 = (return ())
-    assign_2_3 = ((symbol "::=") *> assign )
+    assign_2_3 = ((symbol ":=") *> assign )
     assign_3 = AssignExpr <$> lval <*> assign_3_2
-    assign_3_2 = ((symbol "::=") *> assign )
+    assign_3_2 = ((symbol ":=") *> assign )
 
 {-
 lval ::= Choice(0,
@@ -610,8 +610,8 @@ prim ::= Choice(
  NonTerminal('HideExpr'),
  NonTerminal('MapComprehensionExpr'),
  NonTerminal('ListComprehensionExpr'),
- NonTerminal('MapExpr'),
- NonTerminal('ListExpr'))
+ NonTerminal('ListExpr'),
+ NonTerminal('MapExpr'))
 -}
 prim = literalExpr
   <|> quasiliteral
@@ -620,8 +620,8 @@ prim = literalExpr
   <|> hideExpr
   <|> mapComprehensionExpr
   <|> listComprehensionExpr
-  <|> mapExpr
   <|> listExpr
+  <|> mapExpr
   where
     prim_4 = ((bra "(") *> expr <* (ket ")"))
 
@@ -692,28 +692,37 @@ coerceExpr = CoerceExpr <$> calls <*> coerceExpr_2
 
 {-
 pattern ::= Choice(0,
-       NonTerminal('namePatt'),
-       Choice(0,
-         NonTerminal('SamePatt'),
-         NonTerminal('NotSamePatt')),
+       NonTerminal('postfixPatt'))
+-}
+pattern = postfixPatt
+
+{-
+postfixPatt ::= Choice(0,
+       NonTerminal('SuchThatPatt'),
+       NonTerminal('prefixPatt'))
+-}
+postfixPatt = suchThatPatt
+  <|> prefixPatt
+
+{-
+prefixPatt ::= Choice(0,
+       NonTerminal('MapPatt'),
+       NonTerminal('ListPatt'),
+       NonTerminal('SamePatt'),
+       NonTerminal('NotSamePatt'),
        NonTerminal('QuasiliteralPatt'),
        NonTerminal('ViaPatt'),
        NonTerminal('IgnorePatt'),
-       NonTerminal('ListPatt'),
-       NonTerminal('MapPatt'),
-       NonTerminal('SuchThatPatt'))
+       NonTerminal('namePatt'))
 -}
-pattern = namePatt
-  <|> pattern_2
+prefixPatt = mapPatt
+  <|> listPatt
+  <|> samePatt
+  <|> notSamePatt
   <|> quasiliteralPatt
   <|> viaPatt
   <|> ignorePatt
-  <|> listPatt
-  <|> mapPatt
-  <|> suchThatPatt
-  where
-    pattern_2 = samePatt
-      <|> notSamePatt
+  <|> namePatt
 
 {-
 namePatt ::= Choice(0,
@@ -783,13 +792,13 @@ listPatt = ListPatt <$> listPatt_1 <*> listPatt_2
 
 {-
 MapPatt ::= Ap('MapPatt',
-  Brackets("[", SepBy(NonTerminal('mapPattItem'), ','), ']'),
+  Brackets("[", OneOrMore(NonTerminal('mapPattItem'), ','), ']'),
   Maybe(Sigil("|", NonTerminal('pattern'))))
 -}
 mapPatt = MapPatt <$> mapPatt_1 <*> mapPatt_2
   where
     mapPatt_1 = ((bra "[") *> mapPatt_1_2 <* (ket "]"))
-    mapPatt_1_2 = (sepBy mapPattItem (symbol ","))
+    mapPatt_1_2 = (sepBy1 mapPattItem (symbol ","))
     mapPatt_2 = optionMaybe mapPatt_2_1
     mapPatt_2_1 = ((symbol "|") *> pattern )
 
@@ -871,10 +880,10 @@ viaPatt = ViaPatt <$> viaPatt_1 <*> pattern
     viaPatt_1_2 = ((bra "(") *> expr <* (ket ")"))
 
 {-
-SuchThatPatt ::= Ap('SuchThatPatt', NonTerminal('pattern'),
+SuchThatPatt ::= Ap('SuchThatPatt', NonTerminal('prefixPatt'),
    Sigil("?", Brackets("(", NonTerminal('expr'), ")")))
 -}
-suchThatPatt = SuchThatPatt <$> pattern <*> suchThatPatt_2
+suchThatPatt = SuchThatPatt <$> prefixPatt <*> suchThatPatt_2
   where
     suchThatPatt_2 = ((symbol "?") *> suchThatPatt_2_2 )
     suchThatPatt_2_2 = ((bra "(") *> expr <* (ket ")"))
@@ -937,7 +946,7 @@ listExpr = ListExpr <$> listExpr_1
 {-
 MapExpr ::= Ap('MapExpr',
   Brackets("[",
-           SepBy(Ap('pair', NonTerminal('expr'),
+           OneOrMore(Ap('pair', NonTerminal('expr'),
                             Sigil("=>", NonTerminal('expr'))),
                  ','),
            "]"))
@@ -945,9 +954,9 @@ MapExpr ::= Ap('MapExpr',
 mapExpr = MapExpr <$> mapExpr_1
   where
     mapExpr_1 = ((bra "[") *> mapExpr_1_2 <* (ket "]"))
-    mapExpr_1_2 = (sepBy mapExpr_1_2_1_1 (symbol ","))
-    mapExpr_1_2_1_1 = pair <$> expr <*> mapExpr_1_2_1_1_2
-    mapExpr_1_2_1_1_2 = ((symbol "=>") *> expr )
+    mapExpr_1_2 = (sepBy1 mapExpr_1_2_1 (symbol ","))
+    mapExpr_1_2_1 = pair <$> expr <*> mapExpr_1_2_1_2
+    mapExpr_1_2_1_2 = ((symbol "=>") *> expr )
 
 {-
 LiteralExpr ::= Choice(0,
