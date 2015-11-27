@@ -255,24 +255,30 @@ block ::= Brackets("{",
    Ap('passExpr', "pass"),
    Ap('SequenceExpr',
      SepBy(
-       Choice(0,
-         NonTerminal('blockExpr'),
-         NonTerminal('expr')),
-       ";"))),
+       NonTerminal('blockExpr'),
+       ";")),
+   Ap('passExpr', Skip())),
 "}")
 -}
 block = ((bra "{") *> block_2 <* (ket "}"))
   where
     block_2 = block_2_1
       <|> block_2_2
+      <|> block_2_3
     block_2_1 = passExpr <$> (symbol "pass")
     block_2_2 = SequenceExpr <$> block_2_2_1
-    block_2_2_1 = (sepBy block_2_2_1_1_1 (symbol ";"))
-    block_2_2_1_1_1 = blockExpr
-      <|> expr
+    block_2_2_1 = (sepBy blockExpr (symbol ";"))
+    block_2_3 = passExpr <$> block_2_3_1
+    block_2_3_1 = (return ())
 
 {-
-blockExpr ::= Choice(
+blockExpr ::= Choice(0, NonTerminal('basic'), NonTerminal('expr'))
+-}
+blockExpr = basic
+  <|> expr
+
+{-
+basic ::= Choice(
  0,
  NonTerminal('FunctionExpr'),
  NonTerminal('ObjectExpr'),
@@ -285,9 +291,10 @@ blockExpr ::= Choice(
  NonTerminal('TryExpr'),
  NonTerminal('WhenExpr'),
  NonTerminal('LambdaExpr'),
- NonTerminal('metaExpr'))
+ NonTerminal('metaExpr'),
+ Ap('passExpr', "pass"))
 -}
-blockExpr = functionExpr
+basic = functionExpr
   <|> objectExpr
   <|> interfaceExpr
   <|> ifExpr
@@ -299,14 +306,17 @@ blockExpr = functionExpr
   <|> whenExpr
   <|> lambdaExpr
   <|> metaExpr
+  <|> basic_13
+  where
+    basic_13 = passExpr <$> (symbol "pass")
 
 {-
 expr ::= Choice(0,
- NonTerminal('assign'),
- NonTerminal('ExitExpr'))
+ NonTerminal('ExitExpr'),
+ NonTerminal('assign'))
 -}
-expr = assign
-  <|> exitExpr
+expr = exitExpr
+  <|> assign
 
 {-
 ExitExpr ::= Ap('ExitExpr',
@@ -420,19 +430,19 @@ assign = assign_1
 
 {-
 lval ::= Choice(0,
- Ap('Right', NonTerminal('name')),
  Ap('Left', Ap('pair',
    NonTerminal('order'),
-   Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))))
+   Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))),
+ Ap('Right', NonTerminal('name')))
 -}
 lval = lval_1
   <|> lval_2
   where
-    lval_1 = Right <$> name
-    lval_2 = Left <$> lval_2_1
-    lval_2_1 = pair <$> order <*> lval_2_1_2
-    lval_2_1_2 = ((bra "[") *> lval_2_1_2_2 <* (ket "]"))
-    lval_2_1_2_2 = (sepBy expr (symbol ","))
+    lval_1 = Left <$> lval_1_1
+    lval_1_1 = pair <$> order <*> lval_1_1_2
+    lval_1_1_2 = ((bra "[") *> lval_1_1_2_2 <* (ket "]"))
+    lval_1_1_2_2 = (sepBy expr (symbol ","))
+    lval_2 = Right <$> name
 
 {-
 calls ::= Ap('callExpr',
@@ -945,18 +955,33 @@ listExpr = ListExpr <$> listExpr_1
 
 {-
 MapExpr ::= Ap('MapExpr',
-  Brackets("[",
-           OneOrMore(Ap('pair', NonTerminal('expr'),
-                            Sigil("=>", NonTerminal('expr'))),
-                 ','),
-           "]"))
+  Brackets("[", OneOrMore(NonTerminal('mapItem'), ','), "]"))
 -}
 mapExpr = MapExpr <$> mapExpr_1
   where
     mapExpr_1 = ((bra "[") *> mapExpr_1_2 <* (ket "]"))
-    mapExpr_1_2 = (sepBy1 mapExpr_1_2_1 (symbol ","))
-    mapExpr_1_2_1 = pair <$> expr <*> mapExpr_1_2_1_2
-    mapExpr_1_2_1_2 = ((symbol "=>") *> expr )
+    mapExpr_1_2 = (sepBy1 mapItem (symbol ","))
+
+{-
+mapItem ::= Choice(0,
+  Ap('Right', Ap('pair', NonTerminal('expr'),
+                         Sigil("=>", NonTerminal('expr')))),
+  Ap('Left', Sigil("=>", Choice(0,
+        NonTerminal('SlotExpr'),
+        NonTerminal('BindingExpr'),
+        NonTerminal('NounExpr')))))
+-}
+mapItem = mapItem_1
+  <|> mapItem_2
+  where
+    mapItem_1 = Right <$> mapItem_1_1
+    mapItem_1_1 = pair <$> expr <*> mapItem_1_1_2
+    mapItem_1_1_2 = ((symbol "=>") *> expr )
+    mapItem_2 = Left <$> mapItem_2_1
+    mapItem_2_1 = ((symbol "=>") *> mapItem_2_1_2 )
+    mapItem_2_1_2 = slotExpr
+      <|> bindingExpr
+      <|> nounExpr
 
 {-
 LiteralExpr ::= Choice(0,

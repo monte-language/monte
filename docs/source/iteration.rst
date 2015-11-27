@@ -592,13 +592,16 @@ Block Syntax Summary
       Ap('passExpr', "pass"),
       Ap('SequenceExpr',
         SepBy(
-          Choice(0,
-            NonTerminal('blockExpr'),
-            NonTerminal('expr')),
-          ";"))),
+          NonTerminal('blockExpr'),
+          ";")),
+      Ap('passExpr', Skip())),
    "}")
 
 .. syntax:: blockExpr
+
+   Choice(0, NonTerminal('basic'), NonTerminal('expr'))
+
+.. syntax:: basic
 
    Choice(
     0,
@@ -613,15 +616,16 @@ Block Syntax Summary
     NonTerminal('TryExpr'),
     NonTerminal('WhenExpr'),
     NonTerminal('LambdaExpr'),
-    NonTerminal('metaExpr'))
+    NonTerminal('metaExpr'),
+    Ap('passExpr', "pass"))
 
 @@ bindExpr? (cf. ForwardExpr)
 
 .. syntax:: expr
 
    Choice(0,
-    NonTerminal('assign'),
-    NonTerminal('ExitExpr'))
+    NonTerminal('ExitExpr'),
+    NonTerminal('assign'))
 
 .. syntax:: ExitExpr
 

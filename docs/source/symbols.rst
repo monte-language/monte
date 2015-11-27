@@ -299,23 +299,17 @@ Use ``diverge`` and ``snapshot`` similarly::
 .. syntax:: MapExpr
 
    Ap('MapExpr',
-     Brackets("[",
-              OneOrMore(Ap('pair', NonTerminal('expr'),
-                               Sigil("=>", NonTerminal('expr'))),
-                    ','),
-              "]"))
+     Brackets("[", OneOrMore(NonTerminal('mapItem'), ','), "]"))
 
+.. syntax:: mapItem
 
-@@@.. syntax:: mapItem
-
-   Choice(
-        0,
-        Sequence("=>", Choice(
-            0,
-            Sequence("&", NonTerminal('name')),
-            Sequence("&&", NonTerminal('name')),
-            NonTerminal('name'))),
-        Sequence(NonTerminal('expr'), "=>", NonTerminal('expr')))
+   Choice(0,
+     Ap('Right', Ap('pair', NonTerminal('expr'),
+                            Sigil("=>", NonTerminal('expr')))),
+     Ap('Left', Sigil("=>", Choice(0,
+           NonTerminal('SlotExpr'),
+           NonTerminal('BindingExpr'),
+           NonTerminal('NounExpr')))))
 
 
 Lexical Syntax

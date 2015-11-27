@@ -52,10 +52,10 @@ Monte has rich support for destructuring assignment using
 .. syntax:: lval
 
    Choice(0,
-    Ap('Right', NonTerminal('name')),
     Ap('Left', Ap('pair',
       NonTerminal('order'),
-      Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))))
+      Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))),
+    Ap('Right', NonTerminal('name')))
 
 @@order? infix?/index ok?
 
