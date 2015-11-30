@@ -112,3 +112,11 @@ How do I force an object to be a certain type?
 Use a guard that coerces objects to be of that type. Guards for all of the
 primitive types in Monte are already builtin; see the documentation on
 :doc:`guards` for more details.
+
+
+How does monte syntax compare with python?
+------------------------------------------
+
+ - `assert` is a keyword in python but not in monte
+ - monte `[k => v]` is like python `{k: v}`
+ - monte `fn { ... }` is like python `lambda: ...`
