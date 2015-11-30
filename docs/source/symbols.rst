@@ -156,7 +156,26 @@ Characters are permitted to be adorable::
 
 .. syntax:: CharExpr
 
-   Ap('CharExpr', Terminal(".char."))
+   Ap('CharExpr',
+     Sigil(Char("'"), Sigil(Many(String("\\\n")),
+         Choice(0,
+           NoneOf("'\\\t"),
+           Sigil(Char("\\"),
+             Choice(0,
+               Ap('hexChar', Choice(0,
+                   Sigil(Char("U"), Count(8, P('hexDigit'))),
+                   Sigil(Char("u"), Count(4, P('hexDigit'))),
+                   Sigil(Char("x"), Count(2, P('hexDigit'))))),
+               Ap('decode', OneOf(r'''btnfr\'"''')))))),
+       tail=Char("'")))
+
+.. syntax:: hexDigit
+
+   OneOf('0123456789abcdefABCDEF')
+
+@@why are (escaped) newlines allowed in char literals? what's the motivation?
+
+@@TODO: test for '	' (tab) not allowed
 
 
 Collections

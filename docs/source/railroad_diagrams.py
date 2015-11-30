@@ -174,20 +174,6 @@ class Sequence(DiagramItem):
         return self
 
 
-class Sigil(Sequence):
-    pass
-
-
-class Ap(Sequence):
-    def __init__(self, fun, *items):
-        Sequence.__init__(self, *items)
-        self.fun = fun
-
-
-class Brackets(Sequence):
-    pass
-
-
 class Choice(DiagramItem):
     def __init__(self, default, *items):
         DiagramItem.__init__(self, 'g')
@@ -283,6 +269,10 @@ class SepBy(Choice):
             # at least one, if no separator
             Choice.__init__(self, 0, OneOrMore(item, repeat))
         self.fun = fun
+
+
+def Many(p):  #@@KLUDGE
+    return ZeroOrMore(p)
 
 
 class OneOrMore(DiagramItem):
@@ -446,6 +436,65 @@ class Skip(DiagramItem):
     def format(self, x, y, width):
         Path(x, y).right(width).addTo(self)
         return self
+
+
+class Sigil(Sequence):
+    def __init__(self, *items, **kw):
+        tail = kw.get('tail')
+        self.tail = tail
+        if tail:
+            items = items + (tail,)
+        Sequence.__init__(self, *items)
+
+
+class Ap(Sequence):
+    def __init__(self, fun, *items):
+        Sequence.__init__(self, *items)
+        self.fun = fun
+
+
+class Brackets(Sequence):
+    pass
+
+
+class Char(Terminal):
+    pass
+
+
+class String(Sequence):
+    def __init__(self, s):
+        self.string = s
+        Sequence.__init__(
+            self, *tuple(Comment('newline') if c == '\n' else Terminal(c)
+                         for c in s))
+
+
+class OneOf(Comment):
+    def __init__(self, elts):
+        self.elts = elts
+        Comment.__init__(self, 'one of: ' + eachChar(elts))
+
+
+def eachChar(s):
+    return ', '.join('tab' if c == '\t' else repr(c) if c <= ' ' else c
+                     for c in s)
+
+
+class NoneOf(Comment):
+    def __init__(self, elts):
+        self.elts = elts
+        Comment.__init__(self, 'none of: ' + eachChar(elts))
+
+
+class P(NonTerminal):
+    pass
+
+
+class Count(Sequence):
+    def __init__(self, qty, p):
+        self.qty = qty
+        self.p = p
+        Sequence.__init__(self, Comment('%d x' % qty), p)
 
 
 if __name__ == '__main__':

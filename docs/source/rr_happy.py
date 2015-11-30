@@ -112,7 +112,12 @@ def expand(expr, hint=''):
         return logged('terminal ' + hint + ' =>',
                       [(unCtor(p), None)])
 
-    elif isinstance(expr, rrd.NonTerminal):
+    elif isinstance(expr, (rrd.NonTerminal, rrd.Comment)):
+        if isinstance(expr, rrd.OneOf):
+            print >>stderr, "TODO: oneOf"
+        elif isinstance(expr, rrd.NoneOf):
+            print >>stderr, "TODO: noneOf"
+
         return logged('nonterminal ' + hint + ' =>',
                       [(unCtor(expr.text), None)])
 
