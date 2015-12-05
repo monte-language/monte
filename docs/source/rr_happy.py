@@ -11,13 +11,18 @@ from pprint import pformat
 
 import railroad_diagrams as rrd
 
-todo= ['interface', 'InterfaceExpr', 'FunctionExpr',
-       'comp', 'logical',
-       'auditors',
-       'ObjectExpr', 'objectExpr2', 'objectScript', 'matchers', 'doco']
+ok = ['CharExpr', 'charConstant', 'hexDigit', 'StrExpr']
+
+todo = ['interface', 'InterfaceExpr', 'FunctionExpr',
+        'comp', 'logical',
+        'auditors',
+        'ObjectExpr', 'objectExpr2', 'objectScript', 'matchers', 'doco']
 
 
 def gen_rule(name, body, expr):
+    if ok and name not in ok:
+        return
+
     yield ''
     yield '{-'
     yield name + ' ::= ' + expr
@@ -93,7 +98,7 @@ def expand(expr, hint=''):
     recur = lambda items: logged('recur',
                                  [expand(item, mkName())
                                   for item in items
-                                  if not isinstance(item, rrd.Comment)])
+                                  if type(item) != rrd.Comment])
     more = lambda first, rest, exclude=[]: logged('more', (
         [first] +
         [(name, rule)
@@ -105,19 +110,34 @@ def expand(expr, hint=''):
     logged("expr class of " + hint, expr.__class__.__name__)
 
     if isinstance(expr, rrd.Terminal):
-        tag = expr.text
-        p = (RAW[tag] if tag in RAW
-             else '(symbol "{tag}")'.format(tag=tag))
+        if isinstance(expr, rrd.Char):
+            c = expr.text
+            lit = "'{c}'".format(
+                c=(r"\'" if c == "'" else
+                   r"\\" if c == '\\' else c))
+
+            p = '(P.char {LIT})'.format(LIT=lit)
+        else:
+            tag = expr.text
+            p = (RAW[tag] if tag in RAW
+                 else '(symbol "{tag}")'.format(tag=tag))
 
         return logged('terminal ' + hint + ' =>',
                       [(unCtor(p), None)])
 
-    elif isinstance(expr, (rrd.NonTerminal, rrd.Comment)):
+    elif isinstance(expr, rrd.Comment):
         if isinstance(expr, rrd.OneOf):
-            print >>stderr, "TODO: oneOf"
+            p = '(P.oneOf {LIT})'.format(LIT=hStr(expr.elts))
         elif isinstance(expr, rrd.NoneOf):
-            print >>stderr, "TODO: noneOf"
+            p = '(P.noneOf {LIT})'.format(LIT=hStr(expr.elts))
+        else:
+            raise NotImplementedError(expr.__class__.__name__, expr.text)
 
+        thisRule = (hint, [[p]])
+        return logged('comment ' + hint + ' =>',
+                      [thisRule])
+
+    elif isinstance(expr, rrd.NonTerminal):
         return logged('nonterminal ' + hint + ' =>',
                       [(unCtor(expr.text), None)])
 
@@ -149,6 +169,12 @@ def expand(expr, hint=''):
             rhs = [['optionMaybe', item]]
             exclude = [hint + '_2']
 
+        elif isinstance(expr, rrd.Many):
+            itemplus = expr.items[0]
+            item = expand(itemplus.item, hint + '_1_1')[0][0]
+            rhs = [['P.many', item]]
+            exclude = [hint + '_1', hint + '_2']
+
         thisRule = (hint, rhs)
 
         return more(thisRule, expanded, exclude)
@@ -160,16 +186,30 @@ def expand(expr, hint=''):
                     for (name, _) in [rules[0]]]]
         if isinstance(expr, rrd.Sigil):
             rhs = choices[0]
-            rhs = ['(' + rhs[0] + ' *>'] + rhs[1:] + [')']
+            rhs = (
+                ['(' + rhs[0] + ' *>'] +
+                ((rhs[1:-1] + ['<* ' + rhs[-1]]) if expr.tail
+                 else rhs[1:])
+                + [')'])
             choices = [rhs]
         elif isinstance(expr, rrd.Ap):
             rhs = [expr.fun + " <$> "] + choices[0]
             choices = [rhs]
+        elif isinstance(expr, rrd.Count):
+            rhs = ["P.count", str(expr.qty)] + choices[0]
+            choices = [rhs]
+        elif isinstance(expr, rrd.String):
+            rhs = ["P.string", hStr(expr.string)]
+            choices = [rhs]
         elif isinstance(expr, rrd.Brackets):
             rhs = choices[0]
-            rhs = (['(' + rhs[0].replace('symbol', 'bra') + ' *>']
-                   + rhs[1:-1] +
-                   ['<* ' + rhs[-1].replace('symbol', 'ket') + ')'])
+            rhs = ['P.between', rhs[0], rhs[-1]] + rhs[1:-1]
+            choices = [rhs]
+        elif isinstance(expr, rrd.ManyTill):
+            rhs = choices[0]
+            item = expanded[0][0][1][0][1]
+            expanded = []
+            rhs = ['P.manyTill', item, rhs[1]]
             choices = [rhs]
 
         thisRule = (hint, choices)
@@ -189,6 +229,12 @@ def expand(expr, hint=''):
         return more(thisRule, expanded, exclude)
     else:
         raise NotImplementedError(expr)
+
+
+def hStr(s):
+    '''haskell string expression for s: "..." only; never '...'
+    '''
+    return '"' + repr("'" + s)[2:]  # KLUDGE
 
 
 '''

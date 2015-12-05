@@ -271,8 +271,16 @@ class SepBy(Choice):
         self.fun = fun
 
 
-def Many(p):  #@@KLUDGE
-    return ZeroOrMore(p)
+class Many(Choice):
+    def __init__(self, item):
+        Choice.__init__(self, 0, OneOrMore(item), Skip())
+
+
+class ManyTill(Sequence):
+    def __init__(self, item, end):
+        self.item = item
+        self.end = end
+        return Sequence.__init__(self, Many(item), end)
 
 
 class OneOrMore(DiagramItem):
