@@ -259,9 +259,9 @@ Block Syntax Summary
     Choice(0, Sequence("bind", NonTerminal('name')),
            "_",
            NonTerminal('name')),
-    Optional(NonTerminal('guard')), Comment("objectExpr"))
+    NonTerminal('guardOpt'), Comment("objectExpr"))
 
-.. syntax:: objectExpr
+.. syntax:: objectExpr2
 
    Sequence(
     Optional(Sequence('extends', NonTerminal('order'))),
@@ -274,12 +274,6 @@ Block Syntax Summary
     Optional(NonTerminal('doco')),
     Choice(0, "pass", ZeroOrMore("@@meth")),
     Choice(0, "pass", ZeroOrMore(NonTerminal('matchers'))))
-
-.. syntax:: matchers
-
-   OneOrMore(Sequence("match",
-             NonTerminal('pattern'),
-             NonTerminal('block')))
 
 .. syntax:: doco
 
@@ -306,6 +300,20 @@ Block Syntax Summary
   /** doc string */
   object foo as someAuditor implements firstAuditor, secondAuditor extends baz { ... }
 
+.. syntax:: objectFunction
+
+   Ap('ObjectExpr',
+     Sigil('def', NonTerminal('pattern')),
+     Brackets("(", SepBy(NonTerminal("pattern"), ","), ")"),
+     NonTerminal('guardOpt'),
+     NonTerminal('block'))
+
+.. todo:: objectFunction named args, auditors; FunctionScript?
+
+.. syntax:: ForwardExpr
+
+   Ap('ForwardExpr', Sigil('def', NonTerminal('name')))
+
 .. syntax:: InterfaceExpr
 
    Sequence('@@@@@')
@@ -319,11 +327,14 @@ Block Syntax Summary
 
 .. syntax:: IfExpr
 
-   Sequence(
-    "if", "(", NonTerminal('expr'), ")", NonTerminal('block'),
-    Optional(Sequence("else", Choice(
-        0, Sequence("if", Comment('blockExpr@@')),
-        NonTerminal('block')))))
+   Ap('IfExpr',
+     Sigil("if", Brackets("(", NonTerminal('expr'), ")")),
+     NonTerminal('block'),
+     Maybe(
+       Sigil("else",
+        Choice(0,
+	  NonTerminal('IfExpr'),
+          NonTerminal('block')))))
 
 ::
 
@@ -333,20 +344,18 @@ Block Syntax Summary
 
 .. syntax:: ForExpr
 
-   Sequence(
-    "for",
-    NonTerminal('pattern'),
-    Optional(Sequence("=>", NonTerminal('pattern'))),
-    "in", NonTerminal('comp'),
-    NonTerminal('blockCatch'))
+   Ap('ForExpr',
+     Sigil("for", NonTerminal('pattern')),
+     Maybe(Sigil("=>", NonTerminal('pattern'))),
+     Sigil("in", NonTerminal('comp')),
+     NonTerminal('block'),
+     Maybe(NonTerminal('catcher')))
 
-.. syntax:: blockCatch
+@@ should be Either (Pattern, Pattern) Pattern
 
-   Sequence(
-    NonTerminal('block'),
-    Optional(
-        Sequence("catch", NonTerminal('pattern'),
-                 NonTerminal('block'))))
+.. syntax:: catcher
+
+   Sigil("catch", Ap('pair', NonTerminal('pattern'), NonTerminal('block')))
 
 ::
 
@@ -356,8 +365,10 @@ Block Syntax Summary
 
 .. syntax:: WhileExpr
 
-   Sequence(
-    "while", "(", NonTerminal('expr'), ")", NonTerminal('blockCatch'))
+   Ap('WhileExpr',
+    Sigil("while", Brackets("(", NonTerminal('expr'), ")")),
+    NonTerminal('block'),
+    Maybe(NonTerminal('catcher')))
 
 ::
 
@@ -366,15 +377,14 @@ Block Syntax Summary
 
 .. syntax:: SwitchExpr
 
-   Sequence(
-    "switch", "(", NonTerminal('expr'), ")",
-    "{", NonTerminal('matchers'), "}")
+   Ap('SwitchExpr',
+	     Sigil("switch", Brackets("(", NonTerminal('expr'), ")")),
+	     Brackets("{", NonTerminal('matchers'), "}"))
 
 .. syntax:: matchers
 
-   OneOrMore(Sequence("match",
-             NonTerminal('pattern'),
-             NonTerminal('block')))
+   SepBy(
+     Sigil("match", Ap('pair', NonTerminal('pattern'), NonTerminal('block'))))
 
 ::
 
@@ -382,9 +392,10 @@ Block Syntax Summary
 
 .. syntax:: EscapeExpr
 
-   Sequence(
-    "escape", NonTerminal('pattern'),
-    NonTerminal('blockCatch'))
+   Ap('EscapeExpr',
+    Sigil("escape", NonTerminal('pattern')),
+    NonTerminal('block'),
+    Maybe(NonTerminal('catcher')))
 
 ::
 
@@ -392,16 +403,10 @@ Block Syntax Summary
 
 .. syntax:: TryExpr
 
-   Sequence(
-    "try", NonTerminal('block'), NonTerminal('catchers'))
-
-.. syntax:: catchers
-
-   Sequence(
-    ZeroOrMore(Sequence("catch",
-                        NonTerminal('pattern'),
-                        NonTerminal('block'))),
-    Optional(Sequence("finally", NonTerminal('block'))))
+   Ap('TryExpr',
+    Sigil("try", NonTerminal('block')),
+    SepBy(NonTerminal('catcher')),
+    Maybe(Sigil("finally", NonTerminal('block'))))
 
 ::
 
@@ -409,11 +414,11 @@ Block Syntax Summary
 
 .. syntax:: WhenExpr
 
-   Sequence(
-    "when",
-    "(", OneOrMore(NonTerminal('expr'), ','), ")",
-    "->", NonTerminal('block'),
-    NonTerminal('catchers'))
+   Ap('WhenExpr',
+     Sigil("when", Brackets("(", SepBy(NonTerminal('expr'), ','), ")")),
+     Sigil("->", NonTerminal('block')),
+     SepBy(NonTerminal('catcher')),
+     Maybe(Sigil("finally", NonTerminal('block'))))
 
 ::
 
@@ -421,9 +426,8 @@ Block Syntax Summary
 
 .. syntax:: LambdaExpr
 
-   Sequence(
-    "fn",
-    ZeroOrMore(NonTerminal('pattern'), ','),
+   Ap('LambdaExpr',
+    Sigil("fn", SepBy(NonTerminal('pattern'), ',')),
     NonTerminal('block'))
 
 ::
@@ -432,13 +436,14 @@ Block Syntax Summary
 
 .. todo:: doctest ``/** docstring */``
 
-.. syntax:: MetaExpr
+.. syntax:: metaExpr
 
-   Sequence(
-    "meta", ".",
-    Choice(0,
-           Sequence("context", "(", ")"),
-           Sequence("getState", "(", ")")))
+   Sigil("meta", Sigil(".",
+     Choice(0,
+       Ap('return MetaContextExpr',
+         Sigil("context", Brackets("(", Skip(), ")"))),
+       Ap('return MetaStateExpr',
+         Sigil("getState", Brackets("(", Skip(), ")"))))))
 
 ::
 
@@ -447,27 +452,26 @@ Block Syntax Summary
 
 .. syntax:: block
 
-   Sequence(
-    "{",
-    Choice(
-        0,
-        ZeroOrMore(
-            Choice(
-                0,
-                NonTerminal('blockExpr'),
-                NonTerminal('expr')),
-            ";"),
-        "pass"),
-    "}")
+   Brackets("{",
+    Choice(0,
+      Ap('passExpr', "pass"),
+      Ap('SequenceExpr',
+        SepBy(
+          NonTerminal('blockExpr'),
+          ";")),
+      Ap('passExpr', Skip())),
+   "}")
 
 .. syntax:: blockExpr
+
+   Choice(0, NonTerminal('basic'), NonTerminal('expr'))
+
+.. syntax:: basic
 
    Choice(
     0,
     NonTerminal('FunctionExpr'),
     NonTerminal('ObjectExpr'),
-    NonTerminal('bind'),
-    NonTerminal('def'),
     NonTerminal('InterfaceExpr'),
     NonTerminal('IfExpr'),
     NonTerminal('ForExpr'),
@@ -477,61 +481,47 @@ Block Syntax Summary
     NonTerminal('TryExpr'),
     NonTerminal('WhenExpr'),
     NonTerminal('LambdaExpr'),
-    NonTerminal('MetaExpr'))
+    NonTerminal('metaExpr'),
+    Ap('passExpr', "pass"))
+
+@@ bindExpr? (cf. ForwardExpr)
 
 .. syntax:: expr
 
-   Choice(
-    0,
-    NonTerminal('assign'),
-    Sequence(
-        Choice(0, "continue", "break", "return"),
-        Choice(0,
-               Sequence("(", ")"),
-               ";",
-               NonTerminal('blockExpr'))))
+   Choice(0,
+    NonTerminal('ExitExpr'),
+    NonTerminal('assign'))
 
-.. syntax:: bind
+.. syntax:: ExitExpr
 
-   Sequence(
-    "bind",
-    NonTerminal('name'),
-    Optional(NonTerminal('guard')), Comment("objectExpr@@"))
-
-.. syntax:: name
-
-   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
-
-.. syntax:: def
-
-   Sequence(
-    "def",
-    Choice(
-        0,
-        Sequence(
-            Choice(
-                0,
-                Sequence("bind", NonTerminal("name"),
-                         Optional(NonTerminal('guard'))),
-                NonTerminal("name")),
-            Choice(0, Comment("objectFunction@@"), NonTerminal('assign'))),
-        NonTerminal('assign')))
+   Ap('ExitExpr',
+      Choice(0, "continue", "break", "return"),
+      Choice(0, Ap('nothing', Brackets("(", Skip(), ")")),
+      Ap('Just', NonTerminal('blockExpr'))))
 
 .. todo:: refactor w.r.t. FunctionExpr
 
-.. syntax:: comprehension
+@@    Sequence("[",
+             "for", NonTerminal('comprehension'),
+             "]"))
 
-   Choice(
-    0,
-    Sequence(NonTerminal('pattern'),
-             "in", NonTerminal('iter'),
-             NonTerminal('expr')),
-    Sequence(NonTerminal('pattern'), "=>", NonTerminal('pattern'),
-             "in", NonTerminal('iter'),
-             NonTerminal('expr'), "=>", NonTerminal('expr')))
+.. syntax:: ListComprehensionExpr
 
-.. syntax:: iter
+   Brackets("[",
+     Ap('ListComprehensionExpr',
+       Sigil("for", NonTerminal('pattern')),
+       Sigil("in", Brackets("(", NonTerminal('order'), ")")),
+       Maybe(Sigil("if", Brackets("(", NonTerminal('expr'), ")"))),
+       NonTerminal('expr')),
+     "]")
 
-   Sequence(
-    NonTerminal('order'),
-    Optional(Sequence("if", NonTerminal('comp'))))
+.. syntax:: MapComprehensionExpr
+
+   Brackets("[",
+     Ap('MapComprehensionExpr',
+       Sigil("for", NonTerminal('pattern')),
+       Sigil("=>", NonTerminal('pattern')),
+       Sigil("in", Brackets("(", NonTerminal('order'), ")")),
+       Maybe(Sigil("if", Brackets("(", NonTerminal('expr'), ")"))),
+       NonTerminal('expr')),
+     "]")

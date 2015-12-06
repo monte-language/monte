@@ -88,14 +88,18 @@ Guard Syntax Summary
 
 .. syntax:: guard
 
-   Sequence(
-    ':',
-    Choice(
-        0, Sequence('IDENTIFIER',
-                    Optional(Sequence('[',
-                                      OneOrMore(NonTerminal('expr'), ','),
-                                      ']'))),
-        Sequence('(', NonTerminal('expr'), ')')))
+   Choice(0,
+     Ap('GetExpr',
+        Ap('NounExpr', 'IDENTIFIER'),
+        Brackets('[', SepBy(NonTerminal('expr'), ','), ']')),
+     Ap('NounExpr', 'IDENTIFIER'),
+     Brackets('(', NonTerminal('expr'), ')'))
+
+@@ TODO: rename to maybeGuard
+
+.. syntax:: guardOpt
+
+   Maybe(Sigil(':', NonTerminal('guard')))
 
 
 Guards (@move?)

@@ -98,28 +98,37 @@ Patterns
 .. syntax:: pattern
 
    Choice(0,
-          NonTerminal('namePattern'),
-	  Choice(0,
-	    NonTerminal('SamePattern'),
-	    NonTerminal('NotSamePattern')),
-          NonTerminal('QuasiLiteralPattern'),
-          NonTerminal('ViaPattern'),
-          NonTerminal('IgnorePattern'),
-          NonTerminal('ListPattern'),
-          NonTerminal('MapPattern'),
-          NonTerminal('SuchThatPattern'))
+          NonTerminal('postfixPatt'))
 
-.. syntax:: namePattern
+.. syntax:: postfixPatt
 
    Choice(0,
-           NonTerminal('FinalPattern'),
-           NonTerminal('VarPattern'),
-           NonTerminal('BindPattern'),
-           NonTerminal('SlotPattern'),
-           NonTerminal('BindingPattern'))
+          NonTerminal('SuchThatPatt'),
+          NonTerminal('prefixPatt'))
+
+.. syntax:: prefixPatt
+
+   Choice(0,
+          NonTerminal('MapPatt'),
+          NonTerminal('ListPatt'),
+	  NonTerminal('SamePatt'),
+	  NonTerminal('NotSamePatt'),
+          NonTerminal('QuasiliteralPatt'),
+          NonTerminal('ViaPatt'),
+          NonTerminal('IgnorePatt'),
+          NonTerminal('namePatt'))
+
+.. syntax:: namePatt
+
+   Choice(0,
+           NonTerminal('FinalPatt'),
+           NonTerminal('VarPatt'),
+           NonTerminal('BindPatt'),
+           NonTerminal('SlotPatt'),
+           NonTerminal('BindingPatt'))
 
 
-FinalPattern (kernel)
+FinalPatt (kernel)
 ~~~~~~~~~~~~~~~~~~~~~
 
 ::
@@ -128,10 +137,9 @@ FinalPattern (kernel)
   ::"hello, world"
   x :G
 
-.. syntax:: FinalPattern
+.. syntax:: FinalPatt
 
-   Sequence(Choice(0, "IDENTIFIER", ".String."),
-                    Optional(NonTerminal('guard')))
+   Ap('FinalPatt', NonTerminal('name'), NonTerminal('guardOpt'))
 
 Final patterns match an object and bind a name to them, optionally
 testing them for guard conformance. Guard conformance
@@ -154,13 +162,8 @@ One of the most ubiquitous patterns. Binds a name unconditionally to a
 Like above, but coerced by a :ref:`guard <guards>`.
 
 
-VarPattern (kernel)
-~~~~~~~~~~~~~~~~~~~
-
-.. syntax:: VarPattern
-
-   Sequence("var", NonTerminal('name'),
-            Optional(NonTerminal('guard')))
+VarPatt (kernel)
+~~~~~~~~~~~~~~~~
 
 Var patterns match an object and bind a mutable name to them,
 optionally testing them for guard conformance. Guard
@@ -192,13 +195,13 @@ reassignment to the name later on using an assign expression.
 
         def [first, var second] := value
 
-BindPattern
-~~~~~~~~~~~
+.. syntax:: VarPatt
 
-.. syntax:: BindPattern
+   Ap('VarPatt', Sigil("var", NonTerminal('name')), NonTerminal('guardOpt'))
 
-   Sequence("bind", NonTerminal('name'),
-       Optional(NonTerminal('guard')))
+
+BindPatt
+~~~~~~~~
 
 ::
 
@@ -209,6 +212,11 @@ BindPattern
 Bind patterns match an object and bind it to a forward-declared name,
 optionally testing for guard conformance.
 
+.. syntax:: BindPatt
+
+   Ap('BindPatt', Sigil("bind", NonTerminal('name')), NonTerminal('guardOpt'))
+
+
 Expansion
 *********
 
@@ -217,14 +225,8 @@ Expansion
   >>> m`def bind x := 2`.expand()
   m`def via (_bind.run(x_Resolver, null)) _ := 2`
 
-
-SlotPattern
-~~~~~~~~~~~
-
-.. syntax:: SlotPattern
-
-   Sequence("&", NonTerminal('name'),
-       Optional(NonTerminal('guard')))
+SlotPatt
+~~~~~~~~
 
 ::
 
@@ -232,6 +234,10 @@ SlotPattern
 
 Slot patterns match an object and bind them to the slot of the
 pattern's name, optionally testing the object for guard conformance.
+
+.. syntax:: SlotPatt
+
+   Ap('SlotPatt', Sigil("&", NonTerminal('name')), NonTerminal('guardOpt'))
 
 Expansion
 *********
@@ -241,12 +247,12 @@ Expansion
   >>> m`def &x := 1`.expand()
   m`def via (__slotToBinding) &&x := 1`
 
-BindingPattern (kernel)
-~~~~~~~~~~~~~~~~~~~~~~~
+BindingPatt (kernel)
+~~~~~~~~~~~~~~~~~~~~
 
-.. syntax:: BindingPattern
+.. syntax:: BindingPatt
 
-   Sequence("&&", NonTerminal('name'))
+   Ap('BindingPatt', Sigil("&&", NonTerminal('name')))
 
 ::
 
@@ -264,12 +270,8 @@ A bind pattern does not bind a name, but binds a *binding*.
 
 
 
-IgnorePattern (kernel)
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. syntax:: IgnorePattern
-
-   Sequence("_", Optional(NonTerminal('guard')))
+IgnorePatt (kernel)
+~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -294,16 +296,13 @@ Equivalent to ``value``. Does nothing.
 
 Performs :ref:`guard <guards>` coercion and discards the result.
 
+.. syntax:: IgnorePatt
 
-ListPattern (kernel)
-~~~~~~~~~~~~~~~~~~~~
+   Ap('IgnorePatt', Sigil("_", NonTerminal('guardOpt')))
 
-.. syntax:: ListPattern
 
-   Sequence("[",
-            ZeroOrMore(NonTerminal('pattern'), ','),
-            ']',
-            Optional(Sequence("+", NonTerminal('pattern'))))
+ListPatt (kernel)
+~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -335,38 +334,15 @@ where each subpattern in the head matches the corresponding element in the
 list. The rest of the list is collected into the tail and the tail pattern is
 matched against it.
 
+.. syntax:: ListPatt
+
+   Ap('ListPatt',
+     Brackets("[", SepBy(NonTerminal('pattern'), ','), ']'),
+     Maybe(Sigil("+", NonTerminal('pattern'))))
+
+
 MapPattern
 ~~~~~~~~~~
-
-.. syntax:: MapPattern
-
-   Sequence("[",
-            OneOrMore(NonTerminal('mapPatternItem'), ','),
-            ']',
-            Optional(Sequence("|", NonTerminal('pattern'))))
-
-.. syntax:: mapPatternItem
-
-   Sequence(
-        Choice(0,
-               Sequence("=>", NonTerminal('namePattern')),
-               Sequence(
-                 Choice(0,
-		   Choice(0, ".String.", ".int.", ".float64.", ".char."),
-                   Sequence("(", NonTerminal('expr'), ")")),
-                 "=>", NonTerminal('pattern'))),
-        Optional(Sequence(":=", NonTerminal('order'))))
-
-.. syntax:: mapItem
-
-   Choice(
-        0,
-        Sequence("=>", Choice(
-            0,
-            Sequence("&", NonTerminal('name')),
-            Sequence("&&", NonTerminal('name')),
-            NonTerminal('name'))),
-        Sequence(NonTerminal('expr'), "=>", NonTerminal('expr')))
 
 ::
 
@@ -416,12 +392,27 @@ Any pair in a map pattern can have a default value using the above syntax.  In
 this example, the ``patt`` subpattern will be asked to match against either
 the value corresponding to ``"key"``, or ``"default value"``.
 
+.. syntax:: MapPatt
+
+   Ap('MapPatt',
+     Brackets("[", OneOrMore(NonTerminal('mapPattItem'), ','), ']'),
+     Maybe(Sigil("|", NonTerminal('pattern'))))
+
+.. syntax:: mapPattItem
+
+   Ap('pair',
+     Choice(0,
+       Ap('Right', Ap('pair',
+         Choice(0,
+           NonTerminal('LiteralExpr'),
+           Brackets("(", NonTerminal('expr'), ")")),
+         Sigil("=>", NonTerminal('pattern')))),
+       Ap('Left', Sigil("=>", NonTerminal('namePatt')))),
+     Maybe(Sigil(":=", NonTerminal('order'))))
+
+
 SamePattern
 ~~~~~~~~~~~
-
-.. syntax:: SamePattern
-
-   Sequence("==", NonTerminal('prim'))
 
 ::
 
@@ -442,12 +433,13 @@ Exactly patterns contain a single expression and match if (and only if)
 While this particular formulation of an exactly pattern might not be very
 useful, it can be handy as a pattern in switch expressions.
 
+.. syntax:: SamePatt
+
+   Ap('SamePatt', Sigil("==", NonTerminal('prim')))
+
+
 NotSamePattern
 ~~~~~~~~~~~~~~
-
-.. syntax:: NotSamePattern
-
-   Sequence("!=", NonTerminal('prim'))
 
 ::
 
@@ -465,21 +457,13 @@ Not
 Exactly patterns contain a single expression and match if (and only if)
 ``value != specimen`` according to typical Monte semantics.
 
-QuasiliteralPattern
-~~~~~~~~~~~~~~~~~~~
+.. syntax:: NotSamePatt
 
-.. syntax:: QuasiliteralPattern
+   Ap('NotSamePatt', Sigil("!=", NonTerminal('prim')))
 
-   Sequence(
-    Optional(Terminal("IDENTIFIER")),
-    '`',
-    ZeroOrMore(
-        Choice(0, Comment('...text...'),
-               Choice(
-                   0,
-                   Terminal('@IDENT'),
-                   Sequence('@{', NonTerminal('pattern'), '}')))),
-    '`')
+
+QuasiliteralPatt
+~~~~~~~~~~~~~~~~
 
 ::
 
@@ -500,13 +484,22 @@ Quasiliteral
 Any quasiliteral can be used as a pattern.
 
 
+.. syntax:: QuasiliteralPatt
+
+   Ap('QuasiliteralPatt',
+    Maybe(Terminal("IDENTIFIER")),
+    Brackets('`',
+    SepBy(
+        Choice(0,
+	  Ap('Left', Terminal('QUASI_TEXT')),
+          Ap('Right',
+            Choice(0,
+              Ap('(\\n -> FinalPatt n Nothing)', Terminal('AT_IDENT')),
+              Brackets('@{', NonTerminal('pattern'), '}'))))),
+    '`'))
+
 ViaPattern (kernel)
 ~~~~~~~~~~~~~~~~~~~
-
-.. syntax:: ViaPattern
-
-   Sequence("via", "(", NonTerminal('expr'), ')',
-            NonTerminal('pattern'))
 
 ::
 
@@ -528,13 +521,15 @@ simple tests.
 A via pattern matches if its view successfully transforms the specimen and the
 subpattern matches the transformed specimen.
 
+.. syntax:: ViaPatt
+
+   Ap('ViaPatt',
+     Sigil("via", Brackets("(", NonTerminal('expr'), ')')),
+     NonTerminal('pattern'))
+
 
 SuchThatPattern
 ~~~~~~~~~~~~~~~
-
-.. syntax:: SuchThatPattern
-
-   Sequence(NonTerminal('pattern'), "?", "(", NonTerminal('expr'), ")")
 
 ::
 
@@ -552,9 +547,7 @@ the condition expression in an ``if`` expression. The such-that pattern first
 speculatively performs the pattern match in its subpattern, and then succeeds
 or fails based on whether the condition evaluates to ``true`` or ``false``.
 
-CallPattern
-~~~~~~~~~~~
+.. syntax:: SuchThatPatt
 
-a(p, q)
-
-.. todo:: check whether this is implemented.
+   Ap('SuchThatPatt', NonTerminal('prefixPatt'),
+      Sigil("?", Brackets("(", NonTerminal('expr'), ")")))

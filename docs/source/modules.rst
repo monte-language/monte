@@ -61,6 +61,15 @@ pass audition by ``DeepFrozen``::
     def f() as DeepFrozen:
         return 42
 
+.. syntax:: module_
+
+   Ap('Module',
+    Sigil("imports", SepBy(NonTerminal('namePatt'))),
+    Maybe(
+      Sigil('exports', Brackets("(", SepBy(NonTerminal('name'), ","), ")"))),
+    NonTerminal('block'))
+
+
 Mechanics
 ---------
 
