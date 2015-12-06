@@ -100,6 +100,8 @@ Calls may be curried::
     Choice(0, '.', '<-'),
     Choice(0, "IDENTIFIER", ".String."))
 
+.. _operators:
+
 Operators
 ---------
 
@@ -172,17 +174,22 @@ Comparison is more strict than you might expect::
 
   >>> 3 == "3"
   false
+
   >>> 1 + 1 == 2.0
   false
-  >>> 3 < "3"
+
+  ▲> 3 < "3"
   Parse error: Object was wrong type: Not an integer!
 
 Use ``<=>`` aka ``asBigAs`` to compare magnitudes::
 
   >>> 2.0 <=> 1 + 1
   true
+
   >>> 2 + 1 <=> 3.0
   true
+
+expansion::
   >>> m`2.0 <=> 1 + 1`.expand()
   m`_comparer.asBigAs(2.000000, 1.add(1))`
 
@@ -190,32 +197,21 @@ You can also compare with a pattern::
 
   >>> [1, 2] =~ [a, b]
   true
+
   >>> [1, "x"] =~ [_ :Int, _ :Str]
   true
+
   >>> "abc" =~ `a@rest`
   true
+
   >>> "xbc" =~ `a@rest`
   false
+
   >>> "xbc" !~ `a@rest`
-  Result: true
+  true
 
 Logical
 ~~~~~~~
-
-.. sidebar:: ternary conditional expression
-
-   While monte does not have the ``c ? x : y`` ternary conditional
-   operator, the ``if`` expression works just as well. For example, to
-   tests whether ``i`` is even::
-
-     >>> { def i := 3; if (i % 2 == 0) { "yes" } else { "no" } }
-     "no"
-
-   Don't forget that Monte requires ``if`` expressions to evaluate
-   their condition to a ``Bool``::
-
-     ▲> if (1) { "yes" } else { "no" }
-     Parse error: Not a boolean!
 
 Monte uses C syntax for the basic logical operators::
    >>> true && true
@@ -224,6 +220,7 @@ Monte uses C syntax for the basic logical operators::
 We also have negated implication operator::
    >>> true &! false
    true
+
    >>> m`x &! y`.expand()
    m`x.butNot(y)`
 
@@ -247,6 +244,7 @@ The inclusive range operator is a syntactic shortcut::
 
   >>> 1..4
   1..!5
+
   >>> [for x in (1..4) x * 2]
   [2, 4, 6, 8]
 
