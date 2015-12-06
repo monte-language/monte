@@ -1,41 +1,3 @@
-===
-FAQ
-===
-
-Unusual Monteisms
-=================
-
-Do I have to specify a default matcher for a switch expression?
----------------------------------------------------------------
-
-The short answer: No. You might want to read on for the consequences of
-omitting it, though.
-
-Switch expressions expand to a tree of possibilities, with each matcher being
-tried in turn until one matches. If none of them match, then an exception is
-thrown with a short description of the failing specimen.
-
-To override this behavior, specify a matcher that cannot fail. Examples of
-patterns that cannot fail include final and var patterns without guards, and
-ignore patterns::
-
-    switch (specimen):
-        match ==x:
-            traceln(`$specimen was just like $x`)
-        match i :Int:
-            traceln(`$i is an Int`)
-        match _:
-            traceln(`Default matcher!`)
-
-In this example, since the final matcher always succeeds, the default behavior
-of throwing an exception is effectively overridden.
-
-The long answer: When Monte expands ``switch`` expressions into Kernel-Monte, the
-entire expression becomes a long series of ``if`` expressions. The final
-``else`` throws an exception using the ``_switchFailed`` helper object. If the
-penultimate ``if`` test cannot fail, then the final ``else`` is unreachable,
-and it will be pruned by the optimizer during compilation.
-
 Turns, References, and Vats
 ===========================
 
@@ -105,35 +67,3 @@ they are near references. For example, all literals are near: ``def lue :=
 When in doubt, remember that there is a ``Near`` guard which can be used to
 confirm that an object is in the same vat as you and thus available for
 synchronous calls.
-
-Guards
-======
-
-How do I force an object to be a certain type?
-----------------------------------------------
-
-Use a guard that coerces objects to be of that type. Guards for all of the
-primitive types in Monte are already builtin; see the documentation on
-:doc:`guards` for more details.
-
-Are guards expensive?
----------------------
-
-Monte does require every guard to be executed on every assignment. This means
-that every ``def`` runs its guards once (during definition) and every ``var``
-runs its guards every time an assignment occurs. Since guards are Monte
-objects and can be user-defined, concerns about performance are well-founded
-and reasonable.
-
-Monte implementations are permitted to *elide* any guards which can be
-statically proven to always pass their specimens. An ahead-of-time compiler
-might use type inference to prove that all specimens at a definition site
-might be of a certain type. A just-in-time compiler might recognize at runtime
-that a guard's code is redundant with unboxing, and elide both the unboxing
-and the guard.
-
-.. note::
-    These optimizations aren't hypothetical. Corbin and Allen have talked
-    about gradual typing and type inference in Monte, and the Typhon virtual
-    machine almost always can remove typical trivial guards like ``Int`` and
-    ``Bool``.

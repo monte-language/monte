@@ -68,8 +68,8 @@ These qualities cannot be achieved with traditional security
 approaches. Do not expect the next release of Java, Windows, or Linux
 to fix the problem: the flaws in these systems lie at the heart of
 their architectures, unfixable without breaking upward compatibility,
-as we shall discuss in the chapter on @@LINK Secure Distributed
-Programming.
+as we shall discuss in the chapter on
+:ref:`secure-distributed-computing`.
 
 .. sidebar:: The origin of Monte's name
 
@@ -121,10 +121,10 @@ Preface to Monte Documentation
 We begin with an introduction to practical E programming. Comparisons
 to python are frequent, so some understanding of python is desirable.
 
-Later sections form the @@LINK Monte language specification.
+Later sections form the :ref:`spec` and the :ref:`stdlib`.
 
 This largely follows the structure of `E in a Walnut`__ by Marc Stiegler
-and `The E Language`__ by Mark Miller.
+and `The E Language`__ and `ELib`__ by Mark Miller.
 
 .. todo:: To what extent do we want to invite feedback and offer
           support? i.e. what to write where Walnut says "If you
@@ -133,6 +133,8 @@ and `The E Language`__ by Mark Miller.
 
 __ http://wiki.erights.org/wiki/Walnut
 __ http://erights.org/elang/index.html
+__ http://erights.org/elib/index.html
+
 
 Fireworks In Part II
 --------------------
@@ -142,16 +144,19 @@ programs, the main power of Monte becomes evident only after you move into
 distributed programming. It would be tempting to introduce the
 distributed computing features first...except that you can't really do
 any meaningful computing without the basic data, flow, function, and
-object structures. So we introduce @@LINK "Ordinary Programming" Part
+object structures. So we introduce :ref:`ordinary-programming` in Part
 I before getting into the serious distributed computing
 facilities.
 
 However, since E was designed in the python syntax tradition, an
-experienced programmer can probably glean enough from the @@LINK Quick
-Reference Card to skip directly to @@LINK Part II on Distributed
-Computing. If you are short of time and have the requisite background,
-we recommend that strategy. Go back and read @@LINK Part I when you are
-convinced that E's power for distributed programming meets your needs.
+experienced programmer can probably glean enough from the Quick
+Reference Card to skip directly to Part II on
+:ref:`distributed-computing`. If you are short of time and have the
+requisite background, we recommend that strategy. Go back and read
+:ref:`Part I<ordinary-programming>` when you are convinced that Monte's
+power for distributed programming meets your needs.
+
+.. todo:: quick reference card
 
 
 Getting Started
@@ -192,25 +197,6 @@ __ https://atom.io/packages/language-monte
 
 __ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
 
-
-.. _trace:
-
-Diagnostics, Documentation, and Debugging
------------------------------------------
-
-Monte strives to provide useful error messages and self-documenting objects::
-
-  ▲> help(Ref)
-  Result: Object type: RefOps
-  Ref management and utilities.
-  Method: broken/1
-  Method: isBroken/1
-  Method: isDeepFrozen/1
-  ...
-
-Currently the most convenient way to print out messages from your program is
-with the ``trace()`` and ``traceln()`` built-in functions. The only difference
-between them is that ``traceln()`` automatically adds a newline.
 
 .. rubric:: Notes
 

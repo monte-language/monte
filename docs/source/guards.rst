@@ -1,33 +1,9 @@
 .. _guards:
 
-======
-Guards
-======
-
-.. note::
-    This section sucks less. It still has a harsh opening though. Maybe
-    something could be said about typical guard usage, or some more source
-    code examples could be written?
-
-::
-
-    def someName :SomeGuard exit ej := someExpr
-
-A guard is a syntactic element which ensures that an object has a certain
-property. Guards are used to (in)formally prove that sections of code behave
-correctly. A guard examines a value and returns a (possibly different) value
-which satisfies its property, or ejects or otherwise aborts the computation.
-
-We call the process of a guard examining an object **coercion**. The object
-being examined and coerced is called the **specimen**.
-
-Builtin Guards
-==============
+Dynamic "type checking" and Guards
+----------------------------------
 
 Monte comes equipped with several very useful guards.
-
-Type-checking
--------------
 
 Several builtin guards are used for asserting that a value is of a given type:
 
@@ -56,7 +32,7 @@ list::
     def setOfUppercaseChars :Set['A'..'Z'] := ['A', 'C', 'E', 'D', 'E', 'C', 'A', 'D', 'E'].asSet()
 
 Other Builtin Guards
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 Some other builtin guards are worth mentioning:
 
@@ -66,8 +42,31 @@ Some other builtin guards are worth mentioning:
 * ``Same`` must be specialized, returning a guard which only accepts values
   that are ``==`` to the value on which it was specialized.
 
+
+Are guards expensive?
+~~~~~~~~~~~~~~~~~~~~~
+
+Monte does require every guard to be executed on every assignment. This means
+that every ``def`` runs its guards once (during definition) and every ``var``
+runs its guards every time an assignment occurs. Since guards are Monte
+objects and can be user-defined, concerns about performance are well-founded
+and reasonable.
+
+Monte implementations are permitted to *elide* any guards which can be
+statically proven to always pass their specimens. An ahead-of-time compiler
+might use type inference to prove that all specimens at a definition site
+might be of a certain type. A just-in-time compiler might recognize at runtime
+that a guard's code is redundant with unboxing, and elide both the unboxing
+and the guard.
+
+.. note::
+    These optimizations aren't hypothetical. Corbin and Allen have talked
+    about gradual typing and type inference in Monte, and the Typhon virtual
+    machine almost always can remove typical trivial guards like ``Int`` and
+    ``Bool``.
+
 Glossary
---------
+~~~~~~~~
 
 .. glossary::
 
@@ -85,7 +84,7 @@ Glossary
         internal state of Un or the object.
 
 Guard Syntax Summary
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 .. syntax:: guard
 
@@ -98,3 +97,25 @@ Guard Syntax Summary
                                       ']'))),
         Sequence('(', NonTerminal('expr'), ')')))
 
+
+Guards (@move?)
+~~~~~~~~~~~~~~~
+
+.. note::
+    This section sucks less. It still has a harsh opening though. Maybe
+    something could be said about typical guard usage, or some more source
+    code examples could be written?
+
+::
+
+    def someName :SomeGuard exit ej := someExpr
+
+A guard is a syntactic element which ensures that an object has a certain
+property. Guards are used to (in)formally prove that sections of code behave
+correctly. A guard examines a value and returns a (possibly different) value
+which satisfies its property, or ejects or otherwise aborts the computation.
+
+We call the process of a guard examining an object **coercion**. The object
+being examined and coerced is called the **specimen**.
+
+.. include:: custom-guards.rst

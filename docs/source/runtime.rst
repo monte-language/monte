@@ -1,8 +1,5 @@
 .. _stdlib:
 
-Monte Standard Runtime Library
-==============================
-
 .. todo:: doctests with no expected results are not implemented at the
           time of this writing.
 
@@ -50,7 +47,6 @@ Reference/object operations
  - `Ref` Provides methods for creating and examining references, and
    adding callbacks to them.
 
-
 DeepFrozen Guard
 ~~~~~~~~~~~~~~~~
 
@@ -59,6 +55,8 @@ for (i.e., transitively immutable) objects::
    >>> DeepFrozen
    DeepFrozen
 
+
+.. _selfless:
 
 Selfless Guard
 ~~~~~~~~~~~~~~
@@ -92,6 +90,8 @@ having to be represented as a far ref.
 
   >>> PassByCopy
 
+
+.. _trace:
 
 Tracing
 -------

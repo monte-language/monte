@@ -213,21 +213,6 @@ You can also compare with a pattern::
 Logical
 ~~~~~~~
 
-.. sidebar:: ternary conditional expression
-
-   While monte does not have the ``c ? x : y`` ternary conditional
-   operator, the ``if`` expression works just as well. For example, to
-   tests whether ``i`` is even::
-
-     >>> { def i := 3; if (i % 2 == 0) { "yes" } else { "no" } }
-     "no"
-
-   Don't forget that Monte requires ``if`` expressions to evaluate
-   their condition to a ``Bool``::
-
-     ▲> if (1) { "yes" } else { "no" }
-     Parse error: Not a boolean!
-
 Monte uses C syntax for the basic logical operators::
    >>> true && true
    true
