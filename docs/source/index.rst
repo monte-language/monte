@@ -19,13 +19,16 @@ Monte is a dynamic language inspired by Python and E.
     patterns
     quasiparsers
     guards
+    slots
     interfaces
+    promises
     modules
     custom-guards
     design
     faq
     miranda
     tubes
+    semantics
 
     montefesto
     tools

@@ -16,8 +16,15 @@ own Miranda methods, but does not have to; objects are automatically granted
 default Miranda methods with correct behavior. Or, as stated above, "if an
 object does not have a Miranda method, one will be provided."
 
+Additionally, the Miranda protocol contains **Miranda named arguments**, which
+are named arguments passed alongside every message to every object from the
+runtime.
+
 Safety
 ======
+
+Methods
+~~~~~~~
 
 Miranda methods should be safe to call. The default definitions will always
 respond without throwing exceptions. It is rude but permissible for an object
@@ -29,6 +36,11 @@ in which Miranda methods are being used.
     Special mention goes here to the most commonly-called Miranda method,
     ``_printOn/1``. Any time that an object is being turned into a string, it
     almost certainly involves a little bit of ``_printOn/1``, so be careful.
+
+Named Arguments
+~~~~~~~~~~~~~~~
+
+See `FAIL`.
 
 Methods
 =======
@@ -117,3 +129,17 @@ Methods
     ``_whenMoreResolved``, by default, does nothing on near objects and sends
     notifications of partial fulfillment through references. It is not
     interesting.
+
+Named Arguments
+===============
+
+.. _FAIL:
+
+``FAIL``
+    ``FAIL`` is an object which can be used in place of ``throw.eject`` when
+    an error should propagate beyond the current turn. During asynchronous
+    callbacks, objects might unwittingly be called as part of a subsequent
+    turn's callback, and their errors should propagate to their original
+    callers. ``FAIL`` is ``throw.eject`` in synchronous contexts and a wrapper
+    for some resolver's ``.smash/1`` in callbacks or other asynchronous
+    contexts.

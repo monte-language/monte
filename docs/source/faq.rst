@@ -102,9 +102,12 @@ No. There are many kind of objects on which synchronous calls work, because
 they are near references. For example, all literals are near: ``def lue :=
 (6).mul(7)``.
 
-When in doubt, remember that there is a ``near`` guard which can be used to
+When in doubt, remember that there is a ``Near`` guard which can be used to
 confirm that an object is in the same vat as you and thus available for
 synchronous calls.
+
+Guards
+======
 
 How do I force an object to be a certain type?
 ----------------------------------------------
@@ -112,3 +115,25 @@ How do I force an object to be a certain type?
 Use a guard that coerces objects to be of that type. Guards for all of the
 primitive types in Monte are already builtin; see the documentation on
 :doc:`guards` for more details.
+
+Are guards expensive?
+---------------------
+
+Monte does require every guard to be executed on every assignment. This means
+that every ``def`` runs its guards once (during definition) and every ``var``
+runs its guards every time an assignment occurs. Since guards are Monte
+objects and can be user-defined, concerns about performance are well-founded
+and reasonable.
+
+Monte implementations are permitted to *elide* any guards which can be
+statically proven to always pass their specimens. An ahead-of-time compiler
+might use type inference to prove that all specimens at a definition site
+might be of a certain type. A just-in-time compiler might recognize at runtime
+that a guard's code is redundant with unboxing, and elide both the unboxing
+and the guard.
+
+.. note::
+    These optimizations aren't hypothetical. Corbin and Allen have talked
+    about gradual typing and type inference in Monte, and the Typhon virtual
+    machine almost always can remove typical trivial guards like ``Int`` and
+    ``Bool``.
