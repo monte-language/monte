@@ -12,6 +12,7 @@ Monte is a dynamic language inspired by Python and E.
 .. toctree::
 
     intro
+    Ordinary_Programming
     wizard
     symbols
     operators

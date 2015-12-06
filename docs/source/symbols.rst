@@ -209,12 +209,6 @@ Monte has string escape syntax much like python or Java:
     future and in the future, nobody uses those. Hexadecimal escapes are still
     valid for vertical tabs.
 
-.. note::
-
-    As with Python, a backslash (``\``) as the final character of a line
-    escapes the newline and causes that line and its successor to be
-    interpereted as one.
-
 Lists: ConstList and FlexList
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
