@@ -211,10 +211,10 @@ __ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
 
 .. [#] Encrypted communication is not yet part of the monte standard library.
 
-.. [#] as documented in `the DarpaBrowser
-       report<http://www.combex.com/papers/darpa-report/index.html>`
+.. [#] as documented in `the DarpaBrowser report`__
 
 .. [#] As a practical concession, the safe scope includes ``trace()``
        and ``traceln()``. See :ref:`trace`.
 
 __ http://erights.org/talks/thesis/index.html
+__ http://www.combex.com/papers/darpa-report/index.html

@@ -36,8 +36,115 @@ unittest([
 
 # interfaces
 
+def testinterfaces_0(assert):
+    object example:
+        method test():
+            "doc"
+            def addNumbers(a, b):
+                return a + b
+            
+            # Now use the function::
+            def answer := addNumbers(3, 4)
+            answer
+            
+
+    assert.equal(example.test(), 7)
+
+
+def testinterfaces_1(assert):
+    object example:
+        method test():
+            "doc"
+            def factorial(n):
+                if (n == 0):
+                    return 1
+                else:
+                    return n * factorial(n-1)
+            factorial(3)
+            
+
+    assert.equal(example.test(), 6)
+
+
+def testinterfaces_2(assert):
+    object example:
+        method test():
+            "doc"
+            object origin:
+                to getX():
+                    return 0
+                to getY():
+                    return 0
+            # Now invoke the methods
+            origin.getY()
+            
+
+    assert.equal(example.test(), 0)
+
+
+def testinterfaces_3(assert):
+    object example:
+        method test():
+            "doc"
+            # Point constructor
+            def makePoint(x,y):
+                object point:
+                    to getX():
+                        return x
+                    to getY():
+                        return y
+                    to makeOffsetPoint(offsetX, offsetY):
+                        return makePoint(x + offsetX, y + offsetY)
+            
+                    to makeOffsetPoint(offset):
+                        return makePoint(x + offset, y + offset)
+                return point
+            
+            # Create a point
+            def origin := makePoint(0,0)
+            # get the y value of the origin
+            origin.getY()
+            
+
+    assert.equal(example.test(), 0)
+
+
+def testinterfaces_4(assert):
+    object example:
+        method test():
+            "doc"
+            def makeCar(var name):
+                var x := 0
+                var y := 0
+                return object car:
+                    to moveTo(newX, newY):
+                        x := newX
+                        y := newY
+            
+                    to getX():
+                        return x
+                    to getY():
+                        return y
+                    to setName(newName):
+                        name := newName
+                    to getName():
+                        return name
+            
+            # Now use the makeCar function to make a car, which we will move and print
+            def sportsCar := makeCar("Ferrari")
+            sportsCar.moveTo(10,20)
+            `The car ${sportsCar.getName()} is at X location ${sportsCar.getX()}`
+            
+
+    assert.equal(example.test(), "The car Ferrari is at X location 10")
+
+
 unittest([
-    
+    testinterfaces_0,
+    testinterfaces_1,
+    testinterfaces_2,
+    testinterfaces_3,
+    testinterfaces_4
 ])
 
 
@@ -75,31 +182,21 @@ def testiteration_0(assert):
     object example:
         method test():
             "doc"
-            object helloThere:
-                to greet(whom):
-                    return `Hello, my dear $whom!`
-            
-            helloThere.greet("Student")
+            for i => each in ["a", "b"]:
+                traceln(`Index: $i Value: $each`)
             
 
-    assert.equal(example.test(), "Hello, my dear Student!")
+    assert.equal(example.test(), null)
 
 
 def testiteration_1(assert):
     object example:
         method test():
             "doc"
-            def makeSalutation(time):
-                return object helloThere:
-                    to greet(whom):
-                        return `Good $time, my dear $whom!`
-            
-            def hi := makeSalutation("morning")
-            
-            hi.greet("Student")
+            { def i := 3; if (i % 2 == 0) { "yes" } else { "no" } }
             
 
-    assert.equal(example.test(), "Good morning, my dear Student!")
+    assert.equal(example.test(), "no")
 
 
 unittest([
@@ -365,23 +462,13 @@ def testoperators_23(assert):
     object example:
         method test():
             "doc"
-            { def i := 3; if (i % 2 == 0) { "yes" } else { "no" } }
-            
-
-    assert.equal(example.test(), "no")
-
-
-def testoperators_24(assert):
-    object example:
-        method test():
-            "doc"
             true && true
             
 
     assert.equal(example.test(), true)
 
 
-def testoperators_25(assert):
+def testoperators_24(assert):
     object example:
         method test():
             "doc"
@@ -391,7 +478,7 @@ def testoperators_25(assert):
     assert.equal(example.test(), true)
 
 
-def testoperators_26(assert):
+def testoperators_25(assert):
     object example:
         method test():
             "doc"
@@ -401,7 +488,7 @@ def testoperators_26(assert):
     assert.equal(example.test().canonical(), m`x.butNot(y)`.canonical())
 
 
-def testoperators_27(assert):
+def testoperators_26(assert):
     object example:
         method test():
             "doc"
@@ -411,7 +498,7 @@ def testoperators_27(assert):
     assert.equal(example.test(), 8)
 
 
-def testoperators_28(assert):
+def testoperators_27(assert):
     object example:
         method test():
             "doc"
@@ -421,7 +508,7 @@ def testoperators_28(assert):
     assert.equal(example.test(), 6)
 
 
-def testoperators_29(assert):
+def testoperators_28(assert):
     object example:
         method test():
             "doc"
@@ -431,7 +518,7 @@ def testoperators_29(assert):
     assert.equal(example.test(), [2, 4, 6])
 
 
-def testoperators_30(assert):
+def testoperators_29(assert):
     object example:
         method test():
             "doc"
@@ -441,7 +528,7 @@ def testoperators_30(assert):
     assert.equal(example.test(), 1..!5)
 
 
-def testoperators_31(assert):
+def testoperators_30(assert):
     object example:
         method test():
             "doc"
@@ -451,7 +538,7 @@ def testoperators_31(assert):
     assert.equal(example.test(), [2, 4, 6, 8])
 
 
-def testoperators_32(assert):
+def testoperators_31(assert):
     object example:
         method test():
             "doc"
@@ -461,7 +548,7 @@ def testoperators_32(assert):
     assert.equal(example.test(), "augmenting addition!")
 
 
-def testoperators_33(assert):
+def testoperators_32(assert):
     object example:
         method test():
             "doc"
@@ -471,7 +558,7 @@ def testoperators_33(assert):
     assert.equal(example.test(), "augmenting addition!")
 
 
-def testoperators_34(assert):
+def testoperators_33(assert):
     object example:
         method test():
             "doc"
@@ -481,7 +568,7 @@ def testoperators_34(assert):
     assert.equal(example.test(), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
 
-def testoperators_35(assert):
+def testoperators_34(assert):
     object example:
         method test():
             "doc"
@@ -491,7 +578,7 @@ def testoperators_35(assert):
     assert.equal(example.test(), 1)
 
 
-def testoperators_36(assert):
+def testoperators_35(assert):
     object example:
         method test():
             "doc"
@@ -501,7 +588,7 @@ def testoperators_36(assert):
     assert.equal(example.test(), "y")
 
 
-def testoperators_37(assert):
+def testoperators_36(assert):
     object example:
         method test():
             "doc"
@@ -511,7 +598,7 @@ def testoperators_37(assert):
     assert.equal(example.test(), 10)
 
 
-def testoperators_38(assert):
+def testoperators_37(assert):
     object example:
         method test():
             "doc"
@@ -521,7 +608,7 @@ def testoperators_38(assert):
     assert.equal(example.test(), 18)
 
 
-def testoperators_39(assert):
+def testoperators_38(assert):
     object example:
         method test():
             "doc"
@@ -531,7 +618,7 @@ def testoperators_39(assert):
     assert.equal(example.test(), Int)
 
 
-def testoperators_40(assert):
+def testoperators_39(assert):
     object example:
         method test():
             "doc"
@@ -541,7 +628,7 @@ def testoperators_40(assert):
     assert.equal(example.test(), 1)
 
 
-def testoperators_41(assert):
+def testoperators_40(assert):
     object example:
         method test():
             "doc"
@@ -551,7 +638,7 @@ def testoperators_41(assert):
     assert.equal(example.test(), -4)
 
 
-def testoperators_42(assert):
+def testoperators_41(assert):
     object example:
         method test():
             "doc"
@@ -561,7 +648,7 @@ def testoperators_42(assert):
     assert.equal(example.test(), -256)
 
 
-def testoperators_43(assert):
+def testoperators_42(assert):
     object example:
         method test():
             "doc"
@@ -571,7 +658,7 @@ def testoperators_43(assert):
     assert.equal(example.test(), false)
 
 
-def testoperators_44(assert):
+def testoperators_43(assert):
     object example:
         method test():
             "doc"
@@ -625,8 +712,55 @@ unittest([
     testoperators_40,
     testoperators_41,
     testoperators_42,
-    testoperators_43,
-    testoperators_44
+    testoperators_43
+])
+
+
+# ordinary-programming
+
+def testordinary_programming_0(assert):
+    object example:
+        method test():
+            "doc"
+            # Comment on this piece of code
+            
+            def a := 3
+            var b := a + 2
+            b += 1
+            if (a < b):
+                traceln("a is less than b")
+            else:
+               traceln("Wow, the arithmetic logic unit in this processor is confused")
+            
+
+    assert.equal(example.test(), null)
+
+
+def testordinary_programming_1(assert):
+    object example:
+        method test():
+            "doc"
+            -3.5 // 1
+            
+
+    assert.equal(example.test(), -4)
+
+
+def testordinary_programming_2(assert):
+    object example:
+        method test():
+            "doc"
+            def x := 3
+            `Value of x is: $x`
+            
+
+    assert.equal(example.test(), "Value of x is: 3")
+
+
+unittest([
+    testordinary_programming_0,
+    testordinary_programming_1,
+    testordinary_programming_2
 ])
 
 
@@ -658,7 +792,384 @@ unittest([
 ])
 
 
+# prim-expr
+
+unittest([
+    
+])
+
+
+# promises
+
+unittest([
+    
+])
+
+
 # quasiparsers
+
+unittest([
+    
+])
+
+
+# runtime
+
+def testruntime_0(assert):
+    object example:
+        method test():
+            "doc"
+            [true, false, null, NaN, Infinity]
+            
+
+    assert.equal(example.test(), [true, false, null, NaN, Infinity])
+
+
+def testruntime_1(assert):
+    object example:
+        method test():
+            "doc"
+            M.call(1, "add", [2])
+            
+
+    assert.equal(example.test(), 3)
+
+
+def testruntime_2(assert):
+    object example:
+        method test():
+            "doc"
+            throw
+            
+
+    assert.equal(example.test(), throw)
+
+
+def testruntime_3(assert):
+    object example:
+        method test():
+            "doc"
+            def l := [].diverge()
+            _loop([1,2,3], fn k, v { l.push(v) })
+            l.snapshot()
+            
+
+    assert.equal(example.test(), [1, 2, 3])
+
+
+def testruntime_4(assert):
+    object example:
+        method test():
+            "doc"
+            DeepFrozen
+            
+
+    assert.equal(example.test(), DeepFrozen)
+
+
+def testruntime_5(assert):
+    object example:
+        method test():
+            "doc"
+            Selfless
+            
+
+    assert.equal(example.test(), Selfless)
+
+
+def testruntime_6(assert):
+    object example:
+        method test():
+            "doc"
+            Transparent
+            
+
+    assert.equal(example.test(), Transparent)
+
+
+def testruntime_7(assert):
+    object example:
+        method test():
+            "doc"
+            trace("str")
+            
+
+    assert.equal(example.test(), null)
+
+
+def testruntime_8(assert):
+    object example:
+        method test():
+            "doc"
+            traceln("str")
+            
+
+    assert.equal(example.test(), null)
+
+
+def testruntime_9(assert):
+    object example:
+        method test():
+            "doc"
+            __makeList(1, 2, 3)
+            
+
+    assert.equal(example.test(), [1, 2, 3])
+
+
+def testruntime_10(assert):
+    object example:
+        method test():
+            "doc"
+            __makeMap.fromPairs([['k', 'v']])
+            
+
+    assert.equal(example.test(), ['k' => 'v'])
+
+
+def testruntime_11(assert):
+    object example:
+        method test():
+            "doc"
+            __makeInt("1")
+            
+
+    assert.equal(example.test(), 1)
+
+
+def testruntime_12(assert):
+    object example:
+        method test():
+            "doc"
+            [_makeFinalSlot, _makeVarSlot]
+            
+
+    assert.equal(example.test(), [_makeFinalSlot, _makeVarSlot])
+
+
+def testruntime_13(assert):
+    object example:
+        method test():
+            "doc"
+            _makeOrderedSpace
+            
+
+    assert.equal(example.test(), _makeOrderedSpace)
+
+
+def testruntime_14(assert):
+    object example:
+        method test():
+            "doc"
+            [Any, Void]
+            
+
+    assert.equal(example.test(), [Any, Void])
+
+
+def testruntime_15(assert):
+    object example:
+        method test():
+            "doc"
+            [Bool, Str, Char, Double, Int]
+            
+
+    assert.equal(example.test(), [Bool, Str, Char, Double, Int])
+
+
+def testruntime_16(assert):
+    object example:
+        method test():
+            "doc"
+            [List, Map, Set]
+            
+
+    assert.equal(example.test(), [List, Map, Set])
+
+
+def testruntime_17(assert):
+    object example:
+        method test():
+            "doc"
+            "abc" :NullOk[Str]
+            
+
+    assert.equal(example.test(), "abc")
+
+
+def testruntime_18(assert):
+    object example:
+        method test():
+            "doc"
+            [__makeMessageDesc, __makeParamDesc, __makeProtocolDesc]
+            
+
+    assert.equal(example.test(), [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc])
+
+
+def testruntime_19(assert):
+    object example:
+        method test():
+            "doc"
+            [simple__quasiParser, m__quasiParser]
+            
+
+    assert.equal(example.test(), [simple__quasiParser, m__quasiParser])
+
+
+def testruntime_20(assert):
+    object example:
+        method test():
+            "doc"
+            simple`sum: ${1+1}`
+            
+
+    assert.equal(example.test(), "sum: 2")
+
+
+def testruntime_21(assert):
+    object example:
+        method test():
+            "doc"
+            m`1 + 1`.expand()
+            
+
+    assert.equal(example.test().canonical(), m`1.add(1)`.canonical())
+
+
+def testruntime_22(assert):
+    object example:
+        method test():
+            "doc"
+            [_accumulateList, _accumulateMap]
+            
+
+    assert.equal(example.test(), [_accumulateList, _accumulateMap])
+
+
+def testruntime_23(assert):
+    object example:
+        method test():
+            "doc"
+            _bind
+            
+
+    assert.equal(example.test(), _bind)
+
+
+def testruntime_24(assert):
+    object example:
+        method test():
+            "doc"
+            [_booleanFlow, _comparer, _equalizer]
+            
+
+    assert.equal(example.test(), [_booleanFlow, _comparer, _equalizer])
+
+
+def testruntime_25(assert):
+    object example:
+        method test():
+            "doc"
+            [_mapEmpty, _mapExtract]
+            
+
+    assert.equal(example.test(), [_mapEmpty, _mapExtract])
+
+
+def testruntime_26(assert):
+    object example:
+        method test():
+            "doc"
+            [_matchSame, _quasiMatcher]
+            
+
+    assert.equal(example.test(), [_matchSame, _quasiMatcher])
+
+
+def testruntime_27(assert):
+    object example:
+        method test():
+            "doc"
+            __slotToBinding
+            
+
+    assert.equal(example.test(), __slotToBinding)
+
+
+def testruntime_28(assert):
+    object example:
+        method test():
+            "doc"
+            [_splitList, _suchThat]
+            
+
+    assert.equal(example.test(), [_splitList, _suchThat])
+
+
+def testruntime_29(assert):
+    object example:
+        method test():
+            "doc"
+            _switchFailed
+            
+
+    assert.equal(example.test(), _switchFailed)
+
+
+def testruntime_30(assert):
+    object example:
+        method test():
+            "doc"
+            _validateFor
+            
+
+    assert.equal(example.test(), _validateFor)
+
+
+unittest([
+    testruntime_0,
+    testruntime_1,
+    testruntime_2,
+    testruntime_3,
+    testruntime_4,
+    testruntime_5,
+    testruntime_6,
+    testruntime_7,
+    testruntime_8,
+    testruntime_9,
+    testruntime_10,
+    testruntime_11,
+    testruntime_12,
+    testruntime_13,
+    testruntime_14,
+    testruntime_15,
+    testruntime_16,
+    testruntime_17,
+    testruntime_18,
+    testruntime_19,
+    testruntime_20,
+    testruntime_21,
+    testruntime_22,
+    testruntime_23,
+    testruntime_24,
+    testruntime_25,
+    testruntime_26,
+    testruntime_27,
+    testruntime_28,
+    testruntime_29,
+    testruntime_30
+])
+
+
+# semantics
+
+unittest([
+    
+])
+
+
+# slots
 
 unittest([
     

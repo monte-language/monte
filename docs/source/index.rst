@@ -12,6 +12,7 @@ Monte is a dynamic language inspired by Python and E.
 .. toctree::
 
     intro
+    design
     montefesto
 
 
@@ -21,9 +22,7 @@ Ordinary Programming
 .. toctree::
 
     ordinary-programming
-    interfaces
     quasiparsers
-    modules
 
 .. _distributed-computing:
 
@@ -33,7 +32,6 @@ Distributed Computing (TODO)
 .. toctree::
 
     promises
-    faq
 
 .. _secure-distributed-computing:
 
@@ -51,13 +49,13 @@ Language Specification
 
 .. toctree::
 
-    semantics
-    wizard
-    symbols
-    patterns
     operators
-    iteration
-    design
+    prim-expr
+    patterns
+    wizard
+    semantics
+    symbols
+    modules
 
 Monte Standard Runtime Library
 ==============================

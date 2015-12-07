@@ -1,62 +1,140 @@
-=====================
 Objects and Functions (TODO)
-=====================
+"""""""""""""""""""""
 
 
-Functions (TODO)
+Functions
 ---------
 
-.. todo:: 
+A basic function looks like this::
+
+  >>> def addNumbers(a, b):
+  ...     return a + b
+  ...
+  ... # Now use the function::
+  ... def answer := addNumbers(3, 4)
+  ... answer
+  7
+
+You can nest the definitions of functions and objects inside other
+functions and objects [#]_. Nested functions and objects play a crucial
+role in Monte, notably in the construction of objects as described
+shortly.
+
+Functions can of course call themselves recursively, as in::
+
+  >>> def factorial(n):
+  ...     if (n == 0):
+  ...         return 1
+  ...     else:
+  ...         return n * factorial(n-1)
+  ... factorial(3)
+  6
+
 
 .. include:: guards.rst
 
-New objects are created with a ``object`` keyword::
 
-    object helloThere:
-        to greet(whom):
-            traceln(`Hello, my dear $whom!`)
-
-    helloThere.greet("Student")
-
-Objects can also be created by functions::
-
-    def makeSalutation(time):
-        return object helloThere:
-            to greet(whom):
-                traceln(`Good $time, my dear $whom!`)
-
-    def hi := makeSalutation("morning")
-
-    hi.greet("Student")
-
-
-Objects (todo: Walnut-ize)
+Objects
 -------
 
 Monte has a simpler approach to object composition and inheritance than many
-other object-based and object-oriented languages. Instead of classes or
-prototypes, Monte has a simple single syntax for constructing objects, the
-object expression::
+other object-based and object-oriented languages.
 
-    object myObject:
-        pass
+A Singleton Object
+~~~~~~~~~~~~~~~~~~
+
+We will start our exploration of objects with a simple singleton
+object. Methods can be attached to objects with the ``to`` keyword::
+
+  >>> object origin:
+  ...     to getX():
+  ...         return 0
+  ...     to getY():
+  ...         return 0
+  ... # Now invoke the methods
+  ... origin.getY()
+  0
+
+.. warning:: Python programmers beware, methods are not
+             functions. Methods are just the public hooks to the
+             object that receive messages; functions are standalone
+             objects.
 
 Unlike Java, Monte objects are not constructed from classes. Unlike JavaScript
 or Python, Monte objects are not constructed from prototypes. As a result, it
 might not be obvious at first how to build multiple objects which are similar
-in behavior. However, Monte has a very simple idiom for class-like constructs.
+in behavior.
 
-::
 
-    def makeMyObject():
-        return object myObject:
-            pass
+.. _maker:
 
-Methods can be attached to objects with the to keyword::
+Stateful objects and object constructors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    object deck:
-        to size():
-            return 52
+Monte has a very simple idiom for class-like constructs::
+
+  >>> # Point constructor
+  ... def makePoint(x,y):
+  ...     object point:
+  ...         to getX():
+  ...             return x
+  ...         to getY():
+  ...             return y
+  ...         to makeOffsetPoint(offsetX, offsetY):
+  ...             return makePoint(x + offsetX, y + offsetY)
+  ...
+  ...         to makeOffsetPoint(offset):
+  ...             return makePoint(x + offset, y + offset)
+  ...     return point
+  ...
+  ... # Create a point
+  ... def origin := makePoint(0,0)
+  ... # get the y value of the origin
+  ... origin.getY()
+  0
+
+Inside the function makePoint, we define a point and return it. As
+demonstrated by the ``makeOffsetPoint method``, the function (``makePoint``)
+can be referenced from within its own body. Also note that you can
+overload method names (two versions of ``makeOffsetPoint``) as long as
+they can be distinguished by the number of parameters they take.
+
+The ``(x, y)`` passed into the function are not ephemeral parameters
+that go out of existence when the function exits. Rather, they are
+true variables (implicitly declared with ``def``), and they persist as
+long as any of the objects that use them persist. Since the point uses
+these variables, ``x`` and ``y`` will exist as long as the point
+exists. This saves us the often tedious business in python or Java of
+copying the arguments from the parameter list into instance variables:
+``x`` and ``y`` already are instance variables.
+
+We refer to an object-making function such as makePoint as a
+"Maker". Let us look at a more serious example, with additional
+instance variables:
+
+  >>> def makeCar(var name):
+  ...     var x := 0
+  ...     var y := 0
+  ...     return object car:
+  ...         to moveTo(newX, newY):
+  ...             x := newX
+  ...             y := newY
+  ...
+  ...         to getX():
+  ...             return x
+  ...         to getY():
+  ...             return y
+  ...         to setName(newName):
+  ...             name := newName
+  ...         to getName():
+  ...             return name
+  ...
+  ... # Now use the makeCar function to make a car, which we will move and print
+  ... def sportsCar := makeCar("Ferrari")
+  ... sportsCar.moveTo(10,20)
+  ... `The car ${sportsCar.getName()} is at X location ${sportsCar.getX()}`
+  "The car Ferrari is at X location 10"
+
 
 Finally, just like with functions, methods can have guards on their parameters
 and return value::
@@ -65,10 +143,7 @@ and return value::
         to size(suits :Int, ranks :Int) :Int:
             return suits * ranks
 
-Where did ``self`` go?
-~~~~~~~~~~~~~~~~~~~~~~
-
-Newcomers to Monte are often surprised to learn that Monte lacks a ``this`` or
+Newcomers to Monte may be surprised to learn that Monte lacks a ``this`` or
 ``self`` keyword. In fact, Monte does have ways to refer to the current object,
 but there's a deeper conceptual difference between Monte and other object-based
 languages.
@@ -119,11 +194,8 @@ that no other object can directly modify it. Each time we call
 
 .. _def-fun:
 
-Secret Life of Functions, Multiple Constructors and "Static Methods" / Does Monte have functions?
---------------------------
-
-No. Since everything in Monte is an object, you're always calling methods
-rather than functions.
+Secret Life of Functions, Multiple Constructors and "Static Methods"
+--------------------------------------------------------------------
 
 Monte does have a convention that objects with a single method with the verb
 ``run`` are functions. There is no difference, to Monte, between this
@@ -220,3 +292,7 @@ Monte strives to provide useful error messages and self-documenting objects::
   Method: isBroken/1
   Method: isDeepFrozen/1
   ...
+
+.. rubric:: Notes
+
+.. [#] in Java, compare to inner classes
