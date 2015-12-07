@@ -20,7 +20,7 @@ def main(access):
         write(u'\n# {section}\n'.format(section=section))
         caseNames = []
         for (ix, ex) in enumerate(p.get_examples(txt)):
-            name = 'test%s_%s' % (section, ix)
+            name = 'test%s_%s' % (section.replace('-', '_'), ix)
             fixup = '.canonical()' if 'm`' in ex.source else ''
             case = caseTemplate.format(name=name,
                                        source=indent(ex.source, levels=3),
@@ -29,8 +29,7 @@ def main(access):
             caseNames.append(name)
             write(case)
 
-        write(suiteTemplate.format(section=section,
-                                   cases=',\n    '.join(caseNames)))
+        write(suiteTemplate.format(cases=',\n    '.join(caseNames)))
 
 def indent(source, levels):
     lines = source.split('\n')
