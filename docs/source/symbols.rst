@@ -1,6 +1,9 @@
 Primitive Data Types
 ====================
 
+.. todo:: fold explanatory material into :ref:`ordinary_computing`,
+	  separate discussion of expression syntax from datatypes.
+
 Scalars
 -------
 
@@ -41,7 +44,35 @@ and :ref:`operators<operators>` provide traditional syntax::
 
 .. syntax:: IntExpr
 
-   Ap('IntExpr', Terminal(".int."))
+   Ap('IntExpr', Choice(0, P('hexLiteral'), P('decLiteral')))
+
+.. syntax:: decLiteral
+
+   Ap('(read :: String -> Integer)', P('digits'))
+
+.. syntax:: digits
+
+   Ap("filter ((/=) '_')",
+     Ap('(:)', P('digit'), Many(Choice(0, P('digit'), Char('_')))))
+
+.. syntax:: digit
+
+   OneOf('0123456789')
+
+.. syntax:: hexLiteral
+
+   Ap('(read :: String -> Integer)',
+     Ap('(:)', Char('0'),
+       Ap('(:)', Choice(0, Char('x'), Char('X')), P('hexDigits'))))
+
+.. syntax:: hexDigits
+
+   Ap("filter ((/=) '_')",
+     Ap('(:)', P('hexDigit'), Many(Choice(0, P('hexDigit'), Char('_')))))
+
+.. syntax:: hexDigit
+
+   OneOf('0123456789abcdefABCDEF')
 
 
 Double
@@ -77,7 +108,26 @@ To convert::
 
 .. syntax:: DoubleExpr
 
-   Ap('DoubleExpr', Terminal(".float64."))
+   Ap('DoubleExpr', P('floatLiteral'))
+
+.. syntax:: floatLiteral
+
+   Ap('(read :: String -> Double)',
+     Ap('(++)',
+       P('digits'),
+       Choice(0,
+         Ap('(++)',
+           Ap('(:)', Char('.'), P('digits')),
+           Optional(P('floatExpn'), x='""')),
+         P('floatExpn'))))
+
+.. syntax:: floatExpn
+
+   Ap('(:)',
+     OneOf("eE"),
+     Ap('(++)',
+       Optional(Ap('pure', OneOf('-+')), x='""'),
+       P('digits')))
 
 
 Bool
@@ -171,10 +221,6 @@ Characters are permitted to be adorable::
                Sigil(Char("u"), Count(4, P('hexDigit'))),
                Sigil(Char("x"), Count(2, P('hexDigit'))))),
            Ap('decodeSpecial', OneOf(r'''btnfr\'"'''))))))
-
-.. syntax:: hexDigit
-
-   OneOf('0123456789abcdefABCDEF')
 
 @@TODO: test for '	' (tab) not allowed
 

@@ -11,7 +11,9 @@ from pprint import pformat
 
 import railroad_diagrams as rrd
 
-ok = ['CharExpr', 'charConstant', 'hexDigit', 'StrExpr']
+ok = ['CharExpr', 'charConstant', 'StrExpr',
+      'decLiteral', 'hexLiteral', 'digit', 'digits', 'hexDigits', 'hexDigit',
+      'floatLiteral', 'floatExpn']
 
 todo = ['interface', 'InterfaceExpr', 'FunctionExpr',
         'comp', 'logical',
@@ -166,7 +168,11 @@ def expand(expr, hint=''):
             exclude = [hint + '_1', hint + '_2', hint + '_1_2']
         elif isinstance(expr, rrd.Maybe):
             item = expand(expr.items[0], hint + '_1')[0][0]
-            rhs = [['optionMaybe', item]]
+            rhs = [['P.optionMaybe', item]]
+            exclude = [hint + '_2']
+        elif isinstance(expr, rrd.Optional):
+            item = expand(expr.items[0], hint + '_1')[0][0]
+            rhs = [['P.option', expr.x, item]]
             exclude = [hint + '_2']
 
         elif isinstance(expr, rrd.Many):

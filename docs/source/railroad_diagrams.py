@@ -252,8 +252,10 @@ class Choice(DiagramItem):
         return self
 
 
-def Optional(item, skip=False):
-    return Choice(0 if skip else 1, item, Skip())
+class Optional(Choice):
+    def __init__(self, item, skip=False, x=None):
+        self.x = x
+        Choice.__init__(self, 0 if skip else 1, item, Skip())
 
 
 class Maybe(Choice):
@@ -273,7 +275,7 @@ class SepBy(Choice):
 
 class Many(Choice):
     def __init__(self, item):
-        Choice.__init__(self, 0, OneOrMore(item), Skip())
+        Choice.__init__(self, 1, OneOrMore(item), Skip())
 
 
 class ManyTill(Sequence):
