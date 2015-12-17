@@ -295,8 +295,11 @@ Monte has string escape syntax much like python or Java:
 
 .. syntax:: StrExpr
 
-   Ap('StrExpr',
-     Sigil(Char('"'), ManyTill(P('charConstant'), Char('"'))))
+   Ap('StrExpr', P('stringLiteral'))
+
+.. syntax:: stringLiteral
+
+   Sigil(Char('"'), ManyTill(P('charConstant'), Char('"')))
 
 
 Lists: ConstList and FlexList

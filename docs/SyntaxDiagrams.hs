@@ -2,8 +2,8 @@ module Masque.SyntaxDiagrams where
 
 import Control.Applicative (Applicative(..), Alternative(..),
                             (<$>), (<*), (*>))
+import qualified Text.Parsec as P
 
-import Masque.Parsing
 import Masque.ParseUtil
 import Masque.FullSyntax
 
@@ -116,7 +116,7 @@ charConstant = (charConstant_1 *> charConstant_2 )
     charConstant_1_1_1 = P.string "\\\n"
     charConstant_2 = charConstant_2_1
       <|> charConstant_2_2
-    charConstant_2_1 = (P.noneOf "'\\\t")
+    charConstant_2_1 = (P.noneOf "\'\\\t")
     charConstant_2_2 = ((P.char '\\') *> charConstant_2_2_2 )
     charConstant_2_2_2 = charConstant_2_2_2_1
       <|> charConstant_2_2_2_2
@@ -131,13 +131,16 @@ charConstant = (charConstant_1 *> charConstant_2 )
     charConstant_2_2_2_1_1_3 = ((P.char 'x') *> charConstant_2_2_2_1_1_3_2 )
     charConstant_2_2_2_1_1_3_2 = P.count 2 hexDigit
     charConstant_2_2_2_2 = decodeSpecial <$> charConstant_2_2_2_2_1
-    charConstant_2_2_2_2_1 = (P.oneOf "'btnfr\\\'"')
+    charConstant_2_2_2_2_1 = (P.oneOf "btnfr\\\'\"")
 
 {-
-StrExpr ::= Ap('StrExpr',
-  Sigil(Char('"'), ManyTill(P('charConstant'), Char('"'))))
+StrExpr ::= Ap('StrExpr', P('stringLiteral'))
 -}
-strExpr = StrExpr <$> strExpr_1
+strExpr = StrExpr <$> stringLiteral
+
+{-
+stringLiteral ::= Sigil(Char('"'), ManyTill(P('charConstant'), Char('"')))
+-}
+stringLiteral = ((P.char '"') *> stringLiteral_2 )
   where
-    strExpr_1 = ((P.char '"') *> strExpr_1_2 )
-    strExpr_1_2 = P.manyTill charConstant (P.char '"')
+    stringLiteral_2 = P.manyTill charConstant (P.char '"')

@@ -11,7 +11,7 @@ from pprint import pformat
 
 import railroad_diagrams as rrd
 
-ok = ['CharExpr', 'charConstant', 'StrExpr',
+ok = ['CharExpr', 'charConstant', 'StrExpr', 'stringLiteral',
       'decLiteral', 'hexLiteral', 'digit', 'digits', 'hexDigits', 'hexDigit',
       'floatLiteral', 'floatExpn']
 
@@ -237,10 +237,19 @@ def expand(expr, hint=''):
         raise NotImplementedError(expr)
 
 
-def hStr(s):
-    '''haskell string expression for s: "..." only; never '...'
-    '''
-    return '"' + repr("'" + s)[2:]  # KLUDGE
+def hStr(s,
+         esc={'\n': '\\n',
+              '\t': '\\t',
+              '\\': '\\\\',
+              '"': '\\"',
+              "'": "\\'"}):
+    r"""haskell string expression for s: "..." only; never '...'
+    >>> print hStr("\\\n")
+    "\\\n"
+    >>> print hStr(r'''btnfr\'"''')
+    "btnfr\\\'\""
+    """
+    return '"' + ''.join(esc.get(c, c) for c in s) + '"'
 
 
 '''
