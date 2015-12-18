@@ -24,6 +24,8 @@ Ordinary Programming
     interfaces
     quasiparsers
     modules
+    guards
+    custom-guards
 
 .. _distributed-computing:
 
