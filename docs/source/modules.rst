@@ -1,5 +1,6 @@
 .. _modules:
 
+================
 Modules in Monte
 ================
 
@@ -12,16 +13,6 @@ Concepts and Terms
 script
   A source file run as the entry point for a program (such as from the
   command line).
-
-module file
-  Source files starting with an ``imports`` declaration.
-
-module structure
-  An object representing imported and exported names of a module.
-
-module configuration
-  An object representing a the association of a module's import names
-  with objects. Created from a module structure.
 
 package
   A module structure composed from various module configurations.
@@ -38,7 +29,7 @@ requirement
 Module Declaration Syntax
 -------------------------
 
-Module files start with a **module header**, which is a declaration of the
+Module files start with a :dfn:`module header`, which is a declaration of the
 form::
 
     imports => dependency1, => dependency2, ...
@@ -50,7 +41,8 @@ declaration should be a named parameter. Imports can have guards on them::
     imports => preChilled :DeepFrozen
     exports ()
 
-This is extremely useful for ensuring that imported names are ``DeepFrozen``.
+This is extremely useful for ensuring that imported names are ``DeepFrozen``
+and thus usable by exported objects.
 
 Export declarations are names defined in the module. Every exported name must
 pass audition by ``DeepFrozen``::
@@ -69,12 +61,11 @@ Mechanics
     ``import()`` currently selects modules from a single global namespace.
 
 Scripts are run in a scope by ``import(name :Str, parameters :Map[Str,
-Any])``,
-which can be invoked to load modules. The name is used to locate either a
-module file or a directory containing a package script (currently required to
-be named ``package.mt``). A configuration is created from the structure read
-from this, and then loaded with the parameters given, and its exports are
-returned as a map.
+Any])``, which can be invoked to load modules. The name is used to locate
+either a module file or a directory containing a package script (currently
+required to be named ``package.mt``). A configuration is created from the
+structure read from this, and then loaded with the parameters given, and its
+exports are returned as a map.
 
 Package Scripts
 ---------------
@@ -127,26 +118,22 @@ configuration.
 Testing
 -------
 
-.. note::
-    Tests are not automatically discovered at present. You need to add your
-    test to a package.mt file for it to be run correctly.
+When a module is loaded, the name ``unittest`` will be passed. This object can
+be used to collect tests. It is not ``DeepFrozen``, so it cannot be captured
+by module exports.
 
-.. note::
-    Corbin was too lazy to rewrite this, but it is quite old.
+::
 
-Unit tests are essential to writing good code. Monte's testing framework is
-designed to make it simple to write and run good tests. See the testing.mt_
-module for a simple example. Note that for more complex objects, you may need
-to implement an `_uncall()` method which describes how to recreate the object
-out of Monte's built-in primitives. Additionally, such objects will need to
-implement the Selfless interface in order to guarantee they won't have mutable
-state so that they can be compared.
+    imports => unittest
+    exports (adder)
 
-To test the Python tools surrounding Monte, use Trial. For instance, ``trial
-monte.test.test_ast`` (when run from the root of the project) will run the ast
-tests.
+    def adder(x, y) as DeepFrozen:
+        return x + y
 
-.. _testing.mt: https://github.com/monte-language/monte/blob/master/monte/src/examples/testing.mt
+    def testAdder(assert):
+        assert.equal(adder(5, 7), 12)
+
+    unittest([testAdder])
 
 Module Syntax Summary
 ---------------------
@@ -203,15 +190,14 @@ fail-stop manner in case the ``request`` doesn't match the
 The ``body`` is defined using :ref:`method calls<message_passing>`
 on the imported ``tag`` object.
 
-The critical distinction between monte and other memory-safe dynamic
-languages is that monte is an :ref:`object capability <ocap>`
-lanugage. Powerful objects such as ``currentProcess`` and
-``makeTCP4ServerEndpoint`` are not in any global namespace; they
-cannot be imported. Rather, they are provided explicitly to the
-``main`` function. Except by explicit delegation, no code can do
-anything more more than create objects (including functions) in
-memory. It cannot read from nor write to files [#]_, access the
-network, clobber global state, or launch missiles.
+The critical distinction between monte and other memory-safe dynamic languages
+is that monte is an :ref:`object capability <ocap>` lanugage. Powerful objects
+such as ``currentProcess`` and ``makeTCP4ServerEndpoint`` are not in any
+global namespace; they cannot be imported. Rather, they are provided
+explicitly to the ``main`` function. Except by explicit delegation, no code
+can do anything more more than create objects (including functions) in memory.
+It cannot read from nor write to files, access the network, clobber global
+state, or launch missiles.
 
 By straightforward inspection, we can see that
   - only one TCP port is ever created;

@@ -7,6 +7,11 @@ Glossary
 
 .. glossary::
 
+    module
+        A fundamental unit of compilation for Monte source code. Modules
+        consist of a list of imported names, a list of exported objects, and a
+        code script which, given the imports, generates the exports.
+
     retractable
         A :ref:guard that is not :term:`unretractable`.
 
