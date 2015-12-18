@@ -40,11 +40,10 @@ Here are some of the basics of the language::
   ... else:
   ...    traceln("Wow, the arithmetic logic unit in this processor is confused")
 
-Variable declarations are made with the `var` statement. Variables
-that are only assigned a value once at creation (i.e., constants, or
-variables declared final) are created with the def statement. In Monte as
-in python, "+=" is shorthand for adding the righthand value to the
-lefthand variable.
+Variable declarations are made with the `var` statement. Variables that are
+only assigned a value once at creation (i.e., constants, or variables declared
+final) are created with the def statement. In Monte, as in Python, "+=" is
+shorthand for adding the righthand value to the lefthand variable.
 
 Single-line comments have a `#` at the beginning, and terminate with
 the end of line. The `/**...*/` comment style is used only for writing
@@ -55,10 +54,10 @@ javadoc-style comments, discussed later.
 Assignment uses the `:=` operator. The single equal sign `=` is never
 legal in Monte; use `:=` for assignment and `==` for testing
 equality. The function `traceln` sends diagnostic output to the
-console. The `if` statement looks just like its python equivalent.
+console. The `if` statement looks just like its Python equivalent.
 
 .. todo:: Introduce Monte's haskell-style brace-or-indent blocks;
-          contrast with python
+          contrast with Python
 
 .. todo:: "What is the end-of-statement delineator in Monte?"
 
@@ -96,8 +95,8 @@ integer, truncated towards negative infinity. So::
   >>> -3.5 // 1
   -4
 
-The Monte modulo operator, `%`, like the python modulo operator,
-returns the remainder of division that truncates towards zero.
+The Monte modulo operator, `%`, like the Python modulo operator, returns the
+remainder of division that truncates towards zero.
 
 Operator precedence is generally the same as in Java, Python, or C. In
 a few cases, Monte will throw a syntax error and require the use of
@@ -112,9 +111,9 @@ as described in detail later; here is a very simple example::
 wherein the back-ticks denote a quasi-literal, and the dollar sign
 denotes a variable whose value is to be embedded in the string.
 
-`+` when used with strings is a concatenation operator as in
-python. Unlike Java, it does *not* automatically coerce other types on
-the right-hand if the left-hand operand is a string.
+`+` when used with strings is a concatenation operator as in Python. Unlike
+Java, it does *not* automatically coerce other types on the right-hand if the
+left-hand operand is a string.
 
 `&&` and `||` and `!` have their traditional meanings for booleans;
 `true` and `false` are boolean constants.

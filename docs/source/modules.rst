@@ -182,12 +182,12 @@ that this module ``exports`` its ``main`` function, as is conventional
 for executable programs.
 
 The :ref:`def expression<def>` for defining the ``helloWeb`` function is
-similar to python and the like.
+similar to Python and the like.
 
 .. todo:: Forward ref :ref:`auditors` or find a way to elide
           ``DeepFrozen``. (Issue #43).
 
-The ``smallBody`` import works much like python's ``from
+The ``smallBody`` import works much like Python's ``from
 lib.http.resource import smallBody``, using :ref:`pattern matching
 <patterns>` to bind names to objects imported from :ref:`modules
 <modules>`.

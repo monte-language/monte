@@ -11,7 +11,7 @@ Because **secure distributed computing should not be hard**. We have
 entered the age of globally distributed computing with a vengeance,
 and `everything is broken`__. The hodgepodge of today's dominant
 languages and frameworks offer no comprehensive solution [#]_. Monte
-combines much of the expressive convenience of python with the secure
+combines much of the expressive convenience of Python with the secure
 distributed computing features of E [#]_:
 
 __ https://medium.com/message/everything-is-broken-81e5f33a24e1
@@ -78,11 +78,11 @@ as we shall discuss in the chapter on
    "Monte".
 
 
-E wraps these strengths in a python-like syntax to make it quickly
+E wraps these strengths in a Python-like syntax to make it quickly
 comfortable for a large number of software engineers. It is built with
 objects at the core of its design, making it easy to write modular,
 readable, maintainable software using the strategies familiar from
-python, Java, and the like. It has the kind of powerful string
+Python, Java, and the like. It has the kind of powerful string
 handling that will be recognized and seized upon by the Perl
 programmer.
 
@@ -106,20 +106,23 @@ Smalltalk to Perl and Python have found in the past.
 Why not Monte?
 --------------
 
-Monte assumes automatic memory management; the current implementation
-uses the pypy garbage collector. As such, it is not a good language
-for low level machine manipulation. So do not try to use Monte for
-writing device drivers.
+Monte assumes automatic memory management; the current reference
+implementation uses the PyPy garbage collector, and any other implementation
+will have to choose a similar scheme. As such, it is not a good language for
+low level machine manipulation. So do not try to use Monte for writing device
+drivers.
 
-And Monte's performance is currently quite unfavorable compared to raw
-C, but it is designed to compete with other JIT-compiled VM languages.
+Monte's performance is currently quite unfavorable compared to raw C at the
+moment, and additionally, Monte's target niches are largely occupied by other
+dynamic languages with JIT-compiler-based runtimes, so it is not a design goal
+to compete with C or other memory-unsafe languages.
 
 
 Preface to Monte Documentation
 ------------------------------
 
 We begin with an introduction to practical E programming. Comparisons
-to python are frequent, so some understanding of python is desirable.
+to Python are frequent, so some understanding of Python is desirable.
 
 Later sections form the :ref:`spec` and the :ref:`stdlib`.
 
@@ -148,12 +151,11 @@ object structures. So we introduce :ref:`ordinary-programming` in Part
 I before getting into the serious distributed computing
 facilities.
 
-However, since E was designed in the python syntax tradition, an
-experienced programmer can probably glean enough from the Quick
-Reference Card to skip directly to Part II on
-:ref:`distributed-computing`. If you are short of time and have the
-requisite background, we recommend that strategy. Go back and read
-:ref:`Part I<ordinary-programming>` when you are convinced that Monte's
+However, since E was designed in the Python syntax tradition, an experienced
+programmer can probably glean enough from the Quick Reference Card to skip
+directly to Part II on :ref:`distributed-computing`. If you are short of time
+and have the requisite background, we recommend that strategy. Go back and
+read :ref:`Part I<ordinary-programming>` when you are convinced that Monte's
 power for distributed programming meets your needs.
 
 .. todo:: quick reference card
@@ -162,10 +164,8 @@ power for distributed programming meets your needs.
 Getting Started
 ---------------
 
-.. note:: Installing monte is in transition. The original python
-	  implementation in the monte repository is largely obsolete
-	  in favor of typhon.  See :ref:`roadmap` and the `monte
-	  wiki`__ for more.
+.. note:: Monte's installation process is in transition. See :ref:`roadmap`
+    and the `monte wiki`__ for more.
 
 __ https://github.com/monte-language/monte/wiki
 
