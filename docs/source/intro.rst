@@ -113,11 +113,10 @@ will have to choose a similar scheme. As such, it is not a good language for
 low level machine manipulation. So do not try to use Monte for writing device
 drivers.
 
-Monte's performance is currently quite unfavorable compared to raw C at the
-moment, and additionally, Monte's target niches are largely occupied by other
-dynamic languages with JIT-compiler-based runtimes, so it is not a design goal
-to compete with C or other memory-unsafe languages.
-
+Monte's performance is currently quite unfavorable compared to raw C, and
+additionally, Monte's target niches are largely occupied by other dynamic
+languages with JIT-compiler-based runtimes, so it is not a design goal to
+compete with C or other memory-unsafe languages.
 
 Preface to Monte Documentation
 ------------------------------
