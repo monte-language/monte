@@ -11,9 +11,13 @@ from pprint import pformat
 
 import railroad_diagrams as rrd
 
-ok = ['CharExpr', 'charConstant', 'StrExpr', 'stringLiteral',
-      'decLiteral', 'hexLiteral', 'digit', 'digits', 'hexDigits', 'hexDigit',
-      'floatLiteral', 'floatExpn']
+ok = [
+    'NounExpr', 'name',
+    'HideExpr',
+    'CharExpr', 'charConstant', 'StrExpr', 'stringLiteral',
+    'decLiteral', 'hexLiteral', 'digit', 'digits', 'hexDigits', 'hexDigit',
+    'floatLiteral', 'floatExpn',
+    'LiteralExpr', 'StrExpr', 'IntExpr', 'DoubleExpr', 'CharExpr']
 
 todo = ['interface', 'InterfaceExpr', 'FunctionExpr',
         'comp', 'logical',
@@ -79,13 +83,7 @@ def logged(label, val, logging=False):
     return val
 
 
-RAW = {'.int.': 'parseint',
-       '.float64.': 'parsefloat64',
-       '.String.': 'parseString',
-       '.char.': 'parseChar',
-       'IDENTIFIER': 'parseIdentifier',
-       'DOLLAR_IDENT': 'parseDollarIdent',
-       'AT_IDENT': 'parseAtIdent',
+RAW = {'IDENTIFIER': '(IT.identifier tokP)',
        'QUASI_TEXT': 'parseQuasiText'}
 
 
@@ -122,7 +120,7 @@ def expand(expr, hint=''):
         else:
             tag = expr.text
             p = (RAW[tag] if tag in RAW
-                 else '(symbol "{tag}")'.format(tag=tag))
+                 else '(IT.symbol tokP "{tag}")'.format(tag=tag))
 
         return logged('terminal ' + hint + ' =>',
                       [(unCtor(p), None)])
@@ -209,7 +207,8 @@ def expand(expr, hint=''):
             choices = [rhs]
         elif isinstance(expr, rrd.Brackets):
             rhs = choices[0]
-            rhs = ['P.between', rhs[0], rhs[-1]] + rhs[1:-1]
+            op = 'IPC.betweenBlock' if '{' in rhs[0] else 'IPC.between'
+            rhs = [op, rhs[0], rhs[-1]] + rhs[1:-1]
             choices = [rhs]
         elif isinstance(expr, rrd.ManyTill):
             rhs = choices[0]

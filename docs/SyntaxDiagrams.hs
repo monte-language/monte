@@ -1,11 +1,44 @@
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module Masque.SyntaxDiagrams where
 
 import Control.Applicative (Applicative(..), Alternative(..),
                             (<$>), (<*), (*>))
 import qualified Text.Parsec as P
+import qualified Text.Parsec.IndentParsec.Token as IT
+import qualified Text.Parsec.IndentParsec.Combinator as IPC
 
 import Masque.ParseUtil
 import Masque.FullSyntax
+
+{-
+HideExpr ::= Ap('HideExpr',
+   Brackets("{", SepBy(NonTerminal('expr'), ';', fun='wrapSequence'), "}"))
+-}
+hideExpr = HideExpr <$> hideExpr_1
+  where
+    hideExpr_1 = IPC.betweenBlock (IT.symbol "{") (IT.symbol "}") hideExpr_1_2
+    hideExpr_1_2 = (wrapSequence expr (IT.symbol ";"))
+
+{-
+NounExpr ::= Ap('NounExpr', NonTerminal('name'))
+-}
+nounExpr = NounExpr <$> name
+
+{-
+name ::= Choice(0, "IDENTIFIER", Sigil("::", P('stringLiteral')))
+-}
+name = (IT.identifier tokP)
+  <|> name_2
+  where
+    name_2 = ((IT.symbol "::") *> stringLiteral )
+
+{-
+IntExpr ::= Ap('IntExpr', Choice(0, P('hexLiteral'), P('decLiteral')))
+-}
+intExpr = IntExpr <$> intExpr_1
+  where
+    intExpr_1 = hexLiteral
+      <|> decLiteral
 
 {-
 decLiteral ::= Ap('(read :: String -> Integer)', P('digits'))
@@ -57,6 +90,11 @@ hexDigit ::= OneOf('0123456789abcdefABCDEF')
 hexDigit = (P.oneOf "0123456789abcdefABCDEF")
 
 {-
+DoubleExpr ::= Ap('DoubleExpr', P('floatLiteral'))
+-}
+doubleExpr = DoubleExpr <$> floatLiteral
+
+{-
 floatLiteral ::= Ap('(read :: String -> Double)',
   Ap('(++)',
     P('digits'),
@@ -96,7 +134,7 @@ CharExpr ::= Ap('CharExpr',
 -}
 charExpr = CharExpr <$> charExpr_1
   where
-    charExpr_1 = P.between (P.char '\'') (P.char '\'') charConstant
+    charExpr_1 = IPC.between (P.char '\'') (P.char '\'') charConstant
 
 {-
 charConstant ::= Sigil(Many(String("\\\n")),
@@ -144,3 +182,15 @@ stringLiteral ::= Sigil(Char('"'), ManyTill(P('charConstant'), Char('"')))
 stringLiteral = ((P.char '"') *> stringLiteral_2 )
   where
     stringLiteral_2 = P.manyTill charConstant (P.char '"')
+
+{-
+LiteralExpr ::= Choice(0,
+       NonTerminal('StrExpr'),
+       NonTerminal('IntExpr'),
+       NonTerminal('DoubleExpr'),
+       NonTerminal('CharExpr'))
+-}
+literalExpr = strExpr
+  <|> intExpr
+  <|> doubleExpr
+  <|> charExpr

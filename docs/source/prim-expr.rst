@@ -256,10 +256,6 @@ Primitive Expressions
     NonTerminal('name'),
     Optional(NonTerminal('guard')), Comment("objectExpr@@"))
 
-.. syntax:: name
-
-   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
-
 .. syntax:: def
 
    Sequence(

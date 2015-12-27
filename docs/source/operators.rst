@@ -412,7 +412,7 @@ A noun is a reference to a final or variable slot.
 
 .. syntax:: name
 
-   Choice(0, "IDENTIFIER", Sigil("::", ".String."))
+   Choice(0, "IDENTIFIER", Sigil("::", P('stringLiteral')))
 
 
 examples::
