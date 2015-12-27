@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# This runs the Python and Monte tests via trial.
-
-trial monte
-
-exit $?

@@ -14,6 +14,9 @@ pass the guard. Guards play a key role in protecting the security
 properties when working with untrusted code, as discussed in
 :ref:`secure-distributed-computing`.
 
+Standard Guards
+~~~~~~~~~~~~~~~
+
 Monte comes equipped with several very useful guards.
 
 Several builtin guards are used for asserting that a value is of a given type:
@@ -28,15 +31,18 @@ Several builtin guards are used for asserting that a value is of a given type:
 * ``Set`` for sets
 
 These guards have useful features for more precisely asserting that the
-guarded values are within certain ranges. The ``Char``, ``Double``, and
-``Int`` guards support subranges of values via comparison expressions::
+guarded values are within certain ranges. The ``Char``, ``Double``, ``Int``,
+and ``Str`` guards support subranges of values via comparison expressions::
 
     def x :('a'..'z' | 'A'..'Z') := 'c'
     def y :(Double >= 4.2) := 7.0
     def z :(Int < 5) := 3
 
+.. todo::
+    ``Double`` and ``Str`` are currently broken for this kind of usage.
+
 Additionally, the ``List`` and ``Set`` guards can be specialized on
-*subguards*, which are just regular guards that check each value in the set or
+:dfn:subguards, which are just regular guards that check each value in the set or
 list::
 
     def ints :List[Int] := [1, 2, 4, 6, 8]
@@ -75,24 +81,6 @@ and the guard.
     about gradual typing and type inference in Monte, and the Typhon virtual
     machine almost always can remove typical trivial guards like ``Int`` and
     ``Bool``.
-
-Glossary
-~~~~~~~~
-
-.. glossary::
-
-    retractable
-        A guard that is not :term:`unretractable`.
-
-    unretractable
-        An unretractable guard, informally, cannot be fooled by impostor
-        objects that only pretend to be guarded, and it also will not change
-        its mind about an object on two different coercions.
-
-        Formally, an :dfn:`unretractable` guard Un is a guard such that for
-        all Monte objects, if any given object is successfully coerced by Un,
-        then it will always be successfully coerced by Un, regardless of the
-        internal state of Un or the object.
 
 Guard Syntax Summary
 ~~~~~~~~~~~~~~~~~~~~

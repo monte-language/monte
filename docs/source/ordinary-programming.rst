@@ -40,11 +40,10 @@ Here are some of the basics of the language::
   ...    traceln("Wow, the arithmetic logic unit in this processor is confused")
   null
 
-Variable declarations are made with the ``var`` statement. Variables
-that are only assigned a value once at creation (i.e., constants, or
-variables declared final) are created with the def statement. In Monte as
-in python, "+=" is shorthand for adding the righthand value to the
-lefthand variable.
+Variable declarations are made with the ``var`` statement. Variables that are
+only assigned a value once at creation (i.e., constants, or variables declared
+final) are created with the def statement. In Monte, as in Python, "+=" is
+shorthand for adding the righthand value to the lefthand variable.
 
 Single-line comments have a ``#`` at the beginning, and terminate with
 the end of line. The ``/**...*/`` comment style is used only for writing
@@ -55,10 +54,10 @@ javadoc-style comments, discussed later.
 Assignment uses the ``:=`` operator. The single equal sign ``=`` is never
 legal in Monte; use ``:=`` for assignment and ``==`` for testing
 equality. The function ``traceln`` sends diagnostic output to the
-console. The ``if`` statement looks just like its python equivalent.
+console. The ``if`` statement looks just like its Python equivalent.
 
 .. todo:: Introduce Monte's haskell-style brace-or-indent blocks;
-          contrast with python
+          contrast with Python
 
 .. todo:: "What is the end-of-statement delineator in Monte?"
 
@@ -96,8 +95,8 @@ integer, truncated towards negative infinity. So::
   >>> -3.5 // 1
   -4
 
-The Monte modulo operator, ``%``, like the python modulo operator,
-returns the remainder of division that truncates towards zero.
+The Monte modulo operator, ``%``, like the Python modulo operator, returns the
+remainder of division that truncates towards zero.
 
 Operator precedence is generally the same as in Java, Python, or C. In
 a few cases, Monte will throw a syntax error and require the use of
@@ -113,9 +112,9 @@ as described in detail later; here is a very simple example::
 wherein the back-ticks denote a quasi-literal, and the dollar sign
 denotes a variable whose value is to be embedded in the string.
 
-``+`` when used with strings is a concatenation operator as in
-python. Unlike Java, it does *not* automatically coerce other types on
-the right-hand if the left-hand operand is a string.
+``+`` when used with strings is a concatenation operator as in Python. Unlike
+Java, it does *not* automatically coerce other types on the right-hand if the
+left-hand operand is a string.
 
 ``&&`` and ``||`` and ``!`` have their traditional meanings for booleans;
 ``true`` and ``false`` are boolean constants.
@@ -209,52 +208,4 @@ Note that the ejector is threaded through ``to next(ej)`` into the inner
 iterator in order to allow iteration to terminate if/when the inner iterator
 becomes exhausted.
 
-
-A Taste of Monte
-----------------
-
-Let's see what a simple web server looks like in monte:
-
-.. literalinclude:: tut/web1.mt
-    :linenos:
-    :language: monte
-
-The ``imports`` line begins a :ref:`module <modules>` and we declare
-that this module ``exports`` its ``main`` function, as is conventional
-for executable programs.
-
-The :ref:`def expression<def>` for defining the ``helloWeb`` function is
-similar to python and the like.
-
-.. todo:: Forward ref :ref:`auditors` or find a way to elide
-          ``DeepFrozen``. (Issue #43).
-
-The ``smallBody`` import works much like python's ``from
-lib.http.resource import smallBody``, using :ref:`pattern matching
-<patterns>` to bind names to objects imported from :ref:`modules
-<modules>`.
-
-.. todo:: hoist imports to toplevel once these library modules
-          have gone through the module migration.
-
-The ``escape`` expression introduces an :ref:`ejector <ejector>` called
-``badRequest``, which we use to deal with ill-formed requests in a
-fail-stop manner in case the ``request`` doesn't match the
-``[[verb, path], headers]`` pattern.
-
-The ``body`` is defined using :ref:`method calls<message_passing>`
-on the imported ``tag`` object.
-
-The critical distinction between monte and other memory-safe dynamic
-languages is that monte is an :ref:`object capability <ocap>`
-lanugage. Powerful objects such as ``currentProcess`` and
-``makeTCP4ServerEndpoint`` are not in any global namespace; they
-cannot be imported. Rather, they are provided explicitly to the
-``main`` function. Except by explicit delegation, no code can do
-anything more more than create objects (including functions) in
-memory. It cannot read from nor write to files [#]_, access the
-network, clobber global state, or launch missiles.
-
-By straightforward inspection, we can see that
-  - only one TCP port is ever created;
-  - its port number is taken from the last command-line argument.
+.. include: tut.rst

@@ -14,6 +14,7 @@ Monte is a dynamic language inspired by Python and E.
     intro
     design
     montefesto
+    glossary
 
 
 Ordinary Programming

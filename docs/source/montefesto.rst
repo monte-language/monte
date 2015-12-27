@@ -112,7 +112,7 @@ trackers and the `pipe dreams`_ wiki page. It's also worth grepping for
 .. _Python: https://docs.python.org/2/tutorial/
 .. _E: http://www.skyhunter.com/marcs/ewalnut.html
 .. _repo: https://github.com/monte-language/monte
-.. _pastebin: http://bpaste.net/
+.. _pastebin: https://bpaste.net/
 
 
 Using Monte

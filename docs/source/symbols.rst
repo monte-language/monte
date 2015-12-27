@@ -20,7 +20,8 @@ Monte integer literals are written as usual::
   >>> 0xF
   15
 
-Integers may be arbitrarily large (a la python long)::
+Integers may be arbitrarily large, *à la* Python's `long` or Haskell's
+`Integer`::
 
   >>> 128 ** 20
   1393796574908163946345982392040522594123776
@@ -187,7 +188,7 @@ Expansions::
 Char
 ~~~~
 
-Monte's character type represents unicode characters; it is distinct
+Monte's character type represents Unicode characters; it is distinct
 from the string type. Character literals are always delimited by
 apostrophes (``'``).
 
@@ -235,7 +236,7 @@ String
 ~~~~~~
 
 Strings are objects with built-in methods and capabilities, rather than
-character arrays. Monte's strings are always unicode, like Python 3 (but
+character arrays. Monte's strings are always Unicode, like Python 3 (but
 unlike Python 2). String literals are always delimited by
 double-quotes (``"``)::
 
@@ -248,7 +249,7 @@ double-quotes (``"``)::
 String Escapes
 ++++++++++++++
 
-Monte has string escape syntax much like python or Java:
+Monte has string escape syntax much like Python or Java:
 
 +-----------------+---------------------------------+
 | Escape Sequence | Meaning                         |
@@ -269,23 +270,27 @@ Monte has string escape syntax much like python or Java:
 +-----------------+---------------------------------+
 | ``\t``          | ASCII Horizontal Tab (TAB)      |
 +-----------------+---------------------------------+
+| ``\xhh``        | Character with 8-bit hex value  |
+|                 | *hh* (Unicode code point)       |
++-----------------+---------------------------------+
 | ``\uxxxx``      | Character with 16-bit hex value |
-|                 | *xxxx* (Unicode only)           |
+|                 | *xxxx* (Unicode code point)     |
 +-----------------+---------------------------------+
 | ``\Uxxxxxxxx``  | Character with 32-bit hex value |
-|                 | *xxxxxxxx* (Unicode only)       |
-+-----------------+---------------------------------+
-| ``\xhh``        | Character with hex value *hh*   |
+|                 | *xxxxxxxx* (Unicode code point) |
 +-----------------+---------------------------------+
 
 (table mostly from `the Python docs <https://docs.python.org/2/_sources/reference/lexical_analysis.txt>`_)
 
-.. note:: 
-
+.. warning::
     Monte intentionally avoids providing escape notation for ASCII vertical
-    tabs (``\v``) and octal values (``\o00``) because it is a language of the
-    future and in the future, nobody uses those. Hexadecimal escapes are still
-    valid for vertical tabs.
+    tabs (``\v``) and octal values (``\o00``). These are rare enough that we
+    chose to omit them from the grammar. Hexadecimal escapes are still valid
+    for vertical tabs; use ``\x0b``.
+
+    .. epigraph::
+        "Because [Monte] is a language of the future, and in the future, nobody
+        uses [vertical tabs]." ~ Allen
 
 .. note::
 

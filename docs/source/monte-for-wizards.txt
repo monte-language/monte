@@ -218,7 +218,7 @@ a(p, q)
 1.0
 'a'
 '\u23b6'
-"some unicode text"
+"some Unicode text"
 [1, 2, 'x']
 [1 => 'a', 2 => "b"]
 ***** Simple expressions
