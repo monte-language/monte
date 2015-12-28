@@ -212,4 +212,3 @@ __ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
             <http://www.combex.com/papers/darpa-report/index.html>`_
 
 __ http://erights.org/talks/thesis/index.html
-__ http://www.combex.com/papers/darpa-report/index.html
