@@ -21,6 +21,7 @@ Ordinary Programming
 
 .. toctree::
 
+    taste
     ordinary-programming
     interfaces
     quasiparsers
