@@ -54,6 +54,22 @@ Imports can have guards on them::
 This is extremely useful for ensuring that imported names are ``DeepFrozen``
 and thus usable by exported objects.
 
+Entrypoints
+~~~~~~~~~~~
+
+The export name "main", when present, denotes the *entrypoint* of the module.
+The entrypoint should take named parameters corresponding to unsafe
+capabilities from the unsafe scope, and return an ``Int`` or a promise for an
+``Int``.
+
+::
+
+    exports (main)
+
+    def main(=> currentProcess) :Int as DeepFrozen:
+        traceln(`Current process: $currentProcess`)
+        return 0
+
 Under the Hood
 --------------
 
@@ -69,34 +85,24 @@ Miranda Imports
 The package loader provides a few Miranda import pet names to all modules.
 
 "unittest"
-    A unit test collector. It is not ``DeepFrozen``::
+    A unit test collector. It is not ``DeepFrozen``, so unit tests are
+    confined to their module::
     
-        ``import "unittest" =~ [=> unittest]``
+        import "unittest" =~ [=> unittest]
+        exports (adder)
+
+        def adder(x, y) as DeepFrozen:
+            return x + y
+
+        def testAdder(assert):
+            assert.equal(adder(5, 7), 12)
+
+        unittest([testAdder])
 
 "bench"
     A benchmark collector. It is not ``DeepFrozen``::
-    
-        ``import "bench" =~ [=> bench]``
 
-Unit Testing
-~~~~~~~~~~~~
-
-When a module is loaded, the name ``unittest`` will be passed. This object can
-be used to collect tests. It is not ``DeepFrozen``, so it cannot be captured
-by module exports.
-
-::
-
-    import "unittest" =~ [=> unittest]
-    exports (adder)
-
-    def adder(x, y) as DeepFrozen:
-        return x + y
-
-    def testAdder(assert):
-        assert.equal(adder(5, 7), 12)
-
-    unittest([testAdder])
+        import "bench" =~ [=> bench]
 
 Module Syntax Summary
 ---------------------
