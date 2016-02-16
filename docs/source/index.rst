@@ -28,6 +28,7 @@ Ordinary Programming
     modules
     guards
     custom-guards
+    brands
 
 .. _distributed-computing:
 
