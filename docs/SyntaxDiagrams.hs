@@ -16,8 +16,8 @@ HideExpr ::= Ap('HideExpr',
 -}
 hideExpr = HideExpr <$> hideExpr_1
   where
-    hideExpr_1 = IPC.betweenBlock (IT.symbol "{") (IT.symbol "}") hideExpr_1_2
-    hideExpr_1_2 = (wrapSequence expr (IT.symbol ";"))
+    hideExpr_1 = IPC.betweenBlock (IT.symbol tokP "{") (IT.symbol tokP "}") hideExpr_1_2
+    hideExpr_1_2 = (wrapSequence expr (IT.symbol tokP ";"))
 
 {-
 NounExpr ::= Ap('NounExpr', NonTerminal('name'))
@@ -30,7 +30,7 @@ name ::= Choice(0, "IDENTIFIER", Sigil("::", P('stringLiteral')))
 name = (IT.identifier tokP)
   <|> name_2
   where
-    name_2 = ((IT.symbol "::") *> stringLiteral )
+    name_2 = ((IT.symbol tokP "::") *> stringLiteral )
 
 {-
 IntExpr ::= Ap('IntExpr', Choice(0, P('hexLiteral'), P('decLiteral')))
