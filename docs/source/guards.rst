@@ -1,25 +1,18 @@
 .. _guards:
 
-======
-Guards
-======
+Dynamic "type checking" and Guards
+----------------------------------
 
-.. note::
-    This section sucks less. It still has a harsh opening though. Maybe
-    something could be said about typical guard usage, or some more source
-    code examples could be written?
+Monte guards perform many of the functions usually thought of as type
+checking, though they are so flexible, they also work as concise
+assertions. Guards can be placed on variables, parameters, and return
+values.
 
-::
-
-    def someName :SomeGuard exit ej := someExpr
-
-A guard is a syntactic element which ensures that an object has a certain
-property. Guards are used to (in)formally prove that sections of code behave
-correctly. A guard examines a value and returns a (possibly different) value
-which satisfies its property, or ejects or otherwise aborts the computation.
-
-We call the process of a guard examining an object :dfn:coercion. The object
-being examined and coerced is called the :dfn:specimen.
+Guards are not checked during compilation. They are checked during
+execution, and will throw exceptions if the value cannot be coerced to
+pass the guard. Guards play a key role in protecting the security
+properties when working with untrusted code, as discussed in
+:ref:`secure-distributed-computing`.
 
 Standard Guards
 ~~~~~~~~~~~~~~~
@@ -94,11 +87,38 @@ Guard Syntax Summary
 
 .. syntax:: guard
 
-   Sequence(
-    ':',
-    Choice(
-        0, Sequence('IDENTIFIER',
-                    Optional(Sequence('[',
-                                      OneOrMore(NonTerminal('expr'), ','),
-                                      ']'))),
-        Sequence('(', NonTerminal('expr'), ')')))
+   Choice(0,
+     Ap('GetExpr',
+        Ap('NounExpr', 'IDENTIFIER'),
+        Brackets('[', SepBy(NonTerminal('expr'), ','), ']')),
+     Ap('NounExpr', 'IDENTIFIER'),
+     Brackets('(', NonTerminal('expr'), ')'))
+
+@@ TODO: rename to maybeGuard
+
+.. syntax:: guardOpt
+
+   Maybe(Sigil(':', NonTerminal('guard')))
+
+
+Guards (@move?)
+~~~~~~~~~~~~~~~
+
+.. note::
+    This section sucks less. It still has a harsh opening though. Maybe
+    something could be said about typical guard usage, or some more source
+    code examples could be written?
+
+::
+
+    def someName :SomeGuard exit ej := someExpr
+
+A guard is a syntactic element which ensures that an object has a certain
+property. Guards are used to (in)formally prove that sections of code behave
+correctly. A guard examines a value and returns a (possibly different) value
+which satisfies its property, or ejects or otherwise aborts the computation.
+
+We call the process of a guard examining an object **coercion**. The object
+being examined and coerced is called the **specimen**.
+
+.. include:: custom-guards.rst

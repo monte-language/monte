@@ -96,3 +96,35 @@ Network's View
 
 __ http://www.erights.org/elib/concurrency/refmech.html
 __ http://www.erights.org/elib/index.html
+
+
+Scoping Rules
+-------------
+
+Monte is lexically scoped, with simple scoping rules. In general, names are
+only accessible within the scope in which they were defined.
+
+After an object has been created, the names visible to it aren't accessible
+from outside the object. This is because Monte objects cannot share their
+internal state; they can only respond to messages. For programmers coming from
+object-oriented languages with access modifiers, such as ``private`` and
+``protected``, this is somewhat like if there were only one access modifier
+for variables, ``private``. (And only one access modifier for methods,
+``public``.)
+
+
+Closing Over Bindings
+~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: monte
+
+    var x := 42
+    object obj:
+        to run():
+            return x += 1
+
+Here, ``obj`` can see ``x``, permitting the usage of ``x`` within ``obj``'s
+definition. When ``obj.run()`` is called, ``x`` will be mutated. Monte does
+not require any "global" or "nonlocal" keywords to do this.
+
+.. include:: faq.rst

@@ -1,6 +1,5 @@
 .. _modules:
 
-================
 Modules in Monte
 ================
 
@@ -38,6 +37,18 @@ All exports must pass ``DeepFrozen``::
 
     def f() as DeepFrozen:
         return 42
+
+.. syntax:: module_
+
+   Ap('Module',
+    Sigil("imports", P('StrExpr'), Sigil("=~", SepBy(NonTerminal('namePatt')))),
+    Maybe(P('exports')),
+    NonTerminal('block'))
+
+.. syntax:: exports
+
+   Sigil('exports', Brackets("(", SepBy(NonTerminal('name'), ","), ")"))
+
 
 Conventions
 ~~~~~~~~~~~
@@ -103,17 +114,3 @@ The package loader provides a few Miranda import pet names to all modules.
     A benchmark collector. It is not ``DeepFrozen``::
 
         import "bench" =~ [=> bench]
-
-Module Syntax Summary
----------------------
-
-.. syntax:: module
-
-   Sequence(
-    ZeroOrMore(Sequence("import", ".String.", "=~", NonTerminal('pattern'))),
-    Optional(NonTerminal('exports')),
-    NonTerminal('block'))
-
-.. syntax:: exports
-
-   Sequence("exports", "(", ZeroOrMore(NonTerminal('name')), ")")

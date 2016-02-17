@@ -148,10 +148,21 @@ linkcheck:
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in $(BUILDDIR)/linkcheck/output.txt."
 
-doctest:
-	$(SPHINXBUILD) -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
-	@echo "Testing of doctests in the sources finished, look at the " \
-	      "results in $(BUILDDIR)/doctest/output.txt."
+NIXP=~/.nix-profile
+
+doctest: source/docs_examples.mast
+	$(NIXP)/mt-typhon -l $(NIXP)/mast -l `/bin/pwd`/source \
+           $(NIXP)/mast/unittest docs_examples
+
+PYTHON=python
+
+%.mast: %.mt
+	@ echo "MONTEC $<"
+	$(NIXP)/mt-typhon -l $(NIXP)/mast $(NIXP)/mast/montec -format mast $< $@
+
+SOURCES=*
+source/docs_examples.mt: source/extract_examples.py source/$(SOURCES).rst
+	cd source; $(PYTHON) extract_examples.py docs_examples.mt $(SOURCES).rst
 
 slides:
 	$(SPHINXBUILD) -b slides $(ALLSPHINXOPTS) $(BUILDDIR)/slides

@@ -30,6 +30,9 @@ sys.path.insert(0, os.path.abspath('.'))
 # ones.
 extensions = ['sphinx.ext.todo', 'rr_ext']
 
+syntax_header = 'SyntaxDiagramsTop.hs'
+syntax_dest = 'SyntaxDiagrams.hs'
+
 todo_include_todos = True
 
 rr_stylesheet = 'railroad-diagrams.css'

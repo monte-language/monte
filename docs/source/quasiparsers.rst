@@ -76,13 +76,14 @@ Quasiliteral Syntax Summary
 
 .. syntax:: quasiliteral
 
-   Sequence(
-    Optional(Terminal("IDENTIFIER")),
-    '`',
-    ZeroOrMore(
-        Choice(0, Comment('...text...'),
-               Choice(
-                   0,
-                   Terminal('$IDENT'),
-                   Sequence('${', NonTerminal('expr'), '}')))),
-    '`')
+   Ap('QuasiParserExpr',
+    Maybe(Terminal("IDENTIFIER")),
+    Brackets('`',
+    SepBy(
+        Choice(0,
+	  Ap('Left', Terminal('QUASI_TEXT')),
+          Ap('Right',
+            Choice(0,
+              Ap('NounExpr', Terminal('DOLLAR_IDENT')),
+              Brackets('${', NonTerminal('expr'), '}'))))),
+    '`'))

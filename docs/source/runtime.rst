@@ -7,7 +7,7 @@ Primitive values
 ----------------
 
   >>> [true, false, null, NaN, Infinity]
-  [true, false, null, nan, inf]
+  [true, false, null, NaN, Infinity]
 
 
 Flow control
@@ -17,7 +17,8 @@ Flow control
 
   >>> M.call(1, "add", [2])
   3
-  >>> M.send(1, "add", [2])
+
+  .>> M.send(1, "add", [2])
   <Promise>
 
 
@@ -27,18 +28,18 @@ an exception if `optEjector` is null::
 
   >>> throw
   throw
-  >>> throw.eject
+
+  .>> throw.eject
   <curried>
+
 
 `__loop` is an iteration primitive. Used in syntax expansion of 'for';
 exhausts an iterator, invoking a callable for each item in it.
 
   >>> def l := [].diverge()
-  [].diverge()
-  >>> _loop([1,2,3], fn k, v { l.push(v) })
-  null
-  >>> l
-  [1, 2, 3].diverge()
+  ... _loop([1,2,3], fn k, v { l.push(v) })
+  ... l.snapshot()
+  [1, 2, 3]
 
 
 Reference/object operations
@@ -64,7 +65,7 @@ Selfless Guard
 for selfless (i.e. comparable by value not identity) objects::
 
   >>> Selfless
-  <Selfless>
+  Selfless
 
 Transparent Guard
 ~~~~~~~~~~~~~~~~~
@@ -72,14 +73,14 @@ Transparent Guard
 for transparent (i.e. no hidden state) objects.
 
   >>> Transparent
-  <Transparent>
+  Transparent
 
 Data Guard
 ~~~~~~~~~~
 
 for data (i.e. completely serializable) objects.
 
-  >>> Data
+  .>> Data
 
 
 PassByCopy Guard
@@ -88,7 +89,7 @@ PassByCopy Guard
 for objects that can be copied when passed to another vat, rather than
 having to be represented as a far ref.
 
-  >>> PassByCopy
+  .>> PassByCopy
 
 
 .. _trace:
@@ -118,13 +119,13 @@ Data constructors
   >>> __makeInt("1")
   1
 
-  >>> __makeInt("100_000")
+  .>> __makeInt("100_000")  # BUG!
 
   >>> [_makeFinalSlot, _makeVarSlot]
-  [<FinalSlotMaker>, <VarSlotMaker>]
+  [_makeFinalSlot, _makeVarSlot]
 
   >>> _makeOrderedSpace
-  <OrderedSpaceMaker>
+  _makeOrderedSpace
 
 
 Basic guards
@@ -139,39 +140,39 @@ Basic guards
   >>> [List, Map, Set]
   [List, Map, Set]
 
-  >>> Tuple
-  >>> __Portrayal
-  >>> [Near, Rcvr]
-  >>> Audition
+  .>> Tuple
+  .>> __Portrayal
+  .>> [Near, Rcvr]
+  .>> Audition
 
 Guard utilities
 ---------------
 
-  >>> [All, Not]
-  >>> NotNull
+  .>> [All, Not]
+  .>> NotNull
 
   >>> "abc" :NullOk[Str]
-  abc
+  "abc"
 
 Guard meta
 ----------
 
-  >>> [ValueGuard, Guard, __makeGuard]
+  .>> [ValueGuard, Guard, __makeGuard]
 
 Interface constructors
 ----------------------
 
   >>> [__makeMessageDesc, __makeParamDesc, __makeProtocolDesc]
-  [<_makeMessageDesc>, <_makeParamDesc>, <_makeProtocolDesc>]
+  [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc]
 
 Quasiparsers
 ------------
 
   >>> [simple__quasiParser, m__quasiParser]
-  [<simple__quasiParser>, <m__quasiParser>]
+  [simple__quasiParser, m__quasiParser]
 
   >>> simple`sum: ${1+1}`
-  sum: 2
+  "sum: 2"
 
   >>> m`1 + 1`.expand()
   m`1.add(1)`
@@ -180,32 +181,32 @@ Utilities for syntax expansions
 -------------------------------
 
   >>> [_accumulateList, _accumulateMap]
-  [<_accumulateList>, <_accumulateMap>]
+  [_accumulateList, _accumulateMap]
 
-  >>>  _bind
-  <_bind>
+  >>> _bind
+  _bind
 
   >>> [_booleanFlow, _comparer, _equalizer]
-  [<_booleanFlow>, <_comparer>, <Equalizer>]
+  [_booleanFlow, _comparer, _equalizer]
 
-  >>> __iterWhile
-  >>> __makeVerbFact
+  .>> __iterWhile
+  .>> __makeVerbFact
   >>> [_mapEmpty, _mapExtract]
-  [Empty, <_mapExtract>]
+  [_mapEmpty, _mapExtract]
 
   >>> [_matchSame, _quasiMatcher]
-  [<_matchSame>, <_quasiMatcher>]
+  [_matchSame, _quasiMatcher]
 
   >>> __slotToBinding
-  <SlotBinder>
+  __slotToBinding
 
   >>> [_splitList, _suchThat]
-  [<_splitList>, <_suchThat>]
+  [_splitList, _suchThat]
 
   >>> _switchFailed
-  <_switchFailed>
+  _switchFailed
 
-  >>> __promiseAllFulfilled
+  .>> __promiseAllFulfilled
 
   >>> _validateFor
-  Result: <_validateFor>
+  _validateFor

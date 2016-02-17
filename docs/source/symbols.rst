@@ -1,6 +1,9 @@
 Primitive Data Types
 ====================
 
+.. todo:: fold explanatory material into :ref:`ordinary_computing`,
+	  separate discussion of expression syntax from datatypes.
+
 Scalars
 -------
 
@@ -40,6 +43,38 @@ and :ref:`operators<operators>` provide traditional syntax::
   >>> 5 + 2
   7
 
+.. syntax:: IntExpr
+
+   Ap('IntExpr', Choice(0, P('hexLiteral'), P('decLiteral')))
+
+.. syntax:: decLiteral
+
+   Ap('(read :: String -> Integer)', P('digits'))
+
+.. syntax:: digits
+
+   Ap("filter ((/=) '_')",
+     Ap('(:)', P('digit'), Many(Choice(0, P('digit'), Char('_')))))
+
+.. syntax:: digit
+
+   OneOf('0123456789')
+
+.. syntax:: hexLiteral
+
+   Ap('(read :: String -> Integer)',
+     Ap('(:)', Char('0'),
+       Ap('(:)', Choice(0, Char('x'), Char('X')), P('hexDigits'))))
+
+.. syntax:: hexDigits
+
+   Ap("filter ((/=) '_')",
+     Ap('(:)', P('hexDigit'), Many(Choice(0, P('hexDigit'), Char('_')))))
+
+.. syntax:: hexDigit
+
+   OneOf('0123456789abcdefABCDEF')
+
 
 Double
 ~~~~~~
@@ -71,6 +106,29 @@ To convert::
 
   >>> 4 * 1.0
   4.000000
+
+.. syntax:: DoubleExpr
+
+   Ap('DoubleExpr', P('floatLiteral'))
+
+.. syntax:: floatLiteral
+
+   Ap('(read :: String -> Double)',
+     Ap('(++)',
+       P('digits'),
+       Choice(0,
+         Ap('(++)',
+           Ap('(:)', Char('.'), P('digits')),
+           Optional(P('floatExpn'), x='""')),
+         P('floatExpn'))))
+
+.. syntax:: floatExpn
+
+   Ap('(:)',
+     OneOf("eE"),
+     Ap('(++)',
+       Optional(Ap('pure', OneOf('-+')), x='""'),
+       P('digits')))
 
 
 Bool
@@ -147,6 +205,26 @@ Characters are permitted to be adorable::
   >>> '\u23b6'
   '⎶'
 
+.. syntax:: CharExpr
+
+   Ap('CharExpr',
+     Brackets(Char("'"), P('charConstant'), Char("'")))
+
+.. syntax:: charConstant
+
+   Sigil(Many(String("\\\n")),
+     Choice(0,
+       NoneOf("'\\\t"),
+       Sigil(Char("\\"),
+         Choice(0,
+           Ap('hexChar', Choice(0,
+               Sigil(Char("U"), Count(8, P('hexDigit'))),
+               Sigil(Char("u"), Count(4, P('hexDigit'))),
+               Sigil(Char("x"), Count(2, P('hexDigit'))))),
+           Ap('decodeSpecial', OneOf(r'''btnfr\'"'''))))))
+
+@@TODO: test for '	' (tab) not allowed
+
 
 Collections
 -----------
@@ -214,6 +292,21 @@ Monte has string escape syntax much like Python or Java:
         "Because [Monte] is a language of the future, and in the future, nobody
         uses [vertical tabs]." ~ Allen
 
+.. note::
+
+    As with Python, a backslash (``\``) as the final character of a line
+    escapes the newline and causes that line and its successor to be
+    interpereted as one.
+
+.. syntax:: StrExpr
+
+   Ap('StrExpr', P('stringLiteral'))
+
+.. syntax:: stringLiteral
+
+   Sigil(Char('"'), ManyTill(P('charConstant'), Char('"')))
+
+
 Lists: ConstList and FlexList
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -236,6 +329,13 @@ Use ``diverge`` and ``snapshot`` to go from ``ConstList`` to mutable
 
   >>> { def l := ['I', "love", "Monte", 42, 0.5].diverge(); l[3] := 0 }
   0
+
+
+.. syntax:: ListExpr
+
+     Ap('ListExpr', Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))
+
+
 
 Maps: ConstMap and FlexMap
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -271,21 +371,37 @@ Use ``diverge`` and ``snapshot`` similarly::
                >>> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
                true
 
-Literal Syntax Summary
-----------------------
+.. syntax:: MapExpr
+
+   Ap('MapExpr',
+     Brackets("[", OneOrMore(NonTerminal('mapItem'), ','), "]"))
+
+.. syntax:: mapItem
+
+   Choice(0,
+     Ap('Right', Ap('pair', NonTerminal('expr'),
+                            Sigil("=>", NonTerminal('expr')))),
+     Ap('Left', Sigil("=>", Choice(0,
+           NonTerminal('SlotExpr'),
+           NonTerminal('BindingExpr'),
+           NonTerminal('NounExpr')))))
+
+
+Lexical Syntax
+--------------
 
 .. note:: Lexical details of monte syntax are currently specified
 	  only by implementation; see `lib/monte/monte_lexer.mt`__
 
 __ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
 
-.. syntax:: Literal
+.. syntax:: LiteralExpr
 
    Choice(0,
-     ".int.", ".float64.", ".char.", ".String.",
-     Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"),
-     Sequence("[", ZeroOrMore(Sequence(NonTerminal('expr'),
-                                       "=>", NonTerminal('expr')), ','), "]"))
+          NonTerminal('StrExpr'),
+	  NonTerminal('IntExpr'),
+          NonTerminal('DoubleExpr'),
+	  NonTerminal('CharExpr'))
 
 .. rubric:: Footnotes
 

@@ -32,12 +32,33 @@ Monte has rich support for destructuring assignment using
   >>> { def [x, y] := [1, 2]; x }
   1
 
-.. syntax:: PatternBinding
+.. syntax:: assign
 
-   Sequence('def',
-             NonTerminal('pattern'),
-             Optional(Sequence("exit", NonTerminal('order'))),
-             Optional(Sequence(":=", NonTerminal('assign'))))
+   Choice(0,
+     Ap('DefExpr',
+       Sigil("def", NonTerminal("pattern")),
+       Maybe(Sigil("exit", NonTerminal("order"))),
+       Sigil(":=", NonTerminal("assign"))),
+    Ap('DefExpr',
+      Choice(0, NonTerminal('VarPatt'), NonTerminal('BindPatt')),
+      Ap('return Nothing', Skip()),
+      Sigil(":=", NonTerminal("assign"))),
+    Ap('AssignExpr',
+       NonTerminal('lval'),
+       Sigil(":=", NonTerminal("assign"))),
+    NonTerminal('VerbAssignExpr'),
+    NonTerminal('order'))
+
+.. syntax:: lval
+
+   Choice(0,
+    Ap('Left', Ap('pair',
+      NonTerminal('order'),
+      Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))),
+    Ap('Right', NonTerminal('name')))
+
+@@order? infix?/index ok?
+
 
 .. _message_passing:
 
@@ -70,35 +91,46 @@ Calls may be curried::
   >>> { def x := 2; def xplus := x.add; xplus(4) }
   6
 
-.. syntax:: call
-
-   Sequence(
-    NonTerminal('calls'),
-    Optional(Sequence(NonTerminal('curry'))))
-
 .. syntax:: calls
 
-    Choice(
-        0, NonTerminal('prim'),
-        Sequence(
-            NonTerminal('calls'),
-            Optional(
-                Sequence(Choice(0, ".", "<-"),
-                         Choice(0, "IDENTIFIER", ".String."))),
-            Sequence("(", ZeroOrMore(NonTerminal('expr'), ','), ")")),
-        NonTerminal('getExpr'))
+   Ap('callExpr',
+       NonTerminal('prim'),
+       SepBy(
+         Choice(0,
+           Ap('Right',
+             Choice(0,
+               Ap('Right', NonTerminal('call')),
+               Ap('Left', NonTerminal('send')))),
+           Ap('Left', NonTerminal('index')))),
+       Maybe(NonTerminal('curryTail')))
 
-.. syntax:: getExpr
+.. syntax:: call
 
-   Sequence(
-    NonTerminal('calls'),
-    Sequence("[", ZeroOrMore(NonTerminal('expr'), ','), "]"))
+   Ap('pair', Maybe(Sigil(".", NonTerminal('verb'))), NonTerminal('argList'))
 
-.. syntax:: curry
+.. syntax:: send
 
-   Sequence(
-    Choice(0, '.', '<-'),
-    Choice(0, "IDENTIFIER", ".String."))
+   Sigil("<-", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))
+
+.. syntax:: curryTail
+
+   Choice(0,
+     Ap('Right', Sigil(".", NonTerminal('verb'))),
+     Ap('Left', Sigil("<-", NonTerminal('verb'))))
+
+.. syntax:: index
+
+   Brackets("[", SepBy(NonTerminal('expr'), ','), "]")
+
+.. syntax:: verb
+
+   Choice(0, "IDENTIFIER", ".String.")
+
+.. syntax:: argList
+
+   Brackets("(", SepBy(NonTerminal('expr'), ","), ")")
+
+.. todo:: named args in argList
 
 .. _operators:
 
@@ -115,15 +147,16 @@ the object on the right.
 
 .. syntax:: comp
 
-   Sequence(
-    NonTerminal('order'),
-    Optional(Sequence(Choice(
-        0,
-	Choice(0, "=~", "!~"),
-        Choice(0, "==", "!="),
-        "&!",
-        Choice(0, "^", "&", "|")
-    ), NonTerminal('comp'))))
+   Choice(0,
+     Ap('BinaryExpr',
+       NonTerminal('order'),
+       Choice(0,
+	 Choice(0, "=~", "!~"),
+         Choice(0, "==", "!="),
+         "&!",
+         Choice(0, "^", "&", "|")),
+       NonTerminal('comp')),
+    NonTerminal('order'))
 
 .. syntax:: logical
 
@@ -133,17 +166,35 @@ the object on the right.
 
 .. syntax:: order
 
-   Sequence(
-    NonTerminal('prefix'),
-    Optional(Sequence(Choice(
-        0,
-        "**",
-        Choice(0, "*", "/", "//", "%"),
-        Choice(0, "+", "-"),
-        Choice(0, "<<", ">>"),
-        Choice(0, "..", "..!"),
-        Choice(0, ">", "<", ">=", "<=", "<=>")
-    ), NonTerminal('order'))))
+   Choice(0,
+     NonTerminal('BinaryExpr'),
+     NonTerminal('RangeExpr'),
+     NonTerminal('CompareExpr'),
+     NonTerminal('prefix'))
+
+.. syntax:: BinaryExpr
+
+   Choice(0,
+     Ap('BinaryExpr', NonTerminal('prefix'),
+              "**", NonTerminal('order')),
+     Ap('BinaryExpr', NonTerminal('prefix'),
+              Choice(0, "*", "/", "//", "%"), NonTerminal('order')),
+     Ap('BinaryExpr', NonTerminal('prefix'),
+              Choice(0, "+", "-"), NonTerminal('order')),
+     Ap('BinaryExpr', NonTerminal('prefix'),
+              Choice(0, "<<", ">>"), NonTerminal('order')))
+
+@@TODO: precedence, associativity
+
+.. syntax:: CompareExpr
+
+   Ap('CompareExpr', NonTerminal('prefix'),
+            Choice(0, ">", "<", ">=", "<=", "<=>"), NonTerminal('order'))
+
+.. syntax:: RangeExpr
+
+   Ap('RangeExpr', NonTerminal('prefix'),
+            Choice(0, "..", "..!"), NonTerminal('order'))
 
 
 Comparison
@@ -277,11 +328,17 @@ of parentheses::
   >>> { var x := 7; x modPow= (129, 3) }
   1
 
+.. syntax:: VerbAssignExpr
+
+   Ap('VerbAssignExpr',
+      NonTerminal('lval'),
+      Sigil("VERB_ASSIGN", NonTerminal("assign")))
+
+.. todo:: AugAssignExpr? Lexer.hs loses the distinction between += and add=
+
 
 Assignment operators
 ~~~~~~~~~~~~~~~~~~~~
-
-.. todo:: find these in ``monte_parser.mt``; doctest
 
 ::
 
@@ -301,33 +358,6 @@ Assignment operators
   a ^= b
   a foo= b
 
-.. syntax:: assign
-
-   Choice(
-    0,
-    NonTerminal('PatternBinding'),
-    Sequence(Choice(0, 'var', 'bind'),
-             NonTerminal('pattern'),
-             # XXX the next two seem to be optional in the code.
-             ":=", NonTerminal('assign')),
-    Sequence(NonTerminal('lval'), ":=", NonTerminal('assign')),
-    Comment("@op=...XXX"),
-    Comment("VERB_ASSIGN XXX"),
-    NonTerminal('logical'))
-
-.. syntax:: ForwardDeclaration
-
-   Sequence('def', NonTerminal('name'))
-
-.. todo:: find forward declaration in ``monte_parser.mt``; doctest
-
-.. syntax:: lval
-
-   Choice(
-    0,
-    NonTerminal('name'),
-    NonTerminal('getExpr'))
-
 
 Primitive Expressions
 ---------------------
@@ -338,19 +368,25 @@ Parentheses, braces, and square brackets set off primitive expressions.
 
    Choice(
     0,
-    NonTerminal('Literal'),
+    NonTerminal('LiteralExpr'),
     NonTerminal('quasiliteral'),
-    NonTerminal('noun'),
-    Sequence("(", NonTerminal('expr'), ")"),
-    Sequence("{", ZeroOrMore(NonTerminal('expr'), ';'), "}"),
-    Sequence("[",
-             "for", NonTerminal('comprehension'),
-             "]"))
+    NonTerminal('NounExpr'),
+    Brackets("(", NonTerminal('expr'), ")"),
+    NonTerminal('HideExpr'),
+    NonTerminal('MapComprehensionExpr'),
+    NonTerminal('ListComprehensionExpr'),
+    NonTerminal('ListExpr'),
+    NonTerminal('MapExpr'))
 
 A sequence expressions evaluates to the value of its last item::
 
   >>> { 4; "x"; "y" }
   "y"
+
+.. syntax:: HideExpr
+
+   Ap('HideExpr',
+      Brackets("{", SepBy(NonTerminal('expr'), ';', fun='wrapSequence'), "}"))
 
 Parentheses override normal precedence rules::
 
@@ -370,9 +406,14 @@ Noun
 
 A noun is a reference to a final or variable slot.
 
-.. syntax:: noun
+.. syntax:: NounExpr
 
-   Choice(0, "IDENTIFIER", Sequence("::", ".String."))
+   Ap('NounExpr', NonTerminal('name'))
+
+.. syntax:: name
+
+   Choice(0, "IDENTIFIER", Sigil("::", P('stringLiteral')))
+
 
 examples::
 
@@ -411,22 +452,22 @@ A guard can be used as an operator to coerce a value::
 
    Choice(
     0,
-    NonTerminal('unary'),
-    NonTerminal('SlotExpression'),
-    NonTerminal('BindingExpression'),
-    Sequence(NonTerminal('call'), Optional(NonTerminal('guard'))))
+    Ap("PrefixExpr", '-', NonTerminal('prim')),
+    Ap("PrefixExpr", Choice(0, "~", "!"), NonTerminal('calls')),
+    NonTerminal('SlotExpr'),
+    NonTerminal('BindingExpr'),
+    NonTerminal('CoerceExpr'),
+    NonTerminal('calls'))
 
-.. syntax:: unary
 
-   Choice(
-    0,
-    Sequence('-', NonTerminal('prim')),
-    Sequence(Choice(0, "~", "!"), NonTerminal('call')))
+.. syntax:: SlotExpr
 
-.. syntax:: SlotExpression
+   Ap('SlotExpr', Sigil('&', NonTerminal('name')))
 
-   Sequence('&', NonTerminal('noun'))
+.. syntax:: BindingExpr
 
-.. syntax:: BindingExpression
+   Ap('BindingExpr', Sigil('&&', NonTerminal('name')))
 
-   Sequence('&&', NonTerminal('noun'))
+.. syntax:: CoerceExpr
+
+   Ap("CoerceExpr", NonTerminal('calls'), Sigil(":", NonTerminal('guard')))
