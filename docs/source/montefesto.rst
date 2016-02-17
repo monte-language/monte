@@ -6,7 +6,7 @@ Roadmap: Montefesto
 
 .. epigraph::
 
-    Secure distributed computation should not be hard.
+    .ia lo snura faircu'u kanji ka'e na'e nandu ("Secure distributed computation should not be hard.")
 
     -- Corbin, on Monte
 
@@ -15,6 +15,34 @@ you want to work on anything on this list, let us know; we're very accepting
 of new contributors.
 
 2015
+====
+
+* Finish key language features
+
+  * ✓ Named arguments
+  * ✓ m``
+  * ✓ Bytes
+  * ✓ Finalize on-disk (on-wire) compiled code format
+  * ✓ Auditors
+
+* Finish key runtime features
+
+  * Expose key C libraries to user-level code
+
+    * ✓ libsodium
+    * ✓ libuv
+
+* Finish key compiler features
+
+  * ✓ Compiler error messages are informative
+
+* Finish key integration features
+
+  * Profiling
+
+    * ✓ Time (vmprof)
+
+2016
 ====
 
 * "Exit stealth mode"; display a sleek and friendly front page to neophytes
@@ -36,24 +64,10 @@ of new contributors.
 * Finish key language features
 
   * Records
-  * ✓ Named arguments
-  * ✓ m``
-  * ✓ Bytes
-  * Finalize on-disk (on-wire) compiled code format
-  * printer features
+  * Printer features
   * Tubes
-  * ✓ Auditors
   * Farrefs
-  * Arity overloading deprecation
-
-* Finish key runtime features
-
-  * Decide whether key C/etc. libraries should be bound and exposed (unsafely)
-    to user-level code:
-
-    * libsodium
-    * ✓ libuv
-    * sqlite
+  * Arity overloading deprecation?
 
 * Finish key compiler features
 
@@ -62,8 +76,6 @@ of new contributors.
     (two-core laptop circa 2012.)
   * While proving the compiler correct would be arduous, it should certainly
     be more solid than it currently is.
-  * Compiler error messages are currently completely lost. This is not what we
-    wanted.
 
 * Finish key integration features
 
@@ -72,21 +84,20 @@ of new contributors.
 
     * vim (Corbin)
     * emacs (Allen)
-    * sublime/atom (Mike?)
+    * sublime/atom (Mike, Justin)
 
   * Profiling
 
-    * ✓ Time (vmprof)
     * Space
     * Coverage
     * Turns
     * Vats
     * IPC/Networking
 
-2016
+2017
 ====
 
-We currently don't know what we're going to do for 2016. Possibilities range
+We currently don't know what we're going to do for 2017. Possibilities range
 from MonteCon to The Monte Foundation to nothing at all. Who knows? It is a
 mystery~
 
@@ -94,8 +105,8 @@ Contributing
 ============
 
 If you'd like to get involved with developing or using the Monte language,
-start by getting acquainted with Python_'s syntax and the computational
-concepts of E_. 
+start by getting in touch with us on IRC. It is useful, but not necessary, to
+be acquainted with Python_'s syntax and/or the computational concepts of E_.
 
 Then clone the repo_ and follow the directions below to begin running Monte
 code. If you have problems, join us in #monte on irc.freenode.net, ask your
@@ -113,28 +124,3 @@ trackers and the `pipe dreams`_ wiki page. It's also worth grepping for
 .. _E: http://www.skyhunter.com/marcs/ewalnut.html
 .. _repo: https://github.com/monte-language/monte
 .. _pastebin: https://bpaste.net/
-
-
-Using Monte
-===========
-
-.. warning:: This section largely obsolete. The `monte wiki`__ may
-             have more up-to-date info.
-
-__ https://github.com/monte-language/monte/wiki
-
-To use the Monte implementation hosted in Python, it's best to set up a
-virtualenv:
-
-.. code-block:: console
-
-    $ virtualenv v
-    $ source v/bin/activate
-    $ pip install -r requirements.txt
-
-To run Monte code (with your virtualenv activated):
-
-.. code-block:: console
-
-    $ bin/monte monte/src/examples/hello.mt
-

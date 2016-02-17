@@ -22,8 +22,13 @@ Ordinary Programming
 
 .. toctree::
 
+    taste
     ordinary-programming
     quasiparsers
+    modules
+    guards
+    custom-guards
+    brands
 
 .. _distributed-computing:
 

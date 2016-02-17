@@ -4,15 +4,18 @@ Introduction
 Why Monte?
 ----------
 
-Don't we have enough languages already? How could we justify bringing
-yet another programming language into the world?
+Don't we have enough languages already? How could we justify bringing yet
+another programming language into the world? This is a fair question. We don't
+have good answers, but we can at least explain why Monte is interesting to us.
 
-Because **secure distributed computing should not be hard**. We have
-entered the age of globally distributed computing with a vengeance,
-and `everything is broken`__. The hodgepodge of today's dominant
-languages and frameworks offer no comprehensive solution [#]_. Monte
-combines much of the expressive convenience of Python with the secure
-distributed computing features of E [#]_:
+Because Security Matters
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Because **secure distributed computing should not be hard**. We have entered
+the age of globally distributed computing with a vengeance, and `everything is
+broken`__. The hodgepodge of today's dominant languages and frameworks offer
+no comprehensive solution [#]_. Monte takes the object-capability paradigm of
+E [#]_ and updates it for the metamodern era:
 
 __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 
@@ -26,19 +29,18 @@ __ https://medium.com/message/everything-is-broken-81e5f33a24e1
    finds that a more secure program is simply a program that follows
    object-oriented principles of modularization more closely.
 
-- Distributed computing benefits from a *promise-pipelining*
-  architecture that ensures that *most deadlocks cannot occur*. [*]_
-
 - Monte, like E before it, has dramatic advantages for secure distributed
   systems.
+
+   - Monte promises benefit from a *promise-pipelining* architecture which
+     ensures that *most deadlocks cannot occur*. [*]_
 
    - Monte offers cryptographic services directly to its users, easing the use
      of good cryptographic primitives.
 
-   - Capability-based security enables the concise composition of
-     powerful patterns of interoperation, patterns that enable
-     extensive cooperation even in the presence of severely limited
-     trust.
+   - Capability-based security enables the concise composition of powerful
+     patterns of interoperation, patterns that enable extensive cooperation
+     even in the presence of severely limited trust.
 
    - The fractal nature of POLA encourages short and readable modules, leading
      to applications having relatively low amounts of code. As a consequence,
@@ -50,16 +52,15 @@ __ https://medium.com/message/everything-is-broken-81e5f33a24e1
      When the time comes for a security inspection, capability security allows
      simple reachability analysis to exclude huge swaths of code because they
      cannot embody a threat. As a consequence, auditing a system for security
-     becomes cost- effective to an extent that is simply unimaginable with
+     becomes cost-effective to an extent that is simply unimaginable with
      other approaches [#darpa]_.
 
-   - With Monte, it is straightforward to create systems that run across
-     the Internet that are as secure and safe as if the entire system
-     were running on a single computer in your basement. As one of the
-     original developers of Smalltalk observed, upon learning about
-     the object-capability paradigm from E, capability security is
-     "natural security": if you shouldn't use it, you just can't see
-     it.
+   - With Monte, it is straightforward to create systems that run across the
+     Internet that are as secure and safe as if the entire system were running
+     on a single computer in your basement. As one of the original developers
+     of Smalltalk observed, upon learning about the object-capability paradigm
+     from E, capability security is "natural security": if you shouldn't use
+     it, you just can't see it.
 
 - Monte enables the fearless yet powerful use of multi-party limited-trust
   mobile code.
@@ -71,41 +72,44 @@ their architectures, unfixable without breaking upward compatibility,
 as we shall discuss in the chapter on
 :ref:`secure-distributed-computing`.
 
+.. [*] As with all sufficiently complex concurrency systems, deadlock is
+       possible. That said, it has not been observed outside of
+       specially-constructed pathological object graphs.
+
+Because Readability Matters
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. sidebar:: The origin of Monte's name
 
    The Monte language has its roots in the E and Python languages. We
    took "Monty" from "Monty Python", and put an "e" in there. Thus,
    "Monte".
 
-Monte wraps these strengths in a Python-like syntax to make it quickly
+Monte wraps its strengths in a Python-like syntax to make it quickly
 comfortable for a large number of software engineers. It is built with objects
 at the core of its design, making it easy to write modular, readable,
-maintainable software using the strategies familiar from Python, Java, and the
-like. It has the kind of powerful string handling that will be recognized and
-seized upon by the Perl programmer.
+maintainable software using the strategies familiar from Python, JavaScript,
+Ruby, Java, and other object-based languages. It has the kind of powerful
+string handling that will be recognized and seized upon by the Perl
+hacker.
 
-For both better and for worse, Monte is a dynamically typed language like
-Smalltalk, not a statically typed language like Java. Users of Perl and Python
-will immediately recognize this is an advantage; Java and C++ programmers may
-not be so sure. While a thorough discussion of the merits and demerits of
-static typing is well beyond the scope of this document, many of the most
-complex yet most reliable systems in the world today have been developed with
-dynamically typed languages. We invite you to try Monte first and form your
-conclusions later. We believe you will find the experience both pleasant and
-productive, as the long heritage of programmers from Scheme to Smalltalk to
-Perl and Python have found in the past.
+Because Stability Matters
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note:: While Monte's usable and most architectural issues are
-          resolved, it is still undergoing rapid development.
-          See :ref:`roadmap` for details.
-
-
-.. [*] As with all sufficiently complex concurrency systems, deadlock is
-       possible. That said, it has not been observed outside of
-       specially-constructed pathological objects.
+Monte is dynamically typed, like Smalltalk, and not statically typed, like
+Java. Users of Perl and Python will immediately recognize this is an
+advantage; Java and C++ programmers may not be so sure. Fortunately, Monte has
+a novel type system based heavily on guard syntax from E, which permits type
+annotations to be as precise as desired while still permitting extreme
+customization in type complexity. Additionally, dedicated syntax for interface
+declarations enables contract-based programming.
 
 Why not Monte?
 --------------
+
+.. note:: While Monte's usable and most architectural issues are resolved, it
+          is still undergoing rapid development. See :ref:`roadmap` for
+          details.
 
 Monte assumes automatic memory management; the current reference
 implementation uses the PyPy garbage collector, and any other implementation
