@@ -24,6 +24,7 @@ def setup(app):
 
 
 def start_module(app):
+    return
     if app.config.syntax_dest:
         fp = app.config.syntax_fp = open(app.config.syntax_dest, 'w')
         if app.config.syntax_header:
