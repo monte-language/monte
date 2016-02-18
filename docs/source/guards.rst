@@ -1,5 +1,9 @@
 .. _guards:
 
+======
+Guards
+======
+
 Dynamic "type checking" and Guards
 ----------------------------------
 
@@ -120,5 +124,3 @@ which satisfies its property, or ejects or otherwise aborts the computation.
 
 We call the process of a guard examining an object **coercion**. The object
 being examined and coerced is called the **specimen**.
-
-.. include:: custom-guards.rst

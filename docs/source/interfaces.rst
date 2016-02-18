@@ -1,5 +1,8 @@
-Objects and Functions (TODO)
-"""""""""""""""""""""
+=====================
+Objects and Functions
+=====================
+
+.. todo:: needs work?
 
 
 Functions
@@ -29,9 +32,6 @@ Functions can of course call themselves recursively, as in::
   ...         return n * factorial(n-1)
   ... factorial(3)
   6
-
-
-.. include:: guards.rst
 
 
 Objects
