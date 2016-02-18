@@ -48,33 +48,6 @@ Reference/object operations
  - `Ref` Provides methods for creating and examining references, and
    adding callbacks to them.
 
-DeepFrozen Guard
-~~~~~~~~~~~~~~~~
-
-for (i.e., transitively immutable) objects::
-
-   >>> DeepFrozen
-   DeepFrozen
-
-
-.. _selfless:
-
-Selfless Guard
-~~~~~~~~~~~~~~
-
-for selfless (i.e. comparable by value not identity) objects::
-
-  >>> Selfless
-  Selfless
-
-Transparent Guard
-~~~~~~~~~~~~~~~~~
-
-for transparent (i.e. no hidden state) objects.
-
-  >>> Transparent
-  Transparent
-
 Data Guard
 ~~~~~~~~~~
 

@@ -29,6 +29,7 @@ Ordinary Programming
     guards
     custom-guards
     brands
+    auditors
 
 .. _distributed-computing:
 
