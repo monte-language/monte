@@ -41,6 +41,7 @@ Distributed Computing
 .. toctree::
 
     promises
+    vats
 
 .. _secure-distributed-computing:
 
