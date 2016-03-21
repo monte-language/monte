@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 def main(access):
     inputs, write = access()
 
+    write(u'import "unittest" =~ [=> unittest]\n')
+    write(u'exports ()\n')
+
     p = doctest.DocTestParser()
     for (section, txt) in inputs:
         write(u'\n# {section}\n'.format(section=section))

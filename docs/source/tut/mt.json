@@ -1,0 +1,4 @@
+{"name": "tut",
+ "paths": ["."],
+ "entrypoint": "web1"
+}

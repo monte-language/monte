@@ -214,7 +214,7 @@ Monte has the usual comparison operators::
 They expand to use of a helper object::
 
   >>> m`x == y`.expand()
-  m`__equalizer.sameEver(x, y)`
+  m`_equalizer.sameEver(x, y)`
 
   >>> m`3 < 2`.expand()
   m`_comparer.lessThan(3, 2)`
@@ -291,10 +291,7 @@ We can build a half-open interval with the range operator::
   >>> [for x in (1..!4) x * 2]
   [2, 4, 6]
 
-The inclusive range operator is a syntactic shortcut::
-
-  >>> 1..4
-  1..!5
+Or we can build closed intervals with the inclusive range operator::
 
   >>> [for x in (1..4) x * 2]
   [2, 4, 6, 8]

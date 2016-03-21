@@ -245,7 +245,7 @@ Expansion
 ::
 
   >>> m`def &x := 1`.expand()
-  m`def via (__slotToBinding) &&x := 1`
+  m`def via (_slotToBinding) &&x := 1`
 
 BindingPatt (kernel)
 ~~~~~~~~~~~~~~~~~~~~

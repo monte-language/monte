@@ -1,3 +1,12 @@
+import "unittest" =~ [=> unittest]
+exports ()
+
+# brands
+
+unittest([
+    
+])
+
 
 # custom-guards
 
@@ -14,6 +23,13 @@ unittest([
 
 
 # faq
+
+unittest([
+    
+])
+
+
+# glossary
 
 unittest([
     
@@ -345,7 +361,7 @@ def testoperators_11(assert):
             m`x == y`.expand()
             
 
-    assert.equal(example.test().canonical(), m`__equalizer.sameEver(x, y)`.canonical())
+    assert.equal(example.test().canonical(), m`_equalizer.sameEver(x, y)`.canonical())
 
 
 def testoperators_12(assert):
@@ -522,23 +538,13 @@ def testoperators_29(assert):
     object example:
         method test():
             "doc"
-            1..4
-            
-
-    assert.equal(example.test(), 1..!5)
-
-
-def testoperators_30(assert):
-    object example:
-        method test():
-            "doc"
             [for x in (1..4) x * 2]
             
 
     assert.equal(example.test(), [2, 4, 6, 8])
 
 
-def testoperators_31(assert):
+def testoperators_30(assert):
     object example:
         method test():
             "doc"
@@ -548,7 +554,7 @@ def testoperators_31(assert):
     assert.equal(example.test(), "augmenting addition!")
 
 
-def testoperators_32(assert):
+def testoperators_31(assert):
     object example:
         method test():
             "doc"
@@ -558,7 +564,7 @@ def testoperators_32(assert):
     assert.equal(example.test(), "augmenting addition!")
 
 
-def testoperators_33(assert):
+def testoperators_32(assert):
     object example:
         method test():
             "doc"
@@ -568,7 +574,7 @@ def testoperators_33(assert):
     assert.equal(example.test(), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
 
-def testoperators_34(assert):
+def testoperators_33(assert):
     object example:
         method test():
             "doc"
@@ -578,7 +584,7 @@ def testoperators_34(assert):
     assert.equal(example.test(), 1)
 
 
-def testoperators_35(assert):
+def testoperators_34(assert):
     object example:
         method test():
             "doc"
@@ -588,7 +594,7 @@ def testoperators_35(assert):
     assert.equal(example.test(), "y")
 
 
-def testoperators_36(assert):
+def testoperators_35(assert):
     object example:
         method test():
             "doc"
@@ -598,7 +604,7 @@ def testoperators_36(assert):
     assert.equal(example.test(), 10)
 
 
-def testoperators_37(assert):
+def testoperators_36(assert):
     object example:
         method test():
             "doc"
@@ -608,7 +614,7 @@ def testoperators_37(assert):
     assert.equal(example.test(), 18)
 
 
-def testoperators_38(assert):
+def testoperators_37(assert):
     object example:
         method test():
             "doc"
@@ -618,7 +624,7 @@ def testoperators_38(assert):
     assert.equal(example.test(), Int)
 
 
-def testoperators_39(assert):
+def testoperators_38(assert):
     object example:
         method test():
             "doc"
@@ -628,7 +634,7 @@ def testoperators_39(assert):
     assert.equal(example.test(), 1)
 
 
-def testoperators_40(assert):
+def testoperators_39(assert):
     object example:
         method test():
             "doc"
@@ -638,7 +644,7 @@ def testoperators_40(assert):
     assert.equal(example.test(), -4)
 
 
-def testoperators_41(assert):
+def testoperators_40(assert):
     object example:
         method test():
             "doc"
@@ -648,7 +654,7 @@ def testoperators_41(assert):
     assert.equal(example.test(), -256)
 
 
-def testoperators_42(assert):
+def testoperators_41(assert):
     object example:
         method test():
             "doc"
@@ -658,7 +664,7 @@ def testoperators_42(assert):
     assert.equal(example.test(), false)
 
 
-def testoperators_43(assert):
+def testoperators_42(assert):
     object example:
         method test():
             "doc"
@@ -711,8 +717,7 @@ unittest([
     testoperators_39,
     testoperators_40,
     testoperators_41,
-    testoperators_42,
-    testoperators_43
+    testoperators_42
 ])
 
 
@@ -783,7 +788,7 @@ def testpatterns_1(assert):
             m`def &x := 1`.expand()
             
 
-    assert.equal(example.test().canonical(), m`def via (__slotToBinding) &&x := 1`.canonical())
+    assert.equal(example.test().canonical(), m`def via (_slotToBinding) &&x := 1`.canonical())
 
 
 unittest([
@@ -911,7 +916,7 @@ def testruntime_9(assert):
     object example:
         method test():
             "doc"
-            __makeList(1, 2, 3)
+            _makeList(1, 2, 3)
             
 
     assert.equal(example.test(), [1, 2, 3])
@@ -921,7 +926,7 @@ def testruntime_10(assert):
     object example:
         method test():
             "doc"
-            __makeMap.fromPairs([['k', 'v']])
+            _makeMap.fromPairs([['k', 'v']])
             
 
     assert.equal(example.test(), ['k' => 'v'])
@@ -931,7 +936,7 @@ def testruntime_11(assert):
     object example:
         method test():
             "doc"
-            __makeInt("1")
+            _makeInt("1")
             
 
     assert.equal(example.test(), 1)
@@ -1001,7 +1006,7 @@ def testruntime_18(assert):
     object example:
         method test():
             "doc"
-            [__makeMessageDesc, __makeParamDesc, __makeProtocolDesc]
+            [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc]
             
 
     assert.equal(example.test(), [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc])
@@ -1091,10 +1096,10 @@ def testruntime_27(assert):
     object example:
         method test():
             "doc"
-            __slotToBinding
+            _slotToBinding
             
 
-    assert.equal(example.test(), __slotToBinding)
+    assert.equal(example.test(), _slotToBinding)
 
 
 def testruntime_28(assert):
@@ -1501,6 +1506,13 @@ unittest([
 ])
 
 
+# taste
+
+unittest([
+    
+])
+
+
 # tools
 
 unittest([
@@ -1509,6 +1521,13 @@ unittest([
 
 
 # tubes
+
+unittest([
+    
+])
+
+
+# tut
 
 unittest([
     
