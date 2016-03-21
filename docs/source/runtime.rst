@@ -33,7 +33,7 @@ an exception if `optEjector` is null::
   <curried>
 
 
-`__loop` is an iteration primitive. Used in syntax expansion of 'for';
+`_loop` is an iteration primitive. Used in syntax expansion of 'for';
 exhausts an iterator, invoking a callable for each item in it.
 
   >>> def l := [].diverge()
@@ -111,12 +111,12 @@ To emit a string followed by a newline to the trace log::
 Data constructors
 -----------------
 
-  >>> __makeList(1, 2, 3)
+  >>> _makeList(1, 2, 3)
   [1, 2, 3]
-  >>> __makeMap.fromPairs([['k', 'v']])
+  >>> _makeMap.fromPairs([['k', 'v']])
   ['k' => 'v']
 
-  >>> __makeInt("1")
+  >>> _makeInt("1")
   1
 
   .>> __makeInt("100_000")  # BUG!
@@ -162,7 +162,7 @@ Guard meta
 Interface constructors
 ----------------------
 
-  >>> [__makeMessageDesc, __makeParamDesc, __makeProtocolDesc]
+  >>> [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc]
   [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc]
 
 Quasiparsers
@@ -197,8 +197,8 @@ Utilities for syntax expansions
   >>> [_matchSame, _quasiMatcher]
   [_matchSame, _quasiMatcher]
 
-  >>> __slotToBinding
-  __slotToBinding
+  >>> _slotToBinding
+  _slotToBinding
 
   >>> [_splitList, _suchThat]
   [_splitList, _suchThat]

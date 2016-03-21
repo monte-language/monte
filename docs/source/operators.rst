@@ -214,7 +214,7 @@ Monte has the usual comparison operators::
 They expand to use of a helper object::
 
   >>> m`x == y`.expand()
-  m`__equalizer.sameEver(x, y)`
+  m`_equalizer.sameEver(x, y)`
 
   >>> m`3 < 2`.expand()
   m`_comparer.lessThan(3, 2)`
