@@ -152,13 +152,13 @@ NIXP=~/.nix-profile
 
 doctest: source/docs_examples.mast
 	$(NIXP)/mt-typhon -l $(NIXP)/mast -l `/bin/pwd`/source \
-           $(NIXP)/mast/unittest docs_examples
+           $(NIXP)/loader test docs_examples
 
 PYTHON=python
 
 %.mast: %.mt
 	@ echo "MONTEC $<"
-	$(NIXP)/mt-typhon -l $(NIXP)/mast $(NIXP)/mast/montec -format mast $< $@
+	$(NIXP)/mt-typhon -l $(NIXP)/mast $(NIXP)/loader run montec $< $@
 
 SOURCES=*
 source/docs_examples.mt: source/extract_examples.py source/$(SOURCES).rst
