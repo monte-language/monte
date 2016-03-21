@@ -1,5 +1,9 @@
 .. _ordinary-programming:
 
+====================
+Ordinary Programming
+====================
+
 .. note:: In case you skipped the introduction, this is a last
            reminder that the fireworks start with
            :ref:`distributed-computing`, and you can go there now, or
@@ -7,7 +11,7 @@
            starting with Hello World.
 
 Hello World
-"""""""""""
+===========
 
 We will show Hello World as both a Monte module and at the REPL. REPL
 first::
@@ -141,10 +145,6 @@ because of E's distributed security. These rules are described in the
 Under the :ref:`Under the Covers<under-cover-objects>` section later
 in this chapter.
 
-.. include:: iteration.rst
-
-.. include:: interfaces.rst
-
 .. _modules:
 
 Using Monte Modules
@@ -207,5 +207,3 @@ only lets even values through::
 Note that the ejector is threaded through ``to next(ej)`` into the inner
 iterator in order to allow iteration to terminate if/when the inner iterator
 becomes exhausted.
-
-.. include: tut.rst

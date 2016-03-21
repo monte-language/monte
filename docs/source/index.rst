@@ -29,20 +29,26 @@ Ordinary Programming
     guards
     custom-guards
     brands
+    auditors
 
 .. _distributed-computing:
 
-Distributed Computing (TODO)
+Distributed Computing
 =====================
+
+.. todo:: More stuff should go here?
 
 .. toctree::
 
     promises
+    vats
 
 .. _secure-distributed-computing:
 
-Secure Distributed Computing (TODO)
+Secure Distributed Computing
 ============================
+
+.. todo:: More stuff should go here?
 
 .. _spec:
 
@@ -82,6 +88,16 @@ Appendixes, Indices and tables
 .. toctree::
 
     tools
+
+Trash
+=====
+
+.. toctree::
+
+    faq
+    interfaces
+    iteration
+    tut
 
 * :ref:`genindex`
 * :ref:`modindex`

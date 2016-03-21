@@ -126,5 +126,3 @@ Closing Over Bindings
 Here, ``obj`` can see ``x``, permitting the usage of ``x`` within ``obj``'s
 definition. When ``obj.run()`` is called, ``x`` will be mutated. Monte does
 not require any "global" or "nonlocal" keywords to do this.
-
-.. include:: faq.rst
