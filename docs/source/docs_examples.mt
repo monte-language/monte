@@ -1,5 +1,24 @@
+
 import "unittest" =~ [=> unittest]
 exports ()
+
+def mockFileResource(path):
+    var contents := b``
+    return object fileResource:
+        to setContents(bs :Bytes):
+            contents := bs
+        to getContents() :Bytes:
+            def [p, r] := Ref.promise()
+            r <- resolve(contents)
+            return p
+
+
+# auditors
+
+unittest([
+    
+])
+
 
 # brands
 
@@ -198,7 +217,7 @@ def testiteration_0(assert):
     object example:
         method test():
             "doc"
-            for i => each in ["a", "b"]:
+            for i => each in (["a", "b"]):
                 traceln(`Index: $i Value: $each`)
             
 
@@ -215,9 +234,21 @@ def testiteration_1(assert):
     assert.equal(example.test(), "no")
 
 
+def testiteration_2(assert):
+    object example:
+        method test():
+            "doc"
+            def evens := [for number in (1..10) if (number % 2 == 0) number]
+            evens
+            
+
+    assert.equal(example.test(), [2, 4, 6, 8, 10])
+
+
 unittest([
     testiteration_0,
-    testiteration_1
+    testiteration_1,
+    testiteration_2
 ])
 
 
@@ -568,7 +599,7 @@ def testoperators_32(assert):
     object example:
         method test():
             "doc"
-            { var l := []; for i in 1..10 { l with= (i) }; l }
+            { var l := []; for i in (1..10) { l with= (i) }; l }
             
 
     assert.equal(example.test(), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
@@ -818,6 +849,364 @@ unittest([
 ])
 
 
+# quick_ref
+
+def testquick_ref_0(assert):
+    object example:
+        method test():
+            "doc"
+            def a := 2 + 3
+            var a2 := 4
+            a2 += 1
+            def b := `answer: $a`
+            traceln(b)
+            b
+            
+
+    assert.equal(example.test(), "answer: 5")
+
+
+def testquick_ref_1(assert):
+    object example:
+        method test():
+            "doc"
+            if ('a' == 'b'):
+               traceln("match")
+            else:
+               traceln("no match")
+            
+
+    assert.equal(example.test(), null)
+
+
+def testquick_ref_2(assert):
+    object example:
+        method test():
+            "doc"
+            var a := 0; def b := 4
+            while (a < b):
+                a += 1
+            
+
+    assert.equal(example.test(), null)
+
+
+def testquick_ref_3(assert):
+    object example:
+        method test():
+            "doc"
+            try:
+                3 // 0
+            catch err:
+                traceln(`error: $err`)
+            finally:
+                traceln("always")
+            
+
+    assert.equal(example.test(), null)
+
+
+def testquick_ref_4(assert):
+    object example:
+        method test():
+            "doc"
+            for next in (1..3):
+                traceln(next)
+            
+
+    assert.equal(example.test(), null)
+
+
+def testquick_ref_5(assert):
+    object example:
+        method test():
+            "doc"
+            def map := ['a' => 65, 'b' => 66]
+            for key => value in (map):
+                traceln("got pair")
+            
+
+    assert.equal(example.test(), null)
+
+
+def testquick_ref_6(assert):
+    object example:
+        method test():
+            "doc"
+            def addTwoPrint(number):
+                traceln(number + 2)
+                return number + 2
+            
+            def twoPlusThree := addTwoPrint(3)
+            twoPlusThree
+            
+
+    assert.equal(example.test(), 5)
+
+
+def testquick_ref_7(assert):
+    object example:
+        method test():
+            "doc"
+            object adder:
+                to add1(number):
+                    return number + 1
+                to add2(number):
+                    return number + 2
+            def result := adder.add1(3)
+            result
+            
+
+    assert.equal(example.test(), 4)
+
+
+def testquick_ref_8(assert):
+    object example:
+        method test():
+            "doc"
+            def makeOperator(baseNum):
+                def instanceValue := 3
+                object operator:
+                    to addBase(number):
+                        return baseNum + number
+                    to multiplyBase(number):
+                        return baseNum * number
+                return operator
+            def threeHandler := makeOperator(3)
+            def threeTimes2 := threeHandler.multiplyBase(2)
+            threeTimes2
+            
+
+    assert.equal(example.test(), 6)
+
+
+def testquick_ref_9(assert):
+    object example:
+        method test():
+            "doc"
+            def makeRadio(car):
+                # define radios
+            def makeCar(name):
+                var x := 0 
+                var y := 0
+                def car # using def with no assignment
+                def myWeatherRadio := makeRadio(car)
+                bind car:
+                    to receiveWeatherAlert():
+                        # ....process the weather report....
+                        # myWeatherRadio.foo(...)
+                    to getX():
+                        return x
+                    to getY():
+                        return y
+                    # ....list the rest of the car methods....
+                return car
+            makeCar("ferrari").getX()
+            
+
+    assert.equal(example.test(), 0)
+
+
+def testquick_ref_10(assert):
+    object example:
+        method test():
+            "doc"
+            def makeExtendedFile(myFile):
+                return object extendedFile extends myFile:
+                    to append(text):
+                        var current := myFile.getText()
+                        current := current + text
+                        myFile.setText(current)
+            
+            makeExtendedFile(object _ {})._respondsTo("append", 1)
+            
+
+    assert.equal(example.test(), true)
+
+
+def testquick_ref_11(assert):
+    object example:
+        method test():
+            "doc"
+            def main(argv, => makeFileResource):
+                def fileA := makeFileResource("fileA")
+                fileA <- setContents(b`abc\ndef`)
+                def contents := fileA <- getContents()
+                when (contents) ->
+                    for line in (contents.split("\n")):
+                        traceln(line)
+            
+            main._respondsTo("run", 1)
+            
+
+    assert.equal(example.test(), true)
+
+
+def testquick_ref_12(assert):
+    object example:
+        method test():
+            "doc"
+            var a := [8, 6, "a"]
+            a[2]
+            
+
+    assert.equal(example.test(), "a")
+
+
+def testquick_ref_13(assert):
+    object example:
+        method test():
+            "doc"
+            var a := [8, 6, "a"]
+            a.size()
+            
+
+    assert.equal(example.test(), 3)
+
+
+def testquick_ref_14(assert):
+    object example:
+        method test():
+            "doc"
+            var a := [8, 6, "a"]
+            for i in (a):
+                traceln(i)
+            a := a + ["b"]
+            a.slice(0, 2)
+            
+
+    assert.equal(example.test(), [8, 6])
+
+
+def testquick_ref_15(assert):
+    object example:
+        method test():
+            "doc"
+            def m := ["c" => 5]
+            m["c"]
+            
+
+    assert.equal(example.test(), 5)
+
+
+def testquick_ref_16(assert):
+    object example:
+        method test():
+            "doc"
+            ["c" => 5].size()
+            
+
+    assert.equal(example.test(), 1)
+
+
+def testquick_ref_17(assert):
+    object example:
+        method test():
+            "doc"
+            def m := ["c" => 5]
+            for key => value in (m):
+                traceln(value)
+            def flexM := m.diverge()
+            
+
+    assert.equal(example.test(), ["c" => 5].diverge())
+
+
+def testquick_ref_18(assert):
+    object example:
+        method test():
+            "doc"
+            def flexA := [8, 6, "a", "b"].diverge()
+            flexA.extend(["b"])
+            flexA.push("b")
+            def constA := flexA.snapshot()
+            
+
+    assert.equal(example.test(), [8, 6, "a", "b", "b", "b"])
+
+
+def testquick_ref_19(assert):
+    object example:
+        method test():
+            "doc"
+            def m := ["c" => 5]
+            def flexM := m.diverge()
+            flexM["b"] := 2
+            flexM.removeKey("b")
+            def constM := flexM.snapshot()
+            
+
+    assert.equal(example.test(), ["c" => 5])
+
+
+def testquick_ref_20(assert):
+    object example:
+        method test():
+            "doc"
+            def abacus := object mock {}
+            
+            abacus <- add(1, 2)
+            
+            def answer := abacus <- add(1, 2)
+            when (answer) ->
+                traceln(`computation complete: $answer`)
+            catch problem:
+                traceln(`promise broken $problem `)
+            finally:
+                traceln("always")
+            
+
+    assert.equal(example.test(), null)
+
+
+def testquick_ref_21(assert):
+    object example:
+        method test():
+            "doc"
+            def makeCarRcvr := object mock {}
+            
+            def carRcvr := makeCarRcvr <- ("Mercedes")
+            Ref.whenBroken(carRcvr, def lost(brokenRef) {
+                traceln("Lost connection to carRcvr")
+            })
+            def [resultVow, resolver] := Ref.promise()
+            when (resultVow) -> {
+                traceln(resultVow)
+            } catch prob {
+                traceln(`oops: $prob`)
+            }
+            resolver.resolve("this text is the answer")
+            
+
+    assert.equal(example.test(), true)
+
+
+unittest([
+    testquick_ref_0,
+    testquick_ref_1,
+    testquick_ref_2,
+    testquick_ref_3,
+    testquick_ref_4,
+    testquick_ref_5,
+    testquick_ref_6,
+    testquick_ref_7,
+    testquick_ref_8,
+    testquick_ref_9,
+    testquick_ref_10,
+    testquick_ref_11,
+    testquick_ref_12,
+    testquick_ref_13,
+    testquick_ref_14,
+    testquick_ref_15,
+    testquick_ref_16,
+    testquick_ref_17,
+    testquick_ref_18,
+    testquick_ref_19,
+    testquick_ref_20,
+    testquick_ref_21
+])
+
+
 # runtime
 
 def testruntime_0(assert):
@@ -866,43 +1255,13 @@ def testruntime_4(assert):
     object example:
         method test():
             "doc"
-            DeepFrozen
-            
-
-    assert.equal(example.test(), DeepFrozen)
-
-
-def testruntime_5(assert):
-    object example:
-        method test():
-            "doc"
-            Selfless
-            
-
-    assert.equal(example.test(), Selfless)
-
-
-def testruntime_6(assert):
-    object example:
-        method test():
-            "doc"
-            Transparent
-            
-
-    assert.equal(example.test(), Transparent)
-
-
-def testruntime_7(assert):
-    object example:
-        method test():
-            "doc"
             trace("str")
             
 
     assert.equal(example.test(), null)
 
 
-def testruntime_8(assert):
+def testruntime_5(assert):
     object example:
         method test():
             "doc"
@@ -912,7 +1271,7 @@ def testruntime_8(assert):
     assert.equal(example.test(), null)
 
 
-def testruntime_9(assert):
+def testruntime_6(assert):
     object example:
         method test():
             "doc"
@@ -922,7 +1281,7 @@ def testruntime_9(assert):
     assert.equal(example.test(), [1, 2, 3])
 
 
-def testruntime_10(assert):
+def testruntime_7(assert):
     object example:
         method test():
             "doc"
@@ -932,7 +1291,7 @@ def testruntime_10(assert):
     assert.equal(example.test(), ['k' => 'v'])
 
 
-def testruntime_11(assert):
+def testruntime_8(assert):
     object example:
         method test():
             "doc"
@@ -942,7 +1301,7 @@ def testruntime_11(assert):
     assert.equal(example.test(), 1)
 
 
-def testruntime_12(assert):
+def testruntime_9(assert):
     object example:
         method test():
             "doc"
@@ -952,7 +1311,7 @@ def testruntime_12(assert):
     assert.equal(example.test(), [_makeFinalSlot, _makeVarSlot])
 
 
-def testruntime_13(assert):
+def testruntime_10(assert):
     object example:
         method test():
             "doc"
@@ -962,7 +1321,7 @@ def testruntime_13(assert):
     assert.equal(example.test(), _makeOrderedSpace)
 
 
-def testruntime_14(assert):
+def testruntime_11(assert):
     object example:
         method test():
             "doc"
@@ -972,7 +1331,7 @@ def testruntime_14(assert):
     assert.equal(example.test(), [Any, Void])
 
 
-def testruntime_15(assert):
+def testruntime_12(assert):
     object example:
         method test():
             "doc"
@@ -982,7 +1341,7 @@ def testruntime_15(assert):
     assert.equal(example.test(), [Bool, Str, Char, Double, Int])
 
 
-def testruntime_16(assert):
+def testruntime_13(assert):
     object example:
         method test():
             "doc"
@@ -992,7 +1351,7 @@ def testruntime_16(assert):
     assert.equal(example.test(), [List, Map, Set])
 
 
-def testruntime_17(assert):
+def testruntime_14(assert):
     object example:
         method test():
             "doc"
@@ -1002,7 +1361,7 @@ def testruntime_17(assert):
     assert.equal(example.test(), "abc")
 
 
-def testruntime_18(assert):
+def testruntime_15(assert):
     object example:
         method test():
             "doc"
@@ -1012,7 +1371,7 @@ def testruntime_18(assert):
     assert.equal(example.test(), [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc])
 
 
-def testruntime_19(assert):
+def testruntime_16(assert):
     object example:
         method test():
             "doc"
@@ -1022,7 +1381,7 @@ def testruntime_19(assert):
     assert.equal(example.test(), [simple__quasiParser, m__quasiParser])
 
 
-def testruntime_20(assert):
+def testruntime_17(assert):
     object example:
         method test():
             "doc"
@@ -1032,7 +1391,7 @@ def testruntime_20(assert):
     assert.equal(example.test(), "sum: 2")
 
 
-def testruntime_21(assert):
+def testruntime_18(assert):
     object example:
         method test():
             "doc"
@@ -1042,7 +1401,7 @@ def testruntime_21(assert):
     assert.equal(example.test().canonical(), m`1.add(1)`.canonical())
 
 
-def testruntime_22(assert):
+def testruntime_19(assert):
     object example:
         method test():
             "doc"
@@ -1052,7 +1411,7 @@ def testruntime_22(assert):
     assert.equal(example.test(), [_accumulateList, _accumulateMap])
 
 
-def testruntime_23(assert):
+def testruntime_20(assert):
     object example:
         method test():
             "doc"
@@ -1062,7 +1421,7 @@ def testruntime_23(assert):
     assert.equal(example.test(), _bind)
 
 
-def testruntime_24(assert):
+def testruntime_21(assert):
     object example:
         method test():
             "doc"
@@ -1072,7 +1431,7 @@ def testruntime_24(assert):
     assert.equal(example.test(), [_booleanFlow, _comparer, _equalizer])
 
 
-def testruntime_25(assert):
+def testruntime_22(assert):
     object example:
         method test():
             "doc"
@@ -1082,7 +1441,7 @@ def testruntime_25(assert):
     assert.equal(example.test(), [_mapEmpty, _mapExtract])
 
 
-def testruntime_26(assert):
+def testruntime_23(assert):
     object example:
         method test():
             "doc"
@@ -1092,7 +1451,7 @@ def testruntime_26(assert):
     assert.equal(example.test(), [_matchSame, _quasiMatcher])
 
 
-def testruntime_27(assert):
+def testruntime_24(assert):
     object example:
         method test():
             "doc"
@@ -1102,7 +1461,7 @@ def testruntime_27(assert):
     assert.equal(example.test(), _slotToBinding)
 
 
-def testruntime_28(assert):
+def testruntime_25(assert):
     object example:
         method test():
             "doc"
@@ -1112,7 +1471,7 @@ def testruntime_28(assert):
     assert.equal(example.test(), [_splitList, _suchThat])
 
 
-def testruntime_29(assert):
+def testruntime_26(assert):
     object example:
         method test():
             "doc"
@@ -1122,7 +1481,7 @@ def testruntime_29(assert):
     assert.equal(example.test(), _switchFailed)
 
 
-def testruntime_30(assert):
+def testruntime_27(assert):
     object example:
         method test():
             "doc"
@@ -1160,10 +1519,7 @@ unittest([
     testruntime_24,
     testruntime_25,
     testruntime_26,
-    testruntime_27,
-    testruntime_28,
-    testruntime_29,
-    testruntime_30
+    testruntime_27
 ])
 
 
@@ -1528,6 +1884,13 @@ unittest([
 
 
 # tut
+
+unittest([
+    
+])
+
+
+# vats
 
 unittest([
     
