@@ -4,18 +4,21 @@ Introduction
 Why Monte?
 ----------
 
-Don't we have enough languages already? How could we justify bringing yet
-another programming language into the world? This is a fair question. We don't
-have good answers, but we can at least explain why Monte is interesting to us.
+Don't we have enough languages already? This is a fair question.  We
+can only explain why Monte is interesting to us and leave you to
+judge.
+
 
 Because Security Matters
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Because **secure distributed computing should not be hard**. We have entered
-the age of globally distributed computing with a vengeance, and `everything is
-broken`__. The hodgepodge of today's dominant languages and frameworks offer
-no comprehensive solution [#]_. Monte takes the object-capability paradigm of
-E [#]_ and updates it for the metamodern era:
+Because **secure distributed computing should not be hard**. Computers
+are getting faster, smaller, more connected, and more capable, but
+when it comes to security, `everything is broken`__. We propose to
+reconsider the identity-based access control approach dominant in
+today's dominant languages and frameworks [#]_. Monte takes the
+object-capability paradigm of E [#]_ and updates it for the metamodern
+era:
 
 __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 
@@ -62,19 +65,14 @@ __ https://medium.com/message/everything-is-broken-81e5f33a24e1
      from E, capability security is "natural security": if you shouldn't use
      it, you just can't see it.
 
-- Monte enables the fearless yet powerful use of multi-party limited-trust
-  mobile code.
-
-These qualities cannot be achieved with traditional security
-approaches. Do not expect the next release of Java, Windows, or Linux
-to fix the problem: the flaws in these systems lie at the heart of
-their architectures, unfixable without breaking upward compatibility,
-as we shall discuss in the chapter on
-:ref:`secure-distributed-computing`.
+- Monte enables the fearless yet powerful use of multi-party
+  limited-trust mobile code, as we shall discuss in the chapter on
+  :ref:`secure-distributed-computing`.
 
 .. [*] As with all sufficiently complex concurrency systems, deadlock is
        possible. That said, it has not been observed outside of
        specially-constructed pathological object graphs.
+
 
 Because Readability Matters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
