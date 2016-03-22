@@ -131,14 +131,17 @@ Later sections form the :ref:`spec` and the :ref:`stdlib`.
 This largely follows the structure of `E in a Walnut`__ by Marc Stiegler
 and `The E Language`__ and `ELib`__ by Mark Miller.
 
-.. todo:: To what extent do we want to invite feedback and offer
-          support? i.e. what to write where Walnut says "If you
-          encounter some surprising behavior not explained here,
-          please join the e-lang discussion group and ask there"?
+We welcome feedback:
+  - `issues in monte pypy vm implementation (typhon)`__
+  - `issues in monte documentation`__
+
+Or come say hi on IRC, in `#monte` on `irc.freenode.net`!
 
 __ http://wiki.erights.org/wiki/Walnut
 __ http://erights.org/elang/index.html
 __ http://erights.org/elib/index.html
+__ https://github.com/monte-language/monte/issues
+__ https://github.com/monte-language/typhon/issues
 
 
 Fireworks In Part II
