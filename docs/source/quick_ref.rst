@@ -9,14 +9,6 @@ find it handy as a refresher if returning to the language after some
 time. This reference does not touch pattern matching, parse trees, or
 Kernel-E at all.
 
- - Simple Statements: def, var, assign, print, add, comment
- - Basic Flow: if, while, for, try
- - Modules: Function, Singleton Object, Object Maker, Delegation
- - File I/O
- - Web Apps
- - Data Structures: Strings, ConstLists, ConstMaps, FlexLists, FlexMaps
- - Asynch Sends
-
 
 Simple Statements
 -----------------
@@ -37,37 +29,42 @@ Basic Flow
 
 ::
 
-  >>> if ('a' == 'b'):
-  ...    traceln("match")
-  ... else:
-  ...    traceln("no match")
-  null
+   >>> if ('a' == 'b'):
+   ...    traceln("match")
+   ... else:
+   ...    traceln("no match")
+   null
 
 ::
-  >>> var a := 0; def b := 4
-  ... while (a < b):
-  ...     a += 1
-  null
 
-:
-  >>> try:
-  ...     3 // 0
-  ... catch err:
-  ...     traceln(`error: $err`)
-  ... finally:
-  ...     traceln("always")
-  null
+   >>> var a := 0; def b := 4
+   ... while (a < b):
+   ...     a += 1
+   ... a
+   4
 
 ::
-  >>> for next in (1..3):
-  ...     traceln(next)
-  null
+
+   >>> try:
+   ...     3 // 0
+   ... catch err:
+   ...     traceln(`error: $err`)
+   ... finally:
+   ...     traceln("always")
+   null
 
 ::
-  >>> def map := ['a' => 65, 'b' => 66]
-  ... for key => value in (map):
-  ...     traceln("got pair")
-  null
+
+   >>> for next in (1..3):
+   ...     traceln(next)
+   null
+
+::
+
+   >>> def map := ['a' => 65, 'b' => 66]
+   ... for key => value in (map):
+   ...     traceln("got pair")
+   null
 
 
 Modules
@@ -78,27 +75,27 @@ Function
 
 ::
 
-  >>> def addTwoPrint(number):
-  ...     traceln(number + 2)
-  ...     return number + 2
-  ... 
-  ... def twoPlusThree := addTwoPrint(3)
-  ... twoPlusThree
-  5
+   >>> def addTwoPrint(number):
+   ...     traceln(number + 2)
+   ...     return number + 2
+   ...
+   ... def twoPlusThree := addTwoPrint(3)
+   ... twoPlusThree
+   5
 
 Singleton Object (stateless)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
-  >>> object adder:
-  ...     to add1(number):
-  ...         return number + 1
-  ...     to add2(number):
-  ...         return number + 2
-  ... def result := adder.add1(3)
-  ... result
-  4
+   >>> object adder:
+   ...     to add1(number):
+   ...         return number + 1
+   ...     to add2(number):
+   ...         return number + 2
+   ... def result := adder.add1(3)
+   ... result
+   4
 
 
 Objects with state
@@ -106,18 +103,18 @@ Objects with state
 
 ::
 
-  >>> def makeOperator(baseNum):
-  ...     def instanceValue := 3
-  ...     object operator:
-  ...         to addBase(number):
-  ...             return baseNum + number
-  ...         to multiplyBase(number):
-  ...             return baseNum * number
-  ...     return operator
-  ... def threeHandler := makeOperator(3)
-  ... def threeTimes2 := threeHandler.multiplyBase(2)
-  ... threeTimes2
-  6
+   >>> def makeOperator(baseNum):
+   ...     def instanceValue := 3
+   ...     object operator:
+   ...         to addBase(number):
+   ...             return baseNum + number
+   ...         to multiplyBase(number):
+   ...             return baseNum * number
+   ...     return operator
+   ... def threeHandler := makeOperator(3)
+   ... def threeTimes2 := threeHandler.multiplyBase(2)
+   ... threeTimes2
+   6
 
 
 Objects self-referencing during construction
@@ -125,25 +122,25 @@ Objects self-referencing during construction
 
 ::
 
-  >>> def makeRadio(car):
-  ...     # define radios
-  ... def makeCar(name):
-  ...     var x := 0 
-  ...     var y := 0
-  ...     def car # using def with no assignment
-  ...     def myWeatherRadio := makeRadio(car)
-  ...     bind car:
-  ...         to receiveWeatherAlert():
-  ...             # ....process the weather report....
-  ...             # myWeatherRadio.foo(...)
-  ...         to getX():
-  ...             return x
-  ...         to getY():
-  ...             return y
-  ...         # ....list the rest of the car methods....
-  ...     return car
-  ... makeCar("ferrari").getX()
-  0
+   >>> def makeRadio(car):
+   ...     # define radios
+   ... def makeCar(name):
+   ...     var x := 0
+   ...     var y := 0
+   ...     def car # using def with no assignment
+   ...     def myWeatherRadio := makeRadio(car)
+   ...     bind car:
+   ...         to receiveWeatherAlert():
+   ...             # ....process the weather report....
+   ...             # myWeatherRadio.foo(...)
+   ...         to getX():
+   ...             return x
+   ...         to getY():
+   ...             return y
+   ...         # ....list the rest of the car methods....
+   ...     return car
+   ... makeCar("ferrari").getX()
+   0
 
 
 Delegation
@@ -151,33 +148,32 @@ Delegation
 
 ::
 
-  >>> def makeExtendedFile(myFile):
-  ...     return object extendedFile extends myFile:
-  ...         to append(text):
-  ...             var current := myFile.getText()
-  ...             current := current + text
-  ...             myFile.setText(current)
-  ...
-  ... makeExtendedFile(object _ {})._respondsTo("append", 1)
-  true
+   >>> def makeExtendedFile(myFile):
+   ...     return object extendedFile extends myFile:
+   ...         to append(text):
+   ...             var current := myFile.getText()
+   ...             current := current + text
+   ...             myFile.setText(current)
+   ...
+   ... makeExtendedFile(object _ {})._respondsTo("append", 1)
+   true
 
 
 File I/O
 --------
 
-Access to files is given to the `main` entry point:
+Access to files is given to the `main` entry point::
 
-::
-  >>> def main(argv, => makeFileResource):
-  ...     def fileA := makeFileResource("fileA")
-  ...     fileA <- setContents(b`abc\ndef`)
-  ...     def contents := fileA <- getContents()
-  ...     when (contents) ->
-  ...         for line in (contents.split("\n")):
-  ...             traceln(line)
-  ...
-  ... main._respondsTo("run", 1)
-  true
+    >>> def main(argv, => makeFileResource):
+    ...     def fileA := makeFileResource("fileA")
+    ...     fileA <- setContents(b`abc\ndef`)
+    ...     def contents := fileA <- getContents()
+    ...     when (contents) ->
+    ...         for line in (contents.split("\n")):
+    ...             traceln(line)
+    ...
+    ... main._respondsTo("run", 1)
+    true
 
 
 Web Applications
@@ -187,16 +183,16 @@ Access to TCP/IP networking is also given to the `main` entry
 point. The ``lib/http/server`` module builds an HTTP server from a
 TCP/IP listener::
 
-  import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
-  exports (main)
+    import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
+    exports (main)
 
-  def hello(request) as DeepFrozen:
-      return [200, ["Content-Type" => "text/plain"], b`hello`]
+    def hello(request) as DeepFrozen:
+        return [200, ["Content-Type" => "text/plain"], b`hello`]
 
-  def main(argv, => makeTCP4ServerEndpoint) as DeepFrozen:
-      def tcpListener := makeTCP4ServerEndpoint(8080)
-      def httpServer := makeHTTPEndpoint(tcpListener)
-      httpServer.listen(hello)
+    def main(argv, => makeTCP4ServerEndpoint) as DeepFrozen:
+        def tcpListener := makeTCP4ServerEndpoint(8080)
+        def httpServer := makeHTTPEndpoint(tcpListener)
+        httpServer.listen(hello)
 
 Data Structures
 ---------------
@@ -205,6 +201,7 @@ ConstList
 ~~~~~~~~~
 
 ::
+
    >>> var a := [8, 6, "a"]
    ... a[2]
    "a"
@@ -225,6 +222,7 @@ ConstMap
 ~~~~~~~~
 
 ::
+
    >>> def m := ["c" => 5]
    ... m["c"]
    5
@@ -243,6 +241,7 @@ FlexList
 ~~~~~~~~
 
 ::
+
    >>> def flexA := [8, 6, "a", "b"].diverge()
    ... flexA.extend(["b"])
    ... flexA.push("b")
@@ -254,6 +253,7 @@ FlexMap
 ~~~~~~~
 
 ::
+
    >>> def m := ["c" => 5]
    ... def flexM := m.diverge()
    ... flexM["b"] := 2
@@ -266,6 +266,7 @@ Eventual Sends
 --------------
 
 ::
+
    >>> def abacus := object mock {}
    ...
    ... abacus <- add(1, 2)
@@ -280,6 +281,7 @@ Eventual Sends
    null
 
 ::
+
    >>> def makeCarRcvr := object mock {}
    ...
    ... def carRcvr := makeCarRcvr <- ("Mercedes")

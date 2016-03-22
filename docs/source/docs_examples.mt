@@ -886,9 +886,10 @@ def testquick_ref_2(assert):
             var a := 0; def b := 4
             while (a < b):
                 a += 1
+            a
             
 
-    assert.equal(example.test(), null)
+    assert.equal(example.test(), 4)
 
 
 def testquick_ref_3(assert):
@@ -987,7 +988,7 @@ def testquick_ref_9(assert):
             def makeRadio(car):
                 # define radios
             def makeCar(name):
-                var x := 0 
+                var x := 0
                 var y := 0
                 def car # using def with no assignment
                 def myWeatherRadio := makeRadio(car)
