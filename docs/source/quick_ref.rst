@@ -12,12 +12,10 @@ Kernel-E at all.
  - Simple Statements: def, var, assign, print, add, comment
  - Basic Flow: if, while, for, try
  - Modules: Function, Singleton Object, Object Maker, Delegation
- - Text File I/O
- - Windowed Apps
+ - File I/O
+ - Web Apps
  - Data Structures: Strings, ConstLists, ConstMaps, FlexLists, FlexMaps
- - Java Interface
  - Asynch Sends
- - Remote Comm
 
 
 Simple Statements
@@ -159,5 +157,140 @@ Delegation
   ...             var current := myFile.getText()
   ...             current := current + text
   ...             myFile.setText(current)
-  ... "no usage example"
-  "no usage example"
+  ...
+  ... makeExtendedFile(object _ {})._respondsTo("append", 1)
+  true
+
+
+File I/O
+--------
+
+Access to files is given to the `main` entry point:
+
+::
+  >>> def main(argv, => makeFileResource):
+  ...     def fileA := makeFileResource("fileA")
+  ...     fileA <- setContents(b`abc\ndef`)
+  ...     def contents := fileA <- getContents()
+  ...     when (contents) ->
+  ...         for line in (contents.split("\n")):
+  ...             traceln(line)
+  ...
+  ... main._respondsTo("run", 1)
+  true
+
+
+Web Applications
+----------------
+
+Access to TCP/IP networking is also given to the `main` entry
+point. The ``lib/http/server`` module builds an HTTP server from a
+TCP/IP listener::
+
+  import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
+  exports (main)
+
+  def hello(request) as DeepFrozen:
+      return [200, ["Content-Type" => "text/plain"], b`hello`]
+
+  def main(argv, => makeTCP4ServerEndpoint) as DeepFrozen:
+      def tcpListener := makeTCP4ServerEndpoint(8080)
+      def httpServer := makeHTTPEndpoint(tcpListener)
+      httpServer.listen(hello)
+
+Data Structures
+---------------
+
+ConstList
+~~~~~~~~~
+
+::
+   >>> var a := [8, 6, "a"]
+   ... a[2]
+   "a"
+
+   >>> var a := [8, 6, "a"]
+   ... a.size()
+   3
+
+   >>> var a := [8, 6, "a"]
+   ... for i in (a):
+   ...     traceln(i)
+   ... a := a + ["b"]
+   ... a.slice(0, 2)
+   [8, 6]
+
+
+ConstMap
+~~~~~~~~
+
+::
+   >>> def m := ["c" => 5]
+   ... m["c"]
+   5
+
+   >>> ["c" => 5].size()
+   1
+
+   >>> def m := ["c" => 5]
+   ... for key => value in (m):
+   ...     traceln(value)
+   ... def flexM := m.diverge()
+   ["c" => 5].diverge()
+
+
+FlexList
+~~~~~~~~
+
+::
+   >>> def flexA := [8, 6, "a", "b"].diverge()
+   ... flexA.extend(["b"])
+   ... flexA.push("b")
+   ... def constA := flexA.snapshot()
+   [8, 6, "a", "b", "b", "b"]
+
+
+FlexMap
+~~~~~~~
+
+::
+   >>> def m := ["c" => 5]
+   ... def flexM := m.diverge()
+   ... flexM["b"] := 2
+   ... flexM.removeKey("b")
+   ... def constM := flexM.snapshot()
+   ["c" => 5]
+
+
+Eventual Sends
+--------------
+
+::
+   >>> def abacus := object mock {}
+   ...
+   ... abacus <- add(1, 2)
+   ...
+   ... def answer := abacus <- add(1, 2)
+   ... when (answer) ->
+   ...     traceln(`computation complete: $answer`)
+   ... catch problem:
+   ...     traceln(`promise broken $problem `)
+   ... finally:
+   ...     traceln("always")
+   null
+
+::
+   >>> def makeCarRcvr := object mock {}
+   ...
+   ... def carRcvr := makeCarRcvr <- ("Mercedes")
+   ... Ref.whenBroken(carRcvr, def lost(brokenRef) {
+   ...     traceln("Lost connection to carRcvr")
+   ... })
+   ... def [resultVow, resolver] := Ref.promise()
+   ... when (resultVow) -> {
+   ...     traceln(resultVow)
+   ... } catch prob {
+   ...     traceln(`oops: $prob`)
+   ... }
+   ... resolver.resolve("this text is the answer")
+   true

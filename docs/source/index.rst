@@ -87,6 +87,7 @@ Appendixes, Indices and tables
 
 .. toctree::
 
+    quick_ref
     tools
 
 Trash
