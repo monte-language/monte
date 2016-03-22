@@ -155,14 +155,13 @@ basic data, flow, function, and object structures. So we introduce
 :ref:`ordinary-programming` in Part I before getting into the serious
 distributed computing facilities.
 
-However, since Monte was designed in the Python syntax tradition, an experienced
-programmer can probably glean enough from the Quick Reference Card to skip
-directly to Part II on :ref:`distributed-computing`. If you are short of time
-and have the requisite background, we recommend that strategy. Go back and
-read :ref:`Part I<ordinary-programming>` when you are convinced that Monte's
-power for distributed programming meets your needs.
-
-.. todo:: quick reference card
+However, since Monte was designed in the Python syntax tradition, an
+experienced programmer can probably glean enough from the :ref:`Quick
+Reference Card<quick-ref>` to skip directly to Part II on
+:ref:`distributed-computing`. If you are short of time and have the
+requisite background, we recommend that strategy. Go back and read
+:ref:`Part I<ordinary-programming>` when you are convinced that
+Monte's power for distributed programming meets your needs.
 
 
 Getting Started

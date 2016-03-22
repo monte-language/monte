@@ -1,3 +1,5 @@
+.. _quick-ref:
+
 Monte Idioms Quick Reference
 ============================
 
