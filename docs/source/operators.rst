@@ -316,7 +316,7 @@ Monte permits this augmented construction for any verb, not just those used by
 operators. For example, the ``with`` verb of lists can be used to
 incrementally build a list::
 
-  >>> { var l := []; for i in 1..10 { l with= (i) }; l }
+  >>> { var l := []; for i in (1..10) { l with= (i) }; l }
   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 And even non-unary messages can get in on the fun, with a properly placed pair
