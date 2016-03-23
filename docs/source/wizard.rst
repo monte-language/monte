@@ -2,30 +2,6 @@
 Monte Language Sketch
 =====================
 
-Syntax
-======
-
-Monte's syntax is largely C-derived with an offside rule like Python's
-and Haskell's. However, it's an expression language like Scheme. The
-compromise is achieved by using braces and semicolons to delineate
-blocks and separate expressions in general, but use indentation and
-newlines for this in "statement position", which is chiefly the
-toplevel of the file and inside an indented block.
-
-  >>> def f(x) { def y := x * x; return y }
-  ... f(4)
-  16
-
-  >>> def f(x):
-  ...     def y := x * x
-  ...     return y
-  ... f(5)
-  25
-
-Monte syntax consists of expressions and patterns. Primitive expressions @@like statments
-and operators.
-
-
 Expansion
 ---------
 

@@ -8,6 +8,8 @@ which can be compiled on a per-file basis. Modules are relatively
 self-contained, declaring both their imported and exported names with special
 module syntax.
 
+.. _module-decl:
+
 Module Declaration Syntax
 -------------------------
 
