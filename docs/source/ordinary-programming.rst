@@ -11,7 +11,7 @@ Ordinary Programming
            starting with Hello World.
 
 Hello World
-===========
+-----------
 
 We will show Hello World as both a Monte module and at the REPL. REPL
 first::

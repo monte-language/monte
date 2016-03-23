@@ -15,8 +15,7 @@ values.
 Guards are not checked during compilation. They are checked during
 execution, and will throw exceptions if the value cannot be coerced to
 pass the guard. Guards play a key role in protecting the security
-properties when working with untrusted code, as discussed in
-:ref:`secure-distributed-computing`.
+properties when working with untrusted code.
 
 Standard Guards
 ~~~~~~~~~~~~~~~

@@ -1,6 +1,6 @@
-==============================================
-Ordinary Computing Examples / A Taste of Monte
-==============================================
+===========================
+A Taste of Monte: Hello Web
+===========================
 
 Let's see what a simple web server looks like in monte:
 
@@ -46,4 +46,30 @@ state, or launch missiles.
 By straightforward inspection, we can see that
   - only one TCP port is ever created;
   - its port number is taken from the last command-line argument.
+
+
+Expressions and Patterns
+------------------------
+
+.. todo:: move "expressions and patterns" syntax material here.
+
+Objects and Message Passing
+---------------------------
+
+.. todo:: move "objects and message passing" material here.
+
+Indentation and Blocks
+----------------------
+
+.. todo:: move "Indentation and Blocks" material here.
+
+Using Library Modules
+---------------------
+
+.. todo:: move "Using Library Modules" material here.
+
+DeepFrozen Module Exports
+-------------------------
+
+.. todo:: move DeepFrozen blurb here.
 
