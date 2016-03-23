@@ -123,13 +123,16 @@ compete with C or other memory-unsafe languages.
 Getting Started
 ---------------
 
-Installation: Docker Image
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Installation: Docker Image (TODO)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. todo:: docker image via nix. Meanwhile, see `Getting Started`__
+.. todo:: docker image via nix (`#77`__)
+          Meanwhile, see `Getting Started`__
           in the Monte wiki.
 
+__ https://github.com/monte-language/typhon/issues/77
 __ https://github.com/monte-language/monte/wiki/Getting-Started
+
 
 Interacting with the Monte REPL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -150,12 +153,22 @@ Editor Syntax Highlighting
 Emacs and Flycheck
 ++++++++++++++++++
 
-.. todo:: ref monte-emacs repo
+The `monte-emacs repository`__ provides emacs syntax highlighting
+on-the-fly syntax checking with flycheck__.
+
+__ https://github.com/monte-language/monte-emacs
+__ http://www.flycheck.org/
+
 
 Vim and Syntastic
 +++++++++++++++++
 
-.. todo:: ref syntastic stuff
+The `monte-vim repository`__ provides vim syntax highlighting.
+
+__ https://github.com/monte-language/monte-vim
+
+.. todo:: say something about syntastic
+
 
 Atom
 ++++
@@ -163,6 +176,19 @@ Atom
 Use Atom to install the package `language-monte`__.
 
 __ https://atom.io/packages/language-monte
+
+
+Support and Feedback
+~~~~~~~~~~~~~~~~~~~~
+
+We welcome feedback:
+  - `issues in monte pypy vm implementation (typhon)`__
+  - `issues in monte documentation`__
+
+Or come say hi on IRC, in `#monte` on `irc.freenode.net`!
+
+__ https://github.com/monte-language/monte/issues
+__ https://github.com/monte-language/typhon/issues
 
 
 .. rubric:: Notes
@@ -180,15 +206,3 @@ __ https://atom.io/packages/language-monte
             <http://www.combex.com/papers/darpa-report/index.html>`_
 
 __ http://erights.org/talks/thesis/index.html
-
-Support and Feedback
-~~~~~~~~~~~~~~~~~~~~
-
-We welcome feedback:
-  - `issues in monte pypy vm implementation (typhon)`__
-  - `issues in monte documentation`__
-
-Or come say hi on IRC, in `#monte` on `irc.freenode.net`!
-
-__ https://github.com/monte-language/monte/issues
-__ https://github.com/monte-language/typhon/issues
