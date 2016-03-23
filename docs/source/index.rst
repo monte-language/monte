@@ -13,12 +13,11 @@ Monte is a dynamic language inspired by Python and E.
 
     intro
     taste
-    tut
+    ordinary-programming
     guards
     promises
     symbols
     operators
-    ordinary-programming
     interfaces
     tubes
     custom-guards

@@ -1,31 +1,7 @@
-.. _ordinary-programming:
+Practical Security: The Mafia game
+==================================
 
-====================
-Ordinary Programming
-====================
-
-.. note:: In case you skipped the introduction, this is a last
-           reminder that the fireworks start with
-           :ref:`distributed-computing`, and you can go there now, or
-           continue to read about normal, ordinary computing in E,
-           starting with Hello World.
-
-Hello World
------------
-
-We will show Hello World as both a Monte module and at the REPL. REPL
-first::
-
-  ▲ traceln("Hello World")
-  TRACE: ["Hello World"]
-  Result: null
-
-As a Monte module, it looks like::
-
-  def main():
-      traceln("Hello World")
-
-.. todo:: document how to compile and run such a hello-world script.
+.. todo:: write this chapter
 
 
 Simple data types, simple control flow
@@ -72,16 +48,6 @@ interpereted as one::
  ▲ def c := 1 + 2 \
  ...   + 3 + 4
  Result: 10
-
-Indentation
-~~~~~~~~~~~
-
-Each form with braces can also be written as an indented block.
-
-Standardize your indentation to use spaces, because tabs are a syntax error in
-Monte. Monte core library code uses four-space indentation. However, any
-indentation can be used as long as it's consistent throughout the module.
-
 
 Basic Types and Operators
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -164,46 +130,11 @@ how to export and import objects.
 
 
 
-Ordinary Computing Examples
-===========================
+Functions
+---------
 
-Writing Your Own Iterables
---------------------------
+Guards
+------
 
-Monte has an iteration protocol which defines iterable and iterator objects.
-By implementing this protocol, it is possible for user-created objects to be
-used in ``for`` loops and comprehensions.
-
-Iterables need to have ``to _makeIterator()``, which returns an iterator.
-Iterators need to have ``to next(ej)``, which takes an ejector and either
-returns a list of ``[key, value]`` or fires the ejector with any value to end
-iteration. Guards do not matter but can be helpful for clarity.
-
-As an example, let's look at an iterable that counts upward from zero to
-infinity::
-
-    object countingIterable:
-        to _makeIterator():
-            var i := 0
-            return object counter:
-                to next(_):
-                    def rv := [i, i]
-                    i += 1
-                    return rv
-
-Since the iterators ignore their ejectors, iteration will never terminate.
-
-For another example, let's look at an iterator that wraps another iterator and
-only lets even values through::
-
-    def onlyEvens(iterator):
-        return object evens:
-            to next(ej):
-                var rv := iterator.next(ej)
-                while (rv[1] % 2 != 0):
-                    rv := iterator.next(ej)
-                return rv
-
-Note that the ejector is threaded through ``to next(ej)`` into the inner
-iterator in order to allow iteration to terminate if/when the inner iterator
-becomes exhausted.
+Organization In Progress
+========================

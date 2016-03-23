@@ -166,3 +166,45 @@ generate a list of even numbers::
 
 Unlike many other languages, the predicate must return a Boolean value; if it
 doesn't, then the entire comprehension will fail with an exception.
+
+
+Writing Your Own Iterables
+--------------------------
+
+Monte has an iteration protocol which defines iterable and iterator objects.
+By implementing this protocol, it is possible for user-created objects to be
+used in ``for`` loops and comprehensions.
+
+Iterables need to have ``to _makeIterator()``, which returns an iterator.
+Iterators need to have ``to next(ej)``, which takes an ejector and either
+returns a list of ``[key, value]`` or fires the ejector with any value to end
+iteration. Guards do not matter but can be helpful for clarity.
+
+As an example, let's look at an iterable that counts upward from zero to
+infinity::
+
+    object countingIterable:
+        to _makeIterator():
+            var i := 0
+            return object counter:
+                to next(_):
+                    def rv := [i, i]
+                    i += 1
+                    return rv
+
+Since the iterators ignore their ejectors, iteration will never terminate.
+
+For another example, let's look at an iterator that wraps another iterator and
+only lets even values through::
+
+    def onlyEvens(iterator):
+        return object evens:
+            to next(ej):
+                var rv := iterator.next(ej)
+                while (rv[1] % 2 != 0):
+                    rv := iterator.next(ej)
+                return rv
+
+Note that the ejector is threaded through ``to next(ej)`` into the inner
+iterator in order to allow iteration to terminate if/when the inner iterator
+becomes exhausted.
