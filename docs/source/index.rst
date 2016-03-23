@@ -12,92 +12,50 @@ Monte is a dynamic language inspired by Python and E.
 .. toctree::
 
     intro
-    design
-    montefesto
-    glossary
-
-
-Ordinary Programming
-====================
-
-.. toctree::
-
     taste
+    tut
+    guards
+    promises
+    symbols
+    operators
     ordinary-programming
+    interfaces
+    tubes
+    custom-guards
+    iteration
     quasiparsers
     modules
-    guards
-    custom-guards
-    brands
     auditors
-
-.. _distributed-computing:
-
-Distributed Computing
-=====================
-
-.. todo:: More stuff should go here?
-
-.. toctree::
-
-    promises
     vats
-
-.. _secure-distributed-computing:
-
-Secure Distributed Computing
-============================
-
-.. todo:: More stuff should go here?
-
-.. _spec:
-
-Language Specification
-======================
-
-.. todo:: organize this chapter into: grammar, block & scope
-          structure, Kernel-E, Sameness, Primitive Data Types,
-          Concurrency, Soft Type Checking.
-
-.. toctree::
-
-    operators
+    brands
     prim-expr
     patterns
-    wizard
-    semantics
-    symbols
-    modules
-
-Monte Standard Runtime Library
-==============================
-
-.. toctree::
-
-    runtime
     slots
     miranda
-    tubes
-
-.. todolist::
-
+    wizard
+    design
+    glossary
+    faq
 
 Appendixes, Indices and tables
 ==============================
 
 .. toctree::
 
+    montefesto
+    quick_ref
+    semantics
+    runtime
     tools
 
-Trash
-=====
+.. _spec:
 
-.. toctree::
+.. todo:: be sure we cover E spec: grammar, block & scope
+          structure, Kernel-E, Sameness, Primitive Data Types,
+          Concurrency, Soft Type Checking.
 
-    faq
-    interfaces
-    iteration
-    tut
+.. todolist::
+
 
 * :ref:`genindex`
 * :ref:`modindex`

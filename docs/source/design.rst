@@ -14,7 +14,9 @@ for readability and simplicity. The design of Monte incorporates both of these
 languages' philosophies, with the goal of supporting environments that are
 orders of magnitude more complex than existing systems.
 
-For a history of E's ideas, see http://www.erights.org/history/index.html
+See also `a history of E's ideas`__.
+
+__ http://www.erights.org/history/index.html
 
 Networking
 ----------

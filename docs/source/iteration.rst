@@ -21,20 +21,20 @@ The for-loop
 The simple structure of the ``for`` loop should be familiar in structure to
 Python programmers::
 
-    for value in iterable:
+    for value in (iterable):
         traceln(value)
 
 A ``for`` loop takes an iterable object and a pattern, and matches each
 element in the iterable to the pattern, executing the body of the loop.
 ``for`` loops permit skipping elements with the ``continue`` keyword::
 
-    for value in iterable:
+    for value in (iterable):
         if skippable(value):
             continue
 
 They also permit exiting prematurely with the ``break`` keyword::
 
-    for value in iterable:
+    for value in (iterable):
         if finalValue(value):
             break
 
@@ -47,7 +47,7 @@ For Loop Patterns
 ``for`` loops are pattern-based, so arbitrary patterns are permitted in
 loops::
 
-    for some`$sort of @pattern` in iterable:
+    for some`$sort of @pattern` in (iterable):
         useThat(pattern)
 
 Pair Syntax and Keys
@@ -57,7 +57,7 @@ Unlike other languages, Monte iteration always produces a pair of objects at a
 time, called the **key** and **value**. A bit of syntax enables
 pattern-matching on the key::
 
-    for key => value in iterable:
+    for key => value in (iterable):
         traceln(key)
         traceln(value)
 
@@ -65,14 +65,14 @@ As expected, the key for iteration on a map is the key in the map
 corresponding to each value. The key for iteration on lists and strings is the
 zero-based index of each item or character::
 
-   >>> for i => each in ["a", "b"]:
+   >>> for i => each in (["a", "b"]):
    ...     traceln(`Index: $i Value: $each`)
    null
 
 It is possible to iterate only over the keys, of course, using an ignore
 pattern::
 
-    for key => _ in iterable:
+    for key => _ in (iterable):
         traceln(key)
 
 
@@ -85,9 +85,8 @@ You can create your own data structures over which the for loop can iterate. An 
 The Secret Lives of Flow Control Structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Flow control structures actually return values. For example, the if-else returns the last value in the executed clause:
+Flow control structures actually return values. For example, the if-else returns the last value in the executed clause::
 
- # E sample
  def a := 3
  def b := 4
  def max := if (a > b) {a} else {b}
@@ -120,13 +119,13 @@ they can return values and be used where other expressions are used.
 
 A ``for`` loop usually returns ``null``::
 
-    def result := for value in 0..10 { value }
+    def result := for value in (0..10) { value }
 
 Here, ``result`` is ``null``.
 
 However, a ``for`` loop can return another value with the ``break`` keyword::
 
-    def result := for value in 0..10 { break value }
+    def result := for value in (0..10) { break value }
 
 Since ``break`` was used, the loop exits on its first iteration, returning
 ``value``, which was ``0``. So ``result`` is ``0``.
@@ -145,23 +144,25 @@ Comprehensions
 ``for`` loops aren't the only way to consume iterable objects. Monte also has
 **comprehensions**, which generate new collections from iterables::
 
-    [transform(value) for value in iterable]
+    [for value in (iterable) transform(value)]
 
 This will build and return a list. Maps can also be built with pair syntax::
 
-    [key => makeValue(key) for key in keyList]
+    [for key in (keyList) key => makeValue(key)]
 
 And, of course, pair syntax can be used for both the pattern and expression in
 a comprehension::
 
-    [value => key for key => value in reverseMap]
+    [for key => value in (reverseMap) value => key]
 
 Comprehensions also support *filtering* by a condition. The conditional
 expression is called a **predicate** and should return ``true`` or ``false``,
 depenting on whether the current value should be *skipped*. For example, let's
 generate a list of even numbers::
 
-    def evens := [number for number in 0..20 if number % 2 == 0]
+    >>> def evens := [for number in (1..10) if (number % 2 == 0) number]
+    ... evens
+    [2, 4, 6, 8, 10]
 
 Unlike many other languages, the predicate must return a Boolean value; if it
 doesn't, then the entire comprehension will fail with an exception.

@@ -4,18 +4,21 @@ Introduction
 Why Monte?
 ----------
 
-Don't we have enough languages already? How could we justify bringing yet
-another programming language into the world? This is a fair question. We don't
-have good answers, but we can at least explain why Monte is interesting to us.
+Don't we have enough languages already? This is a fair question.  We
+can only explain why Monte is interesting to us and leave you to
+judge.
+
 
 Because Security Matters
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Because **secure distributed computing should not be hard**. We have entered
-the age of globally distributed computing with a vengeance, and `everything is
-broken`__. The hodgepodge of today's dominant languages and frameworks offer
-no comprehensive solution [#]_. Monte takes the object-capability paradigm of
-E [#]_ and updates it for the metamodern era:
+Because **secure distributed computing should not be hard**. Computers
+are getting faster, smaller, more connected, and more capable, but
+when it comes to security, `everything is broken`__. We propose to
+reconsider the identity-based access control approach dominant in
+today's dominant languages and frameworks [#]_. Monte takes the
+object-capability paradigm of E [#]_ and updates it for the metamodern
+era:
 
 __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 
@@ -62,19 +65,13 @@ __ https://medium.com/message/everything-is-broken-81e5f33a24e1
      from E, capability security is "natural security": if you shouldn't use
      it, you just can't see it.
 
-- Monte enables the fearless yet powerful use of multi-party limited-trust
-  mobile code.
-
-These qualities cannot be achieved with traditional security
-approaches. Do not expect the next release of Java, Windows, or Linux
-to fix the problem: the flaws in these systems lie at the heart of
-their architectures, unfixable without breaking upward compatibility,
-as we shall discuss in the chapter on
-:ref:`secure-distributed-computing`.
+- Monte enables the fearless yet powerful use of multi-party
+  limited-trust mobile code.
 
 .. [*] As with all sufficiently complex concurrency systems, deadlock is
        possible. That said, it has not been observed outside of
        specially-constructed pathological object graphs.
+
 
 Because Readability Matters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,10 +104,6 @@ declarations enables contract-based programming.
 Why not Monte?
 --------------
 
-.. note:: While Monte's usable and most architectural issues are resolved, it
-          is still undergoing rapid development. See :ref:`roadmap` for
-          details.
-
 Monte assumes automatic memory management; the current reference
 implementation uses the PyPy garbage collector, and any other implementation
 will have to choose a similar scheme. As such, it is not a good language for
@@ -122,62 +115,27 @@ additionally, Monte's target niches are largely occupied by other dynamic
 languages with JIT-compiler-based runtimes, so it is not a design goal to
 compete with C or other memory-unsafe languages.
 
-Preface to Monte Documentation
-------------------------------
-
-We begin with an introduction to practical Monte programming. Comparisons
-to Python are frequent, so some understanding of Python is desirable.
-
-Later sections form the :ref:`spec` and the :ref:`stdlib`.
-
-This largely follows the structure of `E in a Walnut`__ by Marc Stiegler
-and `The E Language`__ and `ELib`__ by Mark Miller.
-
-.. todo:: To what extent do we want to invite feedback and offer
-          support? i.e. what to write where Walnut says "If you
-          encounter some surprising behavior not explained here,
-          please join the e-lang discussion group and ask there"?
-
-__ http://wiki.erights.org/wiki/Walnut
-__ http://erights.org/elang/index.html
-__ http://erights.org/elib/index.html
-
-
-Fireworks In Part II
---------------------
-
-Though Monte is a powerful language for writing single-CPU programs, the main
-power of Monte becomes evident only after you move into distributed
-programming. It would be tempting to introduce the distributed computing
-features first, but one can't really do any meaningful computing without the
-basic data, flow, function, and object structures. So we introduce
-:ref:`ordinary-programming` in Part I before getting into the serious
-distributed computing facilities.
-
-However, since Monte was designed in the Python syntax tradition, an experienced
-programmer can probably glean enough from the Quick Reference Card to skip
-directly to Part II on :ref:`distributed-computing`. If you are short of time
-and have the requisite background, we recommend that strategy. Go back and
-read :ref:`Part I<ordinary-programming>` when you are convinced that Monte's
-power for distributed programming meets your needs.
-
-.. todo:: quick reference card
+.. note:: While Monte's usable and most architectural issues are resolved, it
+          is still undergoing rapid development. See :ref:`roadmap` for
+          details.
 
 
 Getting Started
 ---------------
 
-.. note:: Monte's installation process is in transition. See :ref:`roadmap`
-    and the `monte wiki`__ for more.
+Installation: Docker Image
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-__ https://github.com/monte-language/monte/wiki
+.. todo:: docker image via nix. Meanwhile, see `Getting Started`__
+          in the Monte wiki.
 
+__ https://github.com/monte-language/monte/wiki/Getting-Started
 
 Interacting with the Monte REPL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Monte has a traditional "Read - Evaluate - Print Loop", or REPL, for
-exploration. For example::
+exploration. Invoke it as `mt repl`. For example::
 
   >>> 1 + 1
   2
@@ -189,16 +147,22 @@ exploration. For example::
 Editor Syntax Highlighting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Emacs and Flycheck
+++++++++++++++++++
+
+.. todo:: ref monte-emacs repo
+
+Vim and Syntastic
++++++++++++++++++
+
+.. todo:: ref syntastic stuff
+
 Atom
 ++++
 
 Use Atom to install the package `language-monte`__.
 
 __ https://atom.io/packages/language-monte
-
-.. note:: See also `tooling ideas`__ in the wiki.
-
-__ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
 
 
 .. rubric:: Notes
@@ -216,3 +180,15 @@ __ https://github.com/monte-language/monte/wiki/Pipe-Dreams#tooling
             <http://www.combex.com/papers/darpa-report/index.html>`_
 
 __ http://erights.org/talks/thesis/index.html
+
+Support and Feedback
+~~~~~~~~~~~~~~~~~~~~
+
+We welcome feedback:
+  - `issues in monte pypy vm implementation (typhon)`__
+  - `issues in monte documentation`__
+
+Or come say hi on IRC, in `#monte` on `irc.freenode.net`!
+
+__ https://github.com/monte-language/monte/issues
+__ https://github.com/monte-language/typhon/issues

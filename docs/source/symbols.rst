@@ -390,11 +390,6 @@ Use ``diverge`` and ``snapshot`` similarly::
 Lexical Syntax
 --------------
 
-.. note:: Lexical details of monte syntax are currently specified
-	  only by implementation; see `lib/monte/monte_lexer.mt`__
-
-__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
-
 .. syntax:: LiteralExpr
 
    Choice(0,

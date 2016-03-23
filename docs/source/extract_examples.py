@@ -15,8 +15,7 @@ log = logging.getLogger(__name__)
 def main(access):
     inputs, write = access()
 
-    write(u'import "unittest" =~ [=> unittest]\n')
-    write(u'exports ()\n')
+    write(testTop)
 
     p = doctest.DocTestParser()
     for (section, txt) in inputs:
@@ -34,10 +33,28 @@ def main(access):
 
         write(suiteTemplate.format(cases=',\n    '.join(caseNames)))
 
+
 def indent(source, levels):
     lines = source.split('\n')
     indent = ' ' * (levels * 4)
     return '\n'.join(indent + line for line in lines)
+
+
+testTop = ur"""
+import "unittest" =~ [=> unittest]
+exports ()
+
+def mockFileResource(path):
+    var contents := b``
+    return object fileResource:
+        to setContents(bs :Bytes):
+            contents := bs
+        to getContents() :Bytes:
+            def [p, r] := Ref.promise()
+            r <- resolve(contents)
+            return p
+
+"""
 
 caseTemplate = u"""
 def {name}(assert):
