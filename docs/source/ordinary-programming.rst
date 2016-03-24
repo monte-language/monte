@@ -1,8 +1,179 @@
 Practical Security: The Mafia game
 ==================================
 
-Let's look a bit deeper at Monte, using an implementation of the
-`Mafia party game`__ as an example.
+Let's look a bit deeper at Monte, working up to an implementation of
+the `Mafia party game`__.
+
+
+Objects
+-------
+
+Monte has a simpler approach to object composition and inheritance than many
+other object-based and object-oriented languages.
+
+A Singleton Object
+~~~~~~~~~~~~~~~~~~
+
+We will start our exploration of objects with a simple singleton
+object. Methods can be attached to objects with the ``to`` keyword::
+
+  >>> object origin:
+  ...     to getX():
+  ...         return 0
+  ...     to getY():
+  ...         return 0
+  ... # Now invoke the methods
+  ... origin.getY()
+  0
+
+.. warning:: Python programmers beware, methods are not
+             functions. Methods are just the public hooks to the
+             object that receive messages; functions are standalone
+             objects.
+
+Unlike Java, Monte objects are not constructed from classes. Unlike JavaScript
+or Python, Monte objects are not constructed from prototypes. As a result, it
+might not be obvious at first how to build multiple objects which are similar
+in behavior.
+
+
+.. _maker:
+
+Stateful objects and object constructors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Monte has a very simple idiom for class-like constructs::
+
+  >>> def makeCounter(var value :Int):
+  ...     return object counter:
+  ...         to increment() :Int:
+  ...             return value += 1
+  ...         to makeOffsetCounter(delta :Int):
+  ...             return makeCounter(value + delta)
+  ...
+  ... def c1 := makeCounter(1)
+  ... c1.increment()
+  ... def c2 := c1.makeOffsetCounter(10)
+  ... c1.increment()
+  ... c2.increment()
+  ... [c1.increment(), c2.increment()]
+  [4, 14]
+
+And that's it. No declarations of object contents or special
+references to ``this`` or ``self``.
+
+Inside the function ``makeCounter``, we simply define an object called
+``counter`` and return it. Each time we call ``makeCounter()``, we get
+a new counter object. As demonstrated by the ``makeOffsetCounter``
+method, the function (``makeCounter``) can be referenced from within
+its own body.
+
+The lack of a ``this`` or ``self`` keyword may be
+surprising. But this straightforward use of lexical scoping saves us
+the often tedious business in python or Java of copying the arguments
+from the parameter list into instance variables: ``value`` is already
+an instance variable.
+
+The ``value`` passed into the function is not an ephemeral parameter
+that goes out of existence when the function exits. Rather, it is a
+true variable, and it persists as long as any of the objects that uses
+it persist. Since the counter uses this variable, ``value`` will exist
+as long as the counter exists.
+
+.. note::
+    Remember, Monte is an expression language. ``value += 1`` returns the
+    resulting sum. That's why ``return value += 1`` works.
+
+A critical feature of Monte is **complete encapsulation**: ``value``
+is not visible outside of ``makeCounter()``; this means that *no other
+object can directly modify it*. Monte objects have no public
+attributes or fields or even a notion of public and private. Instead,
+all names are private: if a name is not visible (i.e. in scope), there
+is no way to use it.
+
+We refer to an object-making function such as ``makeCounter`` as a
+"Maker". As a more serous example, let's make a sketch of our game::
+
+  >>> def makeMafia(var players :Set):
+  ...     def mafiosoCount :Int := players.size() // 3
+  ...     var mafiosos :Set := players.slice(0, mafiosoCount)
+  ...     var innocents :Set := players.slice(mafiosoCount)
+  ...
+  ...     return object mafia:
+  ...         to getWinner():
+  ...             if (mafiosos.size() == 0):
+  ...                 return "village"
+  ...             if (mafiosos.size() >= innocents.size()):
+  ...                 return "mafia"
+  ...             return null
+  ...
+  ...         to lynch(victim):
+  ...             players without= (victim)
+  ...             mafiosos without= (victim)
+  ...             innocents without= (victim)
+  ...
+  ... def game1 := makeMafia(["Alice", "Bob", "Charlie"].asSet())
+  ... game1.lynch("Bob")
+  ... game1.lynch("Charlie")
+  ... game1.getWinner()
+  "mafia"
+
+.. note:: Just as you would read ``x += 1`` short-hand for ``x := x +
+          1``, read the :ref:`augmented assignment
+          <augmented_assignment>` ``players without= (victim)`` as
+          ``players := players.without(victim)`` .
+
+
+.. _def-fun:
+
+Secret Life of Functions, Multiple Constructors and "Static Methods"
+--------------------------------------------------------------------
+
+Monte does have a convention that objects with a single method with the verb
+``run`` are functions. There is no difference, to Monte, between this
+function::
+
+    def f():
+        pass
+
+And this object::
+
+    object f:
+        to run():
+            pass
+
+Functions
+---------
+
+A basic function looks like this::
+
+  >>> def addNumbers(a, b):
+  ...     return a + b
+  ...
+  ... # Now use the function::
+  ... def answer := addNumbers(3, 4)
+  ... answer
+  7
+
+You can nest the definitions of functions and objects inside other
+functions and objects [#]_. Nested functions and objects play a crucial
+role in Monte, notably in the construction of objects as described
+shortly.
+
+Functions can of course call themselves recursively, as in::
+
+  >>> def factorial(n):
+  ...     if (n == 0):
+  ...         return 1
+  ...     else:
+  ...         return n * factorial(n-1)
+  ... factorial(3)
+  6
+
+
+.. todo:: document docstrings
+
+@@@@@@@@@
 
 In :file:`mafia.mt`, after the comment, we start with a :ref:`module
 declaration <module-decl>` that declares a dependency on the
@@ -139,210 +310,3 @@ variable whose value is to be embedded in the string.
 .. todo:: integrate functions and objects with mafia.mt
 
 .. todo:: discuss the actual game design and security properties.
-
-Functions
----------
-
-A basic function looks like this::
-
-  >>> def addNumbers(a, b):
-  ...     return a + b
-  ...
-  ... # Now use the function::
-  ... def answer := addNumbers(3, 4)
-  ... answer
-  7
-
-You can nest the definitions of functions and objects inside other
-functions and objects [#]_. Nested functions and objects play a crucial
-role in Monte, notably in the construction of objects as described
-shortly.
-
-Functions can of course call themselves recursively, as in::
-
-  >>> def factorial(n):
-  ...     if (n == 0):
-  ...         return 1
-  ...     else:
-  ...         return n * factorial(n-1)
-  ... factorial(3)
-  6
-
-
-.. todo:: document docstrings
-
-Objects
--------
-
-Monte has a simpler approach to object composition and inheritance than many
-other object-based and object-oriented languages.
-
-A Singleton Object
-~~~~~~~~~~~~~~~~~~
-
-We will start our exploration of objects with a simple singleton
-object. Methods can be attached to objects with the ``to`` keyword::
-
-  >>> object origin:
-  ...     to getX():
-  ...         return 0
-  ...     to getY():
-  ...         return 0
-  ... # Now invoke the methods
-  ... origin.getY()
-  0
-
-.. warning:: Python programmers beware, methods are not
-             functions. Methods are just the public hooks to the
-             object that receive messages; functions are standalone
-             objects.
-
-Unlike Java, Monte objects are not constructed from classes. Unlike JavaScript
-or Python, Monte objects are not constructed from prototypes. As a result, it
-might not be obvious at first how to build multiple objects which are similar
-in behavior.
-
-
-.. _maker:
-
-Stateful objects and object constructors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Monte has a very simple idiom for class-like constructs::
-
-  >>> # Point constructor
-  ... def makePoint(x,y):
-  ...     object point:
-  ...         to getX():
-  ...             return x
-  ...         to getY():
-  ...             return y
-  ...         to makeOffsetPoint(offsetX, offsetY):
-  ...             return makePoint(x + offsetX, y + offsetY)
-  ...
-  ...         to makeOffsetPoint(offset):
-  ...             return makePoint(x + offset, y + offset)
-  ...     return point
-  ...
-  ... # Create a point
-  ... def origin := makePoint(0,0)
-  ... # get the y value of the origin
-  ... origin.getY()
-  0
-
-Inside the function makePoint, we define a point and return it. As
-demonstrated by the ``makeOffsetPoint method``, the function (``makePoint``)
-can be referenced from within its own body. Also note that you can
-overload method names (two versions of ``makeOffsetPoint``) as long as
-they can be distinguished by the number of parameters they take.
-
-The ``(x, y)`` passed into the function are not ephemeral parameters
-that go out of existence when the function exits. Rather, they are
-true variables (implicitly declared with ``def``), and they persist as
-long as any of the objects that use them persist. Since the point uses
-these variables, ``x`` and ``y`` will exist as long as the point
-exists. This saves us the often tedious business in python or Java of
-copying the arguments from the parameter list into instance variables:
-``x`` and ``y`` already are instance variables.
-
-We refer to an object-making function such as makePoint as a
-"Maker". Let us look at a more serious example, with additional
-instance variables:
-
-  >>> def makeCar(var name):
-  ...     var x := 0
-  ...     var y := 0
-  ...     return object car:
-  ...         to moveTo(newX, newY):
-  ...             x := newX
-  ...             y := newY
-  ...
-  ...         to getX():
-  ...             return x
-  ...         to getY():
-  ...             return y
-  ...         to setName(newName):
-  ...             name := newName
-  ...         to getName():
-  ...             return name
-  ...
-  ... # Now use the makeCar function to make a car, which we will move and print
-  ... def sportsCar := makeCar("Ferrari")
-  ... sportsCar.moveTo(10,20)
-  ... `The car ${sportsCar.getName()} is at X location ${sportsCar.getX()}`
-  "The car Ferrari is at X location 10"
-
-
-Finally, just like with functions, methods can have guards on their parameters
-and return value::
-
-    object deck:
-        to size(suits :Int, ranks :Int) :Int:
-            return suits * ranks
-
-Newcomers to Monte may be surprised to learn that Monte lacks a ``this`` or
-``self`` keyword. In fact, Monte does have ways to refer to the current object,
-but there's a deeper conceptual difference between Monte and other object-based
-languages.
-
-Monte does not have a ``this`` or ``self`` keyword because Monte objects can
-refer to their "member" or "private" names without qualification. This is a
-consequence of how Monte objects are built. Consider this object maker::
-
-    def makeMyObject():
-        return object myObject:
-            pass
-
-Let's modify it slightly. We want to give this object a "private" value secret
-which cannot be accessed directly, and a method ``getSecret/0`` which will
-return it. We put "private" in quotation marks to emphasize that Monte does not
-have private names. Instead, all names are private in Monte; if one cannot see
-a name, then one cannot access it.
-
-::
-
-    def makeMyObject(secret):
-        return object myObject:
-            to getSecret():
-                return secret
-
-And that's it. No declarations of object contents or special references to ``this``
-or ``self``.
-
-We can also simulate "member" names for objects. As before, we can achieve
-this effect without ``this``.
-
-::
-
-    def makeMyObject():
-        var counter :Int := 0
-        return object myObject:
-            to getCounter():
-                return counter += 1
-
-Here, ``counter`` is not visible outside of ``makeMyObject()``, which means
-that no other object can directly modify it. Each time we call
-``makeMyObject()``, we get a new object called ``myObject`` with a new counter.
-
-.. note::
-    Remember, Monte is an expression language. ``counter += 1`` returns the
-    value of ``counter``. That's why ``return counter += 1`` works.
-
-
-.. _def-fun:
-
-Secret Life of Functions, Multiple Constructors and "Static Methods"
---------------------------------------------------------------------
-
-Monte does have a convention that objects with a single method with the verb
-``run`` are functions. There is no difference, to Monte, between this
-function::
-
-    def f():
-        pass
-
-And this object::
-
-    object f:
-        to run():
-            pass
