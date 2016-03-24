@@ -15,6 +15,10 @@ of backticks::
 
     def ql := name`and some text`
 
+ >>> def x := 3
+ ... `Value of x is: $x`
+ "Value of x is: 3"
+
 The exact object created by a QP varies depending on the QP used. One of the
 most common QPs used is called ``simple``. ``simple`` formats the QL text and
 returns a string::

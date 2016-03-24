@@ -1,8 +1,9 @@
+.. _primitive-data:
+
 Primitive Data Types
 ====================
 
-.. todo:: fold explanatory material into :ref:`ordinary_computing`,
-	  separate discussion of expression syntax from datatypes.
+.. todo:: separate discussion of expression syntax from datatypes.
 
 Scalars
 -------
@@ -297,6 +298,16 @@ Monte has string escape syntax much like Python or Java:
     As with Python, a backslash (``\``) as the final character of a line
     escapes the newline and causes that line and its successor to be
     interpereted as one.
+
+ ▲ def c := 1 + 2 \
+ ...   + 3 + 4
+ Result: 10
+
+``+`` when used with strings is a concatenation operator as in Python. Unlike
+Java, it does *not* automatically coerce other types on the right-hand if the
+left-hand operand is a string.
+
+.. todo:: "What is the end-of-statement delineator in Monte?"
 
 .. syntax:: StrExpr
 

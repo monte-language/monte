@@ -29,7 +29,7 @@ specimens through as-is, and ``Void`` ignores the specimen entirely, always
 returning ``null``.
 
 Here's an actual test. The ``Empty`` guard checks its specimen, which is a
-:doc:`container`, for emptiness and ejects on failure::
+container, for emptiness and ejects on failure::
 
     object Empty:
         to coerce(specimen, ej):

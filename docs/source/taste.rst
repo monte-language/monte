@@ -63,28 +63,34 @@ Expressions and Patterns
 The :ref:`def expression<def>` for defining the ``helloWeb`` function
 is similar to Python and the like.  Note that unlike python and C,
 which use a mix of statements and expressions, Monte is an expression
-language, like Scheme. So ``def`` is an expression with a value, just
-like string literals and method calls.
+language, like Scheme. So ``def body ...`` is an expression with a
+value, just like string literals and method calls.
 
-The expression inside the call to ``tag.p(...)`` does string
+The expression inside the call to ``traceln(...)`` does string
 interpolation much like perl or ruby. It's a
 :ref:`quasiliteral<quasiliteral>`::
 
-    tag.p(`${request.getHeaders()}`)
+    traceln(`serving on port $portNum`)
+
+Another quasiliteral is b`<p>Hello!</p>`, which denotes a ``Bytes``
+object rather than a character string.
 
 This short example includes a few of Monte's :ref:`patterns <patterns>`::
 
     [=> tag :Guard]
     request
-    => makeTCP4ServerEndpoint
 
 
 Objects and Message Passing
 ---------------------------
 
-The ``body`` is defined using :ref:`method calls<message_passing>`
-on the imported ``tag`` object. Monte is a pure object language.
-All operations on objects are done by sending messages.
+Monte is a pure object language.  All operations on objects are done
+by :ref:`sending messages<message_passing>`.  This includes ordinary
+method calls such as ``argv.last()`` as well as function calls such as
+``traceln(portNum)`` and even constructing maps ``["C" => "t"]`` and
+lists ``[200, [], body]``.
+
+.. todo:: fwd ref f.run(), _makeList, _makeMap
 
 
 No Powerful References by Default

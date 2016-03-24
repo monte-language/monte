@@ -1,7 +1,7 @@
 .. _modules:
 
-Modules in Monte
-================
+Modules
+=======
 
 Modules are units of compilation. They are single files of Monte source code
 which can be compiled on a per-file basis. Modules are relatively
@@ -19,14 +19,17 @@ form::
     import "namespace/module" =~ [=> pa, => re, => ci]
     exports (makeThing, main)
 
-With zero or more ``import`` lines and exactly one ``export`` line.
+with zero or more ``import`` lines and exactly one ``export`` line.
 
-Each ``import`` line declares that the module depends on an object called a
-*dependency*, which is known inside the module by its *pet name*. In this
-example, the pet name is "namespace/module". The dependency is matched against
-the pattern on the right-hand side of the ``=~`` operator, called the *import
-pattern*, and the resulting names are available for use throughout the body of
-the module.
+.. index:: dependency, pet name, import pattern
+
+Each ``import`` line declares that the module depends on an object
+called a :dfn:`dependency`, which is known inside the module by its
+:dfn:`pet name`. In this example, the pet name is
+"namespace/module". The dependency is matched against the pattern on
+the right-hand side of the ``=~`` operator, called the :dfn:`import
+pattern`, and the resulting names are available for use throughout the
+body of the module.
 
 A single ``exports`` line follows the import declarations. This line declares a
 list of nouns which will be *exported* from the module's scope. Exported names
@@ -40,7 +43,7 @@ All exports must pass ``DeepFrozen``::
     def f() as DeepFrozen:
         return 42
 
-.. syntax:: module_
+.. syntax:: module_header
 
    Ap('Module',
     Sigil("imports", P('StrExpr'), Sigil("=~", SepBy(NonTerminal('namePatt')))),

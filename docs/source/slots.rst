@@ -1,8 +1,11 @@
+.. _slots:
+.. index:: slot, slot object
+
 =====
 Slots
 =====
 
-Monte's values are stored in **slots**, which are also values. This nested
+Monte's values are stored in :dfn:`slots`, which are also values. This nested
 structure permits some flexibility.
 
 The slot of a value is accessed using the ``&`` unary operator::
@@ -50,3 +53,11 @@ change::
 
     varValue := 5
     varSlot == &varValue # Still true after assignment
+
+.. _bindings:
+
+Bindings
+========
+
+.. todo:: discuss bindings. Expand this section to "slots and
+          bindings"? or discuss bindings under auditors?

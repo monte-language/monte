@@ -54,6 +54,8 @@ will never resolve, but instead refers to a **problem**, which is an object
     # ...but some operations are still safe.
     Ref.optProblem(p)
 
+.. _when-delay:
+
 When-expressions and Delayed Actions
 ====================================
 

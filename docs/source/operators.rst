@@ -468,3 +468,12 @@ A guard can be used as an operator to coerce a value::
 .. syntax:: CoerceExpr
 
    Ap("CoerceExpr", NonTerminal('calls'), Sigil(":", NonTerminal('guard')))
+
+
+.. todo:: special operator rules because of security
+
+There are some special rules about the behavior of the basic operators
+because of E's distributed security. These rules are described in the
+Under the :ref:`Under the Covers<under-cover-objects>` section later
+in this chapter.
+

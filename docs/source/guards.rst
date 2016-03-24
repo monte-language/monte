@@ -4,19 +4,6 @@
 Guards
 ======
 
-Dynamic "type checking" and Guards
-----------------------------------
-
-Monte guards perform many of the functions usually thought of as type
-checking, though they are so flexible, they also work as concise
-assertions. Guards can be placed on variables, parameters, and return
-values.
-
-Guards are not checked during compilation. They are checked during
-execution, and will throw exceptions if the value cannot be coerced to
-pass the guard. Guards play a key role in protecting the security
-properties when working with untrusted code.
-
 Standard Guards
 ~~~~~~~~~~~~~~~
 

@@ -14,6 +14,12 @@ Monte is a dynamic language inspired by Python and E.
     intro
     taste
     ordinary-programming
+
+Organization In Progress
+========================
+
+.. toctree::
+
     guards
     promises
     symbols

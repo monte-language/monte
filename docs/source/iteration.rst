@@ -91,7 +91,7 @@ Flow control structures actually return values. For example, the if-else returns
  def b := 4
  def max := if (a > b) {a} else {b}
 
-This behavior is most useful when used with the when-catch construct described in the chapter on :ref:`distributed-computing`.
+This behavior is most useful when used with the when-catch construct described in the :ref:`when-delay` section.
 The break statement, when used in a for or a while loop, can be followed by an expression, in which case the loop returns the value of that expression.
 
 .. sidebar:: ternary conditional expression

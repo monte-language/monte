@@ -301,6 +301,8 @@ Performs :ref:`guard <guards>` coercion and discards the result.
    Ap('IgnorePatt', Sigil("_", NonTerminal('guardOpt')))
 
 
+.. _ListPatt:
+
 ListPatt (kernel)
 ~~~~~~~~~~~~~~~~~
 
@@ -356,9 +358,10 @@ expressions in parentheses. The subpatterns are matched against the
 values for the keys. ':=' may be used to specify a default value to
 match a subpattern against if the key is absent.
 
+.. _importer:
 .. index:: importer
 
-The 'importer' syntax without keys is a shortcut for binding names
+The :dfn:`importer` syntax without keys is a shortcut for binding names
 identical to string keys in a map; ``[=> x, => y]`` is equivalent to
 ``["x" => x, "y" => y]``.
 
