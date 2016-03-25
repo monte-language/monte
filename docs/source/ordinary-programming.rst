@@ -63,6 +63,12 @@ Monte has a very simple idiom for class-like constructs::
 And that's it. No declarations of object contents or special
 references to ``this`` or ``self``.
 
+.. sidebar:: Assignment Expressions
+
+   Remember, Monte is an expression language.  The expression ``value
+   += 1`` returns the resulting sum. That's why ``return value += 1``
+   works.
+
 Inside the function ``makeCounter``, we simply define an object called
 ``counter`` and return it. Each time we call ``makeCounter()``, we get
 a new counter object. As demonstrated by the ``makeOffsetCounter``
@@ -81,16 +87,20 @@ true variable, and it persists as long as any of the objects that uses
 it persist. Since the counter uses this variable, ``value`` will exist
 as long as the counter exists.
 
-.. note::
-    Remember, Monte is an expression language. ``value += 1`` returns the
-    resulting sum. That's why ``return value += 1`` works.
-
 A critical feature of Monte is **complete encapsulation**: ``value``
 is not visible outside of ``makeCounter()``; this means that *no other
 object can directly modify it*. Monte objects have no public
 attributes or fields or even a notion of public and private. Instead,
 all names are private: if a name is not visible (i.e. in scope), there
 is no way to use it.
+
+.. sidebar:: Augmented Assignment
+
+   Just as you would read ``x += 1`` short-hand for ``x := x + 1``,
+   read the :ref:`augmented assignment <augmented_assignment>`
+   ``players without= (victim)`` as ``players :=
+   players.without(victim)`` .
+
 
 We refer to an object-making function such as ``makeCounter`` as a
 "Maker". As a more serous example, let's make a sketch of our game::
@@ -118,12 +128,6 @@ We refer to an object-making function such as ``makeCounter`` as a
   ... game1.lynch("Charlie")
   ... game1.getWinner()
   "mafia"
-
-.. note:: Just as you would read ``x += 1`` short-hand for ``x := x +
-          1``, read the :ref:`augmented assignment
-          <augmented_assignment>` ``players without= (victim)`` as
-          ``players := players.without(victim)`` .
-
 
 .. _def-fun:
 
@@ -164,6 +168,11 @@ gives you an ``Int``, truncated towards negative infinity. So::
   >>> -3.5 // 1
   -4
 
+.. sidebar:: Comments
+
+   Monte uses the same ``# ...`` syntax for comments as python and
+   shell programming.
+
 Strings are enclosed in double quotes. Characters are enclosed in
 single quotes.
 
@@ -182,9 +191,6 @@ rendition:
     :linenos:
     :lines: 15-
     :lineno-start: 15
-
-.. note:: Monte uses the same ``# ...`` syntax for comments as python
-          and shell programming.
 
 Dynamic "type checking" with Guards
 -----------------------------------
@@ -267,11 +273,6 @@ A list of players that got more than a quorum of votes is written
 is one such player, we remove the player from the
 game with ``players without= (victim)``.
 
-loop iterates over the values of the
-``votes`` map. The ``[for k => v in (counter) if (v >= quorum) k]``
-expression iterates over ``k => v`` pairs in the ``counter`` map and
-returns a list of each ``k`` where ``v >= quorum``.
-
 
 Destructuring with Patterns
 ---------------------------
@@ -282,7 +283,7 @@ Destructuring with Patterns
      single name is typical, but the first ``def`` expression above
      binds ``MafiaState``, ``DAY``, and ``NIGHT`` to the items from
      ``makeEnum`` using a :ref:`list pattern<ListPatt>`. An exception
-     is raised if the match fails (with a noteable exception below).
+     is raised (or an ejector is fired) if the match fails.
   2. Parameters to methods are patterns which are matched against
      arguments. Match failure raises an exception. A :ref:`final
      pattern<FinalPatt>` such as ``to _printOn(out)`` or with a guard
