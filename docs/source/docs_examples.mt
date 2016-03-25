@@ -71,115 +71,8 @@ unittest([
 
 # interfaces
 
-def testinterfaces_0(assert):
-    object example:
-        method test():
-            "doc"
-            def addNumbers(a, b):
-                return a + b
-            
-            # Now use the function::
-            def answer := addNumbers(3, 4)
-            answer
-            
-
-    assert.equal(example.test(), 7)
-
-
-def testinterfaces_1(assert):
-    object example:
-        method test():
-            "doc"
-            def factorial(n):
-                if (n == 0):
-                    return 1
-                else:
-                    return n * factorial(n-1)
-            factorial(3)
-            
-
-    assert.equal(example.test(), 6)
-
-
-def testinterfaces_2(assert):
-    object example:
-        method test():
-            "doc"
-            object origin:
-                to getX():
-                    return 0
-                to getY():
-                    return 0
-            # Now invoke the methods
-            origin.getY()
-            
-
-    assert.equal(example.test(), 0)
-
-
-def testinterfaces_3(assert):
-    object example:
-        method test():
-            "doc"
-            # Point constructor
-            def makePoint(x,y):
-                object point:
-                    to getX():
-                        return x
-                    to getY():
-                        return y
-                    to makeOffsetPoint(offsetX, offsetY):
-                        return makePoint(x + offsetX, y + offsetY)
-            
-                    to makeOffsetPoint(offset):
-                        return makePoint(x + offset, y + offset)
-                return point
-            
-            # Create a point
-            def origin := makePoint(0,0)
-            # get the y value of the origin
-            origin.getY()
-            
-
-    assert.equal(example.test(), 0)
-
-
-def testinterfaces_4(assert):
-    object example:
-        method test():
-            "doc"
-            def makeCar(var name):
-                var x := 0
-                var y := 0
-                return object car:
-                    to moveTo(newX, newY):
-                        x := newX
-                        y := newY
-            
-                    to getX():
-                        return x
-                    to getY():
-                        return y
-                    to setName(newName):
-                        name := newName
-                    to getName():
-                        return name
-            
-            # Now use the makeCar function to make a car, which we will move and print
-            def sportsCar := makeCar("Ferrari")
-            sportsCar.moveTo(10,20)
-            `The car ${sportsCar.getName()} is at X location ${sportsCar.getX()}`
-            
-
-    assert.equal(example.test(), "The car Ferrari is at X location 10")
-
-
 unittest([
-    testinterfaces_0,
-    testinterfaces_1,
-    testinterfaces_2,
-    testinterfaces_3,
-    testinterfaces_4
+    
 ])
 
 
@@ -758,21 +651,97 @@ def testordinary_programming_0(assert):
     object example:
         method test():
             "doc"
-            # Comment on this piece of code
-            
-            def a := 3
-            var b := a + 2
-            b += 1
-            if (a < b):
-                traceln("a is less than b")
-            else:
-               traceln("Wow, the arithmetic logic unit in this processor is confused")
+            object origin:
+                to getX():
+                    return 0
+                to getY():
+                    return 0
+            # Now invoke the methods
+            origin.getY()
             
 
-    assert.equal(example.test(), null)
+    assert.equal(example.test(), 0)
 
 
 def testordinary_programming_1(assert):
+    object example:
+        method test():
+            "doc"
+            def makeCounter(var value :Int):
+                return object counter:
+                    to increment() :Int:
+                        return value += 1
+                    to makeOffsetCounter(delta :Int):
+                        return makeCounter(value + delta)
+            
+            def c1 := makeCounter(1)
+            c1.increment()
+            def c2 := c1.makeOffsetCounter(10)
+            c1.increment()
+            c2.increment()
+            [c1.increment(), c2.increment()]
+            
+
+    assert.equal(example.test(), [4, 14])
+
+
+def testordinary_programming_2(assert):
+    object example:
+        method test():
+            "doc"
+            def makeMafia(var players :Set):
+                def mafiosoCount :Int := players.size() // 3
+                var mafiosos :Set := players.slice(0, mafiosoCount)
+                var innocents :Set := players.slice(mafiosoCount)
+            
+                return object mafia:
+                    to getWinner():
+                        if (mafiosos.size() == 0):
+                            return "village"
+                        if (mafiosos.size() >= innocents.size()):
+                            return "mafia"
+                        return null
+            
+                    to lynch(victim):
+                        players without= (victim)
+                        mafiosos without= (victim)
+                        innocents without= (victim)
+            
+            def game1 := makeMafia(["Alice", "Bob", "Charlie"].asSet())
+            game1.lynch("Bob")
+            game1.lynch("Charlie")
+            game1.getWinner()
+            
+
+    assert.equal(example.test(), "mafia")
+
+
+def testordinary_programming_3(assert):
+    object example:
+        method test():
+            "doc"
+            def square(x):
+                return x * x
+            square.run(4)
+            
+
+    assert.equal(example.test(), 16)
+
+
+def testordinary_programming_4(assert):
+    object example:
+        method test():
+            "doc"
+            object square:
+                to run(x):
+                    return x * x
+            square(4)
+            
+
+    assert.equal(example.test(), 16)
+
+
+def testordinary_programming_5(assert):
     object example:
         method test():
             "doc"
@@ -782,21 +751,13 @@ def testordinary_programming_1(assert):
     assert.equal(example.test(), -4)
 
 
-def testordinary_programming_2(assert):
-    object example:
-        method test():
-            "doc"
-            def x := 3
-            `Value of x is: $x`
-            
-
-    assert.equal(example.test(), "Value of x is: 3")
-
-
 unittest([
     testordinary_programming_0,
     testordinary_programming_1,
-    testordinary_programming_2
+    testordinary_programming_2,
+    testordinary_programming_3,
+    testordinary_programming_4,
+    testordinary_programming_5
 ])
 
 
@@ -844,8 +805,19 @@ unittest([
 
 # quasiparsers
 
+def testquasiparsers_0(assert):
+    object example:
+        method test():
+            "doc"
+            def x := 3
+            `Value of x is: $x`
+            
+
+    assert.equal(example.test(), "Value of x is: 3")
+
+
 unittest([
-    
+    testquasiparsers_0
 ])
 
 
@@ -1865,8 +1837,33 @@ unittest([
 
 # taste
 
+def testtaste_0(assert):
+    object example:
+        method test():
+            "doc"
+            def helloWeb(request) { def reply := [200]; return reply }
+            helloWeb("/")
+            
+
+    assert.equal(example.test(), [200])
+
+
+def testtaste_1(assert):
+    object example:
+        method test():
+            "doc"
+            def helloWeb(request):
+                def reply := [200]
+                return reply
+            helloWeb("/page1")
+            
+
+    assert.equal(example.test(), [200])
+
+
 unittest([
-    
+    testtaste_0,
+    testtaste_1
 ])
 
 
@@ -1878,13 +1875,6 @@ unittest([
 
 
 # tubes
-
-unittest([
-    
-])
-
-
-# tut
 
 unittest([
     
@@ -1904,30 +1894,6 @@ def testwizard_0(assert):
     object example:
         method test():
             "doc"
-            def f(x) { def y := x * x; return y }
-            f(4)
-            
-
-    assert.equal(example.test(), 16)
-
-
-def testwizard_1(assert):
-    object example:
-        method test():
-            "doc"
-            def f(x):
-                def y := x * x
-                return y
-            f(5)
-            
-
-    assert.equal(example.test(), 25)
-
-
-def testwizard_2(assert):
-    object example:
-        method test():
-            "doc"
             m`1 + 1`.expand()
             
 
@@ -1935,8 +1901,6 @@ def testwizard_2(assert):
 
 
 unittest([
-    testwizard_0,
-    testwizard_1,
-    testwizard_2
+    testwizard_0
 ])
 

@@ -4,6 +4,7 @@ Practical Security: The Mafia game
 Let's look a bit deeper at Monte, working up to an implementation of
 the `Mafia party game`__.
 
+__ https://en.wikipedia.org/wiki/Mafia_%28party_game%29
 
 Objects
 -------
@@ -39,8 +40,8 @@ in behavior.
 
 .. _maker:
 
-Stateful objects and object constructors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Object constructors and encapsulation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Monte has a very simple idiom for class-like constructs::
 
@@ -126,117 +127,34 @@ We refer to an object-making function such as ``makeCounter`` as a
 
 .. _def-fun:
 
-Secret Life of Functions, Multiple Constructors and "Static Methods"
---------------------------------------------------------------------
+Functions are objects too
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Monte does have a convention that objects with a single method with the verb
-``run`` are functions. There is no difference, to Monte, between this
-function::
+Functions are simply objects with a ``run`` method. There is no
+difference between this function::
 
-    def f():
-        pass
+  >>> def square(x):
+  ...     return x * x
+  ... square.run(4)
+  16
 
-And this object::
+... and this object::
 
-    object f:
-        to run():
-            pass
-
-Functions
----------
-
-A basic function looks like this::
-
-  >>> def addNumbers(a, b):
-  ...     return a + b
-  ...
-  ... # Now use the function::
-  ... def answer := addNumbers(3, 4)
-  ... answer
-  7
-
-You can nest the definitions of functions and objects inside other
-functions and objects [#]_. Nested functions and objects play a crucial
-role in Monte, notably in the construction of objects as described
-shortly.
-
-Functions can of course call themselves recursively, as in::
-
-  >>> def factorial(n):
-  ...     if (n == 0):
-  ...         return 1
-  ...     else:
-  ...         return n * factorial(n-1)
-  ... factorial(3)
-  6
-
+  >>> object square:
+  ...     to run(x):
+  ...         return x * x
+  ... square(4)
+  16
 
 .. todo:: document docstrings
 
-@@@@@@@@@
 
-In :file:`mafia.mt`, after the comment, we start with a :ref:`module
-declaration <module-decl>` that declares a dependency on the
-`lib/enum` module, imports ``makeEnum``, and exports ``makeMafia``:
-
-__ https://en.wikipedia.org/wiki/Mafia_%28party_game%29
-
-.. literalinclude:: tut/mafia.mt
-    :linenos:
-    :language: monte
-    :lines: 15-28
-    :lineno-start: 15
-
-Dynamic "type checking" with Guards
+Traditional Datatypes and Operators
 -----------------------------------
 
-Monte :ref:`guard <guards>` perform many of the functions usually
-thought of as type checking, though they are so flexible that they
-also work as concise assertions. Guards can be placed on variables
-(such as ``Int`` on ``mafiososCount``), parameters (such as ``Set`` on
-``players``), and return values (such as ``MafiaState`` on
-``getState`` below).
-
-Guards are not checked during compilation. They are checked during
-execution and will throw exceptions if the value cannot be coerced to
-pass the guard. Guards play a key role in protecting security
-properties.
-
-This `lib/enum` module lets us build enumerations.  The call to
-``makeEnum`` returns a list where the first item is a new guard and
-the remaining items are distinct new objects that pass the guard. No
-other objects pass the guard.
-
-Destructuring with Patterns
----------------------------
-
-The first ``def`` expression binds ``MafiaState``, ``DAY``, and
-``NIGHT`` to the guard and the items using a :ref:`list
-pattern<ListPatt>`.
-
-Final, Var, and DeepFrozen
---------------------------
-
-Bindings in Monte are final (immutable) by default.
-
-Wherever a name appears in a pattern, it can also have a guard; in
-particular, the :ref:`DeepFrozen guard <deepfrozen>` means that not
-only is the variable binding immutable, but the object that is stored
-there and everything it refers to are immutable.  The ``def
-makeMafia(...) as DeepFrozen`` expression results in this sort of
-binding as well as patterns such as ``DAY :DeepFrozen``.
-
-Using a ``var`` pattern in a definition (such as ``mafiosos``) or
-parameter (such as ``players``) lets you assign to that variable again
-later.
-
-
-Traditional Types and Operators
--------------------------------
-
-The :ref:`basic types <primitive-data>` in Monte are ``Int``,
+The :ref:`basic data types <primitive-data>` in Monte are ``Int``,
 ``Double``, ``Str``, ``Char``, and ``Boolean``. All integer arithmetic
-is unlimited precision, as if all integers were longs.
+is unlimited precision, as if all integers were python longs.
 
 The operators ``+``, ``-``, and ``*`` have their traditional meanings
 for ``Int`` and ``Double``. The normal division operator ``/`` always
@@ -250,36 +168,59 @@ Strings are enclosed in double quotes. Characters are enclosed in
 single quotes.
 
 The function ``traceln`` sends diagnostic output to the console. The
-``if`` statement looks much like its Python equivalent, as do lists.
+``if`` statement looks much like its Python equivalent, as do lists
+such as ``[4, 14]``.
 
 Operator precedence is generally the same as in Java, Python, or C. In
 a few cases, Monte will throw a syntax error and require the use of
 parentheses.
 
-With that, let's look at the rest of ``makeMafia``:
+With that, let's set aside our game sketch and look at a more complete
+rendition:
 
 .. literalinclude:: tut/mafia.mt
     :linenos:
-    :lines: 23-
-    :lineno-start: 23
+    :lines: 15-
+    :lineno-start: 15
 
+.. note:: Monte uses the same ``# ...`` syntax for comments as python
+          and shell programming.
 
-Maps: building, iterating, and matching
----------------------------------------
+Dynamic "type checking" with Guards
+-----------------------------------
 
-Maps in monte are written ``["key1" => 1, "key2" => 2]``.  The
-``[].asMap()`` expression builds an empty map from an empty list.
-These are constant (immutable) maps. Use ``diverge()`` to get
-a FlexList, as in ``def counter := [].asMap().diverge()``.
+Monte :ref:`guard <guards>` perform many of the functions usually
+thought of as type checking, though they are so flexible that they
+also work as concise assertions. Guards can be placed on variables
+(such as ``mafiososCount :Int``), parameters (such as ``players
+:Set``), and return values (such as ``getState() :MafiaState``).
 
-The ``for _ => v in votes:`` loop iterates over the values of the
-``votes`` map. The ``[for k => v in (counter) if (v >= quorum) k]``
-expression iterates over ``k => v`` pairs in the ``counter`` map and
-returns a list of each ``k`` where ``v >= quorum``.
+Guards are not checked during compilation. They are checked during
+execution and will throw exceptions if the value cannot be coerced to
+pass the guard.
 
-The ``[=> makeEnum]`` pattern syntax is short for ``["makeEnum" =>
-makeEnum]``, which picks out the value corresponding to the key
-``"makeEnum"``.
+We can also build Guards at runtime. The call to ``makeEnum`` returns
+a list where the first item is a new guard and the remaining items are
+distinct new objects that pass the guard. No other objects pass the
+guard.
+
+.. todo:: **show**: Guards play a key role in protecting security
+          properties.
+
+Final, Var, and DeepFrozen
+--------------------------
+
+Bindings in Monte are final (immutable) by default.
+
+Wherever a name appears in a pattern, it can also have a guard; in
+particular, the :ref:`DeepFrozen guard <deepfrozen>` means that the
+object and everything it refers to are immutable.  The ``def
+makeMafia(...) as DeepFrozen`` expression results in this sort of
+binding as well as patterns such as ``DAY :DeepFrozen``.
+
+Using a ``var`` pattern in a definition (such as ``mafiosos``) or
+parameter (such as ``players``) lets you assign to that variable again
+later.
 
 
 Assignment and Equality
@@ -298,6 +239,76 @@ right sides of the operator refer to the same object. Chars, booleans,
 integers, and floating point numbers are all compared by value, as are
 Strings, ConstLists, and ConstMaps.
 
+
+Data Structures for Game Play
+-----------------------------
+
+Monte has ``Set``, ``List``, and ``Map`` data structures that let us
+express the rules of the game concisely.
+
+A game of mafia has some finite number of players. They don't come in
+any particular order, though, so we write ``var players :Set`` to
+ensure that ``players`` is always bound to a ``Set``,
+though it may be assigned to different sets at different times.
+
+We use ``.size()`` to get the number of players and ``.slice()`` to
+get the subsets ``mafiosos`` and ``innocents``.
+
+We initialize ``votes`` to the empty ``Map``, written ``[].asMap()``
+and add to it using ``votes with= (player, choice)``.
+
+To ``lynch``, we use ``counter`` as a map from player to votes cast
+against that player. We initialize it to an empty mutable map with
+``[].asMap().diverge()`` and then iterate over the votes with ``for _
+=> v in votes:``.
+
+A list of players that got more than a quorum of votes is written
+``[for k => v in (counter) if (v >= quorum) k]``. Provided there
+is one such player, we remove the player from the
+game with ``players without= (victim)``.
+
+loop iterates over the values of the
+``votes`` map. The ``[for k => v in (counter) if (v >= quorum) k]``
+expression iterates over ``k => v`` pairs in the ``counter`` map and
+returns a list of each ``k`` where ``v >= quorum``.
+
+
+Destructuring with Patterns
+---------------------------
+
+:ref:`Patterns <patterns>` are used in several ways in Monte:
+
+  1. The left-hand side of a ``def`` expression has a pattern. A
+     single name is typical, but the first ``def`` expression above
+     binds ``MafiaState``, ``DAY``, and ``NIGHT`` to the items from
+     ``makeEnum`` using a :ref:`list pattern<ListPatt>`. An exception
+     is raised if the match fails (with a noteable exception below).
+  2. Parameters to methods are patterns which are matched against
+     arguments. Match failure raises an exception. A :ref:`final
+     pattern<FinalPatt>` such as ``to _printOn(out)`` or with a guard
+     ``to lynch(quorum :Int)`` should look familiar, but the
+     :ref:`such-that patterns <SuchThatPattern>` in ``to vote(player ?
+     (players.contains(player)), ...)`` are somewhat novel. The pattern
+     matches only if the expression after the ``?`` is true.
+  3. Each matcher in a ``switch`` expression has a pattern. In the
+     ``advance`` method, if ``state`` matches the ``==DAY``
+     pattern--that is, if ``state == DAY``--then ``NIGHT`` is assigned
+     to ``state``. Likewise for the pattern ``==NIGHT`` and the
+     expression ``DAY``. An exception would be raised if neither
+     pattern matched, but that can't happen because we have ``state
+     :MafiaState``.
+  4. Match-bind :ref:`comparisons <comparisons>` such as
+     :literal:`"<p>" =~ \`<@tag>\`` test the value on the left against
+     the pattern on the right.
+  5. Matchers in objects expressions provide flexible handlers for
+     :ref:`message passing <message_passing>`.
+
+The ``[=> makeEnum]`` pattern syntax is short for ``["makeEnum" =>
+makeEnum]``, which picks out the value corresponding to the key
+``"makeEnum"``. The :ref:`module_expansion` section explains how
+imports turn out to be a special case of method parameters.
+     
+
 String Interpolation with quasi-literals
 ----------------------------------------
 
@@ -306,7 +317,3 @@ of complex strings as described in detail later;
 ``out.print(`currently $state>`)`` is a simple example wherein the
 back-ticks denote a quasi-literal, and the dollar sign denotes a
 variable whose value is to be embedded in the string.
-
-.. todo:: integrate functions and objects with mafia.mt
-
-.. todo:: discuss the actual game design and security properties.

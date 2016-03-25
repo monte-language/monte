@@ -86,8 +86,10 @@ capabilities from the unsafe scope, and return an ``Int`` or a promise for an
         traceln(`Current process: $currentProcess`)
         return 0
 
-Under the Hood
---------------
+.. _module_expansion:
+
+Module Syntax Expansion
+-----------------------
 
 Under the hood, modules are compiled to be singleton objects which accept
 a mapping of imported objects, and return a mapping of exported names.

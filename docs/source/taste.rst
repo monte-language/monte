@@ -75,10 +75,11 @@ interpolation much like perl or ruby. It's a
 Another quasiliteral is b`<p>Hello!</p>`, which denotes a ``Bytes``
 object rather than a character string.
 
-This short example includes a few of Monte's :ref:`patterns <patterns>`::
+This short example includes just a few of Monte's :ref:`patterns
+<patterns>`::
 
-    [=> tag :Guard]
-    request
+    [=> name :Guard]
+    name
 
 
 Objects and Message Passing

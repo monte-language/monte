@@ -91,6 +91,8 @@ Calls may be curried::
   >>> { def x := 2; def xplus := x.add; xplus(4) }
   6
 
+.. todo:: discuss matchers in object expressions
+
 .. syntax:: calls
 
    Ap('callExpr',
@@ -196,6 +198,7 @@ the object on the right.
    Ap('RangeExpr', NonTerminal('prefix'),
             Choice(0, "..", "..!"), NonTerminal('order'))
 
+.. _comparisons:
 
 Comparison
 ~~~~~~~~~~
@@ -296,6 +299,8 @@ Or we can build closed intervals with the inclusive range operator::
   >>> [for x in (1..4) x * 2]
   [2, 4, 6, 8]
 
+
+.. _augmented_assignment:
 
 Augmented Assignment
 --------------------

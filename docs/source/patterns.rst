@@ -127,6 +127,7 @@ Patterns
            NonTerminal('SlotPatt'),
            NonTerminal('BindingPatt'))
 
+.. _FinalPatt:
 
 FinalPatt (kernel)
 ~~~~~~~~~~~~~~~~~~~~~
@@ -530,6 +531,7 @@ subpattern matches the transformed specimen.
      Sigil("via", Brackets("(", NonTerminal('expr'), ')')),
      NonTerminal('pattern'))
 
+.. _SuchThatPattern:
 
 SuchThatPattern
 ~~~~~~~~~~~~~~~
