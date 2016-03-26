@@ -192,6 +192,15 @@ rendition:
     :lines: 15-
     :lineno-start: 15
 
+String Interpolation with quasi-literals
+----------------------------------------
+
+Monte's :ref:`quasi-literals<quasiliteral>` enable the easy processing
+of complex strings as described in detail later;
+``out.print(`currently $state>`)`` is a simple example wherein the
+back-ticks denote a quasi-literal, and the dollar sign denotes a
+variable whose value is to be embedded in the string.
+
 Dynamic "type checking" with Guards
 -----------------------------------
 
@@ -277,30 +286,42 @@ game with ``players without= (victim)``.
 Destructuring with Patterns
 ---------------------------
 
-:ref:`Patterns <patterns>` are used in several ways in Monte:
+:ref:`Pattern matching <patterns>` is used in the following ways in
+Monte:
 
-  1. The left-hand side of a ``def`` expression has a pattern. A
-     single name is typical, but the first ``def`` expression above
+  1. The left-hand side of a ``def`` expression has a pattern.
+
+     A single name is typical, but the first ``def`` expression above
      binds ``MafiaState``, ``DAY``, and ``NIGHT`` to the items from
-     ``makeEnum`` using a :ref:`list pattern<ListPatt>`. An exception
-     is raised (or an ejector is fired) if the match fails.
+     ``makeEnum`` using a :ref:`list pattern<ListPatt>`.
+
+     An exception is raised (or an ejector is fired) if the match
+     fails.
+
   2. Parameters to methods are patterns which are matched against
-     arguments. Match failure raises an exception. A :ref:`final
+     arguments. Match failure raises an exception.
+
+     A :ref:`final
      pattern<FinalPatt>` such as ``to _printOn(out)`` or with a guard
      ``to lynch(quorum :Int)`` should look familiar, but the
      :ref:`such-that patterns <SuchThatPattern>` in ``to vote(player ?
      (players.contains(player)), ...)`` are somewhat novel. The pattern
      matches only if the expression after the ``?`` is true.
-  3. Each matcher in a ``switch`` expression has a pattern. In the
-     ``advance`` method, if ``state`` matches the ``==DAY``
+
+  3. Each matcher in a ``switch`` expression has a pattern.
+
+     In the ``advance`` method, if ``state`` matches the ``==DAY``
      pattern--that is, if ``state == DAY``--then ``NIGHT`` is assigned
      to ``state``. Likewise for the pattern ``==NIGHT`` and the
-     expression ``DAY``. An exception would be raised if neither
-     pattern matched, but that can't happen because we have ``state
-     :MafiaState``.
+     expression ``DAY``.
+
+     An exception would be raised if neither pattern matched, but that
+     can't happen because we have ``state :MafiaState``.
+
   4. Match-bind :ref:`comparisons <comparisons>` such as
      :literal:`"<p>" =~ \`<@tag>\`` test the value on the left against
      the pattern on the right.
+
   5. Matchers in objects expressions provide flexible handlers for
      :ref:`message passing <message_passing>`.
 
@@ -308,13 +329,3 @@ The ``[=> makeEnum]`` pattern syntax is short for ``["makeEnum" =>
 makeEnum]``, which picks out the value corresponding to the key
 ``"makeEnum"``. The :ref:`module_expansion` section explains how
 imports turn out to be a special case of method parameters.
-     
-
-String Interpolation with quasi-literals
-----------------------------------------
-
-Monte's :ref:`quasi-literals<quasiliteral>` enable the easy processing
-of complex strings as described in detail later;
-``out.print(`currently $state>`)`` is a simple example wherein the
-back-ticks denote a quasi-literal, and the dollar sign denotes a
-variable whose value is to be embedded in the string.
