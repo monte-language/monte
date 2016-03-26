@@ -1,7 +1,7 @@
 .. _stdlib:
 
-Runtime Objects
-===============
+The Safe Scope
+==============
 
 .. todo:: doctests with no expected results are not implemented at the
           time of this writing.
@@ -116,7 +116,9 @@ Basic guards
   >>> [List, Map, Set]
   [List, Map, Set]
 
-  .>> Tuple
+  >>> Pair
+  Pair
+
   .>> __Portrayal
   .>> [Near, Rcvr]
   .>> Audition
@@ -166,7 +168,10 @@ Utilities for syntax expansions
   [_booleanFlow, _comparer, _equalizer]
 
   .>> __iterWhile
-  .>> __makeVerbFact
+
+  >>> _makeVerbFacet
+  _makeVerbFacet
+
   >>> [_mapEmpty, _mapExtract]
   [_mapEmpty, _mapExtract]
 
