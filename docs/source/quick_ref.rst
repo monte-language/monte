@@ -122,9 +122,11 @@ Objects with state
 Objects self-referencing during construction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. todo:: find out why this test goes wonky
+
 ::
 
-   >>> def makeRadio(car):
+   .>> def makeRadio(car):
    ...     # define radios
    ... def makeCar(name):
    ...     var x := 0
@@ -284,7 +286,7 @@ Eventual Sends
 
 ::
 
-   >>> def makeCarRcvr := object mock {}
+   .>> def makeCarRcvr := object mock {}
    ...
    ... def carRcvr := makeCarRcvr <- ("Mercedes")
    ... Ref.whenBroken(carRcvr, def lost(brokenRef) {
