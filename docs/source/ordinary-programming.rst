@@ -87,13 +87,6 @@ true variable, and it persists as long as any of the objects that uses
 it persist. Since the counter uses this variable, ``value`` will exist
 as long as the counter exists.
 
-A critical feature of Monte is **complete encapsulation**: ``value``
-is not visible outside of ``makeCounter()``; this means that *no other
-object can directly modify it*. Monte objects have no public
-attributes or fields or even a notion of public and private. Instead,
-all names are private: if a name is not visible (i.e. in scope), there
-is no way to use it.
-
 .. sidebar:: Augmented Assignment
 
    Just as you would read ``x += 1`` short-hand for ``x := x + 1``,
@@ -101,6 +94,13 @@ is no way to use it.
    ``players without= (victim)`` as ``players :=
    players.without(victim)`` .
 
+
+A critical feature of Monte is **complete encapsulation**: ``value``
+is not visible outside of ``makeCounter()``; this means that *no other
+object can directly modify it*. Monte objects have no public
+attributes or fields or even a notion of public and private. Instead,
+all names are private: if a name is not visible (i.e. in scope), there
+is no way to use it.
 
 We refer to an object-making function such as ``makeCounter`` as a
 "Maker". As a more serous example, let's make a sketch of our game::
@@ -232,9 +232,9 @@ later.
 Assignment and Equality
 -----------------------
 
-Assignment uses the ``:=`` operator. The single equal sign ``=`` is
-never legal in Monte; use ``:=`` for assignment and ``==`` for testing
-equality.
+Assignment uses the ``:=`` operator, as in Pascal. The single equal
+sign ``=`` is never legal in Monte; use ``:=`` for assignment and
+``==`` for testing equality.
 
 ``==`` and ``!=`` are the boolean tests for equality and inequality
 respectively. When the equality test is used between appropriately
