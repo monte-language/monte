@@ -1,6 +1,7 @@
-========================
-Operators and Assignment
-========================
+.. _operators:
+
+Operators by precedence and associativity
+=========================================
 
 .. epigraph::
 
@@ -8,29 +9,56 @@ Operators and Assignment
 
     -- Nina, corporate accounts payable, *Office Space*
 
-.. _def:
+The expression subset of the Monte grammar is presented here in
+operator precedence order, meaning that later constructs bind tighter
+than earlier constructs. For example, `expr "+" expr` is presented
+before `expr "*" expr`, so ``*`` binds tighter than ``+``. Therefore,
+``a + b * c + d`` is equivalent to ``a + (b * c) + d``. All the
+constructs in presented in the same section have the same precedence.
 
-The ``def`` syntax makes final (aka immutable) bindings::
+.. sidebar:: Kernel-Monte and Expansion
 
-  ▲> { def x := 2; x := 3 }
-  ...
-  Parse error: [Can't assign to final nouns, [x].asSet()]
+           .. index: kernel, Kernel Monte, expansion
+           .. index:: expansion, syntactic expansion
 
-To signal that you want a variable binding, use ``var``::
+           The Monte language as seen by the programmer has the rich
+           set of syntactic conveniences expected of a modern
+           scripting language. However, to avoid complexity that so
+           often hampers security, the :doc:`semantics of Monte
+           <semantics>` is primarily defined over a smaller language
+           called :dfn:`Kernel-Monte`. The rest of E is defined by
+           :dfn:`syntactic expansion` to this subset. For example::
 
-  >>> { var v := 6; v := 12; v - 4 }
-  8
+              >>> m`1 + 1`.expand()
+              m`1.add(1)`
 
-Note the use of ``:=`` rather than ``=`` for assignment.
-Comparison in Monte is ``==`` and the single-equals, ``=``, has no meaning. This
-all but eliminates the common issue of ``if (foo = baz)`` suffered by all
-languages where you can compile after typo-ing ``==``.
+Monte has a rich set of operators above and beyond those in Kernel-Monte. All
+operators are overloadable, but overloading follows a very simple set of
+rules: Operators expand to message passing, and the message is generally
+passed to the left-hand operand, except for a few cases where the message is
+passed to a *helper object* which implements the operation. In object
+capability shorthand, we are asking the object on the left what it thinks of
+the object on the right.
 
-Monte has rich support for destructuring assignment using
-:ref:`pattern matching <patterns>`::
+There are some special rules about the behavior of the basic operators
+because of E's distributed security.
 
-  >>> { def [x, y] := [1, 2]; x }
-  1
+.. todo:: special operator rules because of security
+
+Sequence
+--------
+
+.. syntax:: sequence
+
+   ZeroOrMore(
+     Choice(
+       0,
+       NonTerminal('blockExpr'),
+       NonTerminal('expr')),
+     ";")
+
+Assignment and Definition
+-------------------------
 
 .. syntax:: assign
 
@@ -57,41 +85,428 @@ Monte has rich support for destructuring assignment using
       Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))),
     Ap('Right', NonTerminal('name')))
 
-@@order? infix?/index ok?
+Assignment is right associative. The list update on the right happens
+before the definition on the left::
+
+  >>> def color := ["red", "green", "blue"].diverge()
+  ... def c := color[1] := "yellow"
+  ... c
+  "yellow"
+
+Indexed Update Expansion
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+An indexed update expands to a call to ``put``::
+
+   >>> m`x[i] := 1`.expand()
+   m`x.put(i, def ares_1 := 1); ares_1`
+
+.. _augmented_assignment:
+
+Augmented Assignment Expansion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. syntax:: VerbAssignExpr
+
+   Ap('VerbAssignExpr',
+      NonTerminal('lval'),
+      Sigil("VERB_ASSIGN", NonTerminal("assign")))
+
+All binary operators which pass a message to the left-hand operand can be used
+as augmented assignment operators. For example, augmented addition is legal::
+
+  >>> { var x := "augmenting "; x += "addition!"; x }
+  "augmenting addition!"
+
+Behind the scenes, the compiler transforms augmented operators::
+
+  >>> m`x += "addition!"`.expand()
+  m`x := x.add("addition!")`
+
+Monte permits this augmented construction for any verb, not just those used by
+operators. For example, the ``with`` verb of lists can be used to
+incrementally build a list::
+
+  >>> { var l := []; for i in (1..10) { l with= (i) }; l }
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+And even non-unary messages can get in on the fun, with a properly placed pair
+of parentheses::
+
+  >>> { var x := 7; x modPow= (129, 3) }
+  1
+
+.. todo:: VERB_ASSIGN lexical details
+
+
+Assignment operators
+~~~~~~~~~~~~~~~~~~~~
+
+::
+
+   >>> var x := 5; [ x += 2, x -= 1, x *= 2, x **= 3 ]
+   [7, 6, 12, 1728]
+   >>> var x := 50; [ x //= 3, x %= 7, x /= 4]
+   [16, 2, 0.500000]
+   >>> var x := 5; [ x ^= 3, x |= 15, x &= 7, x <<= 3, x >>= 2]
+   [6, 15, 7, 56, 14]
+
+
+Conditional-Or
+--------------
+
+.. syntax:: logical_or
+
+   Sequence(
+    NonTerminal('logical_and'),
+    Optional(Sequence('||', NonTerminal('logical_or'))))
+
+Monte uses C syntax for the basic logical operators::
+
+   >>> true || true
+   true
+
+Conditional-And
+---------------
+
+.. syntax:: logical_and
+
+   Sequence(
+    NonTerminal('comp'),
+    Optional(Sequence('&&', NonTerminal('logical_and'))))
+
+Logical Expansion
+~~~~~~~~~~~~~~~~~
+
+Boolean conditionals expand to ``if`` expressions::
+
+    >>> m`a || b`.expand()
+    m`if (a) { true } else if (b) { true } else { false }`
+
+    >>> m`a && b`.expand()
+    m`if (a) { if (b) { true } else { false } } else { false }`
+
+
+.. _comparisons:
+
+Comparisons and Bitwise/Logical Operators
+-----------------------------------------
+
+.. syntax:: comp
+
+   Choice(0,
+     Ap('BinaryExpr',
+       NonTerminal('order'),
+       Choice(0,
+	 Choice(0, "=~", "!~"),
+         Choice(0, "==", "!="),
+         "&!",
+         Choice(0, "^", "&", "|")),
+       NonTerminal('comp')),
+    NonTerminal('order'))
+
+.. syntax:: order
+
+   Choice(0,
+     NonTerminal('CompareExpr'),
+     NonTerminal('RangeExpr'),
+     NonTerminal('BinaryExpr'),
+     NonTerminal('prefix'))
+
+These are non-associative: ``x == y == z`` is a syntax error.
+
+You can compare with a pattern and use the resulting bindings::
+
+  >>> [1, "x"] =~ [_ :Int, _ :Str]
+  true
+
+  >>> [1, 2] =~ [a, b]; b
+  2
+
+  >>> "<p>" =~ `<@tag>`; tag
+  "p"
+
+  >>> "<p>" !~ `</@tag>`
+  true
+
+Comparison is more strict than you might expect::
+
+  >>> 3 == "3"
+  false
+
+  >>> 1 + 1 == 2.0
+  false
+
+We also have negated implication operator::
+
+   >>> true &! false
+   true
+
+Comparison Expansion
+~~~~~~~~~~~~~~~~~~~~
+
+Comparisons expand to use of a helper object::
+
+::
+
+   >>> m`x == y`.expand()
+   m`_equalizer.sameEver(x, y)`
+   >>> m`x != y`.expand()
+   m`_equalizer.sameEver(x, y).not()`
+
+::
+
+   >>> m`"value" =~ pattern`.expand()
+   m`def sp_1 := "value"; def [ok_2, &&pattern] := escape fail_3 { def pattern exit fail_3 := sp_1; _makeList.run(true, &&pattern) } catch problem_4 { def via (_slotToBinding) &&broken_5 := Ref.broken(problem_4); _makeList.run(false, &&broken_5) }; ok_2`
+   >>> m`"value" !~ pattern`.expand()
+   m`(def sp_1 := "value"; def [ok_2, &&pattern] := escape fail_3 { def pattern exit fail_3 := sp_1; _makeList.run(true, &&pattern) } catch problem_4 { def via (_slotToBinding) &&broken_5 := Ref.broken(problem_4); _makeList.run(false, &&broken_5) }; ok_2).not()`
+
+::
+
+   >>> m`x ^ y`.expand()
+   m`x.xor(y)`
+   >>> m`x & y`.expand()
+   m`x.and(y)`
+   >>> m`x | y`.expand()
+   m`x.or(y)`
+   >>> m`x &! y`.expand()
+   m`x.butNot(y)`
+
+Partial Ordering
+----------------
+
+.. syntax:: CompareExpr
+
+   Ap('CompareExpr', NonTerminal('prefix'),
+     Choice(0, ">", "<", ">=", "<=", "<=>"), NonTerminal('order'))
+
+Monte has the usual ordering operators::
+
+  >>> 3 < 2
+  false
+  >>> 3 > 2
+  true
+  >>> 3 < 3
+  false
+  >>> 3 <= 3
+  true
+
+They are non-associative and only partial:
+
+  >>> try { 3 < "3" } catch ex { "ouch! no order defined" }
+  "ouch! no order defined"
+
+Use ``<=>`` aka ``asBigAs`` to compare magnitudes::
+
+  >>> 2.0 <=> 1 + 1
+  true
+
+  >>> 2 + 1 <=> 3.0
+  true
+
+Ordering Expansion
+~~~~~~~~~~~~~~~~~~
+
+Ordering operators expand to use of a helper object::
+
+  >>> m`3 < 2`.expand()
+  m`_comparer.lessThan(3, 2)`
+
+  >>> m`2.0 <=> 1 + 1`.expand()
+  m`_comparer.asBigAs(2.000000, 1.add(1))`
+
+Interval
+--------
+
+.. syntax:: RangeExpr
+
+   Ap('RangeExpr', NonTerminal('prefix'),
+     Choice(0, "..", "..!"), NonTerminal('order'))
+
+Non-associative.
+
+We can build a half-open interval with the range operator::
+
+  >>> [for x in (1..!4) x * 2]
+  [2, 4, 6]
+
+Or we can build closed intervals with the inclusive range operator::
+
+  >>> [for x in (1..4) x * 2]
+  [2, 4, 6, 8]
+
+Half-open intervals are more typical, though they are in most ways
+equivalent to closed intervals::
+  
+  >>> (0..!10) <=> (0..9)
+  true
+
+Expansion::
+
+   >>> m`lo..hi`.expand()
+   m`_makeOrderedSpace.op__thru(lo, hi)`
+
+   >>> m`lo..!hi`.expand()
+   m`_makeOrderedSpace.op__till(lo, hi)`
+
+Shift
+-----
+
+.. syntax:: shift
+
+   Ap('BinaryExpr', NonTerminal('prefix'),
+     Choice(0, "<<", ">>"), NonTerminal('order'))
+
+Left associative.
+
+Among built-in data types, this is only defined on integers, and has the
+traditional meaning but with no precision limit.
+
+Expansion::
+
+   >>> m`i << bits`.expand()
+   m`i.shiftLeft(bits)`
+
+   >>> m`i >> bits`.expand()
+   m`i.shiftRight(bits)`
+
+Additive
+--------
+
+.. syntax:: additiveExpr
+
+   Ap('BinaryExpr', NonTerminal('multiplicativeExpr'),
+     Choice(0, "+", "-"), NonTerminal('additiveExpr'))
+
+Left associative.
+
+::
+   >>> [1, 2] + [3, 4]
+   [1, 2, 3, 4]
+
+   >>> "abc" + "def"
+   "abcdef"
+
+   >>> ["square" => 4] | ["triangle" => 3]
+   ["square" => 4, "triangle" => 3]
+   
+   >>> def sides := ["square" => 4, "triangle" => 3]
+   ... sides.without("square")
+   ["triangle" => 3]
+
+Expansion::
+
+   >>> m`x + y`.expand()
+   m`x.add(y)`
+
+   >>> m`x - y`.expand()
+   m`x.subtract(y)`
+
+Multiplicative
+--------------
+
+.. syntax:: multiplicativeExpr
+
+   Ap('BinaryExpr', NonTerminal('exponentiationExpr'),
+     Choice(0, "*", "/", "//", "%"), NonTerminal('order'))            
+
+Left associative.
+
+  >>> 2 * 3
+  6
+
+Modular exponentiation::
+
+   >>> 5 ** 3 % 13
+   8
+
+expansion::
+
+   >>> m`base ** exp % mod`.expand()
+   m`base.modPow(exp, mod)`
+
+Exponentiation
+--------------
+
+.. syntax:: exponentiationExpr
+
+   Ap('BinaryExpr', NonTerminal('prefix'),
+      "**", NonTerminal('order'))
+
+Non-associative.
+
+  >>> 2 ** 3
+  8
+
+Expansion::
+
+  >>> m`2 ** 3`.expand()
+  m`2.pow(3)`
+
+Unary Prefix
+------------
+
+.. syntax:: prefix
+
+   Choice(
+    0,
+    Ap("PrefixExpr", '-', NonTerminal('prim')),
+    Ap("PrefixExpr", Choice(0, "~", "!"), NonTerminal('calls')),
+    NonTerminal('SlotExpr'),
+    NonTerminal('BindingExpr'),
+    NonTerminal('CoerceExpr'),
+    NonTerminal('calls'))
+
+.. syntax:: SlotExpr
+
+   Ap('SlotExpr', Sigil('&', NonTerminal('name')))
+
+.. syntax:: BindingExpr
+
+   Ap('BindingExpr', Sigil('&&', NonTerminal('name')))
+
+Monte has logical, bitwise, and arithmetic negation operators::
+
+  >>> - (1 + 3)
+  -4
+  >>> ~ 0xff
+  -256
+  >>> ! true
+  false
+
+.. todo:: discuss, doctest SlotExpression ``&x``, BindingExpression ``&&x``
+
+
+Unary Postfix
+-------------
+
+.. syntax:: MetaExpr
+
+   Sequence(
+    "meta", ".",
+    Choice(0,
+           Sequence("context", "(", ")"),
+           Sequence("getState", "(", ")")))
+
+.. syntax:: CoerceExpr
+
+   Ap("CoerceExpr", NonTerminal('calls'), Sigil(":", NonTerminal('guard')))
+
+::
+
+  meta.getState()
+  meta.context()
+
+A guard can be used as an operator to coerce a value::
+
+  >>> 1 :Int
+  1
 
 
 .. _message_passing:
 
-Message Passing
----------------
-
-There are two ways to pass a message. First, the **immediate call**::
-
-  >>> { def x := 2; def result := x.add(3) }
-  5
-
-And, second, the **eventual send**::
-
-  >>> { def x; def prom := x<-message(3); null }
-  null
-
-Function call syntax elaborates to a call to ``run`` (
-and likewise :ref:`vice-versa<def-fun>`)::
-
-  >>> m`f(x)`.expand()
-  m`f.run(x)`
-
-Indexing elaborates to a call to ``get``::
-
-  >>> { object parity { to get(n) { return n % 2 }}; parity[3] }
-  1
-
-Calls may be curried::
-
-  >>> { def x := 2; def xplus := x.add; xplus(4) }
-  6
-
-.. todo:: discuss matchers in object expressions
+Call
+----
 
 .. syntax:: calls
 
@@ -134,351 +549,33 @@ Calls may be curried::
 
 .. todo:: named args in argList
 
-.. _operators:
+There are two ways to pass a message. First, the **immediate call**::
 
-Operators
----------
+  >>> { def x := 2; def result := x.add(3) }
+  5
 
-Monte has a rich set of operators above and beyond those in Kernel-Monte. All
-operators are overloadable, but overloading follows a very simple set of
-rules: Operators desugar into message passing, and the message is generally
-passed to the left-hand operand, except for a few cases where the message is
-passed to a *helper object* which implements the operation. In object
-capability shorthand, we are asking the object on the left what it thinks of
-the object on the right.
+And, second, the **eventual send**::
 
-.. syntax:: comp
+  >>> { def x; def prom := x<-message(3); null }
+  null
 
-   Choice(0,
-     Ap('BinaryExpr',
-       NonTerminal('order'),
-       Choice(0,
-	 Choice(0, "=~", "!~"),
-         Choice(0, "==", "!="),
-         "&!",
-         Choice(0, "^", "&", "|")),
-       NonTerminal('comp')),
-    NonTerminal('order'))
+Calls may be curried::
 
-.. syntax:: logical
-
-   Sequence(
-    NonTerminal('comp'),
-    Optional(Sequence(Choice(0, '||', '&&'), NonTerminal('logical'))))
-
-.. syntax:: order
-
-   Choice(0,
-     NonTerminal('BinaryExpr'),
-     NonTerminal('RangeExpr'),
-     NonTerminal('CompareExpr'),
-     NonTerminal('prefix'))
-
-.. syntax:: BinaryExpr
-
-   Choice(0,
-     Ap('BinaryExpr', NonTerminal('prefix'),
-              "**", NonTerminal('order')),
-     Ap('BinaryExpr', NonTerminal('prefix'),
-              Choice(0, "*", "/", "//", "%"), NonTerminal('order')),
-     Ap('BinaryExpr', NonTerminal('prefix'),
-              Choice(0, "+", "-"), NonTerminal('order')),
-     Ap('BinaryExpr', NonTerminal('prefix'),
-              Choice(0, "<<", ">>"), NonTerminal('order')))
-
-@@TODO: precedence, associativity
-
-.. syntax:: CompareExpr
-
-   Ap('CompareExpr', NonTerminal('prefix'),
-            Choice(0, ">", "<", ">=", "<=", "<=>"), NonTerminal('order'))
-
-.. syntax:: RangeExpr
-
-   Ap('RangeExpr', NonTerminal('prefix'),
-            Choice(0, "..", "..!"), NonTerminal('order'))
-
-.. _comparisons:
-
-Comparison
-~~~~~~~~~~
-
-Monte has the usual comparison operators::
-
-  >>> 3 < 2
-  false
-  >>> 3 > 2
-  true
-  >>> 3 < 3
-  false
-  >>> 3 <= 3
-  true
-
-They expand to use of a helper object::
-
-  >>> m`x == y`.expand()
-  m`_equalizer.sameEver(x, y)`
-
-  >>> m`3 < 2`.expand()
-  m`_comparer.lessThan(3, 2)`
-
-.. todo:: elaborate on sameness
-
-Comparison is more strict than you might expect::
-
-  >>> 3 == "3"
-  false
-
-  >>> 1 + 1 == 2.0
-  false
-
-  ▲> 3 < "3"
-  Parse error: Object was wrong type: Not an integer!
-
-Use ``<=>`` aka ``asBigAs`` to compare magnitudes::
-
-  >>> 2.0 <=> 1 + 1
-  true
-
-  >>> 2 + 1 <=> 3.0
-  true
-
-expansion::
-  >>> m`2.0 <=> 1 + 1`.expand()
-  m`_comparer.asBigAs(2.000000, 1.add(1))`
-
-You can also compare with a pattern::
-
-  >>> [1, 2] =~ [a, b]
-  true
-
-  >>> [1, "x"] =~ [_ :Int, _ :Str]
-  true
-
-  >>> "abc" =~ `a@rest`
-  true
-
-  >>> "xbc" =~ `a@rest`
-  false
-
-  >>> "xbc" !~ `a@rest`
-  true
-
-Logical
-~~~~~~~
-
-Monte uses C syntax for the basic logical operators::
-   >>> true && true
-   true
-
-We also have negated implication operator::
-   >>> true &! false
-   true
-
-   >>> m`x &! y`.expand()
-   m`x.butNot(y)`
-
-
-Boolean Operators
------------------
-
-We have the usual exponentiation, multiplication, etc.::
-
-  >>> 2 ** 3
-  8
-  >>> 2 * 3
+  >>> { def x := 2; def xplus := x.add; xplus(4) }
   6
 
-We can build a half-open interval with the range operator::
+.. todo:: discuss matchers in object expressions
 
-  >>> [for x in (1..!4) x * 2]
-  [2, 4, 6]
+Call Expansion
+~~~~~~~~~~~~~~
 
-Or we can build closed intervals with the inclusive range operator::
+Function call syntax elaborates to a call to ``run`` (
+and likewise :ref:`vice-versa<def-fun>`)::
 
-  >>> [for x in (1..4) x * 2]
-  [2, 4, 6, 8]
+  >>> m`f(x)`.expand()
+  m`f.run(x)`
 
+Indexing elaborates to a call to ``get``::
 
-.. _augmented_assignment:
-
-Augmented Assignment
---------------------
-
-All binary operators which pass a message to the left-hand operand can be used
-as augmented assignment operators. For example, augmented addition is legal::
-
-  >>> { var x := "augmenting "; x += "addition!"; x }
-  "augmenting addition!"
-
-Behind the scenes, the compiler transforms augmented operators into standard
-operator usage, and then into calls::
-
-  >>> { var x := "augmenting "; x := x.add("addition!") }
-  "augmenting addition!"
-
-Monte permits this augmented construction for any verb, not just those used by
-operators. For example, the ``with`` verb of lists can be used to
-incrementally build a list::
-
-  >>> { var l := []; for i in (1..10) { l with= (i) }; l }
-  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-And even non-unary messages can get in on the fun, with a properly placed pair
-of parentheses::
-
-  >>> { var x := 7; x modPow= (129, 3) }
+  >>> { object parity { to get(n) { return n % 2 }}; parity[3] }
   1
-
-.. syntax:: VerbAssignExpr
-
-   Ap('VerbAssignExpr',
-      NonTerminal('lval'),
-      Sigil("VERB_ASSIGN", NonTerminal("assign")))
-
-.. todo:: AugAssignExpr? Lexer.hs loses the distinction between += and add=
-
-
-Assignment operators
-~~~~~~~~~~~~~~~~~~~~
-
-::
-
-  a := b
-  a += b
-  a -= b
-  a *= b
-  a /= b
-  a //= b
-  a %= b
-  a %%= b
-  a **= b
-  a >>= b
-  a <<= b
-  a &= b
-  a |= b
-  a ^= b
-  a foo= b
-
-
-Primitive Expressions
----------------------
-
-Parentheses, braces, and square brackets set off primitive expressions.
-
-.. syntax:: prim
-
-   Choice(
-    0,
-    NonTerminal('LiteralExpr'),
-    NonTerminal('quasiliteral'),
-    NonTerminal('NounExpr'),
-    Brackets("(", NonTerminal('expr'), ")"),
-    NonTerminal('HideExpr'),
-    NonTerminal('MapComprehensionExpr'),
-    NonTerminal('ListComprehensionExpr'),
-    NonTerminal('ListExpr'),
-    NonTerminal('MapExpr'))
-
-A sequence expressions evaluates to the value of its last item::
-
-  >>> { 4; "x"; "y" }
-  "y"
-
-.. syntax:: HideExpr
-
-   Ap('HideExpr',
-      Brackets("{", SepBy(NonTerminal('expr'), ';', fun='wrapSequence'), "}"))
-
-Parentheses override normal precedence rules::
-
-  >>> 4 + 2 * 3
-  10
-  >>> (4 + 2) * 3
-  18
-
-.. seealso::
-
-   :ref:`quasiliteral <quasiliteral>`,
-   :ref:`comprehension <comprehension>`
-
-
-Noun
-----
-
-A noun is a reference to a final or variable slot.
-
-.. syntax:: NounExpr
-
-   Ap('NounExpr', NonTerminal('name'))
-
-.. syntax:: name
-
-   Choice(0, "IDENTIFIER", Sigil("::", P('stringLiteral')))
-
-
-examples::
-
-  >>> Int
-  Int
-
-  .>> __equalizer
-  <Equalizer>
-
-Any string literal prefixed by `::` can be used as an identifier::
-
-  >>> { def ::"hello, world" := 1; ::"hello, world" }
-  1
-
-
-Unary operators
----------------
-
-Monte has logical, bitwise, and arithmetic negation operators::
-
-  >>> - (1 + 3)
-  -4
-  >>> ~ 0xff
-  -256
-  >>> ! true
-  false
-
-A guard can be used as an operator to coerce a value::
-
-  >>> 1 :Int
-  1
-
-.. todo:: discuss, doctest SlotExpression ``&x``, BindingExpression ``&&x``
-
-.. syntax:: prefix
-
-   Choice(
-    0,
-    Ap("PrefixExpr", '-', NonTerminal('prim')),
-    Ap("PrefixExpr", Choice(0, "~", "!"), NonTerminal('calls')),
-    NonTerminal('SlotExpr'),
-    NonTerminal('BindingExpr'),
-    NonTerminal('CoerceExpr'),
-    NonTerminal('calls'))
-
-
-.. syntax:: SlotExpr
-
-   Ap('SlotExpr', Sigil('&', NonTerminal('name')))
-
-.. syntax:: BindingExpr
-
-   Ap('BindingExpr', Sigil('&&', NonTerminal('name')))
-
-.. syntax:: CoerceExpr
-
-   Ap("CoerceExpr", NonTerminal('calls'), Sigil(":", NonTerminal('guard')))
-
-
-.. todo:: special operator rules because of security
-
-There are some special rules about the behavior of the basic operators
-because of E's distributed security. These rules are described in the
-Under the :ref:`Under the Covers<under-cover-objects>` section later
-in this chapter.
-

@@ -47,25 +47,3 @@ signatures**.
 We can see that ``getAndPut`` implements the ``GetPut`` interface, but it
 isn't very faithful to that interface. Interfaces cannot enforce behavior,
 only signatures.
-
-
-.. syntax:: interface
-
-   Sequence(
-    "interface",
-    NonTerminal('namePattern'),
-    Optional(Sequence("guards", NonTerminal('pattern'))),
-    Optional(Sequence("extends", OneOrMore(NonTerminal('order'), ','))),
-    Comment("implements_@@"), Comment("msgs@@"))
-
-.. _under-cover-objects:
-
-Under the covers: Everything is an object
------------------------------------------
-
-.. todo:: Under the covers: Everything is an object
-
-
-.. rubric:: Notes
-
-.. [#] in Java, compare to inner classes

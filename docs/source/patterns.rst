@@ -1,7 +1,7 @@
 .. _patterns:
 
-Pattern matching
-================
+Pattern matching (WIP)
+======================
 
 Monte comes with a powerful and extensible subsystem for destructuring and
 viewing objects, called the **pattern subsystem**. A *pattern* is a rule which

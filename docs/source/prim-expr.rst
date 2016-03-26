@@ -1,5 +1,72 @@
-Primitive Expressions
----------------------
+Primitive Expressions (WIP)
+===========================
+
+Parentheses, braces, and square brackets set off primitive expressions.
+
+.. syntax:: prim
+
+   Choice(
+    0,
+    NonTerminal('LiteralExpr'),
+    NonTerminal('quasiliteral'),
+    NonTerminal('NounExpr'),
+    Brackets("(", NonTerminal('expr'), ")"),
+    NonTerminal('HideExpr'),
+    NonTerminal('MapComprehensionExpr'),
+    NonTerminal('ListComprehensionExpr'),
+    NonTerminal('ListExpr'),
+    NonTerminal('MapExpr'))
+
+A sequence expressions evaluates to the value of its last item::
+
+  >>> { 4; "x"; "y" }
+  "y"
+
+.. syntax:: HideExpr
+
+   Ap('HideExpr',
+      Brackets("{", SepBy(NonTerminal('expr'), ';', fun='wrapSequence'), "}"))
+
+Parentheses override normal precedence rules::
+
+  >>> 4 + 2 * 3
+  10
+  >>> (4 + 2) * 3
+  18
+
+.. seealso::
+
+   :ref:`quasiliteral <quasiliteral>`,
+   :ref:`comprehension <comprehension>`
+
+
+Noun
+----
+
+A noun is a reference to a final or variable slot.
+
+.. syntax:: NounExpr
+
+   Ap('NounExpr', NonTerminal('name'))
+
+.. syntax:: name
+
+   Choice(0, "IDENTIFIER", Sigil("::", P('stringLiteral')))
+
+
+examples::
+
+  >>> Int
+  Int
+
+  .>> __equalizer
+  <Equalizer>
+
+Any string literal prefixed by `::` can be used as an identifier::
+
+  >>> { def ::"hello, world" := 1; ::"hello, world" }
+  1
+
 
 .. syntax:: FunctionExpr
 
@@ -66,7 +133,12 @@ Primitive Expressions
 
 .. syntax:: InterfaceExpr
 
-   Sequence('@@@@@')
+   Sequence(
+    "interface",
+    NonTerminal('namePattern'),
+    Optional(Sequence("guards", NonTerminal('pattern'))),
+    Optional(Sequence("extends", OneOrMore(NonTerminal('order'), ','))),
+    Comment("implements_@@"), Comment("msgs@@"))
 
 ::
 
@@ -105,6 +177,23 @@ Primitive Expressions
     Optional(
         Sequence("catch", NonTerminal('pattern'),
                  NonTerminal('block'))))
+
+Additional flow of control
+--------------------------
+
+We have already seen the if/then/else structure. Other traditional
+structures include:
+
+ - ``while (booleanExpression) {...}``
+ - ``try{...} catch errorVariable {...} finally{...}``
+ - ``throw (ExceptionExpressionThatCanBeAString)``
+ - ``break`` (which jumps out of a while or for loop; if the break
+   keyword is followed by an expression, that expression is returned
+   as the value of the loop)
+ - ``continue`` (which jumps to the end of a while or for, and starts
+   the next cycle)
+ - ``switch (expression) {match==v1{...} match==v2{...}
+   ... match _{defaultAction}}``
 
 ::
 
@@ -190,31 +279,13 @@ Primitive Expressions
 
 .. todo:: doctest ``/** docstring */``
 
-.. syntax:: MetaExpr
-
-   Sequence(
-    "meta", ".",
-    Choice(0,
-           Sequence("context", "(", ")"),
-           Sequence("getState", "(", ")")))
-
-::
-
-  meta.getState()
-  meta.context()
-
 .. syntax:: block
 
    Sequence(
     "{",
     Choice(
         0,
-        ZeroOrMore(
-            Choice(
-                0,
-                NonTerminal('blockExpr'),
-                NonTerminal('expr')),
-            ";"),
+        NonTerminal('sequence'),
         "pass"),
     "}")
 
@@ -255,6 +326,8 @@ Primitive Expressions
     "bind",
     NonTerminal('name'),
     Optional(NonTerminal('guard')), Comment("objectExpr@@"))
+
+.. _def:
 
 .. syntax:: def
 

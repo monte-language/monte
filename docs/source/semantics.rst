@@ -10,16 +10,20 @@ Monte is an object-based expression language which computes by delivering
 resulting in either success or failure; successful evaluation yields an
 object, while failing evaluation yields an exceptional state.
 
+.. _kernel:
+
 Kernel-Monte
 ============
 
-Monte is designed not to be interpreted immediately, but to be reduced
-("**expanded**") into a core form called "Kernel-Monte". Kernel-Monte is
-smaller than Monte and thus easier to work with, although it lacks most of the
-rich expressiveness of Monte.
 
-.. todo::
-    Detail semantics of full Monte and not just Kernel-Monte.
+The Monte language as seen by the programmer has the rich set of
+syntactic conveniences expected of a modern scripting
+language. However, to be secure, Monte must have a simple analyzable
+semantics. We reconcile these by defining a subset of the full
+language called :dfn:`Kernel-Monte`, and only this subset need be
+given a rigorous semantics. The rest of E is defined by syntactic
+expansion to this subset.
+
 
 Monte as a Tree
 ===============

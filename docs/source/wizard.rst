@@ -2,16 +2,6 @@
 Monte Language Sketch
 =====================
 
-Expansion
----------
-
-Monte's syntax is sugar over a kernel language, Kernel-E. Every Monte
-syntax construct expands to a Kernel-E expression::
-
-  >>> m`1 + 1`.expand()
-  m`1.add(1)`
-
-
 The Semantics
 =============
 

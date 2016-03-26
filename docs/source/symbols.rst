@@ -1,7 +1,7 @@
-.. _primitive-data:
+Lexical Grammar (Tokens) (WIP)
+==============================
 
-Primitive Data Types
-====================
+.. _primitive-data:
 
 .. todo:: separate discussion of expression syntax from datatypes.
 
@@ -397,9 +397,6 @@ Use ``diverge`` and ``snapshot`` similarly::
            NonTerminal('BindingExpr'),
            NonTerminal('NounExpr')))))
 
-
-Lexical Syntax
---------------
 
 .. syntax:: LiteralExpr
 
