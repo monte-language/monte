@@ -66,19 +66,6 @@ Under the covers: Everything is an object
 .. todo:: Under the covers: Everything is an object
 
 
-Getting Help about an Object
-----------------------------
-
-Monte strives to provide useful error messages and self-documenting objects::
-
-  ▲> help(Ref)
-  Result: Object type: RefOps
-  Ref management and utilities.
-  Method: broken/1
-  Method: isBroken/1
-  Method: isDeepFrozen/1
-  ...
-
 .. rubric:: Notes
 
 .. [#] in Java, compare to inner classes

@@ -147,6 +147,20 @@ exploration. Invoke it as `mt repl`. For example::
   3
 
 
+Getting Help about an Object
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Monte strives to provide useful error messages and self-documenting objects::
+
+  ▲> help(Ref)
+  Result: Object type: RefOps
+  Ref management and utilities.
+  Method: broken/1
+  Method: isBroken/1
+  Method: isDeepFrozen/1
+  ...
+
+
 Editor Syntax Highlighting
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
