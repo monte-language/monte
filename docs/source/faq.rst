@@ -84,46 +84,6 @@ how they were delivered. A few extremely special runtime objects can make the
 distinction, but they are the only exception. User-defined objects cannot tell
 whether they received a message via call or send.
 
-References?
------------
-
-.. note::
-    Messy.
-
-There are three words about references:
-
-near/far, settled/unsettled, resolved/unresolved
-
-http://www.erights.org/elib/concurrency/refmech.html
-
-A near reference is to an object in the same vat, whereas a far reference is
-to an object elsewhere.
-
-References are settled if they won't change to a different reference state.
-They can be compared with == and used as hashtable keys.
-
-Settled/unsettled is more or less the same as resolved/unresolved, although
-edge cases in previous implementations have required the distinction.
-
-A reference is either a promise or resolved. A resolved reference is either
-near, far, or broken. Near references can have synchronous calls made on them.
-Promises, far references, and broken references will raise an exception if
-synchronous calls are made.
-
-Does this mean we should never make synchronous calls?
-------------------------------------------------------
-
-.. note::
-    Ugh. This could probably be its own page!
-
-No. There are many kind of objects on which synchronous calls work, because
-they are near references. For example, all literals are near: ``def lue :=
-(6).mul(7)``.
-
-When in doubt, remember that there is a ``Near`` guard which can be used to
-confirm that an object is in the same vat as you and thus available for
-synchronous calls.
-
 Object Capabilities
 ~~~~~~~~~~~~~~~~~~~
 
