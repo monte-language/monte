@@ -63,7 +63,9 @@ def {name}(assert):
             "doc"
 {source}
 
-    assert.equal(example.test(){fixup}, {want}{fixup})
+    def actual := example.test(){fixup}
+    when (actual) ->
+        assert.equal(actual, {want}{fixup})
 
 """
 
