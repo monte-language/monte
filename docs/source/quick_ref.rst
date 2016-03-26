@@ -32,10 +32,10 @@ Basic Flow
 ::
 
    >>> if ('a' == 'b'):
-   ...    traceln("match")
+   ...    "match"
    ... else:
-   ...    traceln("no match")
-   null
+   ...    "no match"
+   "no match"
 
 ::
 
@@ -47,26 +47,32 @@ Basic Flow
 
 ::
 
-   >>> try:
+   >>> var resource := "reserved"
+   ... try:
    ...     3 // 0
    ... catch err:
-   ...     traceln(`error: $err`)
+   ...     `error!`
    ... finally:
-   ...     traceln("always")
-   null
+   ...     resource := "released"
+   ... resource
+   "released"
 
 ::
 
-   >>> for next in (1..3):
-   ...     traceln(next)
-   null
+   >>> def x := [].diverge()
+   ... for next in (1..3):
+   ...     x.push([next, next])
+   ... x.snapshot()
+   [[1, 1], [2, 2], [3, 3]]
 
 ::
 
    >>> def map := ['a' => 65, 'b' => 66]
+   ... var sum := 0
    ... for key => value in (map):
-   ...     traceln("got pair")
-   null
+   ...     sum += value
+   ... sum
+   131
 
 
 Modules
@@ -271,32 +277,34 @@ Eventual Sends
 
 ::
 
-   >>> def abacus := object mock {}
-   ...
-   ... abacus <- add(1, 2)
+   >>> def abacus := object mock { to add(x, y) { return x + y } }
+   ... var out := null
    ...
    ... def answer := abacus <- add(1, 2)
    ... when (answer) ->
-   ...     traceln(`computation complete: $answer`)
+   ...     out := `computation complete: $answer`
    ... catch problem:
    ...     traceln(`promise broken $problem `)
-   ... finally:
-   ...     traceln("always")
-   null
+   3
 
 ::
 
-   .>> def makeCarRcvr := object mock {}
+   >>> def makeCarRcvr := fn autoMake { `shiny $autoMake` }
    ...
    ... def carRcvr := makeCarRcvr <- ("Mercedes")
    ... Ref.whenBroken(carRcvr, def lost(brokenRef) {
    ...     traceln("Lost connection to carRcvr")
    ... })
-   ... def [resultVow, resolver] := Ref.promise()
-   ... when (resultVow) -> {
+   ... carRcvr
+   "shiny Mercedes"
+
+   >>> def [resultVow, resolver] := Ref.promise()
+   ...
+   ... when (resultVow) ->
    ...     traceln(resultVow)
-   ... } catch prob {
+   ... catch prob:
    ...     traceln(`oops: $prob`)
-   ... }
+   ...
    ... resolver.resolve("this text is the answer")
-   true
+   ... resultVow
+   "this text is the answer"
