@@ -24,9 +24,12 @@ def main(access):
         for (ix, ex) in enumerate(p.get_examples(txt)):
             name = 'test%s_%s' % (section.replace('-', '_'), ix)
             fixup = '.canonical()' if 'm`' in ex.source else ''
+            delay = ('when (actual) ->\n        '
+                     if '->' in ex.source or '<-' in ex.source
+                     else '')
             case = caseTemplate.format(name=name,
                                        source=indent(ex.source, levels=3),
-                                       fixup=fixup,
+                                       fixup=fixup, delay=delay,
                                        want=ex.want.strip())
             caseNames.append(name)
             write(case)
@@ -64,8 +67,7 @@ def {name}(assert):
 {source}
 
     def actual := example.test(){fixup}
-    when (actual) ->
-        assert.equal(actual, {want}{fixup})
+    {delay}assert.equal(actual, {want}{fixup})
 
 """
 
