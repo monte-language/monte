@@ -307,6 +307,18 @@ Performs :ref:`guard <guards>` coercion and discards the result.
 ListPatt (kernel)
 ~~~~~~~~~~~~~~~~~
 
+.. syntax:: ListPatt
+
+   Ap('ListPatt',
+     Brackets("[", SepBy(NonTerminal('pattern'), ','), ']'),
+     Maybe(Sigil("+", NonTerminal('pattern'))))
+
+
+::
+
+   >>> def [x, y] := [5, 10]; x
+   5
+
 ::
 
   [p, q]
@@ -336,13 +348,6 @@ List patterns match ``ConstLists`` of at least the same length as the head,
 where each subpattern in the head matches the corresponding element in the
 list. The rest of the list is collected into the tail and the tail pattern is
 matched against it.
-
-.. syntax:: ListPatt
-
-   Ap('ListPatt',
-     Brackets("[", SepBy(NonTerminal('pattern'), ','), ']'),
-     Maybe(Sigil("+", NonTerminal('pattern'))))
-
 
 MapPattern
 ~~~~~~~~~~

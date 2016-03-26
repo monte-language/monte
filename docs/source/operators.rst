@@ -57,6 +57,11 @@ Sequence
        NonTerminal('expr')),
      ";")
 
+A sequence expressions evaluates to the value of its last item::
+
+  >>> { 4; "x"; "y" }
+  "y"
+
 Assignment and Definition
 -------------------------
 
@@ -293,7 +298,7 @@ Monte has the usual ordering operators::
 
 They are non-associative and only partial:
 
-  >>> try { 3 < "3" } catch ex { "ouch! no order defined" }
+  >>> try { 3 < "3" } catch _ { "ouch! no order defined" }
   "ouch! no order defined"
 
 Use ``<=>`` aka ``asBigAs`` to compare magnitudes::

@@ -13,37 +13,6 @@ Monte provides some classic and common value types [#e_scalars]_.
 Int
 ~~~
 
-Monte integer literals are written as usual::
-
-  >>> 5
-  5
-
-  >>> 0xF
-  15
-
-Integers may be arbitrarily large, *à la* Python's `long` or Haskell's
-`Integer`::
-
-  >>> 128 ** 20
-  1393796574908163946345982392040522594123776
-
-.. todo:: un-mask failing test cases such as .expan(), bigint parsing, ...
-
-Integers respond to a variety of mathematical methods,
-and :ref:`operators<operators>` provide traditional syntax::
-
-  ▲> help(5)
-  Result: Object type: IntObject
-  A numeric value in ℤ.
-  Method: op__cmp/1
-  Method: aboveZero/0
-  ...
-  Method: add/1
-  ...
-
-  >>> 5 + 2
-  7
-
 .. syntax:: IntExpr
 
    Ap('IntExpr', Choice(0, P('hexLiteral'), P('decLiteral')))
@@ -76,6 +45,35 @@ and :ref:`operators<operators>` provide traditional syntax::
 
    OneOf('0123456789abcdefABCDEF')
 
+
+Monte integer literals are written as usual::
+
+  >>> 5
+  5
+
+  >>> 0xF
+  15
+
+Integers may be arbitrarily large, *à la* Python's `long` or Haskell's
+`Integer`::
+
+  >>> 128 ** 20
+  1393796574908163946345982392040522594123776
+
+Integers respond to a variety of mathematical methods,
+and :ref:`operators<operators>` provide traditional syntax::
+
+  ▲> help(5)
+  Result: Object type: IntObject
+  A numeric value in ℤ.
+  Method: op__cmp/1
+  Method: aboveZero/0
+  ...
+  Method: add/1
+  ...
+
+  >>> 5 + 2
+  7
 
 Double
 ~~~~~~
@@ -317,94 +315,6 @@ left-hand operand is a string.
 
    Sigil(Char('"'), ManyTill(P('charConstant'), Char('"')))
 
-
-Lists: ConstList and FlexList
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Among Monte's collection types, the list is a very common type. Lists are
-heterogenous ordered unsorted collections with sequencing and indexing, and
-have the performance characteristics of arrays in C, vectors in C++, or lists
-in Python::
-
-  >>> ['I', "love", "Monte", 42, 0.5][3]
-  42
-
-A list expression evaluates to a ``ConstList``::
-
-  ▲> { def l := ['I', "love", "Monte", 42, 0.5]; l[3] := 0 }
-  ...
-  Message refused: ([I, love, Monte, 42, 0.500000], Atom(put/2), [3, 0])
-
-Use ``diverge`` and ``snapshot`` to go from ``ConstList`` to mutable
-``FlexList`` and back::
-
-  >>> { def l := ['I', "love", "Monte", 42, 0.5].diverge(); l[3] := 0 }
-  0
-
-
-.. syntax:: ListExpr
-
-     Ap('ListExpr', Brackets("[", SepBy(NonTerminal('expr'), ','), "]"))
-
-
-
-Maps: ConstMap and FlexMap
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Monte uses the "fat arrow", ``=>`` for map syntax::
-
-  >>> { def m := ["roses" => "red", "violets" => "blue"]; m["roses"] }
-  "red"
-
-.. todo:: output of repl should be quoted like this.
-
-.. todo:: handle multi-line REPL examples when generating tests
-
-Like list expressions, a map expressions evaluates to an immutable
-data structures, a ``ConstMap``::
-
-  ▲> { def m := ["roses" => "red", "violets" => "blue"]; m["roses"] := 3 }
-  ...
-  Message refused: ([roses => red, violets => blue], Atom(put/2), ["roses", 3])
-
-Use ``diverge`` and ``snapshot`` similarly::
-
-  >>> { def m := ["roses" => "red", "violets" => "blue"].diverge(); m["roses"] := 3 }
-  3
-
-.. warning:: Maps in monte are ordered::
-
-               >>> [ "a" => 1, "b" => 2] == [ "b" => 2, "a" => 1]
-               false
-
-             To compare without regard to order, use ``sortKeys``::
-
-               >>> [ "a" => 1, "b" => 2].sortKeys() == [ "b" => 2, "a" => 1].sortKeys()
-               true
-
-.. syntax:: MapExpr
-
-   Ap('MapExpr',
-     Brackets("[", OneOrMore(NonTerminal('mapItem'), ','), "]"))
-
-.. syntax:: mapItem
-
-   Choice(0,
-     Ap('Right', Ap('pair', NonTerminal('expr'),
-                            Sigil("=>", NonTerminal('expr')))),
-     Ap('Left', Sigil("=>", Choice(0,
-           NonTerminal('SlotExpr'),
-           NonTerminal('BindingExpr'),
-           NonTerminal('NounExpr')))))
-
-
-.. syntax:: LiteralExpr
-
-   Choice(0,
-          NonTerminal('StrExpr'),
-	  NonTerminal('IntExpr'),
-          NonTerminal('DoubleExpr'),
-	  NonTerminal('CharExpr'))
 
 .. rubric:: Footnotes
 

@@ -192,6 +192,22 @@ rendition:
     :lines: 15-
     :lineno-start: 15
 
+Additional flow of control
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Other traditional structures include:
+
+ - ``while (booleanExpression) {...}``
+ - ``try{...} catch errorVariable {...} finally{...}``
+ - ``throw (ExceptionExpressionThatCanBeAString)``
+ - ``break`` (which jumps out of a while or for loop; if the break
+   keyword is followed by an expression, that expression is returned
+   as the value of the loop)
+ - ``continue`` (which jumps to the end of a while or for, and starts
+   the next cycle)
+ - ``switch (expression) {match==v1{...} match==v2{...}
+   ... match _{defaultAction}}``
+
 String Interpolation with quasi-literals
 ----------------------------------------
 

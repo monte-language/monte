@@ -73,21 +73,3 @@ messages on behalf of other objects and quote strings.
 
 ``m`` is a quasiparser which parses Monte source code. It is part of the
 runtime Monte compiler.
-
-
-Quasiliteral Syntax Summary
-===========================
-
-.. syntax:: quasiliteral
-
-   Ap('QuasiParserExpr',
-    Maybe(Terminal("IDENTIFIER")),
-    Brackets('`',
-    SepBy(
-        Choice(0,
-	  Ap('Left', Terminal('QUASI_TEXT')),
-          Ap('Right',
-            Choice(0,
-              Ap('NounExpr', Terminal('DOLLAR_IDENT')),
-              Brackets('${', NonTerminal('expr'), '}'))))),
-    '`'))
