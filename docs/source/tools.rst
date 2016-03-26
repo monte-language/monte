@@ -19,15 +19,3 @@ docs will show up in the docs/build directory.
 .. _restructured text: http://docutils.sourceforge.net/docs/user/rst/quickref.html
 .. _Sphinx: http://sphinx-doc.org/
 .. _readthedocs: https://readthedocs.org/projects/monte/
-
-
-Acknowledgements
-================
-
-Monte design and documentation borrow heavily from `E in a Walnut`__
-by Marc Stiegler and `The E Language`__ and `ELib`__ by Mark Miller.
-
-__ http://wiki.erights.org/wiki/Walnut
-__ http://erights.org/elang/index.html
-__ http://erights.org/elib/index.html
-

@@ -205,6 +205,16 @@ __ https://github.com/monte-language/monte/issues
 __ https://github.com/monte-language/typhon/issues
 
 
+Acknowledgements
+----------------
+
+Monte design and documentation borrow heavily from `E in a Walnut`__
+by Marc Stiegler and `The E Language`__ and `ELib`__ by Mark Miller.
+
+__ http://wiki.erights.org/wiki/Walnut
+__ http://erights.org/elang/index.html
+__ http://erights.org/elib/index.html
+
 .. rubric:: Notes
 
 .. [#] Disciplined use of existing languages such as Java and
