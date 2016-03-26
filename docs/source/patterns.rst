@@ -3,94 +3,163 @@
 Pattern matching (WIP)
 ======================
 
-Monte comes with a powerful and extensible subsystem for destructuring and
-viewing objects, called the **pattern subsystem**. A *pattern* is a rule which
-conditionally matches objects and binds parts of the matched objects to names.
+Monte comes with a powerful and extensible subsystem for destructuring
+and viewing objects. A :dfn:`pattern` is a rule which conditionally
+matches objects and binds parts of the matched objects to names.
+
+.. _SuchThatPattern:
+
+The `Such-That` Pattern
+-----------------------
+
+.. syntax:: SuchThatPatt
+
+   Ap('SuchThatPatt', NonTerminal('prefixPatt'),
+      Sigil("?", Brackets("(", NonTerminal('expr'), ")")))
+
+Non associative.
+
+The such-that pattern contains a subpattern and a **condition**, not unlike
+the condition expression in an ``if`` expression. The such-that pattern first
+speculatively performs the pattern match in its subpattern, and then succeeds
+or fails based on whether the condition evaluates to ``true`` or ``false``::
+  
+  >>> def players := [object alice{}, object bob{}]
+  ...
+  ... object game:
+  ...     to vote(player ? (players.contains(player)),
+  ...             choice ? (players.contains(choice))) :
+  ...        return "voted"
+  ...
+  ... def t1 := game.vote(players[0], players[1])
+  ... def t2 := try { game.vote(object alice{}, "bob") } catch _ { "BZZT!" }
+  ... [t1, t2]
+  ["voted", "BZZT!"]
+
+
+SuchThat Expansion
+~~~~~~~~~~~~~~~~~~
+
+::
+   
+   >>> m`def patt ? (condition) := value`.expand()
+   m`def via (_suchThat) [patt, via (_suchThat.run(condition)) _] := value`
+
+.. _ListPatt:
+
+List, Map Patterns
+------------------
+
+.. syntax:: ListPatt
+
+   Ap('ListPatt',
+     Brackets("[", SepBy(NonTerminal('pattern'), ','), ']'),
+     Maybe(Sigil("+", NonTerminal('pattern'))))
+
+.. syntax:: MapPatt
+
+   Ap('MapPatt',
+     Brackets("[", OneOrMore(NonTerminal('mapPattItem'), ','), ']'),
+     Maybe(Sigil("|", NonTerminal('pattern'))))
+
+.. syntax:: mapPattItem
+
+   Ap('pair',
+     Choice(0,
+       Ap('Right', Ap('pair',
+         Choice(0,
+           NonTerminal('LiteralExpr'),
+           Brackets("(", NonTerminal('expr'), ")")),
+         Sigil("=>", NonTerminal('pattern')))),
+       Ap('Left', Sigil("=>", NonTerminal('namePatt')))),
+     Maybe(Sigil(":=", NonTerminal('order'))))
+
+List patterns match lists, matching each subpattern against the items
+in the list::
+
+   >>> def [x, y] := [5, 10]; x
+   5
+
+
+If `+ rest` is used, a list pattern of size N is matched
+against the first N items in the list, and the `rest` pattern is
+matched against the remaining items.::
+
+   >>> def [first] + rest := [1, 2, 3, 4]
+   ... rest
+   [2, 3, 4]
+
+If ``+`` is not used, the list pattern only matches lists of the same size
+
+List Pattern Expansion
+~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+   >>> m`def [item1, item2] + rest := stuff`.expand()
+   m`def via (_splitList.run(2)) [item1, item2, rest] := stuff`
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+MapPattern
+~~~~~~~~~~
+
+::
+
+  ["k1" => p, (k2) => q]
+  ["k1" => p := v1, (k2) => q := v2]
+  ["k1" => p, "k2" => q] | rest
+  [=> p, => q]
+
+Map patterns match maps. Keys are either literal strings or
+expressions in parentheses. The subpatterns are matched against the
+values for the keys. ':=' may be used to specify a default value to
+match a subpattern against if the key is absent.
+
+.. _importer:
+.. index:: importer
+
+The :dfn:`importer` syntax without keys is a shortcut for binding names
+identical to string keys in a map; ``[=> x, => y]`` is equivalent to
+``["x" => x, "y" => y]``.
+
+Map
+***
+
+::
+
+    def ["first" => second, "third" => fourth] | tail := value
+
+Like a list pattern deconstructing a list, a map pattern deconstructs a ``ConstMap`` and gathers its values.
+
+Keys can be literals (strings, integers, etc.) but cannot be patterns.
+
+The tail of the map will be a map of the key/value pairs which were not
+matched in the head. The tail pattern defaults to ``==[].asMap()``.
+
+::
+
+    # def ["first" => first, "second" => second] := value
+    def [=> first, => second] := value
+
+This short syntax for map patterns matches values where the keys are the
+strings corresponding to the identifiers.
+
+::
+
+    def ["key" => patt := "default value"] := value
+
+Any pair in a map pattern can have a default value using the above syntax.  In
+this example, the ``patt`` subpattern will be asked to match against either
+the value corresponding to ``"key"``, or ``"default value"``.
+
 
 .. todo:: blend wizards text with doc text
 
 .. todo:: change pseudocode into real code (updoc/doctest style)
 
 .. todo:: document expansion of non-kernel patterns
-
-.. todo:: consider the fate of this Pronounciation stuff
-
-   Speak the name of the pattern, followed by "pattern": "This is a
-   via pattern with a such-that pattern inside."
-
-Usage
------
-
-There are five places where patterns are used:
-
-Method parameters
-~~~~~~~~~~~~~~~~~
-
-Parameters to methods are patterns which are matched against
-arguments. Match failure raises an exception.
-
-.. todo:: fwd ref parameters?
-
-Matchers
-~~~~~~~~
-
-::
-
-  match patt {}
-
-When 'match' is used in an object expression, 'patt' is
-matched against a message (a [verb, arglist] pair) sent to the object.
-
-.. todo:: fwd ref object expression?
-
-def expressions
-~~~~~~~~~~~~~~~
-
-::
-
-  def patt := val
-
-The pattern 'patt' is matched against the object 'val' and an
-exception is raised if the match fails.
-
-::
-
-  def patt exit e := val
-
-The pattern 'patt' is matched against the object 'val' and the ejector
-'e' is invoked if the match fails.
-
-Match-bind expressions
-~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-  val =~ patt
-
-The pattern 'patt' is matched against the object 'val'. If the match
-fails, 'false' is returned. On success, 'true' is returned.
-
-::
-
-  val !~ patt
-
-The pattern 'patt' is matched against the object 'val'. If the match
-fails, 'true' is returned. On success, 'false' is returned.
-
-Switch expressions
-~~~~~~~~~~~~~~~~~~
-
-::
-
-  switch (val) {
-      match patt1 {}
-      match patt2 {}
-  }
-
-The pattern 'patt1' is matched against the object 'val'. If the match
-fails, the next matcher is invoked, matching 'patt2' against
-'val'. The first pattern to match results in its associated block
-being evaluated. If no patterns match, an exception is raised.
 
 Patterns
 --------
@@ -302,124 +371,6 @@ Performs :ref:`guard <guards>` coercion and discards the result.
    Ap('IgnorePatt', Sigil("_", NonTerminal('guardOpt')))
 
 
-.. _ListPatt:
-
-ListPatt (kernel)
-~~~~~~~~~~~~~~~~~
-
-.. syntax:: ListPatt
-
-   Ap('ListPatt',
-     Brackets("[", SepBy(NonTerminal('pattern'), ','), ']'),
-     Maybe(Sigil("+", NonTerminal('pattern'))))
-
-
-::
-
-   >>> def [x, y] := [5, 10]; x
-   5
-
-::
-
-  [p, q]
-  [p, q] + rest
-
-List patterns match lists, matching each subpattern against the items
-in the list.  if '+' is used, a list pattern of size N is matched
-against the first N items in the list, and the 'rest' pattern is
-matched against the remaining items. If '+' is not used the list
-pattern only matches lists of the same size.
-
-Kernel list patterns do not allow '+ rest'.
-
-List
-****
-
-::
-
-    def [first, second] + tail := value
-
-A list pattern has two pieces, the **head** and the **tail**, joined by ``+``.
-This mirrors construction of a list via addition. The head can be any sequence
-of patterns. The tail is an optional pattern and defaults to ``==[]``,
-matching exactly the empty list.
-
-List patterns match ``ConstLists`` of at least the same length as the head,
-where each subpattern in the head matches the corresponding element in the
-list. The rest of the list is collected into the tail and the tail pattern is
-matched against it.
-
-MapPattern
-~~~~~~~~~~
-
-::
-
-  ["k1" => p, (k2) => q]
-  ["k1" => p := v1, (k2) => q := v2]
-  ["k1" => p, "k2" => q] | rest
-  [=> p, => q]
-
-Map patterns match maps. Keys are either literal strings or
-expressions in parentheses. The subpatterns are matched against the
-values for the keys. ':=' may be used to specify a default value to
-match a subpattern against if the key is absent.
-
-.. _importer:
-.. index:: importer
-
-The :dfn:`importer` syntax without keys is a shortcut for binding names
-identical to string keys in a map; ``[=> x, => y]`` is equivalent to
-``["x" => x, "y" => y]``.
-
-Map
-***
-
-::
-
-    def ["first" => second, "third" => fourth] | tail := value
-
-Like a list pattern deconstructing a list, a map pattern deconstructs a ``ConstMap`` and gathers its values.
-
-Keys can be literals (strings, integers, etc.) but cannot be patterns.
-
-The tail of the map will be a map of the key/value pairs which were not
-matched in the head. The tail pattern defaults to ``==[].asMap()``.
-
-::
-
-    # def ["first" => first, "second" => second] := value
-    def [=> first, => second] := value
-
-This short syntax for map patterns matches values where the keys are the
-strings corresponding to the identifiers.
-
-::
-
-    def ["key" => patt := "default value"] := value
-
-Any pair in a map pattern can have a default value using the above syntax.  In
-this example, the ``patt`` subpattern will be asked to match against either
-the value corresponding to ``"key"``, or ``"default value"``.
-
-.. syntax:: MapPatt
-
-   Ap('MapPatt',
-     Brackets("[", OneOrMore(NonTerminal('mapPattItem'), ','), ']'),
-     Maybe(Sigil("|", NonTerminal('pattern'))))
-
-.. syntax:: mapPattItem
-
-   Ap('pair',
-     Choice(0,
-       Ap('Right', Ap('pair',
-         Choice(0,
-           NonTerminal('LiteralExpr'),
-           Brackets("(", NonTerminal('expr'), ")")),
-         Sigil("=>", NonTerminal('pattern')))),
-       Ap('Left', Sigil("=>", NonTerminal('namePatt')))),
-     Maybe(Sigil(":=", NonTerminal('order'))))
-
-
 SamePattern
 ~~~~~~~~~~~
 
@@ -536,28 +487,3 @@ subpattern matches the transformed specimen.
      Sigil("via", Brackets("(", NonTerminal('expr'), ')')),
      NonTerminal('pattern'))
 
-.. _SuchThatPattern:
-
-SuchThatPattern
-~~~~~~~~~~~~~~~
-
-::
-
-  p ? a
-
-Such-That
-*********
-
-::
-
-    def patt ? (condition) := value
-
-The such-that pattern contains a subpattern and a **condition**, not unlike
-the condition expression in an ``if`` expression. The such-that pattern first
-speculatively performs the pattern match in its subpattern, and then succeeds
-or fails based on whether the condition evaluates to ``true`` or ``false``.
-
-.. syntax:: SuchThatPatt
-
-   Ap('SuchThatPatt', NonTerminal('prefixPatt'),
-      Sigil("?", Brackets("(", NonTerminal('expr'), ")")))
