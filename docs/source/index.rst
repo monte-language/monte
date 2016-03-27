@@ -39,12 +39,6 @@ Language Reference
     runtime
     semantics
 
-.. todo:: methods and matchers in expression grammar
-          
-.. todo:: be sure we cover E spec: grammar, block & scope
-          structure, Kernel-E, Sameness, Primitive Data Types,
-          Concurrency, Soft Type Checking.
-
 Secure Distributed Computing
 ----------------------------
 

@@ -105,9 +105,6 @@ elements of ``idPart``::
    def idStart :DeepFrozen := regionToSet('a'..'z' | 'A'..'Z' | '_'..'_')
    def idPart :DeepFrozen := idStart | decimalDigits
 
-.. _primitive-data:
-
-
 Literals
 --------
 
@@ -119,8 +116,15 @@ literal tokens are tagged:
   - ``.char.`` (``Chr``)
   - ``.String.`` (``Str``)
 
-.. todo:: separate discussion of expression syntax from datatypes?
+.. note:: Monte has no booleans literals; rather, the nouns `true` and
+          `false` are pre-defined :ref:`primitive values
+          <primitive-values>`.
 
+Bool
+~~~~
+
+
+    
 Int
 ~~~
 
@@ -240,11 +244,6 @@ To convert::
 
   >>> 4 * 1.0
   4.000000
-
-Bool
-~~~~
-
-The nouns `true` and `false` are pre-defined to the boolean values.
 
 Char
 ~~~~

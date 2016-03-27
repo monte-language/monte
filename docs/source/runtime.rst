@@ -1,10 +1,14 @@
 .. _stdlib:
 
-The Safe Scope
-==============
+Runtime Objects
+===============
 
 .. todo:: doctests with no expected results are not implemented at the
           time of this writing.
+
+.. index:: boolean, true, false, Nan, Infinity
+
+.. _primitive-values:
 
 Primitive values
 ----------------
@@ -84,6 +88,8 @@ To emit a string followed by a newline to the trace log::
   null
 
 
+.. _primitive-data:
+
 Data constructors
 -----------------
 
@@ -95,7 +101,7 @@ Data constructors
   >>> _makeInt("1")
   1
 
-  .>> __makeInt("100_000")  # BUG!
+.. todo::  _makeInt("100_000")  # BUG!
 
   >>> [_makeFinalSlot, _makeVarSlot]
   [_makeFinalSlot, _makeVarSlot]
@@ -166,6 +172,8 @@ Utilities for syntax expansions
 
   >>> [_booleanFlow, _comparer, _equalizer]
   [_booleanFlow, _comparer, _equalizer]
+
+.. todo:: expand on sameness and doctest `_equalizer`
 
   .>> __iterWhile
 
