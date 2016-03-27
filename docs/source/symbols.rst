@@ -114,9 +114,9 @@ Literals
 In the syntax railroad diagrams and in ``monte_lexer.mt``, the
 literal tokens are tagged:
 
-  - ``.int.`` (``Int``)
+  - ``.int.`` (guard; ``Int``)
   - ``.float64.`` (``Double``)
-  - ``.char.`` (guard: ``Chr``)
+  - ``.char.`` (``Chr``)
   - ``.String.`` (``Str``)
 
 .. todo:: separate discussion of expression syntax from datatypes?
