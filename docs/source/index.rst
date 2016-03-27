@@ -68,9 +68,6 @@ Organization In Progress
 Appendixes, Indices and tables
 ==============================
 
-.. todolist::
-
-
 .. toctree::
 
     montefesto
