@@ -1089,22 +1089,31 @@ def testpatterns_0(assert):
     object example:
         method test():
             "doc"
-            m`def bind x := 2`.expand()
+            def players := [object alice{}, object bob{}]
+            
+            object game:
+                to vote(player ? (players.contains(player)),
+                        choice ? (players.contains(choice))) :
+                   return "voted"
+            
+            def t1 := game.vote(players[0], players[1])
+            def t2 := try { game.vote(object alice{}, "bob") } catch _ { "BZZT!" }
+            [t1, t2]
             
 
-    def actual := example.test().canonical()
-    assert.equal(actual, m`def via (_bind.run(x_Resolver, null)) _ := 2`.canonical())
+    def actual := example.test()
+    assert.equal(actual, ["voted", "BZZT!"])
 
 
 def testpatterns_1(assert):
     object example:
         method test():
             "doc"
-            m`def &x := 1`.expand()
+            m`def patt ? (condition) := value`.expand()
             
 
     def actual := example.test().canonical()
-    assert.equal(actual, m`def via (_slotToBinding) &&x := 1`.canonical())
+    assert.equal(actual, m`def via (_suchThat) [patt, via (_suchThat.run(condition)) _] := value`.canonical())
 
 
 def testpatterns_2(assert):
@@ -1118,10 +1127,246 @@ def testpatterns_2(assert):
     assert.equal(actual, 5)
 
 
+def testpatterns_3(assert):
+    object example:
+        method test():
+            "doc"
+            def [first] + rest := [1, 2, 3, 4]
+            rest
+            
+
+    def actual := example.test()
+    assert.equal(actual, [2, 3, 4])
+
+
+def testpatterns_4(assert):
+    object example:
+        method test():
+            "doc"
+            def sides := ["square" => 4, "triangle" => 3]
+            def shape := "triangle"
+            
+            def ["square" => squareSides, (shape) => qty1] := sides
+            
+            def ["triangle" => qty2] | _ := sides
+            
+            [squareSides, shape, qty1, qty2]
+            
+
+    def actual := example.test()
+    assert.equal(actual, [4, "triangle", 3, 3])
+
+
+def testpatterns_5(assert):
+    object example:
+        method test():
+            "doc"
+            def sides := ["square" => 4, "triangle" => 3]
+            
+            def ["octogon" => octoSides := 8] | _ := sides
+            octoSides
+            
+
+    def actual := example.test()
+    assert.equal(actual, 8)
+
+
+def testpatterns_6(assert):
+    object example:
+        method test():
+            "doc"
+            def sides := ["square" => 4, "triangle" => 3]
+            
+            def [=> triangle, => square] := sides
+            [triangle, square]
+            
+
+    def actual := example.test()
+    assert.equal(actual, [3, 4])
+
+
+def testpatterns_7(assert):
+    object example:
+        method test():
+            "doc"
+            m`def [item1, item2] + rest := stuff`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`def via (_splitList.run(2)) [item1, item2, rest] := stuff`.canonical())
+
+
+def testpatterns_8(assert):
+    object example:
+        method test():
+            "doc"
+            m`def ["key" => patt] := data`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`def via (_mapExtract.run("key")) [patt, _ :_mapEmpty] := data`.canonical())
+
+
+def testpatterns_9(assert):
+    object example:
+        method test():
+            "doc"
+            m`def ["key1" => patt1] | rest := data`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`def via (_mapExtract.run("key1")) [patt1, rest] := data`.canonical())
+
+
+def testpatterns_10(assert):
+    object example:
+        method test():
+            "doc"
+            m`def ["key1" => patt1 := fallback] := data`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`def via (_mapExtract.withDefault("key1", fallback)) [patt1, _ :_mapEmpty] := data`.canonical())
+
+
+def testpatterns_11(assert):
+    object example:
+        method test():
+            "doc"
+            def state := "night"
+            
+            switch (state) {
+                match =="day" {"night"}
+                match =="night" {"day"}
+            }
+            
+
+    def actual := example.test()
+    assert.equal(actual, "day")
+
+
+def testpatterns_12(assert):
+    object example:
+        method test():
+            "doc"
+            m`def ==specimen := value`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`def via (_matchSame.run(specimen)) _ := value`.canonical())
+
+
+def testpatterns_13(assert):
+    object example:
+        method test():
+            "doc"
+            m`def !=specimen := value`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, "TODO".canonical())
+
+
+def testpatterns_14(assert):
+    object example:
+        method test():
+            "doc"
+            "The cat and the hat." =~ simple`The cat and the @what.`
+            
+
+    def actual := example.test()
+    assert.equal(actual, true)
+
+
+def testpatterns_15(assert):
+    object example:
+        method test():
+            "doc"
+            "The cat and the hat." =~ `The cat and the @{what :Str}.`; what
+            
+
+    def actual := example.test()
+    assert.equal(actual, "hat")
+
+
+def testpatterns_16(assert):
+    object example:
+        method test():
+            "doc"
+            "The cat and the hat." =~ simple`The cat and the @{what :Int}.`
+            
+
+    def actual := example.test()
+    assert.equal(actual, false)
+
+
+def testpatterns_17(assert):
+    object example:
+        method test():
+            "doc"
+            m`def ``quasi @@patt`` := value`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`def via (_quasiMatcher.run(simple__quasiParser.matchMaker(_makeList.run("quasi ", simple__quasiParser.patternHole(0), "")), _makeList.run())) [patt] := value`.canonical())
+
+
+def testpatterns_18(assert):
+    object example:
+        method test():
+            "doc"
+            def via (_splitList.run(1)) [x, xs] := [1, 2, 3]
+            [x, xs]
+            
+
+    def actual := example.test()
+    assert.equal(actual, [1, [2, 3]])
+
+
+def testpatterns_19(assert):
+    object example:
+        method test():
+            "doc"
+            m`def bind x := 2`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`def via (_bind.run(x_Resolver, null)) _ := 2`.canonical())
+
+
+def testpatterns_20(assert):
+    object example:
+        method test():
+            "doc"
+            m`def &x := 1`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`def via (_slotToBinding) &&x := 1`.canonical())
+
+
 unittest([
     testpatterns_0,
     testpatterns_1,
-    testpatterns_2
+    testpatterns_2,
+    testpatterns_3,
+    testpatterns_4,
+    testpatterns_5,
+    testpatterns_6,
+    testpatterns_7,
+    testpatterns_8,
+    testpatterns_9,
+    testpatterns_10,
+    testpatterns_11,
+    testpatterns_12,
+    testpatterns_13,
+    testpatterns_14,
+    testpatterns_15,
+    testpatterns_16,
+    testpatterns_17,
+    testpatterns_18,
+    testpatterns_19,
+    testpatterns_20
 ])
 
 
