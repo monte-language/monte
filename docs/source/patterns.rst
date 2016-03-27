@@ -1,7 +1,7 @@
 .. _patterns:
 
-Pattern matching (WIP)
-======================
+Pattern matching
+================
 
 Monte comes with a powerful and extensible subsystem for destructuring
 and viewing objects. A :dfn:`pattern` is a rule which conditionally
