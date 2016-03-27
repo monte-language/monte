@@ -1,14 +1,125 @@
-Lexical Grammar (Tokens) (WIP)
-==============================
+Lexical Grammar (Tokens)
+========================
+
+Monte source consists of a sequence of characters. Before parsing into
+expressions, it is separated into lexical tokens.
+
+Excerpts from the `lib/monte/monte_lexer`__ implementation provide
+a reasonably clear, if somewhat circular, definition of Monte lexical
+syntax.
+
+__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lexer.mt
+
+.. index:: tab, block, indentation
+
+Brackets and Blocks
+-------------------
+
+Opening and closing bracket tokens must be balanced::
+
+  def closers :DeepFrozen := ['(' => ')', '[' => ']', '{' => '}']
+
+A colon (``:``) token begins an :dfn:`indented block`.
+
+.. todo:: specify canStartIndentedBlock, braceStack exactly
+
+.. note:: Tabs are a syntax error in Monte.
+
+Operators
+---------
+
+Many binary operators have corresponding assignment operators:
+  
+  - xor: ``^`` , ``^=``
+  - add: ``+`` , ``+=``
+  - subtract: ``-`` , ``-=``
+  - shiftLeft: ``<<`` , ``<<=``
+  - shiftRight: ``>>`` , ``>>=``
+  - pow: ``**`` , ``**=``
+  - multiply: ``*`` , ``*=``
+  - floorDivide: ``//`` , ``//=``
+  - approxDivide: ``/`` , ``/=``
+  - mod: ``%`` , ``%=``
+  - and: ``&`` , ``&=``
+  - or: ``|`` , ``|=``
+
+The remaining operator tokens are:
+
+  - complement: ``~``
+  - inclusive range: ``..``
+  - exclusive range: ``..!``
+  - assign: ``:=``
+  - as big as: ``<=>``
+  - less: ``<``
+  - greater: ``>``
+  - less or equal: ``<=``
+  - great or equal: ``>=``
+  - equal: ``==``
+  - not equal: ``!=``
+  - match bind: ``=~``
+  - not match bind: ``!~``
+  - not: ``!``
+  - logical and: ``&&``
+  - logical or: ``||``
+  - but not: ``&!``
+  - sequence: ``;``
+
+Other Punctuation
+-----------------
+
+  - ``,``
+  - treat a string as a noun: ``::``
+  - such that: ``?``
+  - ignore pattern: ``_``
+  - call: ``.``
+  - send: ``<-``
+  - when: ``->``
+  - maps to: ``=>``
+
+Keywords
+--------
+
+The Monte keywords are given as::
+
+   def MONTE_KEYWORDS :DeepFrozen := [
+       "as", "bind", "break", "catch", "continue", "def", "else", "escape",
+       "exit", "extends", "exports", "finally", "fn", "for", "guards", "if",
+       "implements", "import", "in", "interface", "match", "meta", "method",
+       "object", "pass", "pragma", "return", "switch", "to", "try", "var",
+       "via", "when", "while"].asSet()
+
+Monte keywords are case insensitive::
+
+  >>> DEF x := 1
+  1
+
+Identifiers
+-----------
+
+Identifers start with an element of ``idStart`` followed by any number of
+elements of ``idPart``::
+
+   def decimalDigits :DeepFrozen := regionToSet('0'..'9')
+   def hexDigits :DeepFrozen := decimalDigits | regionToSet('a'..'f' | 'A'..'F')
+
+   def idStart :DeepFrozen := regionToSet('a'..'z' | 'A'..'Z' | '_'..'_')
+   def idPart :DeepFrozen := idStart | decimalDigits
 
 .. _primitive-data:
 
-.. todo:: separate discussion of expression syntax from datatypes.
 
-Scalars
--------
+Literals
+--------
 
-Monte provides some classic and common value types [#e_scalars]_.
+In the syntax railroad diagrams and in ``monte_lexer.mt``, the
+literal tokens are tagged:
+
+  - ``.int.`` (``Int``)
+  - ``.float64.`` (``Double``)
+  - ``.char.`` (guard: ``Chr``)
+  - ``.String.`` (``Str``)
+
+.. todo:: separate discussion of expression syntax from datatypes?
 
 Int
 ~~~
@@ -78,6 +189,30 @@ and :ref:`operators<operators>` provide traditional syntax::
 Double
 ~~~~~~
 
+.. syntax:: DoubleExpr
+
+   Ap('DoubleExpr', P('floatLiteral'))
+
+.. syntax:: floatLiteral
+
+   Ap('(read :: String -> Double)',
+     Ap('(++)',
+       P('digits'),
+       Choice(0,
+         Ap('(++)',
+           Ap('(:)', Char('.'), P('digits')),
+           Optional(P('floatExpn'), x='""')),
+         P('floatExpn'))))
+
+.. syntax:: floatExpn
+
+   Ap('(:)',
+     OneOf("eE"),
+     Ap('(++)',
+       Optional(Ap('pure', OneOf('-+')), x='""'),
+       P('digits')))
+
+
 Monte has floating point numbers as well::
 
   ▲> help(1.2)
@@ -106,103 +241,13 @@ To convert::
   >>> 4 * 1.0
   4.000000
 
-.. syntax:: DoubleExpr
-
-   Ap('DoubleExpr', P('floatLiteral'))
-
-.. syntax:: floatLiteral
-
-   Ap('(read :: String -> Double)',
-     Ap('(++)',
-       P('digits'),
-       Choice(0,
-         Ap('(++)',
-           Ap('(:)', Char('.'), P('digits')),
-           Optional(P('floatExpn'), x='""')),
-         P('floatExpn'))))
-
-.. syntax:: floatExpn
-
-   Ap('(:)',
-     OneOf("eE"),
-     Ap('(++)',
-       Optional(Ap('pure', OneOf('-+')), x='""'),
-       P('digits')))
-
-
 Bool
 ~~~~
 
-There are only two boolean values, known as `true` and `false`. Here
-are the applicable operators in precedence order.
-
-Logical Or::
-
-  >>> false || true
-  true
-
-Evaluates left to right until it finds a true condition.
-
-  >>> {((1 =~ x) || (2 =~ x)); x}
-  1
-  >>> {((1 =~ [x, y]) || (2 =~ x)); x}
-  2
-
-Logical And::
-
-  >>> false && true
-  false
-
-Boolean Comparisons (non-associative)::
-
-  >>> false == true
-  false
-
-  >>> false != true
-  true
-
-  >>> false & true
-  false
-
-  >>> false | true
-  true
-
-  >>> false ^ true
-  true
-
-Unary::
-
-  >>> ! false
-  true
-
-Expansions::
-
-  >>> m`! false`.expand()
-  m`false.not()`
-
-  >>> m`false & true`.expand()
-  m`false.and(true)`
-
+The nouns `true` and `false` are pre-defined to the boolean values.
 
 Char
 ~~~~
-
-Monte's character type represents Unicode characters; it is distinct
-from the string type. Character literals are always delimited by
-apostrophes (``'``).
-
-.. warning::
-
-    In Python, you may be accustomed to 'single' and "double" quotes
-    functioning interchangeably. In Monte, double quotes can contain any
-    number of letters, but single quotes can only hold a single character. 
-
-Characters are permitted to be adorable::
-
-  >>> '☃'
-  '☃'
-  >>> '\u23b6'
-  '⎶'
 
 .. syntax:: CharExpr
 
@@ -222,17 +267,33 @@ Characters are permitted to be adorable::
                Sigil(Char("x"), Count(2, P('hexDigit'))))),
            Ap('decodeSpecial', OneOf(r'''btnfr\'"'''))))))
 
-@@TODO: test for '	' (tab) not allowed
+Monte's character type represents Unicode characters; it is distinct
+from the string type. Character literals are always delimited by
+apostrophes (``'``).
 
+.. warning::
 
-Collections
------------
+    In Python, you may be accustomed to 'single' and "double" quotes
+    functioning interchangeably. In Monte, double quotes can contain any
+    number of letters, but single quotes can only hold a single character. 
 
-Monte has native lists and maps, as well as various other data structures
-implemented in the language.
+Characters are permitted to be adorable::
+
+  >>> '☃'
+  '☃'
+  >>> '\u23b6'
+  '⎶'
 
 String
 ~~~~~~
+
+.. syntax:: StrExpr
+
+   Ap('StrExpr', P('stringLiteral'))
+
+.. syntax:: stringLiteral
+
+   Sigil(Char('"'), ManyTill(P('charConstant'), Char('"')))
 
 Strings are objects with built-in methods and capabilities, rather than
 character arrays. Monte's strings are always Unicode, like Python 3 (but
@@ -295,30 +356,26 @@ Monte has string escape syntax much like Python or Java:
 
     As with Python, a backslash (``\``) as the final character of a line
     escapes the newline and causes that line and its successor to be
-    interpereted as one.
+    interpereted as one::
 
- ▲ def c := 1 + 2 \
- ...   + 3 + 4
- Result: 10
+       ▲ def c := 1 + 2 \
+       ...   + 3 + 4
+       Result: 10
 
-``+`` when used with strings is a concatenation operator as in Python. Unlike
-Java, it does *not* automatically coerce other types on the right-hand if the
-left-hand operand is a string.
+As in Python, ``+`` when used with strings is a concatenation operator
+. Unlike Java, it does *not* automatically coerce other types on the
+right-hand if the left-hand operand is a string.
 
-.. todo:: "What is the end-of-statement delineator in Monte?"
+Quasi-Literals
+--------------
 
-.. syntax:: StrExpr
+A quasif-literal is somewhat like a string delimited by back-ticks
+("`"), but inside, ``${ ... }`` is parsed as an expression and ``@{
+... }`` is parsed as a pattern; the curly-braces may be omitted in the
+case of simple noun expressions ``$ident`` or ``@ident``.
 
-   Ap('StrExpr', P('stringLiteral'))
+To escape delimiter characters within a quasi-literal, double them::
 
-.. syntax:: stringLiteral
-
-   Sigil(Char('"'), ManyTill(P('charConstant'), Char('"')))
-
-
-.. rubric:: Footnotes
-
-.. [#e_scalars] Sclar types in monte are thes same as the `Scalar Data
-                Types in E`__.
-
-__ http://erights.org/elang/scalars/index.html
+  >>> def price := 10.00
+  ... `The price is $$$price.`
+  "The price is $10.000000."

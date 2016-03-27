@@ -168,8 +168,15 @@ Conditional-Or
 
 Monte uses C syntax for the basic logical operators::
 
-   >>> true || true
+   >>> false || true
    true
+
+Evaluates left to right until it finds a true condition.
+
+  >>> {((1 =~ x) || (2 =~ x)); x}
+  1
+  >>> {((1 =~ [x, y]) || (2 =~ x)); x}
+  2
 
 Conditional-And
 ---------------
@@ -220,6 +227,12 @@ Comparisons and Bitwise/Logical Operators
 
 These are non-associative: ``x == y == z`` is a syntax error.
 
+  >>> false == true
+  false
+
+  >>> false != true
+  true
+
 You can compare with a pattern and use the resulting bindings::
 
   >>> [1, "x"] =~ [_ :Int, _ :Str]
@@ -246,6 +259,17 @@ We also have negated implication operator::
 
    >>> true &! false
    true
+
+Boolean Comparisons (non-associative)::
+
+  >>> false & true
+  false
+
+  >>> false | true
+  true
+
+  >>> false ^ true
+  true
 
 Comparison Expansion
 ~~~~~~~~~~~~~~~~~~~~
@@ -481,6 +505,10 @@ Monte has logical, bitwise, and arithmetic negation operators::
 
 .. todo:: discuss, doctest SlotExpression ``&x``, BindingExpression ``&&x``
 
+Expansions::
+
+  >>> m`! false`.expand()
+  m`false.not()`
 
 Unary Postfix
 -------------
