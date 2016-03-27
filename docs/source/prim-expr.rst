@@ -195,10 +195,6 @@ Monte uses the "fat arrow", ``=>`` for map syntax::
   >>> { def m := ["roses" => "red", "violets" => "blue"]; m["roses"] }
   "red"
 
-.. todo:: output of repl should be quoted like this.
-
-.. todo:: handle multi-line REPL examples when generating tests
-
 Like list expressions, a map expressions evaluates to an immutable
 data structures, a ``ConstMap``::
 
@@ -305,7 +301,7 @@ The `try` Expression
   >>> try { 3 < "3" } catch _ { "ouch! no order defined" }
   "ouch! no order defined"
 
-.. todo:: try expansion
+.. todo:: expansion of various forms of ``try``
 
 The `escape` Expression
 -----------------------
@@ -415,8 +411,6 @@ Defining Objects
             Choice(0, Comment("objectFunction@@"), NonTerminal('assign'))),
         NonTerminal('assign')))
 
-.. todo:: refactor w.r.t. FunctionExpr
-
 .. syntax:: bind
 
    Sequence(
@@ -505,3 +499,8 @@ Defining Interfaces
 
   interface Foo { to interfaceMethod(p, q) { ... } }
   interface Foo guards FooStamp { ... }
+
+.. todo:: various items marked "@@" in railroad diagrams.
+          Also, finish re-organizing them around precedence (use
+          haskell codegen to test).
+          
