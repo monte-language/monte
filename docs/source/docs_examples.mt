@@ -2134,18 +2134,19 @@ def testruntime_4(assert):
     object example:
         method test():
             "doc"
-            trace("str")
+            def [promise, resolver] := Ref.promise(); resolver.resolve(1)
+            promise
             
 
     def actual := example.test()
-    assert.equal(actual, null)
+    assert.equal(actual, 1)
 
 
 def testruntime_5(assert):
     object example:
         method test():
             "doc"
-            traceln("str")
+            trace("str")
             
 
     def actual := example.test()
@@ -2156,6 +2157,17 @@ def testruntime_6(assert):
     object example:
         method test():
             "doc"
+            traceln("str")
+            
+
+    def actual := example.test()
+    assert.equal(actual, null)
+
+
+def testruntime_7(assert):
+    object example:
+        method test():
+            "doc"
             _makeList(1, 2, 3)
             
 
@@ -2163,7 +2175,7 @@ def testruntime_6(assert):
     assert.equal(actual, [1, 2, 3])
 
 
-def testruntime_7(assert):
+def testruntime_8(assert):
     object example:
         method test():
             "doc"
@@ -2174,7 +2186,7 @@ def testruntime_7(assert):
     assert.equal(actual, ['k' => 'v'])
 
 
-def testruntime_8(assert):
+def testruntime_9(assert):
     object example:
         method test():
             "doc"
@@ -2185,7 +2197,7 @@ def testruntime_8(assert):
     assert.equal(actual, 1)
 
 
-def testruntime_9(assert):
+def testruntime_10(assert):
     object example:
         method test():
             "doc"
@@ -2196,7 +2208,7 @@ def testruntime_9(assert):
     assert.equal(actual, [_makeFinalSlot, _makeVarSlot])
 
 
-def testruntime_10(assert):
+def testruntime_11(assert):
     object example:
         method test():
             "doc"
@@ -2207,7 +2219,7 @@ def testruntime_10(assert):
     assert.equal(actual, _makeOrderedSpace)
 
 
-def testruntime_11(assert):
+def testruntime_12(assert):
     object example:
         method test():
             "doc"
@@ -2218,7 +2230,7 @@ def testruntime_11(assert):
     assert.equal(actual, [Any, Void])
 
 
-def testruntime_12(assert):
+def testruntime_13(assert):
     object example:
         method test():
             "doc"
@@ -2229,7 +2241,7 @@ def testruntime_12(assert):
     assert.equal(actual, [Bool, Str, Char, Double, Int])
 
 
-def testruntime_13(assert):
+def testruntime_14(assert):
     object example:
         method test():
             "doc"
@@ -2240,7 +2252,7 @@ def testruntime_13(assert):
     assert.equal(actual, [List, Map, Set])
 
 
-def testruntime_14(assert):
+def testruntime_15(assert):
     object example:
         method test():
             "doc"
@@ -2251,7 +2263,7 @@ def testruntime_14(assert):
     assert.equal(actual, Pair)
 
 
-def testruntime_15(assert):
+def testruntime_16(assert):
     object example:
         method test():
             "doc"
@@ -2262,7 +2274,7 @@ def testruntime_15(assert):
     assert.equal(actual, "abc")
 
 
-def testruntime_16(assert):
+def testruntime_17(assert):
     object example:
         method test():
             "doc"
@@ -2273,7 +2285,7 @@ def testruntime_16(assert):
     assert.equal(actual, [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc])
 
 
-def testruntime_17(assert):
+def testruntime_18(assert):
     object example:
         method test():
             "doc"
@@ -2284,7 +2296,7 @@ def testruntime_17(assert):
     assert.equal(actual, [simple__quasiParser, m__quasiParser])
 
 
-def testruntime_18(assert):
+def testruntime_19(assert):
     object example:
         method test():
             "doc"
@@ -2295,7 +2307,7 @@ def testruntime_18(assert):
     assert.equal(actual, "sum: 2")
 
 
-def testruntime_19(assert):
+def testruntime_20(assert):
     object example:
         method test():
             "doc"
@@ -2306,7 +2318,7 @@ def testruntime_19(assert):
     assert.equal(actual, m`1.add(1)`.canonical())
 
 
-def testruntime_20(assert):
+def testruntime_21(assert):
     object example:
         method test():
             "doc"
@@ -2317,7 +2329,7 @@ def testruntime_20(assert):
     assert.equal(actual, [_accumulateList, _accumulateMap])
 
 
-def testruntime_21(assert):
+def testruntime_22(assert):
     object example:
         method test():
             "doc"
@@ -2328,7 +2340,7 @@ def testruntime_21(assert):
     assert.equal(actual, _bind)
 
 
-def testruntime_22(assert):
+def testruntime_23(assert):
     object example:
         method test():
             "doc"
@@ -2339,7 +2351,7 @@ def testruntime_22(assert):
     assert.equal(actual, [_booleanFlow, _comparer, _equalizer])
 
 
-def testruntime_23(assert):
+def testruntime_24(assert):
     object example:
         method test():
             "doc"
@@ -2350,7 +2362,7 @@ def testruntime_23(assert):
     assert.equal(actual, _makeVerbFacet)
 
 
-def testruntime_24(assert):
+def testruntime_25(assert):
     object example:
         method test():
             "doc"
@@ -2361,7 +2373,7 @@ def testruntime_24(assert):
     assert.equal(actual, [_mapEmpty, _mapExtract])
 
 
-def testruntime_25(assert):
+def testruntime_26(assert):
     object example:
         method test():
             "doc"
@@ -2372,7 +2384,7 @@ def testruntime_25(assert):
     assert.equal(actual, [_matchSame, _quasiMatcher])
 
 
-def testruntime_26(assert):
+def testruntime_27(assert):
     object example:
         method test():
             "doc"
@@ -2383,7 +2395,7 @@ def testruntime_26(assert):
     assert.equal(actual, _slotToBinding)
 
 
-def testruntime_27(assert):
+def testruntime_28(assert):
     object example:
         method test():
             "doc"
@@ -2394,7 +2406,7 @@ def testruntime_27(assert):
     assert.equal(actual, [_splitList, _suchThat])
 
 
-def testruntime_28(assert):
+def testruntime_29(assert):
     object example:
         method test():
             "doc"
@@ -2405,7 +2417,7 @@ def testruntime_28(assert):
     assert.equal(actual, _switchFailed)
 
 
-def testruntime_29(assert):
+def testruntime_30(assert):
     object example:
         method test():
             "doc"
@@ -2446,7 +2458,8 @@ unittest([
     testruntime_26,
     testruntime_27,
     testruntime_28,
-    testruntime_29
+    testruntime_29,
+    testruntime_30
 ])
 
 

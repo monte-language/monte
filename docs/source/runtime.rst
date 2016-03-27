@@ -13,6 +13,8 @@ Runtime Objects
 Primitive values
 ----------------
 
+::
+
   >>> [true, false, null, NaN, Infinity]
   [true, false, null, NaN, Infinity]
 
@@ -52,8 +54,12 @@ exhausts an iterator, invoking a callable for each item in it.
 Reference/object operations
 ---------------------------
 
- - `Ref` Provides methods for creating and examining references, and
-   adding callbacks to them.
+`Ref` Provides methods for creating and examining references, and
+adding callbacks to them::
+
+  >>> def [promise, resolver] := Ref.promise(); resolver.resolve(1)
+  ... promise
+  1
 
 Data Guard
 ~~~~~~~~~~
@@ -113,6 +119,8 @@ Data constructors
 Basic guards
 ------------
 
+::
+
   >>> [Any, Void]
   [Any, Void]
 
@@ -135,6 +143,8 @@ Guard utilities
   .>> [All, Not]
   .>> NotNull
 
+::
+
   >>> "abc" :NullOk[Str]
   "abc"
 
@@ -146,11 +156,15 @@ Guard meta
 Interface constructors
 ----------------------
 
+::
+
   >>> [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc]
   [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc]
 
 Quasiparsers
 ------------
+
+::
 
   >>> [simple__quasiParser, m__quasiParser]
   [simple__quasiParser, m__quasiParser]
@@ -164,6 +178,8 @@ Quasiparsers
 Utilities for syntax expansions
 -------------------------------
 
+::
+
   >>> [_accumulateList, _accumulateMap]
   [_accumulateList, _accumulateMap]
 
@@ -174,6 +190,8 @@ Utilities for syntax expansions
   [_booleanFlow, _comparer, _equalizer]
 
 .. todo:: expand on sameness and doctest `_equalizer`
+
+::
 
   .>> __iterWhile
 
