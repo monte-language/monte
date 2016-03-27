@@ -26,11 +26,11 @@ Language Reference
     operators
     prim-expr
     patterns
-    quasiparsers
     symbols
     modules
     guards
     custom-guards
+    quasiparsers
     iteration
     interfaces
     slots
