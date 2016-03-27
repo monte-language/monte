@@ -217,7 +217,7 @@ Exact Pattern Expansion
    m`def via (_matchSame.run(specimen)) _ := value`
 
    >>> m`def !=specimen := value`.expand()
-   "TODO"
+   m`def via (_matchSame.different(specimen)) _ := value`
 
 
 The `Quasi-Literal` Pattern

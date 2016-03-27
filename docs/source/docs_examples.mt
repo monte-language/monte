@@ -1360,7 +1360,7 @@ def testpatterns_13(assert):
             
 
     def actual := example.test().canonical()
-    assert.equal(actual, "TODO".canonical())
+    assert.equal(actual, m`def via (_matchSame.different(specimen)) _ := value`.canonical())
 
 
 def testpatterns_14(assert):
