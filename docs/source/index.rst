@@ -10,6 +10,7 @@ Monte is Serious Business
 Monte is a dynamic language inspired by Python and E. 
 
 .. toctree::
+    :maxdepth: 2
 
     intro
     taste
@@ -20,6 +21,7 @@ Language Reference
 ------------------
 
 .. toctree::
+    :maxdepth: 2
 
     operators
     prim-expr
