@@ -23,12 +23,12 @@ Language Reference
 .. toctree::
     :maxdepth: 2
 
+    modules
     block-expr
     prim-expr
     operators
     patterns
     symbols
-    modules
     guards
     custom-guards
     quasiparsers
