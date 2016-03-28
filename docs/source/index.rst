@@ -23,8 +23,9 @@ Language Reference
 .. toctree::
     :maxdepth: 2
 
-    operators
+    block-expr
     prim-expr
+    operators
     patterns
     symbols
     modules

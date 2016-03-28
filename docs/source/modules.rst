@@ -48,7 +48,7 @@ All exports must pass ``DeepFrozen``::
    Ap('Module',
     Sigil("imports", P('StrExpr'), Sigil("=~", SepBy(NonTerminal('namePatt')))),
     Maybe(P('exports')),
-    NonTerminal('block'))
+    NonTerminal('sequence'))
 
 .. syntax:: exports
 
