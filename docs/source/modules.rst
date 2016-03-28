@@ -86,6 +86,22 @@ capabilities from the unsafe scope, and return an ``Int`` or a promise for an
         traceln(`Current process: $currentProcess`)
         return 0
 
+.. sidebar:: Kernel-Monte and Expansion
+
+           .. index: kernel, Kernel Monte, expansion
+           .. index:: expansion, syntactic expansion
+
+           The Monte language as seen by the programmer has the rich
+           set of syntactic conveniences expected of a modern
+           scripting language. However, to avoid complexity that so
+           often hampers security, the :doc:`semantics of Monte
+           <semantics>` is primarily defined over a smaller language
+           called :dfn:`Kernel-Monte`. The rest of E is defined by
+           :dfn:`syntactic expansion` to this subset. For example::
+
+              >>> m`1 + 1`.expand()
+              m`1.add(1)`
+
 .. _module_expansion:
 
 Module Syntax Expansion

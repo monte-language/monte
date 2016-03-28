@@ -16,22 +16,6 @@ before `expr "*" expr`, so ``*`` binds tighter than ``+``. Therefore,
 ``a + b * c + d`` is equivalent to ``a + (b * c) + d``. All the
 constructs in presented in the same section have the same precedence.
 
-.. sidebar:: Kernel-Monte and Expansion
-
-           .. index: kernel, Kernel Monte, expansion
-           .. index:: expansion, syntactic expansion
-
-           The Monte language as seen by the programmer has the rich
-           set of syntactic conveniences expected of a modern
-           scripting language. However, to avoid complexity that so
-           often hampers security, the :doc:`semantics of Monte
-           <semantics>` is primarily defined over a smaller language
-           called :dfn:`Kernel-Monte`. The rest of E is defined by
-           :dfn:`syntactic expansion` to this subset. For example::
-
-              >>> m`1 + 1`.expand()
-              m`1.add(1)`
-
 Monte has a rich set of operators above and beyond those in Kernel-Monte. All
 operators are overloadable, but overloading follows a very simple set of
 rules: Operators expand to message passing, and the message is generally
