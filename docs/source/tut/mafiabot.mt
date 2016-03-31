@@ -3,10 +3,18 @@ import "irc/client" =~ [=> makeIRCClient :DeepFrozen,
                         => connectIRCClient :DeepFrozen]
 exports (main)
 
-def makeNet(makeTCP4ClientEndpoint, getAddrInfo) as DeepFrozen:
-    return object Net:
-        to connect(host :Bytes, port :Int):
-            def addrs := getAddrInfo(host, b``)
+def makeIRCService(makeTCP4ClientEndpoint, getAddrInfo, Timer,
+                   hostname :Str) as DeepFrozen:
+    def port := 6667  # TODO: named arg with default value
+
+    return object IRC:
+        to _printOn(out):
+            out.print(`IRC($hostname)`)
+
+        to connect(handler):
+            def client := makeIRCClient(handler, Timer)
+
+            def addrs := getAddrInfo(b`$hostname`, b``)
             return when (addrs) ->
                 def choices := [
                     for addr in (addrs)
@@ -14,14 +22,16 @@ def makeNet(makeTCP4ClientEndpoint, getAddrInfo) as DeepFrozen:
                         addr.getSocketType() == "stream") addr.getAddress()]
                 traceln("choices:", choices)
                 def [address] + _ := choices
-                makeTCP4ClientEndpoint(address, port)
+                def ep := makeTCP4ClientEndpoint(address, port)
+                connectIRCClient(client, ep)
+                client
 
 
 def makeMafiaBot() as DeepFrozen:
     def nick := "mafiaBot"
     def channels :List[Str] := ["#montebot"]
     var game := null
-    var players := [].asSet()
+    var players := []
 
     return object mafiaBot:
         to getNick():
@@ -46,7 +56,7 @@ def makeMafiaBot() as DeepFrozen:
                 match `mafiaBot: start`:
                     if (players.size() >= 2):
                         say(`Starting with $players...`)
-                        game := makeMafia(players)
+                        game := makeMafia(players.snapshot().asSet())
                         say("TODO: implement game play.")
                     else:
                         say(`We need more players, $who!`)
@@ -60,9 +70,6 @@ def main(argv,
          => unsealException,
          => getAddrInfo) as DeepFrozen:
     def [hostname] := argv
-    def net := makeNet(makeTCP4ClientEndpoint, getAddrInfo)
-    when (def ep := net.connect(b`$hostname`, 6667)) ->
-        def client := makeIRCClient(makeMafiaBot(), Timer)
-        connectIRCClient(client, ep)
-    catch oops:
-        traceln("oops!", unsealException(oops))
+    def irc := makeIRCService(makeTCP4ClientEndpoint, getAddrInfo, Timer,
+                              hostname)
+    irc.connect(makeMafiaBot())
