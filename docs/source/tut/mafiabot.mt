@@ -22,7 +22,6 @@ def makeIRCService(makeTCP4ClientEndpoint, getAddrInfo, Timer,
                     for addr in (addrs)
                     if (addr.getFamily() == "INET" &&
                         addr.getSocketType() == "stream") addr.getAddress()]
-                traceln("choices:", choices)
                 def [address] + _ := choices
                 def ep := makeTCP4ClientEndpoint(address, port)
                 connectIRCClient(client, ep)
@@ -94,15 +93,13 @@ def makeModerator(playerNames :Set[Str], rng,
             # Night 0
             chan.say(`$game`)
             when (mafiaChan) ->
-                traceln("joined", mafiaChan)
                 escape notHere:
                     for maf in (mafiosos):
                         chan.tell(
                             maf, `You're a mafioso in $chan.`, notHere)
                         chan.tell(
                             maf, `Join $mafiaChan to meet the others.`, notHere)
-                        traceln("told", maf, "about", mafiaChan)
-                traceln("waiting for", mafiosos)
+                traceln("waiting for", mafiosos, "in", mafiaChan)
                 when (mafiaChan.waitFor(mafiosos)) ->
                     traceln("done waiting for", mafiosos)
                     night0 := false
@@ -148,8 +145,8 @@ def makeMafiaBot(rng) as DeepFrozen:
             return null
 
         to privmsg(client, user, channel, message):
-            traceln("mafiaBot got", message, "on", channel, "from", user,
-                    "channels", chanMod.getKeys())
+            # traceln("mafiaBot got", message, "on", channel, "from", user,
+            #         "channels", chanMod.getKeys())
             def who := user.getNick()
 
             if (message =~ `join @dest` &&
@@ -168,15 +165,14 @@ def makeMafiaBot(rng) as DeepFrozen:
                     keys.removeKey(channel)
                     keys.removeKey(chKey)
                     traceln("removed", channel, chKey)
-                
+
         to join(client, who :Str, channel :Str):
             when(client.hasJoined(channel)) ->
                 client.say(channel, `Thank you for inviting me, $who.`)
                 client.say(channel, `Say "start" to begin.`)
-            
+
         to startGame(client, chan :Near, channel :Str):
             def secret := `$channel-${rng.nextInt(2 ** 32)}`
-            traceln("secret for", channel, secret)
             def secretChan := makeChannelVow(client, secret)
             escape notReady:
                 def users := chan.getUsers(notReady)
