@@ -15,7 +15,11 @@
 # An implementation of the Mafia party game state machine.
 
 import "lib/enum" =~ [=> makeEnum]
-exports (makeMafia)
+import "unittest" =~ [=> unittest]
+import "lib/entropy/entropy" =~ [=> makeEntropy :DeepFrozen]
+import "lib/entropy/pcg" =~ [=> makePCG :DeepFrozen]
+exports (makeMafia, DAY, NIGHT)
+
 def [MafiaState :DeepFrozen,
      DAY :DeepFrozen,
      NIGHT :DeepFrozen] := makeEnum(["day", "night"])
@@ -27,16 +31,17 @@ def makeMafia(var players :Set) as DeepFrozen:
     var innocents :Set := players.slice(mafiosoCount)
 
     var state :MafiaState := NIGHT
+    var day := 0
     var votes :Map := [].asMap()
 
-    return object mafia:
+    object mafia:
         to _printOn(out) :Void:
             def mafiaSize :Int := mafiosos.size()
             def playerSize :Int := players.size()
             out.print(`<Mafia: $playerSize players, `)
             def winner := mafia.getWinner()
             if (winner == null):
-                out.print(`currently $state>`)
+                out.print(`$state $day>`)
             else:
                 out.print(`winner $winner>`)
 
@@ -45,7 +50,7 @@ def makeMafia(var players :Set) as DeepFrozen:
 
         to getQuorum() :Int:
             return switch (state) {
-                match ==DAY { (mafiosos.size() + innocents.size()) // 2}
+                match ==DAY { (mafiosos.size() + innocents.size() + 1) // 2}
                 match ==NIGHT {mafiosos.size()}
             }
 
@@ -62,14 +67,19 @@ def makeMafia(var players :Set) as DeepFrozen:
         to advance() :Str:
             if (mafia.getWinner() =~ outcome ? (outcome != null)):
                 return outcome
+            if ([state, day] == [NIGHT, 0]) {
+                state := DAY
+                day += 1
+                return "It's morning on the first day."
+            }
             if (mafia.lynch() =~ note ? (note != null)):
                 state := switch (state) {
                     match ==DAY {NIGHT}
-                    match ==NIGHT {DAY}
+                    match ==NIGHT { day += 1; DAY}
                 }
                 votes := [].asMap()
                 return note
-            return `${votes.size()} of ${mafia.getQuorum()} votes cast.`
+            return `${votes.size()} votes cast.`
 
 
         to vote(player ? (players.contains(player)),
@@ -84,7 +94,7 @@ def makeMafia(var players :Set) as DeepFrozen:
         to lynch() :NullOk[Str]:
             def quorum :Int := mafia.getQuorum()
             def counter := [].asMap().diverge()
-            for _ => v in votes:
+            for _ => v in (votes):
                 if (counter.contains(v)):
                     counter[v] += 1
                 else:
@@ -94,9 +104,51 @@ def makeMafia(var players :Set) as DeepFrozen:
             escape ej:
                 def [victim] exit ej := [for k => v in (counter) if (v >= quorum) k]
                 def count := counter[victim]
+                def side := mafiosos.contains(victim).pick(
+                    "mafioso", "innocent")
                 players without= (victim)
                 mafiosos without= (victim)
                 innocents without= (victim)
-                return `With $count votes ($quorum needed), $victim was killed.`
+                return `With $count votes, $side $victim was killed.`
             catch _:
                 return null
+
+    return ["game" => mafia, "mafiosos" => mafiosos]
+
+
+def sim1(assert):
+    def names := ["Alice", "Bob", "Charlie",
+                  "Doris", "Eileen", "Frank",
+                  "Gary"]
+    def rng := makeEntropy(makePCG(731, 0))
+    def randName := fn { names[rng.nextInt(names.size())] }
+    def [=> game, =>mafiosos] := makeMafia(names.asSet())
+    assert.equal(`$game`, "<Mafia: 7 players, night 0>")
+    assert.equal(mafiosos, ["Alice", "Bob"].asSet())
+
+    def steps := [game.advance()].diverge()
+    while (game.getWinner() == null):
+        # Rather than keep track of who is still in the game,
+        # just catch the guard failure.
+        try:
+            game.vote(randName(), randName())
+        catch _:
+            continue
+        def step := game.advance()
+        if (step !~ `@n votes cast.`):
+            steps.push(step)
+            steps.push(`$game`)
+
+    assert.equal(steps.snapshot(),
+                 ["It's morning on the first day.",
+                  "With 4 votes, mafioso Alice was killed.",
+                  "<Mafia: 6 players, night 1>",
+                  "With 1 votes, innocent Doris was killed.",
+                  "<Mafia: 5 players, day 2>",
+                  "With 3 votes, innocent Frank was killed.",
+                  "<Mafia: 4 players, night 2>",
+                  "With 1 votes, innocent Charlie was killed.",
+                  "<Mafia: 3 players, day 3>",
+                  "With 2 votes, innocent Eileen was killed.",
+                  "<Mafia: 2 players, winner mafia>"])
+unittest([sim1])
