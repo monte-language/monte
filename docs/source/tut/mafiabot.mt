@@ -27,42 +27,90 @@ def makeIRCService(makeTCP4ClientEndpoint, getAddrInfo, Timer,
                 client
 
 
+def makeModerator(channel :Str, nicknames: Set[Str], say) as DeepFrozen:
+    def game := makeMafia(nicknames)
+    object Player:
+        to coerce(specimen, ej):
+            if (nicknames.contains(specimen)):
+                return specimen
+            ej(`not a player in $channel`)
+
+    def makePlayer(me :Player):
+        return object player:
+            to _printOn(out):
+                out.print(`<mafia player $me in $channel>`)
+            to voteFor(whom: Player):
+                game.vote(me, whom)
+
+                say(`$game`)
+
+    def toPlayer := [for nick in (nicknames) nick => makePlayer(nick)]
+
+    return object moderator:
+        to _printOn(out):
+            out.print(`<mafia moderator in $channel>`)
+        to announce():
+            say(`$game`)
+        to getPlayer(name :Player):
+            return toPlayer[name]
+        to hasPlayer(specimen):
+            return nicknames.contains(specimen)
+        to getWinner():
+            return game.getWinner()
+
+# TODO: pickSecretChannelName for the mafia to gather in.
 def makeMafiaBot() as DeepFrozen:
     def nick := "mafiaBot"
-    def channels :List[Str] := ["#montebot"]
-    var game := null
-    var players := []
+    def moderators := [].asMap().diverge()
 
     return object mafiaBot:
         to getNick():
             return nick
 
         to loggedIn(client):
-            for channel in channels:
-                client.join(channel)
-                client.say(channel, "Who wants to play mafia?")
+            return null
 
         to privmsg(client, user, channel, message):
             traceln("mafiaBot got", message, "on", channel, "from", user)
+            traceln(moderators)
             def who := user.getNick()
-            def say := fn txt { client.say(channel, txt) }
-            switch (message):
-                match `I want to play.`:
-                    if (game == null):
-                        players with= (who)
-                        say(`Who else besides $players?`)
-                    else:
-                        say("Sorry, $who, we already started.")
-                match `mafiaBot: start`:
-                    if (players.size() >= 2):
-                        say(`Starting with $players...`)
-                        game := makeMafia(players.snapshot().asSet())
-                        say("TODO: implement game play.")
-                    else:
-                        say(`We need more players, $who!`)
-                match _:
-                    null
 
+            if (channel == nick &&
+                message =~ `join @dest` &&
+                !moderators.contains(dest)):
+                mafiaBot.join(client, who, dest)
+            else if (channel != nick &&
+                     message == "start"):
+                mafiaBot.startGame(client, who, channel)
+            else if (moderators.snapshot() =~ [(channel) => m] | _):
+                if (message =~ `lynch @whom!` &&
+                    m.hasPlayer(who) &&
+                    m.hasPlayer(whom)):
+                    m.getPlayer(who).voteFor(whom)
+                    traceln("lynch", who, whom)
+                if (m.getWinner() != null):
+                    client.part(channel, "Good game!")
+                    moderators.removeKey(channel)
+
+        to join(client, who, channel):
+            when(client.hasJoined(channel)) ->
+                client.say(channel, `Thank you for inviting me, $who.`)
+                client.say(channel, `Say "start" to begin.`)
+            
+        to startGame(client, who, channel):
+            def say := fn txt { client.say(channel, txt) }
+            escape badChannel:
+                def users := client.getUsers(channel, badChannel)
+                def players := [
+                    for name => _ in (users)
+                    if (name != nick)
+                    # @chanop -> chanop
+                    (if (name =~ `@@@op`) { op } else { name })].asSet()
+                traceln("players:", players, users)
+
+                def m := moderators[channel] := makeModerator(
+                    channel, players, say)
+                m.announce()
 
 def main(argv,
          => makeTCP4ClientEndpoint,

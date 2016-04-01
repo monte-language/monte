@@ -21,21 +21,19 @@ def [MafiaState :DeepFrozen,
      NIGHT :DeepFrozen] := makeEnum(["day", "night"])
 
 def makeMafia(var players :Set) as DeepFrozen:
-    # We don't keep this value updated during play; it's just to make it
-    # easier to tune/tweak the mafia/village slice.
+    # Intial mafioso count.
     def mafiosoCount :Int := players.size() // 3
     var mafiosos :Set := players.slice(0, mafiosoCount)
     var innocents :Set := players.slice(mafiosoCount)
 
-    var state :MafiaState := DAY
+    var state :MafiaState := NIGHT
     var votes :Map := [].asMap()
-    var lynched :Bool := false
 
     return object mafia:
         to _printOn(out) :Void:
             def mafiaSize :Int := mafiosos.size()
             def playerSize :Int := players.size()
-            out.print(`<Mafia: $playerSize players ($mafiaSize mafiosos), `)
+            out.print(`<Mafia: $playerSize players, `)
             def winner := mafia.getWinner()
             if (winner == null):
                 out.print(`currently $state>`)
@@ -46,14 +44,13 @@ def makeMafia(var players :Set) as DeepFrozen:
             return state
 
         to getQuorum() :Int:
-            def voters :Int := switch (state) {
-                match ==DAY {mafiosos.size() + innocents.size()}
+            return switch (state) {
+                match ==DAY { (mafiosos.size() + innocents.size()) // 2}
                 match ==NIGHT {mafiosos.size()}
             }
-            return voters // 2
 
         to getMafiaCount() :Int:
-            return mafiosos.size()
+            return mafiosoCount
 
         to getWinner():
             if (mafiosos.size() == 0):
@@ -62,12 +59,18 @@ def makeMafia(var players :Set) as DeepFrozen:
                 return "mafia"
             return null
 
-        to advance() :Void:
-            state := switch (state) {
-                match ==DAY {NIGHT}
-                match ==NIGHT {DAY}
-            }
-            lynched := false
+        to advance() :Str:
+            if (mafia.getWinner() =~ outcome ? (outcome != null)):
+                return outcome
+            if (mafia.lynch() =~ note ? (note != null)):
+                state := switch (state) {
+                    match ==DAY {NIGHT}
+                    match ==NIGHT {DAY}
+                }
+                votes := [].asMap()
+                return note
+            return `${votes.size()} of ${mafia.getQuorum()} votes cast.`
+
 
         to vote(player ? (players.contains(player)),
                 choice ? (players.contains(choice))) :Void:
@@ -78,11 +81,8 @@ def makeMafia(var players :Set) as DeepFrozen:
                     if (mafiosos.contains(player)):
                         votes with= (player, choice)
 
-        to lynch(quorum :Int) :Str:
-            if (lynched):
-                return "Lynching already happened during this round."
-            lynched := true
-
+        to lynch() :NullOk[Str]:
+            def quorum :Int := mafia.getQuorum()
             def counter := [].asMap().diverge()
             for _ => v in votes:
                 if (counter.contains(v)):
@@ -99,4 +99,4 @@ def makeMafia(var players :Set) as DeepFrozen:
                 innocents without= (victim)
                 return `With $count votes ($quorum needed), $victim was killed.`
             catch _:
-                return "Nobody was lynched."
+                return null
