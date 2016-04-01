@@ -24,11 +24,21 @@ def [MafiaState :DeepFrozen,
      DAY :DeepFrozen,
      NIGHT :DeepFrozen] := makeEnum(["day", "night"])
 
-def makeMafia(var players :Set) as DeepFrozen:
+    
+def makeMafia(var players :Set, rng) as DeepFrozen:
     # Intial mafioso count.
     def mafiosoCount :Int := players.size() // 3
-    var mafiosos :Set := players.slice(0, mafiosoCount)
-    var innocents :Set := players.slice(mafiosoCount)
+
+    def sample(population :List, k :(Int <= population.size())) :List:
+        def n := population.size()
+        def ixs := [].diverge()
+        while (ixs.size() < k):
+            if (!ixs.contains(def ix := rng.nextInt(n))):
+                ixs.push(ix)
+        return [for ix in (ixs) population[ix]]
+
+    var mafiosos :Set := sample(players.asList(), mafiosoCount).asSet()
+    var innocents :Set := players - mafiosos
 
     var state :MafiaState := NIGHT
     var day := 0
@@ -122,9 +132,9 @@ def sim1(assert):
                   "Gary"]
     def rng := makeEntropy(makePCG(731, 0))
     def randName := fn { names[rng.nextInt(names.size())] }
-    def [=> game, =>mafiosos] := makeMafia(names.asSet())
+    def [=> game, =>mafiosos] := makeMafia(names.asSet(), rng)
     assert.equal(`$game`, "<Mafia: 7 players, night 0>")
-    assert.equal(mafiosos, ["Alice", "Bob"].asSet())
+    assert.equal(mafiosos, ["Eileen", "Frank"].asSet())
 
     def steps := [game.advance()].diverge()
     while (game.getWinner() == null):
@@ -141,14 +151,10 @@ def sim1(assert):
 
     assert.equal(steps.snapshot(),
                  ["It's morning on the first day.",
-                  "With 4 votes, mafioso Alice was killed.",
+                  "With 4 votes, innocent Alice was killed.",
                   "<Mafia: 6 players, night 1>",
-                  "With 1 votes, innocent Doris was killed.",
+                  "With 2 votes, mafioso Eileen was killed.",
                   "<Mafia: 5 players, day 2>",
-                  "With 3 votes, innocent Frank was killed.",
-                  "<Mafia: 4 players, night 2>",
-                  "With 1 votes, innocent Charlie was killed.",
-                  "<Mafia: 3 players, day 3>",
-                  "With 2 votes, innocent Eileen was killed.",
-                  "<Mafia: 2 players, winner mafia>"])
+                  "With 3 votes, mafioso Frank was killed.",
+                  "<Mafia: 4 players, winner village>"])
 unittest([sim1])
