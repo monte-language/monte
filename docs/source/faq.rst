@@ -112,19 +112,3 @@ The policy is justified by readability concerns. Since Monte permits mutable
 state, one author's code's behavior could be affected by another author's code
 running further up the frame stack. Stale frames make comprehension of code
 much harder as a result.
-
-Does Monte have functions?
---------------------------
-
-No. Since everything in Monte is an object, you're always calling methods
-rather than functions. See :ref:`def-fun`.
-
-Where did ``self`` go?
-~~~~~~~~~~~~~~~~~~~~~~
-
-Newcomers to Monte may be surprised to learn that Monte lacks a ``this`` or
-``self`` keyword. In fact, Monte does have ways to refer to the current object,
-but there's a deeper conceptual difference between Monte and other object-based
-languages. See :ref:`maker`.
-
-
