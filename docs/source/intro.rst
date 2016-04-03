@@ -101,6 +101,10 @@ annotations to be as precise as desired while still permitting extreme
 customization in type complexity. Additionally, dedicated syntax for interface
 declarations enables contract-based programming.
 
+.. todo:: consider/integrate "Monte is..." blurb from `PyCon poster`__
+
+__ https://us.pycon.org/2016/schedule/presentation/2070/
+
 Why not Monte?
 --------------
 
