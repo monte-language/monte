@@ -95,20 +95,3 @@ Dynamic Binding
 Dynamic Compiling
     Monte can compile and run Monte code at runtime, as part of its core
     language.
-
-
-What's the "no stale stack frame" policy?
------------------------------------------
-
-A stale stack frame is one that isn't currently running; it is neither the
-current stack frame nor below the current stack frame.
-
-The "no stale stack frame" policy is a policy in Monte's design: Monte forbids
-suspending computation mid-frame. There are no coroutines or undelimited
-continuations in Monte. Monte also does not have an "async/await" syntax,
-since there is no way to implement this syntax without stale stack frames.
-
-The policy is justified by readability concerns. Since Monte permits mutable
-state, one author's code's behavior could be affected by another author's code
-running further up the frame stack. Stale frames make comprehension of code
-much harder as a result.

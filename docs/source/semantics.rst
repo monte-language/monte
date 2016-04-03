@@ -54,6 +54,27 @@ required.
 Scope Introduction & Dismissal
 ==============================
 
+.. _no_stale_stack_frames:
+
+.. sidebar:: No stale stack frames.
+   
+   Monte has a rule known as :dfn:`no stale stack frames`. Inherited from E,
+   the rule is simple to state: *No Monte expression shall require a scope to
+   be dismissed by any expression other than itself.*
+
+   A stale stack frame is one that isn't currently running; it is neither the
+   current stack frame nor below the current stack frame.
+
+   Monte forbids suspending computation mid-frame. There are no coroutines or
+   undelimited continuations in Monte. Monte also does not have an
+   "async/await" syntax, since there is no way to implement this syntax
+   without stale stack frames.
+
+   The policy is justified by readability concerns. Since Monte permits
+   mutable state, one author's code's behavior could be affected by another
+   author's code running further up the frame stack. Stale frames make
+   comprehension of code much harder as a result.
+
 Many expressions, during evaluation, introduce scopes. When this is done,
 names declared after scope introduction are said to be :dfn:`visible` within
 the scope. An expression must pair every scope introduction with a scope
@@ -63,13 +84,6 @@ scope are no longer visible.
 .. note::
     This scoping rule is often called "lexical scoping" and should be familiar
     to users of other lexically-scoped languages.
-
-.. _no_stale_stack_frames:
-
-Monte has a rule known as :dfn:`no stale stack frames`. Inherited from E, the
-rule is simple to state: *No Monte expression shall require a scope to be
-dismissed by any expression other than itself.* It requires that every
-expression bookend its own scope introduction and dismissals.
 
 .. index:: name, noun, slot, binding
 
