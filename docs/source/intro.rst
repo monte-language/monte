@@ -93,17 +93,23 @@ hacker.
 Because Stability Matters
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Monte is dynamically typed, like Smalltalk, and not statically typed, like
-Java. Users of Perl and Python will immediately recognize this is an
-advantage; Java and C++ programmers may not be so sure. Fortunately, Monte has
-a novel type system based heavily on guard syntax from E, which permits type
-annotations to be as precise as desired while still permitting extreme
-customization in type complexity. Additionally, dedicated syntax for interface
-declarations enables contract-based programming.
+Monte is dynamically typed [#unityped]_, like Smalltalk, rather than
+statically typed, like Java. Users of Perl and Python will immediately
+recognize this is an advantage; Java and C++ programmers may not be so
+sure. Fortunately, Monte inherits two forms of contract-based programming from
+E: :ref:`guards<guards>` and :ref:`interfaces<interfaces>`.
 
-.. todo:: consider/integrate "Monte is..." blurb from `PyCon poster`__
+Monte is dynamic in three ways:
 
-__ https://us.pycon.org/2016/schedule/presentation/2070/
+Dynamic Typing
+    The type of a variable might not be known until runtime, and "types are
+    open".
+Dynamic Binding
+    It is possible to pass a message to an object that will never able to
+    handle that message. This provides a late-binding sort of polymorphism.
+Dynamic Compiling
+    Monte can compile and run Monte code at runtime, as part of its core
+    runtime.
 
 Why not Monte?
 --------------
@@ -233,4 +239,6 @@ __ http://erights.org/elib/index.html
 .. [#darpa] As documented in `the DarpaBrowser report
             <http://www.combex.com/papers/darpa-report/index.html>`_
 
+.. [#unityped] in formal type theory, Monte is `unityped`.
+            
 __ http://erights.org/talks/thesis/index.html

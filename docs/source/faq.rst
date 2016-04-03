@@ -79,19 +79,3 @@ three rules.
 
 .. note::
     This answer still isn't satisfying. Neither is this question, really.
-
-Why is Monte called a "dynamic language"?
------------------------------------------
-
-Monte is dynamic in three ways.
-
-Dynamic Typing
-    Monte is **unityped**, in formal type theory. For the informal engineer,
-    Monte is "untyped" or "dynamically typed"; the type of a value might not
-    be known at runtime, and "types are open".
-Dynamic Binding
-    Monte's polymorphism is late-binding. It is possible to pass a message to
-    an object that will never able to handle that message.
-Dynamic Compiling
-    Monte can compile and run Monte code at runtime, as part of its core
-    language.
