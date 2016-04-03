@@ -203,6 +203,20 @@ Control Flow
 Escape
 ~~~~~~
 
+.. _ejector:
+
+.. sidebar:: Ejectors
+
+             An ejector is an object whose ``run`` method aborts the current
+             computation and returns to where the ejector was created.
+
+             Monte implements the ``return``, ``break``, and ``continue``
+             expressions with ejectors.
+
+             Ejectors are so-called `single-use, delimited continuations`:
+             their dynamic scope is delimited to downward method calls only,
+             and any use after the first will fail.
+
 An `EscapeExpr` has a pattern and inner expression and, optionally, a catch
 pattern and catch expression (not to be confused with :ref:`Try`/catch
 expressions).

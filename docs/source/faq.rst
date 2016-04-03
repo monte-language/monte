@@ -2,29 +2,6 @@ Design Q&A
 ==========
 
 
-.. _ejector:
-
-What are ejectors?
-------------------
-
-An ejector is an object that aborts the current computation and returns to
-where it was created. They are created by ``escape`` expressions.
-
-An ejector can be passed as deeply as one wants, but cannot be used outside of
-the ``escape`` that created it. This is called the **delimited** property of
-ejectors.
-
-Ejectors cannot be used multiple times. The first time an ejector is used, the
-``escape`` block aborts computation, resulting in the value of the ejector.
-Subsequent clever uses of the ejector will fail. This is called the **single
-use** property.
-
-Monte implements the ``return``, ``break``, and ``continue`` expressions with
-ejectors.
-
-To be fully technical, ejectors are "single-use delimited continuations".
-
-
 Do I have to specify a default matcher for a switch expression?
 ---------------------------------------------------------------
 
