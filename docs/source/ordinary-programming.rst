@@ -116,13 +116,12 @@ as long as the counter exists.
    ``players without= (victim)`` as ``players :=
    players.without(victim)`` .
 
-A natural result is the **complete encapsulation** required for
-:ref:`object capability discipline<ocap>`: ``value`` is not visible
-outside of ``makeCounter()``; this means that *no other object can
-directly observe nor modify it*. Monte objects have no public
-attributes or fields or even a notion of public and private. Instead,
-all names are private: if a name is not visible (i.e. in scope), there
-is no way to use it.
+A natural result is the **complete encapsulation** required for :ref:`object
+capability discipline<ocap>`: ``value`` is not visible outside of
+``makeCounter()``; this means that *no other object can directly observe nor
+modify it*. Monte objects have no public attributes or fields or even a notion
+of public and private. Instead, all names are private: if a name is not
+visible (i.e. in scope), there is no way to use it.
 
 We refer to an object-making function such as ``makeCounter`` as a
 "Maker". As a more serous example, let's make a sketch of our game::
@@ -157,9 +156,9 @@ We refer to an object-making function such as ``makeCounter`` as a
 Traditional Datatypes and Operators
 -----------------------------------
 
-The :ref:`basic data types <primitive-data>` in Monte are ``Int``,
-``Double``, ``Str``, ``Char``, and ``Boolean``. All integer arithmetic
-is unlimited precision, as if all integers were python longs.
+The :doc:`basic data types <runtime>` in Monte are ``Int``, ``Double``,
+``Str``, ``Char``, and ``Boolean``. All integer arithmetic is unlimited
+precision, as if all integers were python longs.
 
 The operators ``+``, ``-``, and ``*`` have their traditional meanings
 for ``Int`` and ``Double``. The normal division operator ``/`` always
@@ -177,9 +176,9 @@ gives you an ``Int``, truncated towards negative infinity. So::
 Strings are enclosed in double quotes. Characters are enclosed in
 single quotes.
 
-The function ``traceln`` sends diagnostic output to the console. The
-``if`` and ``while`` constructs look much like their Python
-equivalents, as do lists such as ``[4, 14]``.
+The function ``traceln`` sends diagnostic output to the console. The ``if``
+and ``while`` constructs look much like their Python equivalents, as do lists
+such as ``[4, 14]``.
 
 Operator precedence is generally the same as in Java, Python, or C. In
 a few cases, Monte will throw a syntax error and require the use of
@@ -190,8 +189,29 @@ rendition:
 
 .. literalinclude:: tut/mafia.mt
     :linenos:
-    :lines: 15-127
+    :lines: 15-17,21-127
     :lineno-start: 15
+
+
+Unit Testing
+~~~~~~~~~~~~
+
+This module also uses Monte's unite test facilities to capture a simulated
+game:
+
+
+.. literalinclude:: tut/mafia.mt
+    :linenos:
+    :lines: 18-20,127-
+    :lineno-start: 18
+
+We still cannot import access to a true source of entropy; ``makePCG``
+constructs a pseudo-random number generator given an initial seed, and
+``makeEntropy`` makes an object that takes the resulting sequence of bytes and
+packages them up conveniently as integers etc. In
+:ref:`secure_distributed_computing`, we will develop the part of the game that
+provides a truely random seed. But for unit testing, the seed is an
+arbitrarily chosen constant.
 
 Additional flow of control
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -345,13 +365,3 @@ The ``[=> makeEnum]`` pattern syntax is short for ``["makeEnum" =>
 makeEnum]``, which picks out the value corresponding to the key
 ``"makeEnum"``. The :ref:`module_expansion` section explains how
 imports turn out to be a special case of method parameters.
-
-Unit Testing
-------------
-
-Unit testing facilities are also available to Monte modules:
-
-.. literalinclude:: tut/mafia.mt
-    :linenos:
-    :lines: 18,127-
-    :lineno-start: 18
