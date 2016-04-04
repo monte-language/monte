@@ -1,4 +1,5 @@
-import "lib/tubes" =~ [=> makeUTF8EncodePump :DeepFrozen, => makePumpTube :DeepFrozen]
+import "lib/tubes" =~ [=> makeUTF8EncodePump :DeepFrozen,
+                       => makePumpTube :DeepFrozen]
 exports (main)
 
 
@@ -13,7 +14,7 @@ def makeFormatter(drain) as DeepFrozen:
     def dedent(paragraph :Str, =>indent := 0) :Str as DeepFrozen:
         "Remove leading spaces from every line of a paragraph."
 
-        def pfx := rep("    ", indent)
+        def pfx := rep("   ", indent)
         def pieces := [for line in (paragraph.split("\n"))
                        pfx + line.trim()]
         return "\n".join(pieces)
@@ -37,6 +38,23 @@ def makeFormatter(drain) as DeepFrozen:
         to dd(text :Str):
             drain.receive(dedent(text, "indent"=>1) + "\n")
 
+        to module(name :Str):
+            # cheat a little and use the Python domain for Monte.
+            drain.receive(`.. py:module:: $name$\n$\n`)
+
+        to data(name :Str, docstring :Str):
+            drain.receive(`.. py:data:: $name$\n$\n`)
+            if (docstring != null):
+                drain.receive(dedent(docstring, "indent" => 1) + "\n\n")
+
+        to method_(sig :Str, docstring :NullOk[Str]):
+            drain.receive(`   .. py:method:: $sig$\n$\n`)
+            if (docstring != null):
+                drain.receive(dedent(docstring, "indent" => 2) + "\n\n")
+
+        to todo(text :Str):
+            drain.receive(".. todo::\n")
+            drain.receive(dedent(text, "indent" => 1) + "\n\n")
 
 object Not as DeepFrozen:
     to get(subGuard):
@@ -53,12 +71,13 @@ def makeDocstringWalker(doc) as DeepFrozen:
         to explainScope(name :Str, scope :Map,
                         sections :Map[Str, List[Str]],
                         related :Map[Str, List]):
-            doc.heading(1, name)
+            doc.module(name)
 
             def done := [].diverge()  # would rather flatMap, but oh well...
 
             def walkNames(names):
                 for name in (names):
+                    trace("documenting: ", name)
                     def &&obj := scope[`&&$name`]
                     done.push(`&&$name`)
                     if (obj == scope):
@@ -93,15 +112,15 @@ def makeDocstringWalker(doc) as DeepFrozen:
                         " :" + label
 
             def iface := obj._getAllegedInterface()
-            doc.dt(name + novelDoc(iface))
-            doc.dd(docOf(obj), "indent" => 1)
+            # TODO: novelDoc(iface)
+            doc.data(name, docOf(iface))
 
             def methods := try { iface.getMethods() } catch _ { return; }
 
             for meth in (methods):
                 def [verb, arity] := [meth.getVerb(), meth.getArity()]
 
-                doc.item(`$verb/$arity: ${docOf(meth)}`)  # TODO: indented paras?
+                doc.method_(`$verb/$arity`, docOf(meth))
             doc.endList()
 
 
@@ -163,6 +182,29 @@ def unsafeScopeBySection :DeepFrozen := [
         "makeProcess"]
 ]
 
+def doSafeScope(rst, d) as DeepFrozen:
+    rst.heading(1, "Runtime Objects")
+
+    rst.heading(2, "safeScope")
+
+    rst.paras("Bindings in the safe scope are available to modules by
+    default. They are all `DeepFrozen`.")
+
+    rst.todo("Fix the `module.name` notation
+    resulting from abuse of sphinx python support.")
+
+    d.explainScope("safeScope", safeScope, safeScopeBySection, related)
+
+def doEntryCaps(rst, d, caps) as DeepFrozen:
+    rst.heading(2, "Entrypoint Arguments")
+
+    rst.todo("Fix the `module.name` notation
+    resulting from abuse of sphinx python support.")
+
+    d.explainScope("__entrypoint_io__", caps, unsafeScopeBySection,
+                   [].asMap())
+    
+
 def main(argv,
          =>Timer,
          =>currentProcess,
@@ -182,9 +224,10 @@ def main(argv,
 
     def rst := makeFormatter(stdout)
     def d := makeDocstringWalker(rst)
-    d.explainScope("safeScope", safeScope, safeScopeBySection, related)
 
-    def unsafeScope := [
+    doSafeScope(rst, d)
+
+    def io := [
         =>&&Timer,
         =>&&currentProcess,
         =>&&currentRuntime,
@@ -199,5 +242,4 @@ def main(argv,
         =>&&makeTCP4ServerEndpoint,
         =>&&unsealException]
 
-    d.explainScope("Unsafe Scope", unsafeScope, unsafeScopeBySection,
-                   [].asMap())
+    doEntryCaps(rst, d, io)
