@@ -27,16 +27,38 @@ object. Methods can be attached to objects with the ``to`` keyword::
   ... origin.getY()
   0
 
-.. warning:: Python programmers beware, methods are not
-             functions. Methods are just the public hooks to the
-             object that receive messages; functions are standalone
-             objects.
-
 Unlike Java, Monte objects are not constructed from classes. Unlike JavaScript
 or Python, Monte objects are not constructed from prototypes. As a result, it
 might not be obvious at first how to build multiple objects which are similar
 in behavior.
 
+Functions are objects too
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Functions are simply objects with a ``run`` method. There is no
+difference between this function::
+
+  >>> def square(x):
+  ...     return x * x
+  ... square.run(4)
+  16
+
+... and this object::
+
+  >>> object square:
+  ...     to run(x):
+  ...         return x * x
+  ... square(4)
+  16
+
+.. warning:: Python programmers beware, methods are not
+             functions. Methods are just the public hooks to the
+             object that receive messages; functions are standalone
+             objects.
+
+.. todo:: document docstrings
+
+.. todo:: document named args, defaults
 
 .. _maker:
 
@@ -94,10 +116,10 @@ as long as the counter exists.
    ``players without= (victim)`` as ``players :=
    players.without(victim)`` .
 
-
-A critical feature of Monte is **complete encapsulation**: ``value``
-is not visible outside of ``makeCounter()``; this means that *no other
-object can directly modify it*. Monte objects have no public
+A natural result is the **complete encapsulation** required for
+:ref:`object capability discipline<ocap>`: ``value`` is not visible
+outside of ``makeCounter()``; this means that *no other object can
+directly observe nor modify it*. Monte objects have no public
 attributes or fields or even a notion of public and private. Instead,
 all names are private: if a name is not visible (i.e. in scope), there
 is no way to use it.
@@ -131,29 +153,6 @@ We refer to an object-making function such as ``makeCounter`` as a
 
 .. _def-fun:
 
-Functions are objects too
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Functions are simply objects with a ``run`` method. There is no
-difference between this function::
-
-  >>> def square(x):
-  ...     return x * x
-  ... square.run(4)
-  16
-
-... and this object::
-
-  >>> object square:
-  ...     to run(x):
-  ...         return x * x
-  ... square(4)
-  16
-
-.. todo:: document docstrings
-
-.. todo:: document named args, defaults
-
 
 Traditional Datatypes and Operators
 -----------------------------------
@@ -179,8 +178,8 @@ Strings are enclosed in double quotes. Characters are enclosed in
 single quotes.
 
 The function ``traceln`` sends diagnostic output to the console. The
-``if`` statement looks much like its Python equivalent, as do lists
-such as ``[4, 14]``.
+``if`` and ``while`` constructs look much like their Python
+equivalents, as do lists such as ``[4, 14]``.
 
 Operator precedence is generally the same as in Java, Python, or C. In
 a few cases, Monte will throw a syntax error and require the use of
@@ -191,23 +190,17 @@ rendition:
 
 .. literalinclude:: tut/mafia.mt
     :linenos:
-    :lines: 15-
+    :lines: 15-127
     :lineno-start: 15
-
-.. todo:: put unit tests in a separate section
 
 Additional flow of control
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Other traditional structures include:
 
- - ``while (booleanExpression) {...}``
  - ``try{...} catch errorVariable {...} finally{...}``
  - ``throw (ExceptionExpressionThatCanBeAString)``
- - ``break`` (which jumps out of a while or for loop; if the break
-   keyword is followed by an expression, that expression is returned
-   as the value of the loop)
- - ``continue`` (which jumps to the end of a while or for, and starts
+ - ``break``, ``continue``
    the next cycle)
  - ``switch (expression) {match==v1{...} match==v2{...}
    ... match _{defaultAction}}``
@@ -257,6 +250,9 @@ Using a ``var`` pattern in a definition (such as ``mafiosos``) or
 parameter (such as ``players``) lets you assign to that variable again
 later.
 
+There are no (mutable) global variables, however. We cannot import a
+random number generator. Rather, the random number generator argument
+``rng`` is passed to the ``makeMafia`` maker function explicitly.
 
 Assignment and Equality
 -----------------------
@@ -315,18 +311,18 @@ Monte:
      binds ``MafiaState``, ``DAY``, and ``NIGHT`` to the items from
      ``makeEnum`` using a :ref:`list pattern<ListPatt>`.
 
-     An exception is raised (or an ejector is fired) if the match
-     fails.
+     If the match fails, an :ref:`ejector<ejector>` is fired, if
+     provided; otherwise, an exception is raised () .
 
   2. Parameters to methods are patterns which are matched against
      arguments. Match failure raises an exception.
 
-     A :ref:`final
-     pattern<FinalPatt>` such as ``to _printOn(out)`` or with a guard
-     ``to lynch(quorum :Int)`` should look familiar, but the
-     :ref:`such-that patterns <SuchThatPattern>` in ``to vote(player ?
-     (players.contains(player)), ...)`` are somewhat novel. The pattern
-     matches only if the expression after the ``?`` is true.
+     A :ref:`final pattern<FinalPatt>` such as ``to _printOn(out)`` or
+     with a guard ``to sample(population :List)`` should look
+     familiar, but the :ref:`such-that patterns <SuchThatPattern>` in
+     ``to vote(player ?  (players.contains(player)), ...)`` are
+     somewhat novel. The pattern matches only if the expression after
+     the ``?`` is true.
 
   3. Each matcher in a ``switch`` expression has a pattern.
 
@@ -349,3 +345,13 @@ The ``[=> makeEnum]`` pattern syntax is short for ``["makeEnum" =>
 makeEnum]``, which picks out the value corresponding to the key
 ``"makeEnum"``. The :ref:`module_expansion` section explains how
 imports turn out to be a special case of method parameters.
+
+Unit Testing
+------------
+
+Unit testing facilities are also available to Monte modules:
+
+.. literalinclude:: tut/mafia.mt
+    :linenos:
+    :lines: 18,127-
+    :lineno-start: 18

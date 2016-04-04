@@ -70,11 +70,19 @@ Imports can have guards on them::
 This is extremely useful for ensuring that imported names are ``DeepFrozen``
 and thus usable by exported objects.
 
+.. _module_expansion:
+
+Module Syntax Expansion
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Under the hood, modules are compiled to be singleton objects which accept
+a mapping of imported objects, and return a mapping of exported names.
+
 .. index:: entrypoint, main, unsafe capabilities
 .. _entrypoints:
 
 Entrypoints
-~~~~~~~~~~~
+-----------
 
 The export name "main", when present, denotes the :dfn:`entrypoint` of
 the module.  The entrypoint should take named parameters corresponding
@@ -105,36 +113,17 @@ a promise for an ``Int``.
               >>> m`1 + 1`.expand()
               m`1.add(1)`
 
-.. _module_expansion:
 
-Module Syntax Expansion
------------------------
-
-Under the hood, modules are compiled to be singleton objects which accept
-a mapping of imported objects, and return a mapping of exported names.
-
-The Package Loader
-------------------
-
-Miranda Imports
-~~~~~~~~~~~~~~~
+Unit Testing and Benchmarking
+-----------------------------
 
 The package loader provides a few Miranda import pet names to all modules.
 
 "unittest"
     A unit test collector. It is not ``DeepFrozen``, so unit tests are
     confined to their module::
-    
-        import "unittest" =~ [=> unittest]
-        exports (adder)
 
-        def adder(x, y) as DeepFrozen:
-            return x + y
-
-        def testAdder(assert):
-            assert.equal(adder(5, 7), 12)
-
-        unittest([testAdder])
+      import "unittest" =~ [=> unittest]
 
 "bench"
     A benchmark collector. It is not ``DeepFrozen``::
