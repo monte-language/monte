@@ -1,8 +1,8 @@
 .. _guards:
 
-======
-Guards
-======
+============
+Guards (WIP)
+============
 
 Standard Guards
 ~~~~~~~~~~~~~~~
@@ -81,7 +81,7 @@ Guard Syntax Summary
      Ap('NounExpr', 'IDENTIFIER'),
      Brackets('(', NonTerminal('expr'), ')'))
 
-@@ TODO: rename to maybeGuard
+.. todo:: rename to maybeGuard
 
 .. syntax:: guardOpt
 
