@@ -1,13 +1,88 @@
 .. _operators:
 
-Operators by precedence and associativity
-=========================================
+Primitive Data and Operators
+============================
 
 .. epigraph::
 
     Corporate accounts payable, Nina speaking! Just a moment!
 
     -- Nina, corporate accounts payable, *Office Space*
+
+Primitive data in Monte passes one of the following guards:
+  - ``Void``
+
+    - written as the noun ``null``
+    - no operators
+
+  - ``Bool``
+
+    - written as the nouns ``true`` and ``false``
+    - operators:
+
+      - and, or, xor, not, butNot, pick
+      - op__cmp
+
+  - ``Int``
+
+    - written with `IntExpr` :ref:`literals<literals>`
+    - operators:
+
+      - add, subtract, multiply, negate, approxDivide, floorDivide,
+	mod, pow, modPow
+      - and, or, xor, bitLength, complement, shiftLeft, shiftRight
+      - abs
+      - next, previous
+      - aboveZero, atLeastZero, atMostZero, belowZero, isZero, op__cmp,
+	max, min
+      - floor, toBytes
+
+  - ``Double``
+
+    - written with `DoubleExpr` :ref:`literals<literals>`
+    - operators:
+
+      - add, subtract, multiply, negate, approxDivide, floorDivide
+      - abs, sqrt, log, sin, cos, tan
+      - aboveZero, atLeastZero, atMostZero, belowZero, isZero, op__cmp
+      - floor, toBytes
+
+  - ``Char``
+
+    - written with `CharExpr` :ref:`literals<literals>`
+    - operators:
+
+      - add, subtract
+      - asInteger, asString, quote
+      - max, min, op__cmp
+      - next, previous
+      - getCategory
+
+  - ``Str``
+
+    - written with `StrExpr` :ref:`literals<literals>` (and
+      ``simple`` quasiliterals)
+    - operators:
+
+      - with, get, size
+      - contains, startsWith, endsWith, indexOf
+      - add, replace, join, multiply, slice, split, trim, toUpperCase,
+        toLowerCase
+      - asList, asSet, _makeIterator, quote
+      - getSpan
+      - op__cmp
+
+  - ``Bytes``
+
+    - written with ``b`` quasiliterals
+    - operators:
+
+      - with, size, get
+      - add, join, multiply, replace, slice, split, toLowerCase,
+        toUpperCase, trim
+      - contains, indexOf, lastIndexOf
+      - asList, asSet
+      - _makeIterator
 
 The expression subset of the Monte grammar is presented here in
 operator precedence order, meaning that later constructs bind tighter

@@ -105,6 +105,8 @@ elements of ``idPart``::
    def idStart :DeepFrozen := regionToSet('a'..'z' | 'A'..'Z' | '_'..'_')
    def idPart :DeepFrozen := idStart | decimalDigits
 
+.. _literals:
+
 Literals
 --------
 
@@ -120,11 +122,6 @@ literal tokens are tagged:
           `false` are pre-defined :doc:`primitive values
           <runtime>`.
 
-Bool
-~~~~
-
-
-    
 Int
 ~~~
 
