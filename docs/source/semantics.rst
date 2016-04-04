@@ -208,6 +208,8 @@ then each argument, and then each named argument. Then, a :dfn:`message`
 consisting of the verb, arguments, and named arguments is passed to the
 receiver. The value returned from the receiver is the produced value.
 
+.. todo:: discuss sameness and doctest `_equalizer`
+
 Control Flow
 ------------
 

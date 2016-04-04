@@ -50,7 +50,9 @@ object Not as DeepFrozen:
 
 def makeDocstringWalker(doc) as DeepFrozen:
     return object walker:
-        to explainScope(name :Str, scope :DeepFrozen, sections :Map[Str, List[Str]]):
+        to explainScope(name :Str, scope :Map,
+                        sections :Map[Str, List[Str]],
+                        related :Map[Str, List]):
             doc.heading(1, name)
 
             def done := [].diverge()  # would rather flatMap, but oh well...
@@ -62,6 +64,9 @@ def makeDocstringWalker(doc) as DeepFrozen:
                     if (obj == scope):
                         continue
                     walker.explainObject(name, obj)
+                    if (related =~ [(name) => others] | _):
+                        for obj in (others):
+                            walker.explainObject(`$obj`, obj)
 
             for section => names in (sections):
                 doc.heading(2, section)
@@ -102,13 +107,6 @@ def makeDocstringWalker(doc) as DeepFrozen:
 
 def safeScopeBySection :DeepFrozen := [
     "Primitive values" => ["true", "false", "null", "NaN", "Infinity"],
-    "Flow control" => ["M", "throw", "_loop", "_iterForever"],
-    "Reference/object operations" => ["Ref", "promiseAllFulfilled",
-                                      "DeepFrozen", "Selfless", "Transparent", "Near",
-                                      "Binding"],
-    # @@ Data Guard
-    # @@ PassByCopy Guard
-    "Tracing" => ["trace", "traceln"],
     "Data Constructors" => ["_makeInt", "_makeDouble",
                             "_makeString", "_makeBytes",
                             "_makeList", "_makeMap",
@@ -119,8 +117,15 @@ def safeScopeBySection :DeepFrozen := [
                        "Bool", "Str", "Char", "Double", "Int", "Bytes",
                        "List", "Map", "Set", "Pair"],
     "Guard utilities" => ["NullOk", "Same", "SubrangeGuard", "_auditedBy"],
-    "Interface constructors" => ["_makeMessageDesc", "_makeParamDesc", "_makeProtocolDesc"],
+    "Tracing" => ["trace", "traceln"],
+    "Brands" => ["makeBrandPair"],
     "Quasiparsers" => ["simple__quasiParser", "b__quasiParser", "m__quasiParser"],
+    "Flow control" => ["M", "throw", "_loop", "_iterForever"],
+    "Evaluation" => ["eval", "typhonEval", "safeScope"],
+    "Reference/object operations" => ["Ref", "promiseAllFulfilled",
+                                      "DeepFrozen", "Selfless", "Transparent", "Near",
+                                      "Binding"],
+    "Abstract Syntax" => ["astBuilder"],
     "Utilities for syntax expansions" => ["_accumulateList", "_accumulateMap",
                                           "_bind",
                                           "_booleanFlow", "_comparer", "_equalizer",
@@ -131,15 +136,68 @@ def safeScopeBySection :DeepFrozen := [
                                           "_splitList", "_suchThat",
                                           "_switchFailed",
                                           "_validateFor"],
-    "Evaluation" => ["eval", "typhonEval", "safeScope"],
-    "Abstract Syntax" => ["astBuilder"],
-    "Brands" => ["makeBrandPair"]
+    "Interface constructors" => ["_makeMessageDesc", "_makeParamDesc", "_makeProtocolDesc"]
 ]
 
-def main(argv, => makeStdOut) as DeepFrozen:
+def related :DeepFrozen := [
+    # "Int" => [1]
+].asMap()
+
+def unsafeScopeBySection :DeepFrozen := [
+    "Time" => ["Timer"],
+    "I/O" => [
+        "makeStdErr",
+        "makeStdIn",
+        "makeStdOut",
+        "makeFileResource"],
+    "Networking" => [
+        "makeTCP4ClientEndpoint",
+        "makeTCP4ServerEndpoint",
+        "getAddrInfo"],
+    "Runtime" => [
+        "currentRuntime",
+        "unsealException"],
+    "Processes and Vats" => [
+        "currentProcess",
+        "currentVat",
+        "makeProcess"]
+]
+
+def main(argv,
+         =>Timer,
+         =>currentProcess,
+         =>currentRuntime,
+         =>currentVat,
+         =>getAddrInfo,
+         =>makeFileResource,
+         =>makeProcess,
+         =>makeStdErr,
+         =>makeStdIn,
+         =>makeStdOut,
+         =>makeTCP4ClientEndpoint,
+         =>makeTCP4ServerEndpoint,
+         =>unsealException) as DeepFrozen:
     def stdout := makePumpTube(makeUTF8EncodePump())
     stdout<-flowTo(makeStdOut())
 
     def rst := makeFormatter(stdout)
     def d := makeDocstringWalker(rst)
-    d.explainScope("safeScope", safeScope, safeScopeBySection)
+    d.explainScope("safeScope", safeScope, safeScopeBySection, related)
+
+    def unsafeScope := [
+        =>&&Timer,
+        =>&&currentProcess,
+        =>&&currentRuntime,
+        =>&&currentVat,
+        =>&&getAddrInfo,
+        =>&&makeFileResource,
+        =>&&makeProcess,
+        =>&&makeStdErr,
+        =>&&makeStdIn,
+        =>&&makeStdOut,
+        =>&&makeTCP4ClientEndpoint,
+        =>&&makeTCP4ServerEndpoint,
+        =>&&unsealException]
+
+    d.explainScope("Unsafe Scope", unsafeScope, unsafeScopeBySection,
+                   [].asMap())

@@ -117,8 +117,8 @@ literal tokens are tagged:
   - ``.String.`` (``Str``)
 
 .. note:: Monte has no booleans literals; rather, the nouns `true` and
-          `false` are pre-defined :ref:`primitive values
-          <primitive-values>`.
+          `false` are pre-defined :doc:`primitive values
+          <runtime>`.
 
 Bool
 ~~~~
