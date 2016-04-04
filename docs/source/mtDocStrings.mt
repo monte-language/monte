@@ -1,0 +1,145 @@
+import "lib/tubes" =~ [=> makeUTF8EncodePump :DeepFrozen, => makePumpTube :DeepFrozen]
+exports (main)
+
+
+def makeFormatter(drain) as DeepFrozen:
+    def h := [null, "=", "-", "~"]
+
+    def rep(s :Str, qty :Int) :Str as DeepFrozen:
+        if (qty < 1):
+            return ""
+        return "".join([for _ in (1..qty) s])
+
+    def dedent(paragraph :Str, =>indent := 0) :Str as DeepFrozen:
+        "Remove leading spaces from every line of a paragraph."
+
+        def pfx := rep("    ", indent)
+        def pieces := [for line in (paragraph.split("\n"))
+                       pfx + line.trim()]
+        return "\n".join(pieces)
+
+
+    return object formatter:
+        to heading(level :(1..!h.size()), text):
+            drain.receive(`$\n$text$\n${rep(h[level], text.size())}$\n$\n`)
+
+        to paras(text :Str, =>indent := 0):
+            drain.receive(dedent(text, "indent"=>indent).trim() + "\n\n")
+
+        to item(text :Str):
+            drain.receive(`      - $text$\n`)
+        to endList():
+            drain.receive("\n")
+
+        to dt(term :Str):
+            drain.receive(term + "\n")
+
+        to dd(text :Str):
+            drain.receive(dedent(text, "indent"=>1) + "\n")
+
+
+object Not as DeepFrozen:
+    to get(subGuard):
+        return object notSubGuard:
+            to coerce(specimen, ej):
+                escape not:
+                    subGuard.coerce(specimen, not)
+                    ej("not")
+                return specimen
+
+
+def makeDocstringWalker(doc) as DeepFrozen:
+    return object walker:
+        to explainScope(name :Str, scope :DeepFrozen, sections :Map[Str, List[Str]]):
+            doc.heading(1, name)
+
+            def done := [].diverge()  # would rather flatMap, but oh well...
+
+            def walkNames(names):
+                for name in (names):
+                    def &&obj := scope[`&&$name`]
+                    done.push(`&&$name`)
+                    if (obj == scope):
+                        continue
+                    walker.explainObject(name, obj)
+
+            for section => names in (sections):
+                doc.heading(2, section)
+                walkNames(names)
+
+            if (scope.getKeys().asSet() - done.asSet() =~ missed : Not[Empty]):
+                doc.heading(2, "Oops! Not in any section")
+                walkNames([for `&&@name` in (missed) name])
+
+        to explainObject(name :Str, obj):
+            def docOf(x) :Str:
+                def d := try { x.getDocstring() } catch _ { "*cannot get docstring*" }
+                return switch (d):
+                    match ==null:
+                        "*no docstring*"
+                    match txt:
+                        txt
+
+            def novelDoc(iface):
+                return switch (`$iface`):
+                    match =="<computed interface>":
+                        ""
+                    match label:
+                        " :" + label
+
+            def iface := obj._getAllegedInterface()
+            doc.dt(name + novelDoc(iface))
+            doc.dd(docOf(obj), "indent" => 1)
+
+            def methods := try { iface.getMethods() } catch _ { return; }
+
+            for meth in (methods):
+                def [verb, arity] := [meth.getVerb(), meth.getArity()]
+
+                doc.item(`$verb/$arity: ${docOf(meth)}`)  # TODO: indented paras?
+            doc.endList()
+
+
+def safeScopeBySection :DeepFrozen := [
+    "Primitive values" => ["true", "false", "null", "NaN", "Infinity"],
+    "Flow control" => ["M", "throw", "_loop", "_iterForever"],
+    "Reference/object operations" => ["Ref", "promiseAllFulfilled",
+                                      "DeepFrozen", "Selfless", "Transparent", "Near",
+                                      "Binding"],
+    # @@ Data Guard
+    # @@ PassByCopy Guard
+    "Tracing" => ["trace", "traceln"],
+    "Data Constructors" => ["_makeInt", "_makeDouble",
+                            "_makeString", "_makeBytes",
+                            "_makeList", "_makeMap",
+                            "_makeOrderedSpace", "_makeTopSet", "_makeOrderedRegion",
+                            "_makeSourceSpan",
+                            "_makeFinalSlot", "_makeVarSlot", "makeLazySlot"],
+    "Basic guards" => ["Any", "Void", "Empty",
+                       "Bool", "Str", "Char", "Double", "Int", "Bytes",
+                       "List", "Map", "Set", "Pair"],
+    "Guard utilities" => ["NullOk", "Same", "SubrangeGuard", "_auditedBy"],
+    "Interface constructors" => ["_makeMessageDesc", "_makeParamDesc", "_makeProtocolDesc"],
+    "Quasiparsers" => ["simple__quasiParser", "b__quasiParser", "m__quasiParser"],
+    "Utilities for syntax expansions" => ["_accumulateList", "_accumulateMap",
+                                          "_bind",
+                                          "_booleanFlow", "_comparer", "_equalizer",
+                                          "_makeVerbFacet",
+                                          "_mapEmpty", "_mapExtract",
+                                          "_matchSame", "_quasiMatcher",
+                                          "_slotToBinding",
+                                          "_splitList", "_suchThat",
+                                          "_switchFailed",
+                                          "_validateFor"],
+    "Evaluation" => ["eval", "typhonEval", "safeScope"],
+    "Abstract Syntax" => ["astBuilder"],
+    "Brands" => ["makeBrandPair"]
+]
+
+def main(argv, => makeStdOut) as DeepFrozen:
+    def stdout := makePumpTube(makeUTF8EncodePump())
+    stdout<-flowTo(makeStdOut())
+
+    def rst := makeFormatter(stdout)
+    def d := makeDocstringWalker(rst)
+    d.explainScope("safeScope", safeScope, safeScopeBySection)
