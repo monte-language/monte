@@ -231,6 +231,8 @@ __ http://erights.org/elib/index.html
        Access Control and Concurrency Control`__. PhD thesis, Johns
        Hopkins University, Baltimore, Maryland, USA (May 2006)
 
+       See also `a history of E's ideas`__.
+
 .. [*] As with all sufficiently complex concurrency systems, deadlock is
        possible. That said, it has not been observed outside of
        specially-constructed pathological object graphs.
@@ -239,3 +241,4 @@ __ http://erights.org/elib/index.html
 .. [#unityped] in formal type theory, Monte is `unityped`.
 
 __ http://erights.org/talks/thesis/index.html
+__ http://www.erights.org/history/index.html

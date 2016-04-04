@@ -87,9 +87,8 @@ references to ``this`` or ``self``.
 
 .. sidebar:: Assignment Expressions
 
-   Remember, Monte is an expression language.  The expression ``value
-   += 1`` returns the resulting sum. That's why ``return value += 1``
-   works.
+   Monte is an expression language.  The expression ``value += 1`` returns the
+   resulting sum. That's why ``return value += 1`` works.
 
 Inside the function ``makeCounter``, we simply define an object called
 ``counter`` and return it. Each time we call ``makeCounter()``, we get
@@ -247,6 +246,18 @@ Guards are not checked during compilation. They are checked during
 execution and will throw exceptions if the value cannot be coerced to
 pass the guard.
 
+Monte features strong dynamic types. By "strong" we mean that Monte's types
+resist automatic coercion; by "dynamic" we mean that objects are not
+necessarily specialized to any specific type.
+
+As an example of strong typing in Monte, consider the following statement::
+
+    def x := 42 + true
+
+This statement will result in an error, because ``true`` is a boolean value
+and cannot be automatically transformed into an integer, float, or other value
+which integers will accept for addition.
+
 We can also build Guards at runtime. The call to ``makeEnum`` returns
 a list where the first item is a new guard and the remaining items are
 distinct new objects that pass the guard. No other objects pass the
@@ -312,6 +323,21 @@ To ``lynch``, we use ``counter`` as a map from player to votes cast
 against that player. We initialize it to an empty mutable map with
 ``[].asMap().diverge()`` and then iterate over the votes with ``for _
 => v in votes:``.
+
+Functional Features (WIP)
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Monte has support for the various language features required for programming
+in the so-called "functional" style. Monte supports closing over values (by
+reference and by binding), and Monte also supports creating new function
+objects at runtime. This combination of features enables functional
+programming patterns.
+
+Monte also has several features similar to those found in languages in the
+Lisp and ML families which are often conflated with the functional style, like
+strict lexical scoping, immutable builtin value types, and currying for
+message passing.
+
 
 A list of players that got more than a quorum of votes is written
 ``[for k => v in (counter) if (v >= quorum) k]``. Provided there

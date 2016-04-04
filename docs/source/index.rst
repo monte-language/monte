@@ -47,23 +47,24 @@ Secure Distributed Computing
 
 .. toctree::
 
+    design
     vats
     brands
     promises
     tubes
 
 Organization In Progress
-========================
+------------------------
 
 .. toctree::
 
     wizard
-    design
     glossary
     faq
 
 Appendixes, Indices and tables
-==============================
+------------------------------
+
 
 .. toctree::
 
