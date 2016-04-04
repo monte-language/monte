@@ -88,8 +88,6 @@ such as ``argv.last()`` as well as :ref:`function calls<def-fun>` such as
 ``traceln(portNum)`` and even constructing :ref:`lists<ListExpr>` ``[200, [],
 body]`` and :ref:`maps<MapExpr>` ``["C" => "t"]``.
 
-.. todo:: fwd ref f.run(), _makeList, _makeMap
-
 
 Cooperation Without Vulerability
 --------------------------------
