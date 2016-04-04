@@ -183,9 +183,7 @@ def unsafeScopeBySection :DeepFrozen := [
 ]
 
 def doSafeScope(rst, d) as DeepFrozen:
-    rst.heading(1, "Runtime Objects")
-
-    rst.heading(2, "safeScope")
+    rst.heading(1, "safeScope")
 
     rst.paras("Bindings in the safe scope are available to modules by
     default. They are all `DeepFrozen`.")
@@ -196,7 +194,7 @@ def doSafeScope(rst, d) as DeepFrozen:
     d.explainScope("safeScope", safeScope, safeScopeBySection, related)
 
 def doEntryCaps(rst, d, caps) as DeepFrozen:
-    rst.heading(2, "Entrypoint Arguments")
+    rst.heading(1, "Entrypoint Arguments")
 
     rst.todo("Fix the `module.name` notation
     resulting from abuse of sphinx python support.")

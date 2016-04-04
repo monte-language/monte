@@ -1,10 +1,6 @@
 
-Runtime Objects
-===============
-
-
 safeScope
----------
+=========
 
 Bindings in the safe scope are available to modules by
 default. They are all `DeepFrozen`.
@@ -1745,7 +1741,7 @@ Interface constructors
 
 
 Entrypoint Arguments
---------------------
+====================
 
 .. todo::
    Fix the `module.name` notation
