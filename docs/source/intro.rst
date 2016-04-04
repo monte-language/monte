@@ -86,8 +86,9 @@ The key to supporting dynamic code execution without vulnerability is
 :dfn:`object capability discipline`, which consists of:
 
 Memory safety and encapsulation
-  There is no way to get a reference to an object except by being given one at
-  creation or via a message; no casting integers to pointers, for example.
+  There is no way to get a reference to an object except by creating one or
+  being given one at creation or via a message; no casting integers to
+  pointers, for example.
 
   From outside an object, there is no way to access the internal state of the
   object without the object's consent (where consent is expressed by
