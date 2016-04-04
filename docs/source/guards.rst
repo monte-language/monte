@@ -28,9 +28,6 @@ and ``Str`` guards support subranges of values via comparison expressions::
     def y :(Double >= 4.2) := 7.0
     def z :(Int < 5) := 3
 
-.. todo::
-    ``Double`` and ``Str`` are currently broken for this kind of usage.
-
 Additionally, the ``List`` and ``Set`` guards can be specialized on
 :dfn:subguards, which are just regular guards that check each value in the set or
 list::
