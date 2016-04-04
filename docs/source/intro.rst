@@ -12,28 +12,17 @@ judge.
 Because Security Matters
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Because **secure distributed computing should not be hard**. Computers
-are getting faster, smaller, more connected, and more capable, but
-when it comes to security, `everything is broken`__. We propose to
-reconsider the identity-based access control approach dominant in
-today's dominant languages and frameworks [#]_. Monte takes the
-object-capability paradigm of E [#]_ and updates it for the metamodern
-era:
+**Secure distributed computing should not be hard**. Computers are getting
+faster, smaller, more connected, and more capable, but when it comes to
+security, `everything is broken`__. We propose to reconsider the
+identity-based access control approach dominant in today's dominant languages
+and frameworks [#]_. Monte takes the object-capability paradigm of E [#]_ and
+updates it for the metamodern era:
 
 __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 
-.. sidebar:: Object Capabilities
-
-   Monte inherits from E a specific flavor of capability-based security known
-   as object capabilities. With object capabilities, capability-oriented
-   programming has the same flavor as object-oriented programming, except that
-   capability-oriented programming takes the usual object-oriented constraints
-   more seriously. Often when using object capabilities for security, one
-   finds that a more secure program is simply a program that follows
-   object-oriented principles of modularization more closely.
-
-- Monte, like E before it, has dramatic advantages for secure distributed
-  systems.
+Monte, like E before it, has dramatic advantages for secure distributed
+systems:
 
    - Monte promises benefit from a *promise-pipelining* architecture which
      ensures that *most deadlocks cannot occur*. [*]_
@@ -42,35 +31,8 @@ __ https://medium.com/message/everything-is-broken-81e5f33a24e1
      of good cryptographic primitives.
 
    - Capability-based security enables the concise composition of powerful
-     patterns of interoperation, patterns that enable extensive cooperation
+     patterns of interoperation--patterns that enable extensive cooperation
      even in the presence of severely limited trust.
-
-   - The fractal nature of POLA encourages short and readable modules, leading
-     to applications having relatively low amounts of code. As a consequence,
-     the attack surface of an application is decreased and code review is
-     easier. The implementors of E and CapDesk boast of implementing
-     peer-to-peer chat systems and digital-money bank servers in hundreds,
-     *not* tens of thousands, of lines of code.
-
-     When the time comes for a security inspection, capability security allows
-     simple reachability analysis to exclude huge swaths of code because they
-     cannot embody a threat. As a consequence, auditing a system for security
-     becomes cost-effective to an extent that is simply unimaginable with
-     other approaches [#darpa]_.
-
-   - With Monte, it is straightforward to create systems that run across the
-     Internet that are as secure and safe as if the entire system were running
-     on a single computer in your basement. As one of the original developers
-     of Smalltalk observed, upon learning about the object-capability paradigm
-     from E, capability security is "natural security": if you shouldn't use
-     it, you just can't see it.
-
-- Monte enables the fearless yet powerful use of multi-party
-  limited-trust mobile code.
-
-.. [*] As with all sufficiently complex concurrency systems, deadlock is
-       possible. That said, it has not been observed outside of
-       specially-constructed pathological object graphs.
 
 
 Because Readability Matters
@@ -110,6 +72,39 @@ Dynamic Binding
 Dynamic Compiling
     Monte can compile and run Monte code at runtime, as part of its core
     runtime.
+
+While "arbitrary code execution" is a notorious security vulnerability, Monte
+enables the fearless yet powerful use of multi-party limited-trust mobile
+code.
+
+.. _ocap:
+
+Object Capability Discipline
+----------------------------
+
+The key to supporting dynamic code execution without vulnerability is
+:dfn:`object capability discipline`, which consists of:
+
+Memory safety and encapsulation
+  There is no way to get a reference to an object except by being given one at
+  creation or via a message; no casting integers to pointers, for example.
+
+  From outside an object, there is no way to access the internal state of the
+  object without the object's consent (where consent is expressed by
+  responding to messages).
+Primitive effects only via references
+  The only way an object can affect the world outside itself is via references
+  to other objects. All primitives for interacting with the external world are
+  embodied by primitive objects and anything globally accessible is immutable
+  data. There is no ``open(filename)`` function in the global namespace, nor
+  can such a function be imported. The runtime passes all such objects to an
+  :ref:`entrypoint<entrypoints>`, which then explicitly delegates to other
+  objects.
+
+We'll demonstrate how this leads to natural expression of the *Principle of
+Least Power* briefly in :ref:`taste` and in more detail in
+:ref:`secure_distributed_computing`.
+
 
 Why not Monte?
 --------------
@@ -236,9 +231,11 @@ __ http://erights.org/elib/index.html
        Access Control and Concurrency Control`__. PhD thesis, Johns
        Hopkins University, Baltimore, Maryland, USA (May 2006)
 
-.. [#darpa] As documented in `the DarpaBrowser report
-            <http://www.combex.com/papers/darpa-report/index.html>`_
+.. [*] As with all sufficiently complex concurrency systems, deadlock is
+       possible. That said, it has not been observed outside of
+       specially-constructed pathological object graphs.
+
 
 .. [#unityped] in formal type theory, Monte is `unityped`.
-            
+
 __ http://erights.org/talks/thesis/index.html

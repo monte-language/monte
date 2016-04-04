@@ -3,10 +3,9 @@ exports (main)
 
 
 def helloWeb(request) as DeepFrozen:
-    "Build an HTML response including details from a request."
+    "Build an simple HTML response."
 
-    def body := b`<p>Hello!</p>`
-    return [200, ["Content-Type" => "text/html"], body]
+    return [200, ["Content-Type" => "text/html"], b`<p>Hello!</p>`]
 
 
 def main(argv, => makeTCP4ServerEndpoint) as DeepFrozen:

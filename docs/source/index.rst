@@ -40,6 +40,8 @@ Language Reference
     runtime
     semantics
 
+.. _secure_distributed_computing:
+
 Secure Distributed Computing
 ----------------------------
 

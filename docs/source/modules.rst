@@ -70,13 +70,16 @@ Imports can have guards on them::
 This is extremely useful for ensuring that imported names are ``DeepFrozen``
 and thus usable by exported objects.
 
+.. index:: entrypoint, main, unsafe capabilities
+.. _entrypoints:
+
 Entrypoints
 ~~~~~~~~~~~
 
-The export name "main", when present, denotes the *entrypoint* of the module.
-The entrypoint should take named parameters corresponding to unsafe
-capabilities from the unsafe scope, and return an ``Int`` or a promise for an
-``Int``.
+The export name "main", when present, denotes the :dfn:`entrypoint` of
+the module.  The entrypoint should take named parameters corresponding
+to unsafe capabilities from the unsafe scope, and return an ``Int`` or
+a promise for an ``Int``.
 
 ::
 

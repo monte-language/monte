@@ -48,7 +48,7 @@ Noun
    Choice(0, "IDENTIFIER", Sigil("::", P('stringLiteral')))
 
 
-A noun is a reference to a final or variable :ref:`slot <slot>`::
+A noun is a reference to a final or variable :ref:`slot <slots>`::
 
   >>> Int
   Int
@@ -93,6 +93,8 @@ Quasi-Literal Expression
 .. seealso::
 
    :ref:`quasiliteral <quasiliteral>`,
+
+.. _ListExpr:
 
 List Expression
 ---------------
@@ -141,6 +143,13 @@ Use ``diverge`` and ``snapshot`` to go from ``ConstList`` to mutable
 .. seealso::
 
    :ref:`comprehension <comprehension>`
+
+Expansion:
+
+  >>> m`[]`.expand()
+  m`_makeList.run()`
+
+.. _MapExpr:
 
 Map Expression
 ---------------

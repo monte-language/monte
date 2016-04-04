@@ -152,6 +152,8 @@ difference between this function::
 
 .. todo:: document docstrings
 
+.. todo:: document named args, defaults
+
 
 Traditional Datatypes and Operators
 -----------------------------------
@@ -191,6 +193,8 @@ rendition:
     :linenos:
     :lines: 15-
     :lineno-start: 15
+
+.. todo:: put unit tests in a separate section
 
 Additional flow of control
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
