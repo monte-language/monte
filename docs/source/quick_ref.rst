@@ -244,7 +244,9 @@ ConstMap
    ... for key => value in (m):
    ...     traceln(value)
    ... def flexM := m.diverge()
-   ["c" => 5].diverge()
+   ... flexM["d"] := 6
+   ... flexM.size()
+   2
 
 
 FlexList
