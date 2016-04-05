@@ -236,11 +236,11 @@ variable whose value is to be embedded in the string.
 Dynamic "type checking" with Guards
 -----------------------------------
 
-Monte :ref:`guard <guards>` perform many of the functions usually
-thought of as type checking, though they are so flexible that they
-also work as concise assertions. Guards can be placed on variables
-(such as ``mafiososCount :Int``), parameters (such as ``players
-:Set``), and return values (such as ``getState() :MafiaState``).
+Monte :ref:`guards <guards>` perform many of the functions usually thought of
+as type checking, though they are so flexible that they also work as concise
+assertions. Guards can be placed on variables (such as ``mafiososCount
+:Int``), parameters (such as ``players :Set``), and return values (such as
+``getState() :MafiaState``).
 
 Guards are not checked during compilation. They are checked during
 execution and will throw exceptions if the value cannot be coerced to
