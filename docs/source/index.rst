@@ -52,14 +52,6 @@ Secure Distributed Computing
     promises
     tubes
 
-Organization In Progress
-------------------------
-
-.. toctree::
-
-    wizard
-    faq
-
 Appendixes, Indices and tables
 ------------------------------
 

@@ -20,12 +20,34 @@ vats being spawned and destroyed according to the whims of anybody with
 references to those vats. Indeed, vats can be managed just like any other
 object, and vats are correct with regards to capability security.
 
+How do I perform parallel computations?
+---------------------------------------
 
-References?
------------
+Use the ``makeProcess`` entrypoint capability to run multiple
+processes to get node-level parallelism.
+
+.. note::
+    Monte doesn't really say anything about parallelism per se. We *should*
+    though. If we're going to be agoric, we should say something about CPUs,
+    even if it's just that people should spin up more vats and make more code
+    use farrefs.
+
+How do I perform concurrent operations?
+---------------------------------------
+
+Spawn more vats. All vats are concurrently turning.
+
+References (WIP)
+----------------
 
 .. note::
     Messy.
+
+.. todo:: This is a big topic; for now, see the `Reference
+          Mechanics`__ section from `ELib`__ for now.
+
+__ http://www.erights.org/elib/concurrency/refmech.html
+__ http://www.erights.org/elib/index.html
 
 There are three words about references:
 
@@ -60,5 +82,3 @@ they are near references. For example, all literals are near: ``def lue :=
 When in doubt, remember that there is a ``Near`` guard which can be used to
 confirm that an object is in the same vat as you and thus available for
 synchronous calls.
-
-.. todo:: elaborate on sameness

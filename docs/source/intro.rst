@@ -45,12 +45,14 @@ Because Readability Matters
    "Monte".
 
 Monte wraps its strengths in a Python-like syntax to make it quickly
-comfortable for a large number of software engineers. It is built with objects
-at the core of its design, making it easy to write modular, readable,
-maintainable software using the strategies familiar from Python, JavaScript,
-Ruby, Java, and other object-based languages. It has the kind of powerful
-string handling that will be recognized and seized upon by the Perl
-hacker.
+comfortable for a large number of software engineers.
+
+Monte is a pure object-based language in the Smalltalk tradition.  making it
+easy to write modular, readable, maintainable software using the strategies
+familiar from Python, JavaScript, Ruby, Java, and other object-based
+languages.  All values are objects and all computation is done by sending
+messages to objects. It has the kind of powerful string handling that will be
+recognized and seized upon by the Perl hacker.
 
 Because Stability Matters
 ~~~~~~~~~~~~~~~~~~~~~~~~~
