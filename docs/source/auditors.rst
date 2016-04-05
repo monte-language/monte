@@ -92,3 +92,11 @@ The resulting maker will produce objects that can be compared as if by value::
 .. note::
     Specifically, the property proven by ``Transparent`` is that uncalling the
     object is the inverse of calling the maker, and vice versa.
+
+.. _bindings:
+
+Bindings (WIP)
+--------------
+
+.. todo:: discuss bindings. Expand this section to "slots and
+          bindings"? or discuss bindings under auditors?

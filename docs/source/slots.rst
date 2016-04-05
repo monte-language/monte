@@ -12,6 +12,8 @@ The slot of a value is accessed using the ``&`` unary operator::
 
     def slot := &value
 
+.. _FinalSlot:
+
 Final Slots
 ===========
 
@@ -53,11 +55,3 @@ change::
 
     varValue := 5
     varSlot == &varValue # Still true after assignment
-
-.. _bindings:
-
-Bindings
-========
-
-.. todo:: discuss bindings. Expand this section to "slots and
-          bindings"? or discuss bindings under auditors?
