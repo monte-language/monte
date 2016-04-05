@@ -36,6 +36,8 @@ Guards are used constrain pattern bindings and method return values::
      Brackets('(', NonTerminal('expr'), ')'))
 
 
+.. _basic_data:
+
 Basic Data Guards
 -----------------
 

@@ -155,9 +155,9 @@ We refer to an object-making function such as ``makeCounter`` as a
 Traditional Datatypes and Operators
 -----------------------------------
 
-The :doc:`basic data types <runtime>` in Monte are ``Int``, ``Double``,
-``Str``, ``Char``, and ``Boolean``. All integer arithmetic is unlimited
-precision, as if all integers were python longs.
+Monte includes :ref:`basic data types <basic_data>` such as ``Int``,
+``Double``, ``Str``, ``Char``, and ``Boolean``. All integer arithmetic is
+unlimited precision, as if all integers were python longs.
 
 The operators ``+``, ``-``, and ``*`` have their traditional meanings
 for ``Int`` and ``Double``. The normal division operator ``/`` always
