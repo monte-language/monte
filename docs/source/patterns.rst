@@ -285,8 +285,8 @@ permits much richer transformations in addition to simple tests::
 
 .. _FinalPatt:
 
-FinalPatt (kernel)
-~~~~~~~~~~~~~~~~~~~~~
+Final Pattern (kernel)
+----------------------
 
 .. syntax:: FinalPatt
 
