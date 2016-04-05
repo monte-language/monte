@@ -82,8 +82,10 @@ code.
 Object Capability Discipline
 ----------------------------
 
-The key to supporting dynamic code execution without vulnerability is
-:dfn:`object capability discipline`, which consists of:
+A :dfn:`capability` is a reference to an object and represents authority to
+invoke methods on the object. The key to supporting dynamic code execution
+without vulnerability is :dfn:`object capability discipline`, which consists
+of:
 
 Memory safety and encapsulation
   There is no way to get a reference to an object except by creating one or

@@ -81,6 +81,22 @@ authority it needs:
   - ``makeMafiaBot`` starts games on request, routes messages to the relevant
     moderator during game play, and disposes of moderators when games end.
 
+Even if one of these components is buggy or compromised, its ability to
+corrupt the system is limited to using the capabilities in its static scope.
+
+Contrast this with traditional identity-based systems, where programs execute
+with all privileges granted to a user or role. In such a system, any
+compromise lets the attacker do anything that the user could do. A simple game
+such as solitaire executes with all authority necessary to corrupt,
+exfiltrate, or ransom the user's files.
+
+With object capability disciplne, when the time comes for a security
+inspection, we do not have to consider the possibility that any compromise in
+any part of our program leaves the whole system wide open in this way. Each
+component in the system can be reviewed independently and auditing a system
+for security becomes cost-effective to an extent that is infeasible with other
+approaches [#darpa]_.
+
 .. literalinclude:: tut/mafiabot.mt
     :linenos:
     :lines: 68-132
@@ -93,3 +109,9 @@ collude at night:
     :linenos:
     :lines: 133-192
     :lineno-start: 133
+
+.. rubric:: Notes
+
+.. [#darpa] As documented in `the DarpaBrowser report
+            <http://www.combex.com/papers/darpa-report/index.html>`_
+
