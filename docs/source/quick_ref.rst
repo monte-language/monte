@@ -75,19 +75,6 @@ Basic Flow
    131
 
 
-Modules
--------
-
-::
-
-   import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
-   exports (main)
-
-   def main(argv, => makeTCP4ServerEndpoint) as DeepFrozen:
-       def ep := makeHTTPEndpoint(makeTCP4ServerEndpoint(8080))
-       traceln(`serving on port $portNum`)
-       ep.listen(helloWeb)
-
 Function
 ~~~~~~~~
 
@@ -179,8 +166,8 @@ Delegation
    true
 
 
-File I/O
---------
+File I/O and Modules
+--------------------
 
 Access to files is given to the `main` entry point::
 
