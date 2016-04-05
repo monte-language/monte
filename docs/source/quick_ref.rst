@@ -3,13 +3,8 @@
 Monte Idioms Quick Reference
 ============================
 
-This is intended as a compact representation of frequently-used syntax
-and frequently-encountered special characteristics of monte. The
-beginning monte user may find it a handy reference while experimenting
-and reading the documentation; the experienced monte programmer may
-find it handy as a refresher if returning to the language after some
-time. This reference does not touch pattern matching, parse trees, or
-Kernel-E at all.
+These examples show Monte syntax for conventional constructs as
+well as workhorse idioms that are somewhat novel to Monte.
 
 
 Simple Statements
