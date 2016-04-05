@@ -40,6 +40,8 @@ How do I perform concurrent operations?
 
 Spawn more vats. All vats are concurrently turning.
 
+.. _references:
+
 References (WIP)
 ----------------
 

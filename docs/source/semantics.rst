@@ -87,8 +87,8 @@ scope are no longer visible.
 
 .. index:: name, noun, slot, binding
 
-Nouns, Slots, and Bindings
-==========================
+Names: Nouns, Slots, and References
+===================================
 
 Monte has a complex system underlying names.
 
@@ -103,10 +103,15 @@ were matched.
 To represent mutable state, we indirect via slots. :dfn:`Slots` are objects
 that contain values and may be updated over time (much like pointers in
 C). Slots can be accessed and manipulated with slot patterns and slot
-expressions.
+expressions. A final slot acts as though nouns refer directly to values, while
+a var slot has a ``put`` operation that updates its value.
 
 A :dfn:`binding` is a slot along with a guard that constrains the values in
 the slot. Bindings are essential to :ref:`auditors<auditors>`.
+
+To allow references across turns and vats, we indirect via :ref:`references
+<references>`.
+
 
 Expressions
 ===========
