@@ -61,3 +61,15 @@ The ejector does not need to have a meaningful object (nor even a string) as
 its payload, but the payload may be used for diagnostic purposes by the
 runtime. For example, a debugger might display them to a developer, or a
 debugging feature of the runtime might record them to a log.
+
+Unretractable Guards
+--------------------
+
+Informally, an unretractable guard cannot be fooled by impostor
+objects that only pretend to be guarded, and it also will not change
+its mind about an object on two different coercions.
+
+Formally, an :dfn:`unretractable` guard `Un` is a guard such that for
+all Monte objects `o`, if `o` is successfully coerced by `Un`, then it
+will always be successfully coerced by `Un`, regardless of the
+internal state of `Un` or `o`.

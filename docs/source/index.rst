@@ -58,7 +58,6 @@ Organization In Progress
 .. toctree::
 
     wizard
-    glossary
     faq
 
 Appendixes, Indices and tables
