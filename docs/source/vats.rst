@@ -32,6 +32,9 @@ processes to get node-level parallelism.
     even if it's just that people should spin up more vats and make more code
     use farrefs.
 
+.. todo:: reconcile parallel / concurrent discussion here with
+          Distributed Systems section.
+
 How do I perform concurrent operations?
 ---------------------------------------
 
