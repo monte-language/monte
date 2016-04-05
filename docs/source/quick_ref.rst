@@ -78,6 +78,16 @@ Basic Flow
 Modules
 -------
 
+::
+
+   import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
+   exports (main)
+
+   def main(argv, => makeTCP4ServerEndpoint) as DeepFrozen:
+       def ep := makeHTTPEndpoint(makeTCP4ServerEndpoint(8080))
+       traceln(`serving on port $portNum`)
+       ep.listen(helloWeb)
+
 Function
 ~~~~~~~~
 
