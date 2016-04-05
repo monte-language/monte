@@ -113,6 +113,8 @@ a promise for an ``Int``.
               >>> m`1 + 1`.expand()
               m`1.add(1)`
 
+           ``m`` is a :doc:`quasiparser<quasiparsers>` that parses
+           Monte source code. It is part of the runtime Monte compiler.
 
 Unit Testing and Benchmarking
 -----------------------------
