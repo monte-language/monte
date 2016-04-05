@@ -1,3 +1,56 @@
+Operations on Basic Data
+========================
+
+  - ``Bool``
+
+    - and, or, xor, not, butNot, pick
+    - op__cmp
+
+  - ``Int``
+
+    - add, subtract, multiply, negate, approxDivide, floorDivide,
+      mod, pow, modPow
+    - and, or, xor, bitLength, complement, shiftLeft, shiftRight
+    - abs
+    - next, previous
+    - aboveZero, atLeastZero, atMostZero, belowZero, isZero, op__cmp,
+      max, min
+    - floor, toBytes
+
+  - ``Double``
+
+    - add, subtract, multiply, negate, approxDivide, floorDivide
+    - abs, sqrt, log, sin, cos, tan
+    - aboveZero, atLeastZero, atMostZero, belowZero, isZero, op__cmp
+    - floor, toBytes
+
+  - ``Char``
+
+    - add, subtract
+    - asInteger, asString, quote
+    - max, min, op__cmp
+    - next, previous
+    - getCategory
+
+  - ``Str``
+
+    - with, get, size
+    - contains, startsWith, endsWith, indexOf
+    - add, replace, join, multiply, slice, split, trim, toUpperCase,
+      toLowerCase
+    - asList, asSet, _makeIterator, quote
+    - getSpan
+    - op__cmp
+
+  - ``Bytes``
+
+    - with, size, get
+    - add, join, multiply, replace, slice, split, toLowerCase,
+      toUpperCase, trim
+    - contains, indexOf, lastIndexOf
+    - asList, asSet
+    - _makeIterator
+
 
 safeScope
 =========
@@ -1963,6 +2016,3 @@ Processes and Vats
    flowed to a drain representing stdin. `=> stdoutDrain` and
    `=> stderrDrain` are similar but should be drains which will have founts
    flowed to them.
-   
-
-

@@ -20,6 +20,91 @@ unittest([
 ])
 
 
+# block-expr
+
+def testblock_expr_0(assert):
+    object example:
+        method test():
+            "doc"
+            if (2 < 3) { "expected" } else { "unexpected" }
+            
+
+    def actual := example.test()
+    assert.equal(actual, "expected")
+
+
+def testblock_expr_1(assert):
+    object example:
+        method test():
+            "doc"
+            def x := 5
+            def y := 10
+            if (x < y) { "less" } else if (x > y) { "greater" } else { "neither" }
+            
+
+    def actual := example.test()
+    assert.equal(actual, "less")
+
+
+def testblock_expr_2(assert):
+    object example:
+        method test():
+            "doc"
+            def state := "day"
+            
+            switch (state) {
+                match =="day" {"night"}
+                match =="night" {"day"}
+            }
+            
+
+    def actual := example.test()
+    assert.equal(actual, "night")
+
+
+def testblock_expr_3(assert):
+    object example:
+        method test():
+            "doc"
+            m`switch (specimen) { match pat1 { expr1 } }`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`{ def specimen_1 := specimen; escape ej_2 { def pat1 exit ej_2 := specimen_1; expr1 } catch failure_3 { _switchFailed.run(specimen_1, failure_3) } }`.canonical())
+
+
+def testblock_expr_4(assert):
+    object example:
+        method test():
+            "doc"
+            try { 3 < "3" } catch _ { "ouch! no order defined" }
+            
+
+    def actual := example.test()
+    assert.equal(actual, "ouch! no order defined")
+
+
+def testblock_expr_5(assert):
+    object example:
+        method test():
+            "doc"
+            escape hatch { def x :Int exit hatch := 1.0 }
+            
+
+    def actual := example.test()
+    assert.equal(actual, "1.000000 does not conform to <IntGuard>")
+
+
+unittest([
+    testblock_expr_0,
+    testblock_expr_1,
+    testblock_expr_2,
+    testblock_expr_3,
+    testblock_expr_4,
+    testblock_expr_5
+])
+
+
 # brands
 
 unittest([
@@ -57,8 +142,80 @@ unittest([
 
 # guards
 
+def testguards_0(assert):
+    object example:
+        method test():
+            "doc"
+            def x :Int := 1
+            x
+            
+
+    def actual := example.test()
+    assert.equal(actual, 1)
+
+
+def testguards_1(assert):
+    object example:
+        method test():
+            "doc"
+            def halves(s) :Pair[Str, Str]:
+                return s.split(",")
+            halves("A,B")
+            
+
+    def actual := example.test()
+    assert.equal(actual, ["A", "B"])
+
+
+def testguards_2(assert):
+    object example:
+        method test():
+            "doc"
+            def y := -5
+            escape oops {
+                def x :(Int > 0) exit oops := y
+            }
+            
+
+    def actual := example.test()
+    assert.equal(actual, "-5 is not in <(0, ∞) <IntGuard> region>")
+
+
+def testguards_3(assert):
+    object example:
+        method test():
+            "doc"
+            def x :('a'..'z' | 'A'..'Z') := 'c'
+            def y :(Double >= 4.2) := 7.0
+            def z :(Int < 5) := 3
+            [x, y, z]
+            
+
+    def actual := example.test()
+    assert.equal(actual, ['c', 7.0, 3])
+
+
+def testguards_4(assert):
+    object example:
+        method test():
+            "doc"
+            def ints :List[Int] := [1, 2, 4, 6, 8]
+            def setOfUppercaseChars :Set['A'..'Z'] := ['A', 'C', 'E', 'D', 'E', 'C', 'A', 'D', 'E'].asSet()
+            def scores :Map[Str, Int] := ["Alice" => 10, "Bob" => 5]
+            
+            [ints.contains(4), setOfUppercaseChars.contains('B'), scores.contains("Bob")]
+            
+
+    def actual := example.test()
+    assert.equal(actual, [true, false, true])
+
+
 unittest([
-    
+    testguards_0,
+    testguards_1,
+    testguards_2,
+    testguards_3,
+    testguards_4
 ])
 
 
@@ -159,8 +316,19 @@ unittest([
 
 # modules
 
+def testmodules_0(assert):
+    object example:
+        method test():
+            "doc"
+            m`1 + 1`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`1.add(1)`.canonical())
+
+
 unittest([
-    
+    testmodules_0
 ])
 
 
@@ -177,17 +345,6 @@ def testoperators_0(assert):
     object example:
         method test():
             "doc"
-            m`1 + 1`.expand()
-            
-
-    def actual := example.test().canonical()
-    assert.equal(actual, m`1.add(1)`.canonical())
-
-
-def testoperators_1(assert):
-    object example:
-        method test():
-            "doc"
             { 4; "x"; "y" }
             
 
@@ -195,7 +352,7 @@ def testoperators_1(assert):
     assert.equal(actual, "y")
 
 
-def testoperators_2(assert):
+def testoperators_1(assert):
     object example:
         method test():
             "doc"
@@ -208,7 +365,7 @@ def testoperators_2(assert):
     assert.equal(actual, "yellow")
 
 
-def testoperators_3(assert):
+def testoperators_2(assert):
     object example:
         method test():
             "doc"
@@ -219,7 +376,7 @@ def testoperators_3(assert):
     assert.equal(actual, m`x.put(i, def ares_1 := 1); ares_1`.canonical())
 
 
-def testoperators_4(assert):
+def testoperators_3(assert):
     object example:
         method test():
             "doc"
@@ -230,7 +387,7 @@ def testoperators_4(assert):
     assert.equal(actual, "augmenting addition!")
 
 
-def testoperators_5(assert):
+def testoperators_4(assert):
     object example:
         method test():
             "doc"
@@ -241,7 +398,7 @@ def testoperators_5(assert):
     assert.equal(actual, m`x := x.add("addition!")`.canonical())
 
 
-def testoperators_6(assert):
+def testoperators_5(assert):
     object example:
         method test():
             "doc"
@@ -252,7 +409,7 @@ def testoperators_6(assert):
     assert.equal(actual, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
 
-def testoperators_7(assert):
+def testoperators_6(assert):
     object example:
         method test():
             "doc"
@@ -263,7 +420,7 @@ def testoperators_7(assert):
     assert.equal(actual, 1)
 
 
-def testoperators_8(assert):
+def testoperators_7(assert):
     object example:
         method test():
             "doc"
@@ -274,7 +431,7 @@ def testoperators_8(assert):
     assert.equal(actual, [7, 6, 12, 1728])
 
 
-def testoperators_9(assert):
+def testoperators_8(assert):
     object example:
         method test():
             "doc"
@@ -285,7 +442,7 @@ def testoperators_9(assert):
     assert.equal(actual, [16, 2, 0.500000])
 
 
-def testoperators_10(assert):
+def testoperators_9(assert):
     object example:
         method test():
             "doc"
@@ -296,7 +453,7 @@ def testoperators_10(assert):
     assert.equal(actual, [6, 15, 7, 56, 14])
 
 
-def testoperators_11(assert):
+def testoperators_10(assert):
     object example:
         method test():
             "doc"
@@ -307,7 +464,7 @@ def testoperators_11(assert):
     assert.equal(actual, true)
 
 
-def testoperators_12(assert):
+def testoperators_11(assert):
     object example:
         method test():
             "doc"
@@ -318,7 +475,7 @@ def testoperators_12(assert):
     assert.equal(actual, 1)
 
 
-def testoperators_13(assert):
+def testoperators_12(assert):
     object example:
         method test():
             "doc"
@@ -329,7 +486,7 @@ def testoperators_13(assert):
     assert.equal(actual, 2)
 
 
-def testoperators_14(assert):
+def testoperators_13(assert):
     object example:
         method test():
             "doc"
@@ -340,7 +497,7 @@ def testoperators_14(assert):
     assert.equal(actual, m`if (a) { true } else if (b) { true } else { false }`.canonical())
 
 
-def testoperators_15(assert):
+def testoperators_14(assert):
     object example:
         method test():
             "doc"
@@ -351,7 +508,7 @@ def testoperators_15(assert):
     assert.equal(actual, m`if (a) { if (b) { true } else { false } } else { false }`.canonical())
 
 
-def testoperators_16(assert):
+def testoperators_15(assert):
     object example:
         method test():
             "doc"
@@ -362,7 +519,7 @@ def testoperators_16(assert):
     assert.equal(actual, false)
 
 
-def testoperators_17(assert):
+def testoperators_16(assert):
     object example:
         method test():
             "doc"
@@ -373,7 +530,7 @@ def testoperators_17(assert):
     assert.equal(actual, true)
 
 
-def testoperators_18(assert):
+def testoperators_17(assert):
     object example:
         method test():
             "doc"
@@ -384,7 +541,7 @@ def testoperators_18(assert):
     assert.equal(actual, true)
 
 
-def testoperators_19(assert):
+def testoperators_18(assert):
     object example:
         method test():
             "doc"
@@ -395,7 +552,7 @@ def testoperators_19(assert):
     assert.equal(actual, 2)
 
 
-def testoperators_20(assert):
+def testoperators_19(assert):
     object example:
         method test():
             "doc"
@@ -406,7 +563,7 @@ def testoperators_20(assert):
     assert.equal(actual, "p")
 
 
-def testoperators_21(assert):
+def testoperators_20(assert):
     object example:
         method test():
             "doc"
@@ -417,7 +574,7 @@ def testoperators_21(assert):
     assert.equal(actual, true)
 
 
-def testoperators_22(assert):
+def testoperators_21(assert):
     object example:
         method test():
             "doc"
@@ -428,7 +585,7 @@ def testoperators_22(assert):
     assert.equal(actual, false)
 
 
-def testoperators_23(assert):
+def testoperators_22(assert):
     object example:
         method test():
             "doc"
@@ -439,7 +596,7 @@ def testoperators_23(assert):
     assert.equal(actual, false)
 
 
-def testoperators_24(assert):
+def testoperators_23(assert):
     object example:
         method test():
             "doc"
@@ -450,7 +607,7 @@ def testoperators_24(assert):
     assert.equal(actual, true)
 
 
-def testoperators_25(assert):
+def testoperators_24(assert):
     object example:
         method test():
             "doc"
@@ -461,7 +618,7 @@ def testoperators_25(assert):
     assert.equal(actual, false)
 
 
-def testoperators_26(assert):
+def testoperators_25(assert):
     object example:
         method test():
             "doc"
@@ -472,7 +629,7 @@ def testoperators_26(assert):
     assert.equal(actual, true)
 
 
-def testoperators_27(assert):
+def testoperators_26(assert):
     object example:
         method test():
             "doc"
@@ -483,7 +640,7 @@ def testoperators_27(assert):
     assert.equal(actual, true)
 
 
-def testoperators_28(assert):
+def testoperators_27(assert):
     object example:
         method test():
             "doc"
@@ -494,7 +651,7 @@ def testoperators_28(assert):
     assert.equal(actual, m`_equalizer.sameEver(x, y)`.canonical())
 
 
-def testoperators_29(assert):
+def testoperators_28(assert):
     object example:
         method test():
             "doc"
@@ -505,7 +662,7 @@ def testoperators_29(assert):
     assert.equal(actual, m`_equalizer.sameEver(x, y).not()`.canonical())
 
 
-def testoperators_30(assert):
+def testoperators_29(assert):
     object example:
         method test():
             "doc"
@@ -516,7 +673,7 @@ def testoperators_30(assert):
     assert.equal(actual, m`def sp_1 := "value"; def [ok_2, &&pattern] := escape fail_3 { def pattern exit fail_3 := sp_1; _makeList.run(true, &&pattern) } catch problem_4 { def via (_slotToBinding) &&broken_5 := Ref.broken(problem_4); _makeList.run(false, &&broken_5) }; ok_2`.canonical())
 
 
-def testoperators_31(assert):
+def testoperators_30(assert):
     object example:
         method test():
             "doc"
@@ -527,7 +684,7 @@ def testoperators_31(assert):
     assert.equal(actual, m`(def sp_1 := "value"; def [ok_2, &&pattern] := escape fail_3 { def pattern exit fail_3 := sp_1; _makeList.run(true, &&pattern) } catch problem_4 { def via (_slotToBinding) &&broken_5 := Ref.broken(problem_4); _makeList.run(false, &&broken_5) }; ok_2).not()`.canonical())
 
 
-def testoperators_32(assert):
+def testoperators_31(assert):
     object example:
         method test():
             "doc"
@@ -538,7 +695,7 @@ def testoperators_32(assert):
     assert.equal(actual, m`x.xor(y)`.canonical())
 
 
-def testoperators_33(assert):
+def testoperators_32(assert):
     object example:
         method test():
             "doc"
@@ -549,7 +706,7 @@ def testoperators_33(assert):
     assert.equal(actual, m`x.and(y)`.canonical())
 
 
-def testoperators_34(assert):
+def testoperators_33(assert):
     object example:
         method test():
             "doc"
@@ -560,7 +717,7 @@ def testoperators_34(assert):
     assert.equal(actual, m`x.or(y)`.canonical())
 
 
-def testoperators_35(assert):
+def testoperators_34(assert):
     object example:
         method test():
             "doc"
@@ -571,7 +728,7 @@ def testoperators_35(assert):
     assert.equal(actual, m`x.butNot(y)`.canonical())
 
 
-def testoperators_36(assert):
+def testoperators_35(assert):
     object example:
         method test():
             "doc"
@@ -582,7 +739,7 @@ def testoperators_36(assert):
     assert.equal(actual, false)
 
 
-def testoperators_37(assert):
+def testoperators_36(assert):
     object example:
         method test():
             "doc"
@@ -593,7 +750,7 @@ def testoperators_37(assert):
     assert.equal(actual, true)
 
 
-def testoperators_38(assert):
+def testoperators_37(assert):
     object example:
         method test():
             "doc"
@@ -604,7 +761,7 @@ def testoperators_38(assert):
     assert.equal(actual, false)
 
 
-def testoperators_39(assert):
+def testoperators_38(assert):
     object example:
         method test():
             "doc"
@@ -615,7 +772,7 @@ def testoperators_39(assert):
     assert.equal(actual, true)
 
 
-def testoperators_40(assert):
+def testoperators_39(assert):
     object example:
         method test():
             "doc"
@@ -626,7 +783,7 @@ def testoperators_40(assert):
     assert.equal(actual, "ouch! no order defined")
 
 
-def testoperators_41(assert):
+def testoperators_40(assert):
     object example:
         method test():
             "doc"
@@ -637,7 +794,7 @@ def testoperators_41(assert):
     assert.equal(actual, true)
 
 
-def testoperators_42(assert):
+def testoperators_41(assert):
     object example:
         method test():
             "doc"
@@ -648,7 +805,7 @@ def testoperators_42(assert):
     assert.equal(actual, true)
 
 
-def testoperators_43(assert):
+def testoperators_42(assert):
     object example:
         method test():
             "doc"
@@ -659,7 +816,7 @@ def testoperators_43(assert):
     assert.equal(actual, m`_comparer.lessThan(3, 2)`.canonical())
 
 
-def testoperators_44(assert):
+def testoperators_43(assert):
     object example:
         method test():
             "doc"
@@ -670,7 +827,7 @@ def testoperators_44(assert):
     assert.equal(actual, m`_comparer.asBigAs(2.000000, 1.add(1))`.canonical())
 
 
-def testoperators_45(assert):
+def testoperators_44(assert):
     object example:
         method test():
             "doc"
@@ -681,7 +838,7 @@ def testoperators_45(assert):
     assert.equal(actual, [2, 4, 6])
 
 
-def testoperators_46(assert):
+def testoperators_45(assert):
     object example:
         method test():
             "doc"
@@ -692,7 +849,7 @@ def testoperators_46(assert):
     assert.equal(actual, [2, 4, 6, 8])
 
 
-def testoperators_47(assert):
+def testoperators_46(assert):
     object example:
         method test():
             "doc"
@@ -703,7 +860,7 @@ def testoperators_47(assert):
     assert.equal(actual, true)
 
 
-def testoperators_48(assert):
+def testoperators_47(assert):
     object example:
         method test():
             "doc"
@@ -714,7 +871,7 @@ def testoperators_48(assert):
     assert.equal(actual, m`_makeOrderedSpace.op__thru(lo, hi)`.canonical())
 
 
-def testoperators_49(assert):
+def testoperators_48(assert):
     object example:
         method test():
             "doc"
@@ -725,7 +882,7 @@ def testoperators_49(assert):
     assert.equal(actual, m`_makeOrderedSpace.op__till(lo, hi)`.canonical())
 
 
-def testoperators_50(assert):
+def testoperators_49(assert):
     object example:
         method test():
             "doc"
@@ -736,7 +893,7 @@ def testoperators_50(assert):
     assert.equal(actual, m`i.shiftLeft(bits)`.canonical())
 
 
-def testoperators_51(assert):
+def testoperators_50(assert):
     object example:
         method test():
             "doc"
@@ -747,7 +904,7 @@ def testoperators_51(assert):
     assert.equal(actual, m`i.shiftRight(bits)`.canonical())
 
 
-def testoperators_52(assert):
+def testoperators_51(assert):
     object example:
         method test():
             "doc"
@@ -758,7 +915,7 @@ def testoperators_52(assert):
     assert.equal(actual, [1, 2, 3, 4])
 
 
-def testoperators_53(assert):
+def testoperators_52(assert):
     object example:
         method test():
             "doc"
@@ -769,7 +926,7 @@ def testoperators_53(assert):
     assert.equal(actual, "abcdef")
 
 
-def testoperators_54(assert):
+def testoperators_53(assert):
     object example:
         method test():
             "doc"
@@ -780,7 +937,7 @@ def testoperators_54(assert):
     assert.equal(actual, ["square" => 4, "triangle" => 3])
 
 
-def testoperators_55(assert):
+def testoperators_54(assert):
     object example:
         method test():
             "doc"
@@ -792,7 +949,7 @@ def testoperators_55(assert):
     assert.equal(actual, ["triangle" => 3])
 
 
-def testoperators_56(assert):
+def testoperators_55(assert):
     object example:
         method test():
             "doc"
@@ -803,7 +960,7 @@ def testoperators_56(assert):
     assert.equal(actual, m`x.add(y)`.canonical())
 
 
-def testoperators_57(assert):
+def testoperators_56(assert):
     object example:
         method test():
             "doc"
@@ -814,7 +971,7 @@ def testoperators_57(assert):
     assert.equal(actual, m`x.subtract(y)`.canonical())
 
 
-def testoperators_58(assert):
+def testoperators_57(assert):
     object example:
         method test():
             "doc"
@@ -825,7 +982,7 @@ def testoperators_58(assert):
     assert.equal(actual, 6)
 
 
-def testoperators_59(assert):
+def testoperators_58(assert):
     object example:
         method test():
             "doc"
@@ -836,7 +993,7 @@ def testoperators_59(assert):
     assert.equal(actual, 8)
 
 
-def testoperators_60(assert):
+def testoperators_59(assert):
     object example:
         method test():
             "doc"
@@ -847,7 +1004,7 @@ def testoperators_60(assert):
     assert.equal(actual, m`base.modPow(exp, mod)`.canonical())
 
 
-def testoperators_61(assert):
+def testoperators_60(assert):
     object example:
         method test():
             "doc"
@@ -858,7 +1015,7 @@ def testoperators_61(assert):
     assert.equal(actual, 8)
 
 
-def testoperators_62(assert):
+def testoperators_61(assert):
     object example:
         method test():
             "doc"
@@ -869,7 +1026,7 @@ def testoperators_62(assert):
     assert.equal(actual, m`2.pow(3)`.canonical())
 
 
-def testoperators_63(assert):
+def testoperators_62(assert):
     object example:
         method test():
             "doc"
@@ -880,7 +1037,7 @@ def testoperators_63(assert):
     assert.equal(actual, -4)
 
 
-def testoperators_64(assert):
+def testoperators_63(assert):
     object example:
         method test():
             "doc"
@@ -891,7 +1048,7 @@ def testoperators_64(assert):
     assert.equal(actual, -256)
 
 
-def testoperators_65(assert):
+def testoperators_64(assert):
     object example:
         method test():
             "doc"
@@ -902,7 +1059,7 @@ def testoperators_65(assert):
     assert.equal(actual, false)
 
 
-def testoperators_66(assert):
+def testoperators_65(assert):
     object example:
         method test():
             "doc"
@@ -913,7 +1070,7 @@ def testoperators_66(assert):
     assert.equal(actual, m`false.not()`.canonical())
 
 
-def testoperators_67(assert):
+def testoperators_66(assert):
     object example:
         method test():
             "doc"
@@ -924,7 +1081,7 @@ def testoperators_67(assert):
     assert.equal(actual, 1)
 
 
-def testoperators_68(assert):
+def testoperators_67(assert):
     object example:
         method test():
             "doc"
@@ -935,7 +1092,7 @@ def testoperators_68(assert):
     assert.equal(actual, 5)
 
 
-def testoperators_69(assert):
+def testoperators_68(assert):
     object example:
         method test():
             "doc"
@@ -947,7 +1104,7 @@ def testoperators_69(assert):
         assert.equal(actual, null)
 
 
-def testoperators_70(assert):
+def testoperators_69(assert):
     object example:
         method test():
             "doc"
@@ -958,7 +1115,7 @@ def testoperators_70(assert):
     assert.equal(actual, 6)
 
 
-def testoperators_71(assert):
+def testoperators_70(assert):
     object example:
         method test():
             "doc"
@@ -969,7 +1126,7 @@ def testoperators_71(assert):
     assert.equal(actual, m`f.run(x)`.canonical())
 
 
-def testoperators_72(assert):
+def testoperators_71(assert):
     object example:
         method test():
             "doc"
@@ -1052,8 +1209,7 @@ unittest([
     testoperators_68,
     testoperators_69,
     testoperators_70,
-    testoperators_71,
-    testoperators_72
+    testoperators_71
 ])
 
 
@@ -1080,6 +1236,33 @@ def testordinary_programming_1(assert):
     object example:
         method test():
             "doc"
+            def square(x):
+                return x * x
+            square.run(4)
+            
+
+    def actual := example.test()
+    assert.equal(actual, 16)
+
+
+def testordinary_programming_2(assert):
+    object example:
+        method test():
+            "doc"
+            object square:
+                to run(x):
+                    return x * x
+            square(4)
+            
+
+    def actual := example.test()
+    assert.equal(actual, 16)
+
+
+def testordinary_programming_3(assert):
+    object example:
+        method test():
+            "doc"
             def makeCounter(var value :Int):
                 return object counter:
                     to increment() :Int:
@@ -1099,7 +1282,7 @@ def testordinary_programming_1(assert):
     assert.equal(actual, [4, 14])
 
 
-def testordinary_programming_2(assert):
+def testordinary_programming_4(assert):
     object example:
         method test():
             "doc"
@@ -1129,33 +1312,6 @@ def testordinary_programming_2(assert):
 
     def actual := example.test()
     assert.equal(actual, "mafia")
-
-
-def testordinary_programming_3(assert):
-    object example:
-        method test():
-            "doc"
-            def square(x):
-                return x * x
-            square.run(4)
-            
-
-    def actual := example.test()
-    assert.equal(actual, 16)
-
-
-def testordinary_programming_4(assert):
-    object example:
-        method test():
-            "doc"
-            object square:
-                to run(x):
-                    return x * x
-            square(4)
-            
-
-    def actual := example.test()
-    assert.equal(actual, 16)
 
 
 def testordinary_programming_5(assert):
@@ -1423,6 +1579,30 @@ def testpatterns_19(assert):
     object example:
         method test():
             "doc"
+            def x := 1
+            x
+            
+
+    def actual := example.test()
+    assert.equal(actual, 1)
+
+
+def testpatterns_20(assert):
+    object example:
+        method test():
+            "doc"
+            def ::"hello, world" := [1, 2]
+            ::"hello, world"
+            
+
+    def actual := example.test()
+    assert.equal(actual, [1, 2])
+
+
+def testpatterns_21(assert):
+    object example:
+        method test():
+            "doc"
             m`def bind x := 2`.expand()
             
 
@@ -1430,7 +1610,7 @@ def testpatterns_19(assert):
     assert.equal(actual, m`def via (_bind.run(x_Resolver, null)) _ := 2`.canonical())
 
 
-def testpatterns_20(assert):
+def testpatterns_22(assert):
     object example:
         method test():
             "doc"
@@ -1462,7 +1642,9 @@ unittest([
     testpatterns_17,
     testpatterns_18,
     testpatterns_19,
-    testpatterns_20
+    testpatterns_20,
+    testpatterns_21,
+    testpatterns_22
 ])
 
 
@@ -1549,6 +1731,17 @@ def testprim_expr_7(assert):
     object example:
         method test():
             "doc"
+            m`[]`.expand()
+            
+
+    def actual := example.test().canonical()
+    assert.equal(actual, m`_makeList.run()`.canonical())
+
+
+def testprim_expr_8(assert):
+    object example:
+        method test():
+            "doc"
             { def m := ["roses" => "red", "violets" => "blue"]; m["roses"] }
             
 
@@ -1556,7 +1749,7 @@ def testprim_expr_7(assert):
     assert.equal(actual, "red")
 
 
-def testprim_expr_8(assert):
+def testprim_expr_9(assert):
     object example:
         method test():
             "doc"
@@ -1567,7 +1760,7 @@ def testprim_expr_8(assert):
     assert.equal(actual, 3)
 
 
-def testprim_expr_9(assert):
+def testprim_expr_10(assert):
     object example:
         method test():
             "doc"
@@ -1578,7 +1771,7 @@ def testprim_expr_9(assert):
     assert.equal(actual, false)
 
 
-def testprim_expr_10(assert):
+def testprim_expr_11(assert):
     object example:
         method test():
             "doc"
@@ -1587,79 +1780,6 @@ def testprim_expr_10(assert):
 
     def actual := example.test()
     assert.equal(actual, true)
-
-
-def testprim_expr_11(assert):
-    object example:
-        method test():
-            "doc"
-            if (2 < 3) { "expected" } else { "unexpected" }
-            
-
-    def actual := example.test()
-    assert.equal(actual, "expected")
-
-
-def testprim_expr_12(assert):
-    object example:
-        method test():
-            "doc"
-            def x := 5
-            def y := 10
-            if (x < y) { "less" } else if (x > y) { "greater" } else { "neither" }
-            
-
-    def actual := example.test()
-    assert.equal(actual, "less")
-
-
-def testprim_expr_13(assert):
-    object example:
-        method test():
-            "doc"
-            def state := "day"
-            
-            switch (state) {
-                match =="day" {"night"}
-                match =="night" {"day"}
-            }
-            
-
-    def actual := example.test()
-    assert.equal(actual, "night")
-
-
-def testprim_expr_14(assert):
-    object example:
-        method test():
-            "doc"
-            m`switch (specimen) { match pat1 { expr1 } }`.expand()
-            
-
-    def actual := example.test().canonical()
-    assert.equal(actual, m`{ def specimen_1 := specimen; escape ej_2 { def pat1 exit ej_2 := specimen_1; expr1 } catch failure_3 { _switchFailed.run(specimen_1, failure_3) } }`.canonical())
-
-
-def testprim_expr_15(assert):
-    object example:
-        method test():
-            "doc"
-            try { 3 < "3" } catch _ { "ouch! no order defined" }
-            
-
-    def actual := example.test()
-    assert.equal(actual, "ouch! no order defined")
-
-
-def testprim_expr_16(assert):
-    object example:
-        method test():
-            "doc"
-            escape hatch { def x :Int exit hatch := 1.0 }
-            
-
-    def actual := example.test()
-    assert.equal(actual, "1.000000 does not conform to <IntGuard>")
 
 
 unittest([
@@ -1674,12 +1794,7 @@ unittest([
     testprim_expr_8,
     testprim_expr_9,
     testprim_expr_10,
-    testprim_expr_11,
-    testprim_expr_12,
-    testprim_expr_13,
-    testprim_expr_14,
-    testprim_expr_15,
-    testprim_expr_16
+    testprim_expr_11
 ])
 
 
@@ -1964,10 +2079,12 @@ def testquick_ref_16(assert):
             for key => value in (m):
                 traceln(value)
             def flexM := m.diverge()
+            flexM["d"] := 6
+            flexM.size()
             
 
     def actual := example.test()
-    assert.equal(actual, ["c" => 5].diverge())
+    assert.equal(actual, 2)
 
 
 def testquick_ref_17(assert):
@@ -2084,382 +2201,8 @@ unittest([
 
 # runtime
 
-def testruntime_0(assert):
-    object example:
-        method test():
-            "doc"
-            [true, false, null, NaN, Infinity]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [true, false, null, NaN, Infinity])
-
-
-def testruntime_1(assert):
-    object example:
-        method test():
-            "doc"
-            M.call(1, "add", [2])
-            
-
-    def actual := example.test()
-    assert.equal(actual, 3)
-
-
-def testruntime_2(assert):
-    object example:
-        method test():
-            "doc"
-            throw
-            
-
-    def actual := example.test()
-    assert.equal(actual, throw)
-
-
-def testruntime_3(assert):
-    object example:
-        method test():
-            "doc"
-            def l := [].diverge()
-            _loop([1,2,3], fn k, v { l.push(v) })
-            l.snapshot()
-            
-
-    def actual := example.test()
-    assert.equal(actual, [1, 2, 3])
-
-
-def testruntime_4(assert):
-    object example:
-        method test():
-            "doc"
-            def [promise, resolver] := Ref.promise(); resolver.resolve(1)
-            promise
-            
-
-    def actual := example.test()
-    assert.equal(actual, 1)
-
-
-def testruntime_5(assert):
-    object example:
-        method test():
-            "doc"
-            trace("str")
-            
-
-    def actual := example.test()
-    assert.equal(actual, null)
-
-
-def testruntime_6(assert):
-    object example:
-        method test():
-            "doc"
-            traceln("str")
-            
-
-    def actual := example.test()
-    assert.equal(actual, null)
-
-
-def testruntime_7(assert):
-    object example:
-        method test():
-            "doc"
-            _makeList(1, 2, 3)
-            
-
-    def actual := example.test()
-    assert.equal(actual, [1, 2, 3])
-
-
-def testruntime_8(assert):
-    object example:
-        method test():
-            "doc"
-            _makeMap.fromPairs([['k', 'v']])
-            
-
-    def actual := example.test()
-    assert.equal(actual, ['k' => 'v'])
-
-
-def testruntime_9(assert):
-    object example:
-        method test():
-            "doc"
-            _makeInt("1")
-            
-
-    def actual := example.test()
-    assert.equal(actual, 1)
-
-
-def testruntime_10(assert):
-    object example:
-        method test():
-            "doc"
-            [_makeFinalSlot, _makeVarSlot]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [_makeFinalSlot, _makeVarSlot])
-
-
-def testruntime_11(assert):
-    object example:
-        method test():
-            "doc"
-            _makeOrderedSpace
-            
-
-    def actual := example.test()
-    assert.equal(actual, _makeOrderedSpace)
-
-
-def testruntime_12(assert):
-    object example:
-        method test():
-            "doc"
-            [Any, Void]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [Any, Void])
-
-
-def testruntime_13(assert):
-    object example:
-        method test():
-            "doc"
-            [Bool, Str, Char, Double, Int]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [Bool, Str, Char, Double, Int])
-
-
-def testruntime_14(assert):
-    object example:
-        method test():
-            "doc"
-            [List, Map, Set]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [List, Map, Set])
-
-
-def testruntime_15(assert):
-    object example:
-        method test():
-            "doc"
-            Pair
-            
-
-    def actual := example.test()
-    assert.equal(actual, Pair)
-
-
-def testruntime_16(assert):
-    object example:
-        method test():
-            "doc"
-            "abc" :NullOk[Str]
-            
-
-    def actual := example.test()
-    assert.equal(actual, "abc")
-
-
-def testruntime_17(assert):
-    object example:
-        method test():
-            "doc"
-            [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [_makeMessageDesc, _makeParamDesc, _makeProtocolDesc])
-
-
-def testruntime_18(assert):
-    object example:
-        method test():
-            "doc"
-            [simple__quasiParser, m__quasiParser]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [simple__quasiParser, m__quasiParser])
-
-
-def testruntime_19(assert):
-    object example:
-        method test():
-            "doc"
-            simple`sum: ${1+1}`
-            
-
-    def actual := example.test()
-    assert.equal(actual, "sum: 2")
-
-
-def testruntime_20(assert):
-    object example:
-        method test():
-            "doc"
-            m`1 + 1`.expand()
-            
-
-    def actual := example.test().canonical()
-    assert.equal(actual, m`1.add(1)`.canonical())
-
-
-def testruntime_21(assert):
-    object example:
-        method test():
-            "doc"
-            [_accumulateList, _accumulateMap]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [_accumulateList, _accumulateMap])
-
-
-def testruntime_22(assert):
-    object example:
-        method test():
-            "doc"
-            _bind
-            
-
-    def actual := example.test()
-    assert.equal(actual, _bind)
-
-
-def testruntime_23(assert):
-    object example:
-        method test():
-            "doc"
-            [_booleanFlow, _comparer, _equalizer]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [_booleanFlow, _comparer, _equalizer])
-
-
-def testruntime_24(assert):
-    object example:
-        method test():
-            "doc"
-            _makeVerbFacet
-            
-
-    def actual := example.test()
-    assert.equal(actual, _makeVerbFacet)
-
-
-def testruntime_25(assert):
-    object example:
-        method test():
-            "doc"
-            [_mapEmpty, _mapExtract]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [_mapEmpty, _mapExtract])
-
-
-def testruntime_26(assert):
-    object example:
-        method test():
-            "doc"
-            [_matchSame, _quasiMatcher]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [_matchSame, _quasiMatcher])
-
-
-def testruntime_27(assert):
-    object example:
-        method test():
-            "doc"
-            _slotToBinding
-            
-
-    def actual := example.test()
-    assert.equal(actual, _slotToBinding)
-
-
-def testruntime_28(assert):
-    object example:
-        method test():
-            "doc"
-            [_splitList, _suchThat]
-            
-
-    def actual := example.test()
-    assert.equal(actual, [_splitList, _suchThat])
-
-
-def testruntime_29(assert):
-    object example:
-        method test():
-            "doc"
-            _switchFailed
-            
-
-    def actual := example.test()
-    assert.equal(actual, _switchFailed)
-
-
-def testruntime_30(assert):
-    object example:
-        method test():
-            "doc"
-            _validateFor
-            
-
-    def actual := example.test()
-    assert.equal(actual, _validateFor)
-
-
 unittest([
-    testruntime_0,
-    testruntime_1,
-    testruntime_2,
-    testruntime_3,
-    testruntime_4,
-    testruntime_5,
-    testruntime_6,
-    testruntime_7,
-    testruntime_8,
-    testruntime_9,
-    testruntime_10,
-    testruntime_11,
-    testruntime_12,
-    testruntime_13,
-    testruntime_14,
-    testruntime_15,
-    testruntime_16,
-    testruntime_17,
-    testruntime_18,
-    testruntime_19,
-    testruntime_20,
-    testruntime_21,
-    testruntime_22,
-    testruntime_23,
-    testruntime_24,
-    testruntime_25,
-    testruntime_26,
-    testruntime_27,
-    testruntime_28,
-    testruntime_29,
-    testruntime_30
+    
 ])
 
 
@@ -2646,31 +2389,16 @@ def testtaste_0(assert):
     object example:
         method test():
             "doc"
-            def helloWeb(request) { def reply := [200]; return reply }
+            def helloWeb(request) { return [200, "hello"]; }
             helloWeb("/")
             
 
     def actual := example.test()
-    assert.equal(actual, [200])
-
-
-def testtaste_1(assert):
-    object example:
-        method test():
-            "doc"
-            def helloWeb(request):
-                def reply := [200]
-                return reply
-            helloWeb("/page1")
-            
-
-    def actual := example.test()
-    assert.equal(actual, [200])
+    assert.equal(actual, [200, "hello"])
 
 
 unittest([
-    testtaste_0,
-    testtaste_1
+    testtaste_0
 ])
 
 

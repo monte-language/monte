@@ -25,19 +25,18 @@ Language Reference
 
     modules
     block-expr
+    guards
     prim-expr
     operators
     patterns
     symbols
-    guards
-    custom-guards
     quasiparsers
-    iteration
     interfaces
+    miranda
+    iteration
+    custom-guards
     slots
     auditors
-    miranda
-    runtime
     semantics
 
 .. _secure_distributed_computing:
@@ -69,6 +68,7 @@ Appendixes, Indices and tables
 .. toctree::
 
     montefesto
+    runtime
     tools
 
 * :ref:`genindex`

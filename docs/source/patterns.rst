@@ -294,18 +294,19 @@ FinalPatt (kernel)
 
 Final patterns match an object and bind a name to them, optionally
 testing them for guard conformance.  One of the most ubiquitous
-patterns. Binds a name unconditionally to a ``FinalSlot`` and
-prohibits reassignment::
+patterns. Binds a name unconditionally to a :ref:`final
+slot<FinalSlot>`, which prohibits reassignment::
 
-    def name := value
+  >>> def x := 1
+  ... x
+  1
 
-Guard conformance failure causes pattern match failure::
+Again, any string can be used as an identifier::
 
-    def name :Guard := value
+  >>> def ::"hello, world" := [1, 2]
+  ... ::"hello, world"
+  [1, 2]
 
-::
-
-  ::"hello, world"
 
 The `var` Pattern (kernel)
 --------------------------
