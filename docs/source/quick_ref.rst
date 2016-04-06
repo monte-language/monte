@@ -120,12 +120,10 @@ Objects with state
 Objects self-referencing during construction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. todo:: find out why this test goes wonky
-
 ::
 
-   .>> def makeRadio(car):
-   ...     # define radios
+   >>> def makeRadio(car):
+   ...     `radio for $car`
    ... def makeCar(name):
    ...     var x := 0
    ...     var y := 0
@@ -134,7 +132,7 @@ Objects self-referencing during construction
    ...     bind car:
    ...         to receiveWeatherAlert():
    ...             # ....process the weather report....
-   ...             # myWeatherRadio.foo(...)
+   ...             traceln(myWeatherRadio)
    ...         to getX():
    ...             return x
    ...         to getY():
