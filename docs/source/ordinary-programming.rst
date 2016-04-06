@@ -313,8 +313,9 @@ any particular order, though, so we write ``var players :Set`` to
 ensure that ``players`` is always bound to a ``Set``,
 though it may be assigned to different sets at different times.
 
-We use ``.size()`` to get the number of players and ``.slice()`` to
-get the subsets ``mafiosos`` and ``innocents``.
+We use ``.size()`` to get the number of players, and once we get the
+``mafiosos`` subset (using a ``sample`` function), the set of ``innocents`` is
+the difference of ``players - mafiosos``.
 
 We initialize ``votes`` to the empty ``Map``, written ``[].asMap()``
 and add to it using ``votes with= (player, choice)``.
