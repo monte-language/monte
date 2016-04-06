@@ -188,11 +188,11 @@ Vim
 +++
 
 The `monte-vim repository`__ provides vim syntax highlighting, and linter
-integration is available via a private `Syntastic repository`___.
+integration is available via a private `Syntastic repository`__.
 
 __ https://github.com/monte-language/monte-vim
 
-___ https://github.com/mostawesomedude/syntastic
+__ https://github.com/mostawesomedude/syntastic
 
 
 Atom
