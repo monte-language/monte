@@ -184,14 +184,15 @@ __ https://github.com/monte-language/monte-emacs
 __ http://www.flycheck.org/
 
 
-Vim and Syntastic
-+++++++++++++++++
+Vim
++++
 
-The `monte-vim repository`__ provides vim syntax highlighting.
+The `monte-vim repository`__ provides vim syntax highlighting, and linter
+integration is available via a private `Syntastic repository`___.
 
 __ https://github.com/monte-language/monte-vim
 
-.. todo:: say something about syntastic
+___ https://github.com/mostawesomedude/syntastic
 
 
 Atom
