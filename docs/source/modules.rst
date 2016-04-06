@@ -75,6 +75,25 @@ and thus usable by exported objects.
 Module Syntax Expansion
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+.. sidebar:: Kernel-Monte and Expansion
+
+           .. index: kernel, Kernel Monte, expansion
+           .. index:: expansion, syntactic expansion
+
+           The Monte language as seen by the programmer has the rich
+           set of syntactic conveniences expected of a modern
+           scripting language. However, to avoid complexity that so
+           often hampers security, the :doc:`semantics of Monte
+           <semantics>` is primarily defined over a smaller language
+           called :dfn:`Kernel-Monte`. The rest of E is defined by
+           :dfn:`syntactic expansion` to this subset. For example::
+
+              >>> m`1 + 1`.expand()
+              m`1.add(1)`
+
+           ``m`` is a :doc:`quasiparser<quasiparsers>` that parses
+           Monte source code. It is part of the runtime Monte compiler.
+
 Under the hood, modules are compiled to be singleton objects which accept
 a mapping of imported objects, and return a mapping of exported names.
 
@@ -96,25 +115,6 @@ a promise for an ``Int``.
     def main(=> currentProcess) :Int as DeepFrozen:
         traceln(`Current process: $currentProcess`)
         return 0
-
-.. sidebar:: Kernel-Monte and Expansion
-
-           .. index: kernel, Kernel Monte, expansion
-           .. index:: expansion, syntactic expansion
-
-           The Monte language as seen by the programmer has the rich
-           set of syntactic conveniences expected of a modern
-           scripting language. However, to avoid complexity that so
-           often hampers security, the :doc:`semantics of Monte
-           <semantics>` is primarily defined over a smaller language
-           called :dfn:`Kernel-Monte`. The rest of E is defined by
-           :dfn:`syntactic expansion` to this subset. For example::
-
-              >>> m`1 + 1`.expand()
-              m`1.add(1)`
-
-           ``m`` is a :doc:`quasiparser<quasiparsers>` that parses
-           Monte source code. It is part of the runtime Monte compiler.
 
 Unit Testing and Benchmarking
 -----------------------------
