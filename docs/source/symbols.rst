@@ -100,7 +100,6 @@ Identifers start with an element of ``idStart`` followed by any number of
 elements of ``idPart``::
 
    def decimalDigits :DeepFrozen := regionToSet('0'..'9')
-   def hexDigits :DeepFrozen := decimalDigits | regionToSet('a'..'f' | 'A'..'F')
 
    def idStart :DeepFrozen := regionToSet('a'..'z' | 'A'..'Z' | '_'..'_')
    def idPart :DeepFrozen := idStart | decimalDigits
