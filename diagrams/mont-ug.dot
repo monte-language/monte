@@ -1,0 +1,72 @@
+// Types:
+// Any: The top type.
+// Near: The type of all near references.
+// List, Map, Set: (Literal) container types; they are DF when their contents
+// are DF.
+// NullOk: Pseudo-option type with null as sentinel value.
+// DeepFrozen: The type of all immutable objects.
+// Bytes, Char, Double, Int, Str, Void: DF data literal types.
+// None: The bottom type.
+digraph "Monte Type System" {
+    // Clearly mark None as synthesized from Any.
+    "None" [label = "None (~Any)"];
+
+    // There can be no topmost type besides Any.
+    "Any" -> "Near";
+
+    // All DF objects are necessarily Near.
+    "Near" -> "DeepFrozen";
+
+    // LMS containers are Near.
+    "Near" -> "List";
+    "Near" -> "Map";
+    "Near" -> "Set";
+
+    // Some of the List hierarchy.
+    "List" [label = "List (List[Any])"];
+    "List" -> "List[DeepFrozen]";
+    "DeepFrozen" -> "List[DeepFrozen]";
+    "List[DeepFrozen]" -> "List[Int]";
+    "List[Int]" -> "List[None]";
+    "List[None]" -> "None";
+
+    // Some of the Map hierarchy.
+    "Map" [label = "Map (Map[Any, Any])"];
+    "Map" -> "Map[DeepFrozen, DeepFrozen]";
+    "DeepFrozen" -> "Map[DeepFrozen, DeepFrozen]";
+    "Map[DeepFrozen, DeepFrozen]" -> "Map[Str, Int]";
+    "Map[Str, Int]" -> "Map[None, None]";
+    "Map[None, None]" -> "None";
+
+    // And Set.
+    "Set" [label = "Set (Set[Any])"];
+    "Set" -> "Set[DeepFrozen]";
+    "DeepFrozen" -> "Set[DeepFrozen]";
+    "Set[DeepFrozen]" -> "Set[Int]";
+    "Set[Int]" -> "Set[None]";
+    "Set[None]" -> "None";
+
+    // List-like examples with NullOk.
+    "DeepFrozen" -> "NullOk[Int]" -> "Void";
+    "NullOk[Int]" -> "Int";
+
+    // Data is DF.
+    "DeepFrozen" -> "Bytes";
+    "DeepFrozen" -> "Char";
+    "DeepFrozen" -> "Double";
+    "DeepFrozen" -> "Int";
+    "DeepFrozen" -> "Str";
+    "DeepFrozen" -> "Void";
+
+    // There can be no bottommost type besides None.
+    "Bytes" -> "None";
+    "Char" -> "None";
+    "Double" -> "None";
+    "Int" -> "Same[42]" -> "None";
+    "Str" -> "None";
+    "Void" -> "None";
+
+    "List" -> "None";
+    "Map" -> "None";
+    "Set" -> "None";
+}
