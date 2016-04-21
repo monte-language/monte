@@ -1,72 +1,73 @@
-Iteration Protocol
-==================
+Loops and the Iteration Protocol
+================================
 
-The for-loop
-------------
+Monte has only two kinds of looping constructs: ``for`` loops, which consume
+iterators to process a series of elements, and ``while`` loops, which
+repeatedly consider a predicate before doing work. Both should be familiar to
+any experienced programmer; let's explore them in greater detail.
 
-The simple structure of the ``for`` loop should be familiar in structure to
-Python programmers::
+``for`` loops
+-------------
 
-    for value in (iterable):
-        traceln(value)
+A ``for`` loop is a simple structure that takes an iterable object and loops
+over it::
 
-A ``for`` loop takes an iterable object and a pattern, and matches each
-element in the iterable to the pattern, executing the body of the loop.
-``for`` loops permit skipping elements with the ``continue`` keyword::
+    var x := 0
+    for i in (1..10):
+        x += i
 
-    for value in (iterable):
-        if skippable(value):
+Here, we can clearly see the three elements of the ``for`` loop, the
+*pattern*, ``x``; the *iterable*, ``1..10``, and the loop's *body*,
+``x += i``. For each element in the iterable, the iterable is matched against
+the pattern, which is available within the body.
+
+Within a ``for`` loop, the ``continue`` keyword will skip the current
+iteration of the loop, and ``break`` keyword will exit the loop altogether::
+
+    # Skip the even elements, and give up if we find multiples of three.
+    for i in (1..10):
+        if (i % 2 == 0):
             continue
-
-They also permit exiting prematurely with the ``break`` keyword::
-
-    for value in (iterable):
-        if finalValue(value):
+        if (i % 3 == 0):
             break
+        x -= i
 
-All builtin containers are iterable, including lists, maps, and sets. Strings
-are also iterable, yielding characters.
+Pair Patterns
+~~~~~~~~~~~~~
 
-For Loop Patterns
-~~~~~~~~~~~~~~~~~
+All iterables yield not just one element, but a *pair* of elements on every
+iteration. To access both elements at once, we can use a *pair pattern*::
 
-``for`` loops are pattern-based, so arbitrary patterns are permitted in
-loops::
+    def names := ["Scooby", "Shaggy", "Velma"]
+    for i => name in (names):
+        traceln(`Name $i: $name`)
 
-    for some`$sort of @pattern` in (iterable):
-        useThat(pattern)
+For a list, like in the previous example, the right-hand side of the pair
+matches the current element, and the left-hand side matches that element's
+index. When iterating over a map, the pair will match the key and value::
 
-Pair Syntax and Keys
-~~~~~~~~~~~~~~~~~~~~
+    def animals := [
+        "Bagira"     => "panther",
+        "Baloo"      => "bear",
+        "Shere Khan" => "tiger",
+    ]
+    for animal => species in (animals):
+        traceln(`Animal $animal is a $species`)
 
-Unlike other languages, Monte iteration always produces a pair of objects at a
-time, called the **key** and **value**. A bit of syntax enables
-pattern-matching on the key::
+``while`` loops
+---------------
 
-    for key => value in (iterable):
-        traceln(key)
-        traceln(value)
+In addition to the ``for`` loop, Monte provides a ``while`` loop::
 
-As expected, the key for iteration on a map is the key in the map
-corresponding to each value. The key for iteration on lists and strings is the
-zero-based index of each item or character::
+    var x := 1
+    while (x < 402):
+        x *= 2
 
-   >>> for i => each in (["a", "b"]):
-   ...     traceln(`Index: $i Value: $each`)
-   null
+The ``while`` loop admits ``continue`` and ``break``, just like in ``for``
+loops.
 
-It is possible to iterate only over the keys, of course, using an ignore
-pattern::
-
-    for key => _ in (iterable):
-        traceln(key)
-
-
-Iteration Protocol
-~~~~~~~~~~~~~~~~~~
-
-You can create your own data structures over which the for loop can iterate. An example of such a structure, and a brief explanation of the iterate(function) method you need to implement, can be found in the Library Packages: emakers section later in this chapter, where we build a simple queue object.
-
+Advanced Looping
+----------------
 
 The Secret Lives of Flow Control Structures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,46 +87,31 @@ The break statement, when used in a for or a while loop, can be followed by an e
    operator, the ``if`` expression works just as well. For example, to
    tests whether ``i`` is even::
 
-     >>> { def i := 3; if (i % 2 == 0) { "yes" } else { "no" } }
-     "no"
-
-   Don't forget that Monte requires ``if`` expressions to evaluate
-   their condition to a ``Bool``::
-
-     ▲> if (1) { "yes" } else { "no" }
-     Parse error: Not a boolean!
+     >>> { def c := 'c'; if (c < 'e') { "Yay!" } else { "Nope" } }
+     "Nope"
 
 .. _loopExpr:
 
 Loops as Expressions
 ~~~~~~~~~~~~~~~~~~~~
 
-Like all structures in Monte, ``for`` loops are expressions, which means that
-they can return values and be used where other expressions are used.
-
-A ``for`` loop usually returns ``null``::
+Like all structures in Monte, ``for`` loops are expressions; they return
+values::
 
     def result := for value in (0..10) { value }
 
-Here, ``result`` is ``null``.
-
-However, a ``for`` loop can return another value with the ``break`` keyword::
+Here, ``result`` is ``null``, which is the default return value for ``for``
+loops. To override that value, use ``break``::
 
     def result := for value in (0..10) { break value }
 
 Since ``break`` was used, the loop exits on its first iteration, returning
 ``value``, which was ``0``. So ``result`` is ``0``.
 
-.. note::
-
-    The syntax of ``break`` permits parentheses around the return value, like
-    ``break(this)``, and also an empty pair of parentheses to indicate a null
-    return value, like so: ``break()``.
-
 .. _comprehension:
 
-Comprehensions
-~~~~~~~~~~~~~~
+List & Map Comprehensions
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``for`` loops aren't the only way to consume iterable objects. Monte also has
 **comprehensions**, which generate new collections from iterables::
@@ -141,14 +127,16 @@ a comprehension::
 
     [for key => value in (reverseMap) value => key]
 
-Comprehensions also support *filtering* by a condition. The conditional
-expression is called a **predicate** and should return ``true`` or ``false``,
-depenting on whether the current value should be *skipped*. For example, let's
-generate a list of even numbers::
+Additionally, just like in Python and Haskell, comprehensions support
+filtering with a predicate::
 
     >>> def evens := [for number in (1..10) if (number % 2 == 0) number]
     ... evens
     [2, 4, 6, 8, 10]
+
+.. note::
+    This is currently under discussion; see
+    https://github.com/monte-language/typhon/issues/51 for details.
 
 Unlike many other languages, the predicate must return a Boolean value; if it
 doesn't, then the entire comprehension will fail with an exception.
