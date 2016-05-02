@@ -58,6 +58,7 @@ Appendixes, Indices and tables
 
 .. toctree::
 
+    grammar
     montefesto
     runtime
     tools

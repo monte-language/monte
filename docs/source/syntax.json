@@ -1,0 +1,194 @@
+[
+{"expr": "Choice(\n 0,\n NonTerminal('FunctionExpr'),\n NonTerminal('ObjectExpr'),\n NonTerminal('bind'),\n NonTerminal('def'),\n NonTerminal('InterfaceExpr'),\n NonTerminal('IfExpr'),\n NonTerminal('ForExpr'),\n NonTerminal('WhileExpr'),\n NonTerminal('SwitchExpr'),\n NonTerminal('EscapeExpr'),\n NonTerminal('TryExpr'),\n NonTerminal('WhenExpr'),\n NonTerminal('LambdaExpr'),\n NonTerminal('MetaExpr'))", "name": "blockExpr"},
+
+{"expr": "Sequence(\n \"{\",\n Choice(\n     0,\n     NonTerminal('sequence'),\n     \"pass\"),\n \"}\")", "name": "block"},
+
+{"expr": "Ap('HideExpr',\n   Brackets(\"{\", SepBy(NonTerminal('expr'), ';', fun='wrapSequence'), \"}\"))", "name": "HideExpr"},
+
+{"expr": "Sequence(\n \"if\", \"(\", NonTerminal('expr'), \")\", NonTerminal('block'),\n Optional(Sequence(\"else\", Choice(\n     0, Sequence(\"if\", Comment('blockExpr@@')),\n     NonTerminal('block')))))", "name": "IfExpr"},
+
+{"expr": "Sequence(\n \"switch\", \"(\", NonTerminal('expr'), \")\",\n \"{\", NonTerminal('matchers'), \"}\")", "name": "SwitchExpr"},
+
+{"expr": "OneOrMore(Sequence(\"match\",\n          NonTerminal('pattern'),\n          NonTerminal('block')))", "name": "matchers"},
+
+{"expr": "Sequence(\n \"try\", NonTerminal('block'), NonTerminal('catchers'))", "name": "TryExpr"},
+
+{"expr": "Sequence(\n ZeroOrMore(Sequence(\"catch\",\n                     NonTerminal('pattern'),\n                     NonTerminal('block'))),\n Optional(Sequence(\"finally\", NonTerminal('block'))))", "name": "catchers"},
+
+{"expr": "Sequence(\n \"escape\", NonTerminal('pattern'),\n NonTerminal('blockCatch'))", "name": "EscapeExpr"},
+
+{"expr": "Sequence(\n \"while\", \"(\", NonTerminal('expr'), \")\", NonTerminal('blockCatch'))", "name": "WhileExpr"},
+
+{"expr": "Sequence(\n \"for\",\n NonTerminal('pattern'),\n Optional(Sequence(\"=>\", NonTerminal('pattern'))),\n \"in\", NonTerminal('comp'),\n NonTerminal('blockCatch'))", "name": "ForExpr"},
+
+{"expr": "Sequence(\n NonTerminal('block'),\n Optional(\n     Sequence(\"catch\", NonTerminal('pattern'),\n              NonTerminal('block'))))", "name": "blockCatch"},
+
+{"expr": "Sequence(\n \"when\",\n \"(\", OneOrMore(NonTerminal('expr'), ','), \")\",\n \"->\", NonTerminal('block'),\n NonTerminal('catchers'))", "name": "WhenExpr"},
+
+{"expr": "Sequence(\n \"fn\",\n ZeroOrMore(NonTerminal('pattern'), ','),\n NonTerminal('block'))", "name": "LambdaExpr"},
+
+{"expr": "Sequence(\n \"def\",\n Choice(\n     0,\n     Sequence(\n         Choice(\n             0,\n             Sequence(\"bind\", NonTerminal(\"name\"),\n                      Optional(NonTerminal('guard'))),\n             NonTerminal(\"name\")),\n         Choice(0, Comment(\"objectFunction@@\"), NonTerminal('assign'))),\n     NonTerminal('assign')))", "name": "def"},
+
+{"expr": "Sequence(\n \"bind\",\n NonTerminal('name'),\n Optional(NonTerminal('guard')), NonTerminal(\"objectExpr\"))", "name": "bind"},
+
+{"expr": "Sequence(\n \"object\",\n Choice(0, Sequence(\"bind\", NonTerminal('name')),\n        \"_\",\n        NonTerminal('name')),\n NonTerminal(\"objectExpr\"))", "name": "ObjectExpr"},
+
+{"expr": "Sequence(\n Optional(Sequence('extends', NonTerminal('order'))),\n NonTerminal('auditors'),\n '{', ZeroOrMore(NonTerminal('objectScript'), ';'), '}')", "name": "objectExpr"},
+
+{"expr": "Sequence(\n Optional(NonTerminal('doco')),\n Choice(0, \"pass\", ZeroOrMore(\"@@meth\")),\n Choice(0, \"pass\", ZeroOrMore(NonTerminal('matchers'))))", "name": "objectScript"},
+
+{"expr": "OneOrMore(Sequence(\"match\",\n          NonTerminal('pattern'),\n          NonTerminal('block')))", "name": "matchers"},
+
+{"expr": "Terminal('.String.')", "name": "doco"},
+
+{"expr": "Sequence('def', '(', ZeroOrMore(NonTerminal('pattern'), ','), ')',\n  NonTerminal('block'))", "name": "FunctionExpr"},
+
+{"expr": "Sequence(\n \"interface\",\n NonTerminal('namePatt'),\n Optional(Sequence(\"guards\", NonTerminal('pattern'))),\n Optional(Sequence(\"extends\", OneOrMore(NonTerminal('order'), ','))),\n Comment(\"implements_@@\"), Comment(\"msgs@@\"))", "name": "InterfaceExpr"},
+
+{"expr": "Maybe(Sigil(':', NonTerminal('guard')))", "name": "guardOpt"},
+
+{"expr": "Choice(0,\n  Ap('GetExpr',\n     Ap('NounExpr', 'IDENTIFIER'),\n     Brackets('[', SepBy(NonTerminal('expr'), ','), ']')),\n  Ap('NounExpr', 'IDENTIFIER'),\n  Brackets('(', NonTerminal('expr'), ')'))", "name": "guard"},
+
+{"expr": "Ap('Module',\n Sigil(\"imports\", P('StrExpr'), Sigil(\"=~\", SepBy(NonTerminal('namePatt')))),\n Maybe(P('exports')),\n NonTerminal('sequence'))", "name": "module_header"},
+
+{"expr": "Sigil('exports', Brackets(\"(\", SepBy(NonTerminal('name'), \",\"), \")\"))", "name": "exports"},
+
+{"expr": "ZeroOrMore(\n  Choice(\n    0,\n    NonTerminal('blockExpr'),\n    NonTerminal('expr')),\n  \";\")", "name": "sequence"},
+
+{"expr": "Choice(0,\n  Ap('DefExpr',\n    Sigil(\"def\", NonTerminal(\"pattern\")),\n    Maybe(Sigil(\"exit\", NonTerminal(\"order\"))),\n    Sigil(\":=\", NonTerminal(\"assign\"))),\n Ap('DefExpr',\n   Choice(0, NonTerminal('VarPatt'), NonTerminal('BindPatt')),\n   Ap('return Nothing', Skip()),\n   Sigil(\":=\", NonTerminal(\"assign\"))),\n Ap('AssignExpr',\n    NonTerminal('lval'),\n    Sigil(\":=\", NonTerminal(\"assign\"))),\n NonTerminal('VerbAssignExpr'),\n NonTerminal('order'))", "name": "assign"},
+
+{"expr": "Choice(0,\n Ap('Left', Ap('pair',\n   NonTerminal('order'),\n   Brackets(\"[\", SepBy(NonTerminal('expr'), ','), \"]\"))),\n Ap('Right', NonTerminal('name')))", "name": "lval"},
+
+{"expr": "Ap('VerbAssignExpr',\n   NonTerminal('lval'),\n   Sigil(\"VERB_ASSIGN\", NonTerminal(\"assign\")))", "name": "VerbAssignExpr"},
+
+{"expr": "Sequence(\n NonTerminal('logical_and'),\n Optional(Sequence('||', NonTerminal('logical_or'))))", "name": "logical_or"},
+
+{"expr": "Sequence(\n NonTerminal('comp'),\n Optional(Sequence('&&', NonTerminal('logical_and'))))", "name": "logical_and"},
+
+{"expr": "Choice(0,\n  Ap('BinaryExpr',\n    NonTerminal('order'),\n    Choice(0,\n      Choice(0, \"=~\", \"!~\"),\n      Choice(0, \"==\", \"!=\"),\n      \"&!\",\n      Choice(0, \"^\", \"&\", \"|\")),\n    NonTerminal('comp')),\n NonTerminal('order'))", "name": "comp"},
+
+{"expr": "Choice(0,\n  NonTerminal('CompareExpr'),\n  NonTerminal('RangeExpr'),\n  NonTerminal('BinaryExpr'),\n  NonTerminal('prefix'))", "name": "order"},
+
+{"expr": "Ap('CompareExpr', NonTerminal('prefix'),\n  Choice(0, \">\", \"<\", \">=\", \"<=\", \"<=>\"), NonTerminal('order'))", "name": "CompareExpr"},
+
+{"expr": "Ap('RangeExpr', NonTerminal('prefix'),\n  Choice(0, \"..\", \"..!\"), NonTerminal('order'))", "name": "RangeExpr"},
+
+{"expr": "Ap('BinaryExpr', NonTerminal('prefix'),\n  Choice(0, \"<<\", \">>\"), NonTerminal('order'))", "name": "shift"},
+
+{"expr": "Ap('BinaryExpr', NonTerminal('multiplicativeExpr'),\n  Choice(0, \"+\", \"-\"), NonTerminal('additiveExpr'))", "name": "additiveExpr"},
+
+{"expr": "Ap('BinaryExpr', NonTerminal('exponentiationExpr'),\n  Choice(0, \"*\", \"/\", \"//\", \"%\"), NonTerminal('order'))", "name": "multiplicativeExpr"},
+
+{"expr": "Ap('BinaryExpr', NonTerminal('prefix'),\n   \"**\", NonTerminal('order'))", "name": "exponentiationExpr"},
+
+{"expr": "Choice(\n 0,\n Ap(\"PrefixExpr\", '-', NonTerminal('prim')),\n Ap(\"PrefixExpr\", Choice(0, \"~\", \"!\"), NonTerminal('calls')),\n NonTerminal('SlotExpr'),\n NonTerminal('BindingExpr'),\n NonTerminal('CoerceExpr'),\n NonTerminal('calls'))", "name": "prefix"},
+
+{"expr": "Ap('SlotExpr', Sigil('&', NonTerminal('name')))", "name": "SlotExpr"},
+
+{"expr": "Ap('BindingExpr', Sigil('&&', NonTerminal('name')))", "name": "BindingExpr"},
+
+{"expr": "Sequence(\n \"meta\", \".\",\n Choice(0,\n        Sequence(\"context\", \"(\", \")\"),\n        Sequence(\"getState\", \"(\", \")\")))", "name": "MetaExpr"},
+
+{"expr": "Ap(\"CoerceExpr\", NonTerminal('calls'), Sigil(\":\", NonTerminal('guard')))", "name": "CoerceExpr"},
+
+{"expr": "Ap('callExpr',\n    NonTerminal('prim'),\n    SepBy(\n      Choice(0,\n        Ap('Right',\n          Choice(0,\n            Ap('Right', NonTerminal('call')),\n            Ap('Left', NonTerminal('send')))),\n        Ap('Left', NonTerminal('index')))),\n    Maybe(NonTerminal('curryTail')))", "name": "calls"},
+
+{"expr": "Ap('pair', Maybe(Sigil(\".\", NonTerminal('verb'))), NonTerminal('argList'))", "name": "call"},
+
+{"expr": "Sigil(\"<-\", Ap('pair', Maybe(NonTerminal('verb')), NonTerminal('argList')))", "name": "send"},
+
+{"expr": "Choice(0,\n  Ap('Right', Sigil(\".\", NonTerminal('verb'))),\n  Ap('Left', Sigil(\"<-\", NonTerminal('verb'))))", "name": "curryTail"},
+
+{"expr": "Brackets(\"[\", SepBy(NonTerminal('expr'), ','), \"]\")", "name": "index"},
+
+{"expr": "Choice(0, \"IDENTIFIER\", \".String.\")", "name": "verb"},
+
+{"expr": "Brackets(\"(\", SepBy(NonTerminal('expr'), \",\"), \")\")", "name": "argList"},
+
+{"expr": "Choice(0,\n       NonTerminal('postfixPatt'))", "name": "pattern"},
+
+{"expr": "Choice(0,\n       NonTerminal('SuchThatPatt'),\n       NonTerminal('prefixPatt'))", "name": "postfixPatt"},
+
+{"expr": "Choice(0,\n       NonTerminal('MapPatt'),\n       NonTerminal('ListPatt'),\n       NonTerminal('SamePatt'),\n       NonTerminal('NotSamePatt'),\n       NonTerminal('QuasiliteralPatt'),\n       NonTerminal('ViaPatt'),\n       NonTerminal('IgnorePatt'),\n       NonTerminal('namePatt'))", "name": "prefixPatt"},
+
+{"expr": "Choice(0,\n        NonTerminal('FinalPatt'),\n        NonTerminal('VarPatt'),\n        NonTerminal('BindPatt'),\n        NonTerminal('SlotPatt'),\n        NonTerminal('BindingPatt'))", "name": "namePatt"},
+
+{"expr": "Ap('SuchThatPatt', NonTerminal('prefixPatt'),\n   Sigil(\"?\", Brackets(\"(\", NonTerminal('expr'), \")\")))", "name": "SuchThatPatt"},
+
+{"expr": "Ap('ListPatt',\n  Brackets(\"[\", SepBy(NonTerminal('pattern'), ','), ']'),\n  Maybe(Sigil(\"+\", NonTerminal('pattern'))))", "name": "ListPatt"},
+
+{"expr": "Ap('MapPatt',\n  Brackets(\"[\", OneOrMore(NonTerminal('mapPattItem'), ','), ']'),\n  Maybe(Sigil(\"|\", NonTerminal('pattern'))))", "name": "MapPatt"},
+
+{"expr": "Ap('pair',\n  Choice(0,\n    Ap('Right', Ap('pair',\n      Choice(0,\n        NonTerminal('LiteralExpr'),\n        Brackets(\"(\", NonTerminal('expr'), \")\")),\n      Sigil(\"=>\", NonTerminal('pattern')))),\n    Ap('Left', Sigil(\"=>\", NonTerminal('namePatt')))),\n  Maybe(Sigil(\":=\", NonTerminal('order'))))", "name": "mapPattItem"},
+
+{"expr": "Ap('SamePatt', Sigil(\"==\", NonTerminal('prim')))", "name": "SamePatt"},
+
+{"expr": "Ap('NotSamePatt', Sigil(\"!=\", NonTerminal('prim')))", "name": "NotSamePatt"},
+
+{"expr": "Ap('QuasiliteralPatt',\n Maybe(Terminal(\"IDENTIFIER\")),\n Brackets('`',\n SepBy(\n     Choice(0,\n       Ap('Left', Terminal('QUASI_TEXT')),\n       Ap('Right',\n         Choice(0,\n           Ap('(\\\\n -> FinalPatt n Nothing)', Terminal('AT_IDENT')),\n           Brackets('@{', NonTerminal('pattern'), '}'))))),\n '`'))", "name": "QuasiliteralPatt"},
+
+{"expr": "Ap('ViaPatt',\n  Sigil(\"via\", Brackets(\"(\", NonTerminal('expr'), ')')),\n  NonTerminal('pattern'))", "name": "ViaPatt"},
+
+{"expr": "Ap('FinalPatt', NonTerminal('name'), NonTerminal('guardOpt'))", "name": "FinalPatt"},
+
+{"expr": "Ap('VarPatt', Sigil(\"var\", NonTerminal('name')), NonTerminal('guardOpt'))", "name": "VarPatt"},
+
+{"expr": "Ap('BindPatt', Sigil(\"bind\", NonTerminal('name')), NonTerminal('guardOpt'))", "name": "BindPatt"},
+
+{"expr": "Ap('SlotPatt', Sigil(\"&\", NonTerminal('name')), NonTerminal('guardOpt'))", "name": "SlotPatt"},
+
+{"expr": "Ap('BindingPatt', Sigil(\"&&\", NonTerminal('name')))", "name": "BindingPatt"},
+
+{"expr": "Ap('IgnorePatt', Sigil(\"_\", NonTerminal('guardOpt')))", "name": "IgnorePatt"},
+
+{"expr": "Choice(\n 0,\n Brackets(\"(\", NonTerminal('expr'), \")\"),\n NonTerminal('LiteralExpr'),\n NonTerminal('quasiliteral'),\n NonTerminal('NounExpr'),\n NonTerminal('HideExpr'),\n NonTerminal('MapComprehensionExpr'),\n NonTerminal('ListComprehensionExpr'),\n NonTerminal('ListExpr'),\n NonTerminal('MapExpr'))", "name": "prim"},
+
+{"expr": "Choice(\n 0,\n NonTerminal('assign'),\n Sequence(\n     Choice(0, \"continue\", \"break\", \"return\"),\n     Choice(0,\n            Sequence(\"(\", \")\"),\n            \";\",\n            NonTerminal('blockExpr'))))", "name": "expr"},
+
+{"expr": "Ap('NounExpr', NonTerminal('name'))", "name": "NounExpr"},
+
+{"expr": "Choice(0, \"IDENTIFIER\", Sigil(\"::\", P('stringLiteral')))", "name": "name"},
+
+{"expr": "Choice(0,\n       NonTerminal('StrExpr'),\n       NonTerminal('IntExpr'),\n       NonTerminal('DoubleExpr'),\n       NonTerminal('CharExpr'))", "name": "LiteralExpr"},
+
+{"expr": "Ap('QuasiParserExpr',\n Maybe(Terminal(\"IDENTIFIER\")),\n Brackets('`',\n SepBy(\n     Choice(0,\n       Ap('Left', Terminal('QUASI_TEXT')),\n       Ap('Right',\n         Choice(0,\n           Ap('NounExpr', Terminal('DOLLAR_IDENT')),\n           Brackets('${', NonTerminal('expr'), '}'))))),\n '`'))", "name": "quasiliteral"},
+
+{"expr": "Ap('ListExpr', Brackets(\"[\", SepBy(NonTerminal('expr'), ','), \"]\"))", "name": "ListExpr"},
+
+{"expr": "Choice(\n 0,\n Sequence(NonTerminal('pattern'),\n          \"in\", NonTerminal('iter'),\n          NonTerminal('expr')),\n Sequence(NonTerminal('pattern'), \"=>\", NonTerminal('pattern'),\n          \"in\", NonTerminal('iter'),\n          NonTerminal('expr'), \"=>\", NonTerminal('expr')))", "name": "comprehension"},
+
+{"expr": "Sequence(\n NonTerminal('order'),\n Optional(Sequence(\"if\", NonTerminal('comp'))))", "name": "iter"},
+
+{"expr": "Ap('MapExpr',\n  Brackets(\"[\", OneOrMore(NonTerminal('mapItem'), ','), \"]\"))", "name": "MapExpr"},
+
+{"expr": "Choice(0,\n  Ap('Right', Ap('pair', NonTerminal('expr'),\n                         Sigil(\"=>\", NonTerminal('expr')))),\n  Ap('Left', Sigil(\"=>\", Choice(0,\n        NonTerminal('SlotExpr'),\n        NonTerminal('BindingExpr'),\n        NonTerminal('NounExpr')))))", "name": "mapItem"},
+
+{"expr": "Ap('IntExpr', Choice(0, P('hexLiteral'), P('decLiteral')))", "name": "IntExpr"},
+
+{"expr": "Ap('(read :: String -> Integer)', P('digits'))", "name": "decLiteral"},
+
+{"expr": "Ap(\"filter ((/=) '_')\",\n  Ap('(:)', P('digit'), Many(Choice(0, P('digit'), Char('_')))))", "name": "digits"},
+
+{"expr": "OneOf('0123456789')", "name": "digit"},
+
+{"expr": "Ap('(read :: String -> Integer)',\n  Ap('(:)', Char('0'),\n    Ap('(:)', Choice(0, Char('x'), Char('X')), P('hexDigits'))))", "name": "hexLiteral"},
+
+{"expr": "Ap(\"filter ((/=) '_')\",\n  Ap('(:)', P('hexDigit'), Many(Choice(0, P('hexDigit'), Char('_')))))", "name": "hexDigits"},
+
+{"expr": "OneOf('0123456789abcdefABCDEF')", "name": "hexDigit"},
+
+{"expr": "Ap('DoubleExpr', P('floatLiteral'))", "name": "DoubleExpr"},
+
+{"expr": "Ap('(read :: String -> Double)',\n  Ap('(++)',\n    P('digits'),\n    Choice(0,\n      Ap('(++)',\n        Ap('(:)', Char('.'), P('digits')),\n        Optional(P('floatExpn'), x='\"\"')),\n      P('floatExpn'))))", "name": "floatLiteral"},
+
+{"expr": "Ap('(:)',\n  OneOf(\"eE\"),\n  Ap('(++)',\n    Optional(Ap('pure', OneOf('-+')), x='\"\"'),\n    P('digits')))", "name": "floatExpn"},
+
+{"expr": "Ap('CharExpr',\n  Brackets(Char(\"'\"), P('charConstant'), Char(\"'\")))", "name": "CharExpr"},
+
+{"expr": "Sigil(Many(String(\"\\\\\\n\")),\n  Choice(0,\n    NoneOf(\"'\\\\\\t\"),\n    Sigil(Char(\"\\\\\"),\n      Choice(0,\n        Ap('hexChar', Choice(0,\n            Sigil(Char(\"U\"), Count(8, P('hexDigit'))),\n            Sigil(Char(\"u\"), Count(4, P('hexDigit'))),\n            Sigil(Char(\"x\"), Count(2, P('hexDigit'))))),\n        Ap('decodeSpecial', OneOf(r'''btnfr\\'\"'''))))))", "name": "charConstant"},
+
+{"expr": "Ap('StrExpr', P('stringLiteral'))", "name": "StrExpr"},
+
+{"expr": "Sigil(Char('\"'), ManyTill(P('charConstant'), Char('\"')))", "name": "stringLiteral"},
+
+null]

@@ -32,7 +32,7 @@ def start_module(app):
 
 def end_module(app, ex):
     if app.config.syntax_dest:
-        app.config.syntax_fp.write("]\n")
+        app.config.syntax_fp.write("null]\n")
 
 
 class RailroadDiagram(nodes.hint):
@@ -79,6 +79,6 @@ class RailroadDirective(Directive):
         if env.config.syntax_fp:
             out = env.config.syntax_fp
             dump({'name': name, 'expr': expr}, out)
-            out.write("\n\n")
+            out.write(",\n\n")
 
         return [targetnode, ix, label, diag]
