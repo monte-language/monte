@@ -29,8 +29,14 @@ It provides a custom ``.. syntax::`` directive.
 
 __ https://github.com/tabatkins/railroad-diagrams
 
-``rr_happy.py`` is work-in-progress to generate a haskell monadic
-parser from the syntax diagram directives.
+If `syntax_dest` is set in `conf.py`, the syntax diagram info
+is written to a file in JSON format. download:`rr_grammar.py` converts
+this format to a `sphinx grammar production display`__.
+
+__ http://www.sphinx-doc.org/en/stable/markup/para.html#grammar-production-displays
+
+download:`rr_happy.py` is work-in-progress to generate a haskell monadic
+parser.
 
 Doctests
 --------
