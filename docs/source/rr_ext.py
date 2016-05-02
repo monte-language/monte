@@ -1,5 +1,6 @@
 # cribbed from http://sphinx-doc.org/extdev/tutorial.html
 
+from json import dump
 from sys import stderr
 
 from docutils.parsers.rst import Directive
@@ -7,16 +8,16 @@ from docutils import nodes
 from sphinx import addnodes
 
 import railroad_diagrams
-import rr_happy
 
 
 def setup(app):
     app.connect('builder-inited', start_module)
+    app.connect('build-finished', end_module)
+
     app.add_node(RailroadDiagram,
                  html=(visit, depart))
 
     app.add_directive('syntax', RailroadDirective)
-    app.add_config_value('syntax_header', None, 'html')
     app.add_config_value('syntax_dest', None, 'html')
     app.add_config_value('syntax_fp', None, None)
 
@@ -24,12 +25,14 @@ def setup(app):
 
 
 def start_module(app):
-    return
     if app.config.syntax_dest:
         fp = app.config.syntax_fp = open(app.config.syntax_dest, 'w')
-        if app.config.syntax_header:
-            top = open(app.config.syntax_header).read()
-            fp.write(top)
+        fp.write("[\n")
+
+
+def end_module(app, ex):
+    if app.config.syntax_dest:
+        app.config.syntax_fp.write("null]\n")
 
 
 class RailroadDiagram(nodes.hint):
@@ -75,7 +78,7 @@ class RailroadDirective(Directive):
 
         if env.config.syntax_fp:
             out = env.config.syntax_fp
-            for line in rr_happy.gen_rule(name, it, expr):
-                print >>out, line
+            dump({'name': name, 'expr': expr}, out)
+            out.write(",\n\n")
 
         return [targetnode, ix, label, diag]

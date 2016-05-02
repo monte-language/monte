@@ -30,8 +30,7 @@ sys.path.insert(0, os.path.abspath('.'))
 # ones.
 extensions = ['sphinx.ext.todo', 'rr_ext']
 
-syntax_header = 'SyntaxDiagramsTop.hs'
-syntax_dest = 'SyntaxDiagrams.hs'
+# syntax_dest = 'syntax.json'
 
 todo_include_todos = True
 

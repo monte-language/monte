@@ -292,7 +292,7 @@ Defining Objects
 
 .. syntax:: doco
 
-   Terminal('.String')
+   Terminal('.String.')
 
 .. syntax:: FunctionExpr
 
@@ -331,7 +331,7 @@ Defining Interfaces
 
    Sequence(
     "interface",
-    NonTerminal('namePattern'),
+    NonTerminal('namePatt'),
     Optional(Sequence("guards", NonTerminal('pattern'))),
     Optional(Sequence("extends", OneOrMore(NonTerminal('order'), ','))),
     Comment("implements_@@"), Comment("msgs@@"))
