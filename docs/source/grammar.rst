@@ -5,7 +5,10 @@ Monte Grammar
 .. note:: Lexical details such as indented blocks are
           not captured in this grammar.
 
-.. todo:: finish grammar productions marked @@
+.. todo:: finish grammar productions marked @@.
+          Meanwhile, see `monte_parser.mt`__ for details.
+
+__ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_parser.mt
 
 .. productionlist::
    blockExpr: `FunctionExpr` 
