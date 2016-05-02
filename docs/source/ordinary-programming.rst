@@ -184,7 +184,7 @@ a few cases, Monte will throw a syntax error and require the use of
 parentheses.
 
 With that, let's set aside our game sketch and look at a more complete
-rendition:
+rendition, :download:`mafia.mt<tut/mafia.mt>`:
 
 .. literalinclude:: tut/mafia.mt
     :linenos:
