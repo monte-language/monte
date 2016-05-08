@@ -292,7 +292,7 @@ def testiteration_2(assert):
     object example:
         method test():
             "doc"
-            def evens := [for number in (1..10) if (number % 2 == 0) number]
+            def evens := [for number in (1..10) ? (number % 2 == 0) number]
             evens
             
 

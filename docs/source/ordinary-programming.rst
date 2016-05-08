@@ -341,7 +341,7 @@ message passing.
 
 
 A list of players that got more than a quorum of votes is written
-``[for k => v in (counter) if (v >= quorum) k]``. Provided there
+``[for k => v in (counter) ? (v >= quorum) k]``. Provided there
 is one such player, we remove the player from the
 game with ``players without= (victim)``.
 

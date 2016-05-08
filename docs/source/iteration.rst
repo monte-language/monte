@@ -128,19 +128,17 @@ a comprehension::
     [for key => value in (reverseMap) value => key]
 
 Additionally, just like in Python and Haskell, comprehensions support
-filtering with a predicate::
+filtering with a predicate; this is called the *for-such* comprehension::
 
-    >>> def evens := [for number in (1..10) if (number % 2 == 0) number]
+    >>> def evens := [for number in (1..10) ? (number % 2 == 0) number]
     ... evens
     [2, 4, 6, 8, 10]
 
-.. note::
-    This is currently under discussion; see
-    https://github.com/monte-language/typhon/issues/51 for details.
-
-Unlike many other languages, the predicate must return a Boolean value; if it
+Just like the `such-that pattern`, this such-that clause is evaluated for
+every iteration, and iterations where the clause returns ``false`` are
+skipped. Also, just like the such-that pattern, and unlike some other
+languages' comprehension syntax, the predicate must return a ``Bool``; if it
 doesn't, then the entire comprehension will fail with an exception.
-
 
 Writing Your Own Iterables
 --------------------------
