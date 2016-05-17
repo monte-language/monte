@@ -195,7 +195,7 @@ rendition, :download:`mafia.mt<tut/mafia.mt>`:
 Unit Testing
 ~~~~~~~~~~~~
 
-This module also uses Monte's unite test facilities to capture a simulated
+This module also uses Monte's unit test facilities to capture a simulated
 game:
 
 
