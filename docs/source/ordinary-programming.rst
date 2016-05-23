@@ -27,10 +27,10 @@ object. Methods can be attached to objects with the ``to`` keyword::
   ... origin.getY()
   0
 
-Unlike Java, Monte objects are not constructed from classes. Unlike JavaScript
-or Python, Monte objects are not constructed from prototypes. As a result, it
-might not be obvious at first how to build multiple objects which are similar
-in behavior.
+Unlike Java or Python, Monte objects are not constructed from classes.
+Unlike JavaScript, Monte objects are not constructed from prototypes. As a
+result, it might not be obvious at first how to build multiple objects which
+are similar in behavior.
 
 Functions are objects too
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,7 +94,8 @@ Inside the function ``makeCounter``, we simply define an object called
 ``counter`` and return it. Each time we call ``makeCounter()``, we get
 a new counter object. As demonstrated by the ``makeOffsetCounter``
 method, the function (``makeCounter``) can be referenced from within
-its own body.
+its own body. (Similarly, our counter object could refer to itself in
+any of its methods as ``counter``.)
 
 The lack of a ``this`` or ``self`` keyword may be
 surprising. But this straightforward use of lexical scoping saves us
@@ -123,7 +124,7 @@ of public and private. Instead, all names are private: if a name is not
 visible (i.e. in scope), there is no way to use it.
 
 We refer to an object-making function such as ``makeCounter`` as a
-"Maker". As a more serous example, let's make a sketch of our game::
+"Maker". As a more serious example, let's make a sketch of our game::
 
   >>> def makeMafia(var players :Set):
   ...     def mafiosoCount :Int := players.size() // 3
@@ -209,7 +210,7 @@ constructs a pseudo-random number generator given an initial seed, and
 ``makeEntropy`` makes an object that takes the resulting sequence of bytes and
 packages them up conveniently as integers etc. In
 :ref:`secure_distributed_computing`, we will develop the part of the game that
-provides a truely random seed. But for unit testing, the seed is an
+provides a truly random seed. But for unit testing, the seed is an
 arbitrarily chosen constant.
 
 Additional flow of control
@@ -217,12 +218,11 @@ Additional flow of control
 
 Other traditional structures include:
 
- - ``try{...} catch errorVariable {...} finally{...}``
- - ``throw (ExceptionExpressionThatCanBeAString)``
+ - ``try{...} catch errorVariable {...} finally {...}``
+ - ``throw(ExceptionExpressionThatCanBeAString)``
  - ``break``, ``continue``
-   the next cycle)
- - ``switch (expression) {match==v1{...} match==v2{...}
-   ... match _{defaultAction}}``
+ - ``switch (expression) {match pattern1 {...} match pattern2 {...}
+   ... match _ {defaultAction}}``
 
 String Interpolation with quasi-literals
 ----------------------------------------
@@ -271,8 +271,7 @@ Final, Var, and DeepFrozen
 
 Bindings in Monte are final (immutable) by default.
 
-Wherever a name appears in a pattern, it can also have a guard; in
-particular, the :ref:`DeepFrozen guard <deepfrozen>` means that the
+The :ref:`DeepFrozen guard <deepfrozen>` ensures that an
 object and everything it refers to are immutable.  The ``def
 makeMafia(...) as DeepFrozen`` expression results in this sort of
 binding as well as patterns such as ``DAY :DeepFrozen``.
@@ -292,15 +291,15 @@ Assignment uses the ``:=`` operator, as in Pascal. The single equal
 sign ``=`` is never legal in Monte; use ``:=`` for assignment and
 ``==`` for testing equality.
 
-``==`` and ``!=`` are the boolean tests for equality and inequality
-respectively. When the equality test is used between appropriately
-designated :ref:`transparent immutables<selfless>`, such as
-integers, the values are compared to see if the values are equal; for
-other objects the references are compared to see if both the left and
-right sides of the operator refer to the same object. Chars, booleans,
-integers, and floating point numbers are all compared by value, as are
-Strings, ConstLists, and ConstMaps.
-
+``==`` and ``!=`` are the boolean tests for sameness. For any pair
+of refs x and y, "x == y" will tell whether these refs designate
+the same object. The sameness test is monotonic, meaning that the
+answer it returns will not change for any given pair of objects.
+Chars, booleans, integers, and floating point numbers are all
+compared by their contents, as are Strings, ConstLists, and ConstMaps.
+Other objects only compare same with themselves, unless their
+definition declares them:ref:`Transparent<selfless>`, which lets them
+expose their contents and have them compared for sameness.
 
 Data Structures for Game Play
 -----------------------------
@@ -336,9 +335,14 @@ programming patterns.
 
 Monte also has several features similar to those found in languages in the
 Lisp and ML families which are often conflated with the functional style, like
-strict lexical scoping, immutable builtin value types, and currying for
-message passing.
+strict lexical scoping, immutable builtin value types, comprehension syntax,
+and currying for message passing.
 
+Comprehensions in Monte are written similarly to Python's, but in keeping with
+Monte's style, the syntax elements are placed in evaluation order:
+``[for KEY_PATTERN => VALUE_PATTERN in (ITERABLE) if (FILTER_EXPR) ELEMENT_EXPR]``.
+Just as Python has dict comprehensions, Monte provides map comprehensions --
+to produce a map, ``ELEMENT_EXPR`` would be replaced with ``KEY_EXPR => VALUE_EXPR``.
 
 A list of players that got more than a quorum of votes is written
 ``[for k => v in (counter) ? (v >= quorum) k]``. Provided there
@@ -383,9 +387,10 @@ Monte:
 
   4. Match-bind :ref:`comparisons <comparisons>` such as
      :literal:`"<p>" =~ \`<@tag>\`` test the value on the left against
-     the pattern on the right.
+     the pattern on the right, and return whether the pattern matched
+     or not.
 
-  5. Matchers in objects expressions provide flexible handlers for
+  5. Matchers in object expressions provide flexible handlers for
      :ref:`message passing <message_passing>`.
 
 The ``[=> makeEnum]`` pattern syntax is short for ``["makeEnum" =>

@@ -4,9 +4,8 @@ Introduction
 Why Monte?
 ----------
 
-Don't we have enough languages already? This is a fair question.  We
-can only explain why Monte is interesting to us and leave you to
-judge.
+Don't we have enough languages already? This is a fair question.  Here we'll
+explain why we created Monte and what's interesting about it.
 
 
 Because Security Matters

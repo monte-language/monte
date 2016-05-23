@@ -22,7 +22,7 @@ Monte shares much of its syntax with the C family of languages::
   [200, "hello"]
 
 But as in Haskell, each form with braces can also be written as an indented
-block, so that idiomatic Monte as looks much like Python.
+block, so that idiomatic Monte looks much like Python.
 
 Standardize your indentation to use spaces, because tabs are a syntax
 error in Monte. Monte core library code uses four-space indentation.
@@ -69,7 +69,7 @@ interpolation much like perl or ruby. It's a
 
     traceln(`serving on port $portNum`)
 
-Another quasiliteral is b`<p>Hello!</p>`, which denotes a ``Bytes``
+Another quasiliteral is ``b`<p>Hello!</p>```, which denotes a ``Bytes``
 object rather than a character string.
 
 This short example includes just a few of Monte's :ref:`patterns
@@ -107,8 +107,11 @@ the list of top 10 web application security flaws:
 
 But using object capability discipline, untrusted code has only the authority
 that we explicitly give it.  This rich form of cooperation comes with
-dramatically less vulerability [#dos]_.  The environment in this example is
-empty.  In particular, ``makeTCP4ServerEndpoint`` is not in scope when the
+dramatically less vulnerability [#dos]_.  The environment in this example is
+``safeScope``, which is the same environment modules are evaluated in -- it
+provides basic runtime services such as constructors for lists, maps, and
+other structures, but no "powerful" objects.  In particular,
+``makeTCP4ServerEndpoint`` is not in scope when the
 remote code is executed, so the code cannot use it to access the network.
 Neither does the code have any access to read from nor write to files, clobber
 global state, nor launch missiles.

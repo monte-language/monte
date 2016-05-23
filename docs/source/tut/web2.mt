@@ -3,7 +3,7 @@ import "formData" =~ [=> fieldMap :DeepFrozen]
 exports (main)
 
 object calculator as DeepFrozen:
-    to run (request):
+    to run(request):
         return switch (request.getVerb()):
             match =="GET":
                 calculator.get(request)
@@ -13,15 +13,14 @@ object calculator as DeepFrozen:
     to get(request):
         def body := b`
         <form method="POST">
-          <label>Arbitraty code to execute:<input name="code" /></label>
+          <label>Arbitrary code to execute:<input name="code" /></label>
         </form>
         `
         return [200, ["Content-Type" => "text/html"], body]
 
     to post(request):
         def code := fieldMap(request.getBody())["code"]
-        def emptyEnvironment := [].asMap()
-        def result := eval(code, emptyEnvironment)
+        def result := eval(code, safeScope)
         return [200, ["Content-Type" => "text/plain"], b`${`$result`}`]
 
 def main(argv, => makeTCP4ServerEndpoint) as DeepFrozen:
