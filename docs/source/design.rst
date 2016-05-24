@@ -29,9 +29,9 @@ named arguments:
     :lines: 192-
     :lineno-start: 192
 
-We can go ahead and run this code from a file by using the ``mt`` commandline
+We can go ahead and run this code from a file by using the ``monte`` commandline
 tool::
-  mt eval mafiabot.mt chat.freenode.net
+  monte eval mafiabot.mt chat.freenode.net
 
 Everything after the source filename is passed to main in ``argv`` as a list of
 strings.

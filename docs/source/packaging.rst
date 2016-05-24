@@ -6,12 +6,12 @@ https://github.com/monte-language/mt-mafia . Let's download and run it::
 
   git clone https://github.com/monte-language/mt-mafia
   cd mt-mafia
-  mt test mafiabot
-  mt run mafiabot chat.freenode.net
+  monte test mafiabot
+  monte run mafiabot chat.freenode.net
 This should result in the bot connecting to IRC and being ready to receive commands.
 
 Monte packages are defined by a file in the project root directory named
-``mt.json``. This file includes package metadata and a list of dependencies. Previous to the first run, a Nix package is built from the project and its dependencies (currently these can either be from a local directory or a Git repository). The ``mt test`` command collects all unit tests in the project and starts the test runner, whereas ``mt run`` invokes the ``main`` function in mafiabot.mt. (The build step can be invoked directly using ``mt build``.)
+``mt.json``. This file includes package metadata and a list of dependencies. Previous to the first run, a Nix package is built from the project and its dependencies (currently these can either be from a local directory or a Git repository). The ``monte test`` command collects all unit tests in the project and starts the test runner, whereas ``monte run`` invokes the ``main`` function in mafiabot.mt. (The build step can be invoked directly using ``monte build``.)
 
 The format for ``mt.json`` is a JSON file with the following keys:
 

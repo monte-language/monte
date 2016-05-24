@@ -147,7 +147,7 @@ Interacting with the Monte REPL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Monte has a traditional "Read - Evaluate - Print Loop", or REPL, for
-exploration. Invoke it as `mt repl`. For example::
+exploration. Invoke it as `monte repl`. For example::
 
   >>> 1 + 1
   2
