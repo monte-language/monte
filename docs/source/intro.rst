@@ -132,22 +132,52 @@ compete with C or other memory-unsafe languages.
 Getting Started
 ---------------
 
-Installation: Docker Image (TODO)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Quick Start Docker Image
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. todo:: docker image via nix (`#77`__)
-          Meanwhile, see `Getting Started`__
-          in the Monte wiki.
+If you have Docker installed, the quickest way to get to an interactive prompt
+to run some Monte code is ``docker run -it montelang/repl``. This container
+provides the essentials needed for most examples in this documentation.
 
-__ https://github.com/monte-language/typhon/issues/77
-__ https://github.com/monte-language/monte/wiki/Getting-Started
+A container with a shell and the full set of Monte development tools is
+available on Docker Hub as well, ``montelang/monte-dev``.
+
+
+Installation
+~~~~~~~~~~~~
+
+If you don't want to use Docker, the other supported environment requires the
+packaging/build tool `Nix`__. It can be installed on Linux and OSX from their
+installer script::
+
+    curl https://nixos.org/nix/install | sh
+
+Alternately, you can `install it manually`__ from tarball, deb or rpm.
+
+Once you have Nix set up, you can add our build server as a source of binary packages::
+
+    nix-channel --add http://ci.monte-language.org:3000/project/typhon/channel/latest monte
+
+Once that's set up, you can always fetch the latest build by running::
+
+    nix-channel --update
+    nix-env -i monte
+
+Alternately, you can use Nix to build from source. After fetching the `Monte runtime from GitHub`__, you can start the build from the root directory of the source tree::
+
+    nix-env -f . -iA monte
+
+__ http://nixos.org/nix/
+__ http://nixos.org/releases/nix/latest/
+__ https://github.com/monte-language/typhon/
+
 
 
 Interacting with the Monte REPL
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Monte has a traditional "Read - Evaluate - Print Loop", or REPL, for
-exploration. Invoke it as `monte repl`. For example::
+exploration. Invoke it as ``monte repl``. For example::
 
   >>> 1 + 1
   2
