@@ -244,13 +244,13 @@ pattern holes. The resulting matcher object is invoked with the object
 to be matched, and the patterns in the holes are matched against the
 specimens it extracts::
 
-    >>> "The cat and the hat." =~ simple`The cat and the @what.`
+    >>> "The cat and the hat." =~ `The cat and the @what.`
     true
 
     >>> "The cat and the hat." =~ `The cat and the @{what :Str}.`; what
     "hat"
 
-    >>> "The cat and the hat." =~ simple`The cat and the @{what :Int}.`
+    >>> "The cat and the hat." =~ `The cat and the @{what :Int}.`
     false
 
 Quasi-Literal Pattern Expansion
