@@ -88,7 +88,7 @@ The break statement, when used in a for or a while loop, can be followed by an e
    tests whether ``i`` is even::
 
      >>> { def c := 'c'; if (c < 'e') { "Yay!" } else { "Nope" } }
-     "Nope"
+     "Yay!"
 
 .. _loopExpr:
 
