@@ -150,9 +150,8 @@ linkcheck:
 
 NIXP=~/.nix-profile
 
-doctest: source/docs_examples.mast
-	$(NIXP)/mt-typhon -l $(NIXP)/mast -l `/bin/pwd`/source \
-           $(NIXP)/loader test docs_examples
+doctest: source/docs_examples.mt source/docs_examples.json
+	$(NIXP)/bin/monte eval source/docs_examples.mt source/docs_examples.json
 
 PYTHON=python
 
@@ -161,8 +160,8 @@ PYTHON=python
 	$(NIXP)/mt-typhon -l $(NIXP)/mast $(NIXP)/loader run montec $< $@
 
 SOURCES=*
-source/docs_examples.mt: source/extract_examples.py source/$(SOURCES).rst
-	cd source; $(PYTHON) extract_examples.py docs_examples.mt $(SOURCES).rst
+source/docs_examples.json: source/extract_examples.py source/$(SOURCES).rst
+	cd source; $(PYTHON) extract_examples.py docs_examples.json $(SOURCES).rst
 
 slides:
 	$(SPHINXBUILD) -b slides $(ALLSPHINXOPTS) $(BUILDDIR)/slides

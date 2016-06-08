@@ -2,81 +2,29 @@
 
 Usage:
 
-  extract_examples dest.mt section1.rst section2.rst ...
+  extract_examples dest.json section1.rst section2.rst ...
 
-Examples are converted to monte unit tests.
+Examples are saved in .json format.
 '''
-import logging
 import doctest
+import json
+import logging
 
 log = logging.getLogger(__name__)
 
 
 def main(access):
-    inputs, write = access()
-
-    write(testTop)
+    inputs, save = access()
 
     p = doctest.DocTestParser()
+    suite = []
     for (section, txt) in inputs:
-        write(u'\n# {section}\n'.format(section=section))
-        caseNames = []
-        for (ix, ex) in enumerate(p.get_examples(txt)):
-            name = 'test%s_%s' % (section.replace('-', '_'), ix)
-            fixup = '.canonical()' if 'm`' in ex.source else ''
-            delay = ('when (actual) ->\n        '
-                     if '->' in ex.source or '<-' in ex.source
-                     else '')
-            case = caseTemplate.format(name=name,
-                                       source=indent(ex.source, levels=3),
-                                       fixup=fixup, delay=delay,
-                                       want=ex.want.strip())
-            caseNames.append(name)
-            write(case)
-
-        write(suiteTemplate.format(cases=',\n    '.join(caseNames)))
-
-
-def indent(source, levels):
-    lines = source.split('\n')
-    indent = ' ' * (levels * 4)
-    return '\n'.join(indent + line for line in lines)
-
-
-testTop = ur"""
-import "unittest" =~ [=> unittest]
-exports ()
-
-def mockFileResource(path):
-    var contents := b``
-    return object fileResource:
-        to setContents(bs :Bytes):
-            contents := bs
-        to getContents() :Bytes:
-            def [p, r] := Ref.promise()
-            r <- resolve(contents)
-            return p
-
-"""
-
-caseTemplate = u"""
-def {name}(assert):
-    object example:
-        method test():
-            "doc"
-{source}
-
-    def actual := example.test(){fixup}
-    {delay}assert.equal(actual, {want}{fixup})
-
-"""
-
-suiteTemplate = u"""
-unittest([
-    {cases}
-])
-
-"""
+        for ex in p.get_examples(txt):
+            suite.append(dict(section=section,
+                              lineno=ex.lineno,
+                              source=ex.source,
+                              want=ex.want))
+    save(suite)
 
 
 def mkInputs(argv, open, splitext):
@@ -85,15 +33,15 @@ def mkInputs(argv, open, splitext):
 
 if __name__ == '__main__':
     def _script():
-        from io import open
+        from io import open as io_open
         from sys import argv
         from os.path import splitext
 
         def access():
             logging.basicConfig(level=logging.INFO)
             dest = argv[1]
-            write = open(dest, 'w').write
-            return mkInputs(argv, open, splitext), write
+            save = lambda obj: json.dump(obj, io_open(dest, 'wb'), indent=2)
+            return mkInputs(argv, io_open, splitext), save
 
         main(access)
 

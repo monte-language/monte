@@ -1,0 +1,1016 @@
+[
+  {
+    "source": "if (2 < 3) { \"expected\" } else { \"unexpected\" }\n", 
+    "section": "block-expr", 
+    "lineno": 54, 
+    "want": "\"expected\"\n"
+  }, 
+  {
+    "source": "def x := 5\ndef y := 10\nif (x < y) { \"less\" } else if (x > y) { \"greater\" } else { \"neither\" }\n", 
+    "section": "block-expr", 
+    "lineno": 57, 
+    "want": "\"less\"\n"
+  }, 
+  {
+    "source": "def state := \"day\"\n\nswitch (state) {\n    match ==\"day\" {\"night\"}\n    match ==\"night\" {\"day\"}\n}\n", 
+    "section": "block-expr", 
+    "lineno": 79, 
+    "want": "\"night\"\n"
+  }, 
+  {
+    "source": "m`switch (specimen) { match pat1 { expr1 } }`.expand()\n", 
+    "section": "block-expr", 
+    "lineno": 121, 
+    "want": "m`{ def specimen_1 := specimen; escape ej_2 { def pat1 exit ej_2 := specimen_1; expr1 } catch failure_3 { _switchFailed.run(specimen_1, failure_3) } }`\n"
+  }, 
+  {
+    "source": "try { 3 < \"3\" } catch _ { \"ouch! no order defined\" }\n", 
+    "section": "block-expr", 
+    "lineno": 143, 
+    "want": "\"ouch! no order defined\"\n"
+  }, 
+  {
+    "source": "escape hatch { def x :Int exit hatch := 1.0 }\n", 
+    "section": "block-expr", 
+    "lineno": 159, 
+    "want": "\"1.000000 does not conform to <IntGuard>\"\n"
+  }, 
+  {
+    "source": "def x :Int := 1\nx\n", 
+    "section": "guards", 
+    "lineno": 7, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "def halves(s) :Pair[Str, Str]:\n    return s.split(\",\")\nhalves(\"A,B\")\n", 
+    "section": "guards", 
+    "lineno": 11, 
+    "want": "[\"A\", \"B\"]\n"
+  }, 
+  {
+    "source": "def y := -5\nescape oops {\n    def x :(Int > 0) exit oops := y\n}\n", 
+    "section": "guards", 
+    "lineno": 17, 
+    "want": "\"-5 is not in <(0, \u221e) <IntGuard> region>\"\n"
+  }, 
+  {
+    "source": "def x :('a'..'z' | 'A'..'Z') := 'c'\ndef y :(Double >= 4.2) := 7.0\ndef z :(Int < 5) := 3\n[x, y, z]\n", 
+    "section": "guards", 
+    "lineno": 58, 
+    "want": "['c', 7.0, 3]\n"
+  }, 
+  {
+    "source": "def ints :List[Int] := [1, 2, 4, 6, 8]\ndef setOfUppercaseChars :Set['A'..'Z'] := ['A', 'C', 'E', 'D', 'E', 'C', 'A', 'D', 'E'].asSet()\ndef scores :Map[Str, Int] := [\"Alice\" => 10, \"Bob\" => 5]\n\n[ints.contains(4), setOfUppercaseChars.contains('B'), scores.contains(\"Bob\")]\n", 
+    "section": "guards", 
+    "lineno": 78, 
+    "want": "[true, false, true]\n"
+  }, 
+  {
+    "source": "1 + 1\n", 
+    "section": "intro", 
+    "lineno": 181, 
+    "want": "2\n"
+  }, 
+  {
+    "source": "\"abc\".size()\n", 
+    "section": "intro", 
+    "lineno": 184, 
+    "want": "3\n"
+  }, 
+  {
+    "source": "{ def c := 'c'; if (c < 'e') { \"Yay!\" } else { \"Nope\" } }\n", 
+    "section": "iteration", 
+    "lineno": 89, 
+    "want": "\"Yay!\"\n"
+  }, 
+  {
+    "source": "def evens := [for number in (1..10) ? (number % 2 == 0) number]\nevens\n", 
+    "section": "iteration", 
+    "lineno": 132, 
+    "want": "[2, 4, 6, 8, 10]\n"
+  }, 
+  {
+    "source": "m`1 + 1`.expand()\n", 
+    "section": "modules", 
+    "lineno": 90, 
+    "want": "m`1.add(1)`\n"
+  }, 
+  {
+    "source": "{ 4; \"x\"; \"y\" }\n", 
+    "section": "operators", 
+    "lineno": 45, 
+    "want": "\"y\"\n"
+  }, 
+  {
+    "source": "def color := [\"red\", \"green\", \"blue\"].diverge()\ndef c := color[1] := \"yellow\"\nc\n", 
+    "section": "operators", 
+    "lineno": 79, 
+    "want": "\"yellow\"\n"
+  }, 
+  {
+    "source": "m`x[i] := 1`.expand()\n", 
+    "section": "operators", 
+    "lineno": 89, 
+    "want": "m`x.put(i, def ares_1 := 1); ares_1`\n"
+  }, 
+  {
+    "source": "{ var x := \"augmenting \"; x += \"addition!\"; x }\n", 
+    "section": "operators", 
+    "lineno": 106, 
+    "want": "\"augmenting addition!\"\n"
+  }, 
+  {
+    "source": "m`x += \"addition!\"`.expand()\n", 
+    "section": "operators", 
+    "lineno": 111, 
+    "want": "m`x := x.add(\"addition!\")`\n"
+  }, 
+  {
+    "source": "{ var l := []; for i in (1..10) { l with= (i) }; l }\n", 
+    "section": "operators", 
+    "lineno": 118, 
+    "want": "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\n"
+  }, 
+  {
+    "source": "{ var x := 7; x modPow= (129, 3) }\n", 
+    "section": "operators", 
+    "lineno": 124, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "var x := 5; [ x += 2, x -= 1, x *= 2, x **= 3 ]\n", 
+    "section": "operators", 
+    "lineno": 135, 
+    "want": "[7, 6, 12, 1728]\n"
+  }, 
+  {
+    "source": "var x := 50; [ x //= 3, x %= 7, x /= 4]\n", 
+    "section": "operators", 
+    "lineno": 137, 
+    "want": "[16, 2, 0.500000]\n"
+  }, 
+  {
+    "source": "var x := 5; [ x ^= 3, x |= 15, x &= 7, x <<= 3, x >>= 2]\n", 
+    "section": "operators", 
+    "lineno": 139, 
+    "want": "[6, 15, 7, 56, 14]\n"
+  }, 
+  {
+    "source": "false || true\n", 
+    "section": "operators", 
+    "lineno": 154, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "{((1 =~ x) || (2 =~ x)); x}\n", 
+    "section": "operators", 
+    "lineno": 159, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "{((1 =~ [x, y]) || (2 =~ x)); x}\n", 
+    "section": "operators", 
+    "lineno": 161, 
+    "want": "2\n"
+  }, 
+  {
+    "source": "m`a || b`.expand()\n", 
+    "section": "operators", 
+    "lineno": 178, 
+    "want": "m`if (a) { true } else if (b) { true } else { false }`\n"
+  }, 
+  {
+    "source": "m`a && b`.expand()\n", 
+    "section": "operators", 
+    "lineno": 181, 
+    "want": "m`if (a) { if (b) { true } else { false } } else { false }`\n"
+  }, 
+  {
+    "source": "false == true\n", 
+    "section": "operators", 
+    "lineno": 213, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "false != true\n", 
+    "section": "operators", 
+    "lineno": 216, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "[1, \"x\"] =~ [_ :Int, _ :Str]\n", 
+    "section": "operators", 
+    "lineno": 221, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "[1, 2] =~ [a, b]; b\n", 
+    "section": "operators", 
+    "lineno": 224, 
+    "want": "2\n"
+  }, 
+  {
+    "source": "\"<p>\" =~ `<@tag>`; tag\n", 
+    "section": "operators", 
+    "lineno": 227, 
+    "want": "\"p\"\n"
+  }, 
+  {
+    "source": "\"<p>\" !~ `</@tag>`\n", 
+    "section": "operators", 
+    "lineno": 230, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "3 == \"3\"\n", 
+    "section": "operators", 
+    "lineno": 235, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "1 + 1 == 2.0\n", 
+    "section": "operators", 
+    "lineno": 238, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "true &! false\n", 
+    "section": "operators", 
+    "lineno": 243, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "false & true\n", 
+    "section": "operators", 
+    "lineno": 248, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "false | true\n", 
+    "section": "operators", 
+    "lineno": 251, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "false ^ true\n", 
+    "section": "operators", 
+    "lineno": 254, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "m`x == y`.expand()\n", 
+    "section": "operators", 
+    "lineno": 264, 
+    "want": "m`_equalizer.sameEver(x, y)`\n"
+  }, 
+  {
+    "source": "m`x != y`.expand()\n", 
+    "section": "operators", 
+    "lineno": 266, 
+    "want": "m`_equalizer.sameEver(x, y).not()`\n"
+  }, 
+  {
+    "source": "m`\"value\" =~ pattern`.expand()\n", 
+    "section": "operators", 
+    "lineno": 271, 
+    "want": "m`def sp_1 := \"value\"; def [ok_2, &&pattern] := escape fail_3 { def pattern exit fail_3 := sp_1; _makeList.run(true, &&pattern) } catch problem_4 { def via (_slotToBinding) &&broken_5 := Ref.broken(problem_4); _makeList.run(false, &&broken_5) }; ok_2`\n"
+  }, 
+  {
+    "source": "m`\"value\" !~ pattern`.expand()\n", 
+    "section": "operators", 
+    "lineno": 273, 
+    "want": "m`(def sp_1 := \"value\"; def [ok_2, &&pattern] := escape fail_3 { def pattern exit fail_3 := sp_1; _makeList.run(true, &&pattern) } catch problem_4 { def via (_slotToBinding) &&broken_5 := Ref.broken(problem_4); _makeList.run(false, &&broken_5) }; ok_2).not()`\n"
+  }, 
+  {
+    "source": "m`x ^ y`.expand()\n", 
+    "section": "operators", 
+    "lineno": 278, 
+    "want": "m`x.xor(y)`\n"
+  }, 
+  {
+    "source": "m`x & y`.expand()\n", 
+    "section": "operators", 
+    "lineno": 280, 
+    "want": "m`x.and(y)`\n"
+  }, 
+  {
+    "source": "m`x | y`.expand()\n", 
+    "section": "operators", 
+    "lineno": 282, 
+    "want": "m`x.or(y)`\n"
+  }, 
+  {
+    "source": "m`x &! y`.expand()\n", 
+    "section": "operators", 
+    "lineno": 284, 
+    "want": "m`x.butNot(y)`\n"
+  }, 
+  {
+    "source": "3 < 2\n", 
+    "section": "operators", 
+    "lineno": 297, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "3 > 2\n", 
+    "section": "operators", 
+    "lineno": 299, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "3 < 3\n", 
+    "section": "operators", 
+    "lineno": 301, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "3 <= 3\n", 
+    "section": "operators", 
+    "lineno": 303, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "try { 3 < \"3\" } catch _ { \"ouch! no order defined\" }\n", 
+    "section": "operators", 
+    "lineno": 308, 
+    "want": "\"ouch! no order defined\"\n"
+  }, 
+  {
+    "source": "2.0 <=> 1 + 1\n", 
+    "section": "operators", 
+    "lineno": 313, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "2 + 1 <=> 3.0\n", 
+    "section": "operators", 
+    "lineno": 316, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "m`3 < 2`.expand()\n", 
+    "section": "operators", 
+    "lineno": 324, 
+    "want": "m`_comparer.lessThan(3, 2)`\n"
+  }, 
+  {
+    "source": "m`2.0 <=> 1 + 1`.expand()\n", 
+    "section": "operators", 
+    "lineno": 327, 
+    "want": "m`_comparer.asBigAs(2.000000, 1.add(1))`\n"
+  }, 
+  {
+    "source": "[for x in (1..!4) x * 2]\n", 
+    "section": "operators", 
+    "lineno": 342, 
+    "want": "[2, 4, 6]\n"
+  }, 
+  {
+    "source": "[for x in (1..4) x * 2]\n", 
+    "section": "operators", 
+    "lineno": 347, 
+    "want": "[2, 4, 6, 8]\n"
+  }, 
+  {
+    "source": "(0..!10) <=> (0..9)\n", 
+    "section": "operators", 
+    "lineno": 353, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "m`lo..hi`.expand()\n", 
+    "section": "operators", 
+    "lineno": 358, 
+    "want": "m`_makeOrderedSpace.op__thru(lo, hi)`\n"
+  }, 
+  {
+    "source": "m`lo..!hi`.expand()\n", 
+    "section": "operators", 
+    "lineno": 361, 
+    "want": "m`_makeOrderedSpace.op__till(lo, hi)`\n"
+  }, 
+  {
+    "source": "m`i << bits`.expand()\n", 
+    "section": "operators", 
+    "lineno": 379, 
+    "want": "m`i.shiftLeft(bits)`\n"
+  }, 
+  {
+    "source": "m`i >> bits`.expand()\n", 
+    "section": "operators", 
+    "lineno": 382, 
+    "want": "m`i.shiftRight(bits)`\n"
+  }, 
+  {
+    "source": "[1, 2] + [3, 4]\n", 
+    "section": "operators", 
+    "lineno": 396, 
+    "want": "[1, 2, 3, 4]\n"
+  }, 
+  {
+    "source": "\"abc\" + \"def\"\n", 
+    "section": "operators", 
+    "lineno": 399, 
+    "want": "\"abcdef\"\n"
+  }, 
+  {
+    "source": "[\"square\" => 4] | [\"triangle\" => 3]\n", 
+    "section": "operators", 
+    "lineno": 402, 
+    "want": "[\"square\" => 4, \"triangle\" => 3]\n"
+  }, 
+  {
+    "source": "def sides := [\"square\" => 4, \"triangle\" => 3]\nsides.without(\"square\")\n", 
+    "section": "operators", 
+    "lineno": 405, 
+    "want": "[\"triangle\" => 3]\n"
+  }, 
+  {
+    "source": "m`x + y`.expand()\n", 
+    "section": "operators", 
+    "lineno": 411, 
+    "want": "m`x.add(y)`\n"
+  }, 
+  {
+    "source": "m`x - y`.expand()\n", 
+    "section": "operators", 
+    "lineno": 414, 
+    "want": "m`x.subtract(y)`\n"
+  }, 
+  {
+    "source": "2 * 3\n", 
+    "section": "operators", 
+    "lineno": 427, 
+    "want": "6\n"
+  }, 
+  {
+    "source": "5 ** 3 % 13\n", 
+    "section": "operators", 
+    "lineno": 432, 
+    "want": "8\n"
+  }, 
+  {
+    "source": "m`base ** exp % mod`.expand()\n", 
+    "section": "operators", 
+    "lineno": 437, 
+    "want": "m`base.modPow(exp, mod)`\n"
+  }, 
+  {
+    "source": "2 ** 3\n", 
+    "section": "operators", 
+    "lineno": 450, 
+    "want": "8\n"
+  }, 
+  {
+    "source": "m`2 ** 3`.expand()\n", 
+    "section": "operators", 
+    "lineno": 455, 
+    "want": "m`2.pow(3)`\n"
+  }, 
+  {
+    "source": "- (1 + 3)\n", 
+    "section": "operators", 
+    "lineno": 482, 
+    "want": "-4\n"
+  }, 
+  {
+    "source": "~ 0xff\n", 
+    "section": "operators", 
+    "lineno": 484, 
+    "want": "-256\n"
+  }, 
+  {
+    "source": "! true\n", 
+    "section": "operators", 
+    "lineno": 486, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "m`! false`.expand()\n", 
+    "section": "operators", 
+    "lineno": 493, 
+    "want": "m`false.not()`\n"
+  }, 
+  {
+    "source": "1 :Int\n", 
+    "section": "operators", 
+    "lineno": 518, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "{ def x := 2; def result := x.add(3) }\n", 
+    "section": "operators", 
+    "lineno": 570, 
+    "want": "5\n"
+  }, 
+  {
+    "source": "{ def x; def prom := x<-message(3); null }\n", 
+    "section": "operators", 
+    "lineno": 575, 
+    "want": "null\n"
+  }, 
+  {
+    "source": "{ def x := 2; def xplus := x.add; xplus(4) }\n", 
+    "section": "operators", 
+    "lineno": 580, 
+    "want": "6\n"
+  }, 
+  {
+    "source": "m`f(x)`.expand()\n", 
+    "section": "operators", 
+    "lineno": 591, 
+    "want": "m`f.run(x)`\n"
+  }, 
+  {
+    "source": "{ object parity { to get(n) { return n % 2 }}; parity[3] }\n", 
+    "section": "operators", 
+    "lineno": 596, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "m`target<-verb(args)`.expand()\n", 
+    "section": "operators", 
+    "lineno": 604, 
+    "want": "m`M.send(target, \"verb\", _makeList.run(args), _makeMap.fromPairs(_makeList.run()))`\n"
+  }, 
+  {
+    "source": "m`target<-verb(args, \"name\" := namedArg)`.expand()\n", 
+    "section": "operators", 
+    "lineno": 607, 
+    "want": "m`M.send(target, \"verb\", _makeList.run(args), _makeMap.fromPairs(_makeList.run()))`\n"
+  }, 
+  {
+    "source": "object origin:\n    to getX():\n        return 0\n    to getY():\n        return 0\n# Now invoke the methods\norigin.getY()\n", 
+    "section": "ordinary-programming", 
+    "lineno": 20, 
+    "want": "0\n"
+  }, 
+  {
+    "source": "def square(x):\n    return x * x\nsquare.run(4)\n", 
+    "section": "ordinary-programming", 
+    "lineno": 40, 
+    "want": "16\n"
+  }, 
+  {
+    "source": "object square:\n    to run(x):\n        return x * x\nsquare(4)\n", 
+    "section": "ordinary-programming", 
+    "lineno": 47, 
+    "want": "16\n"
+  }, 
+  {
+    "source": "def makeCounter(var value :Int):\n    return object counter:\n        to increment() :Int:\n            return value += 1\n        to makeOffsetCounter(delta :Int):\n            return makeCounter(value + delta)\n\ndef c1 := makeCounter(1)\nc1.increment()\ndef c2 := c1.makeOffsetCounter(10)\nc1.increment()\nc2.increment()\n[c1.increment(), c2.increment()]\n", 
+    "section": "ordinary-programming", 
+    "lineno": 69, 
+    "want": "[4, 14]\n"
+  }, 
+  {
+    "source": "def makeMafia(var players :Set):\n    def mafiosoCount :Int := players.size() // 3\n    var mafiosos :Set := players.slice(0, mafiosoCount)\n    var innocents :Set := players.slice(mafiosoCount)\n\n    return object mafia:\n        to getWinner():\n            if (mafiosos.size() == 0):\n                return \"village\"\n            if (mafiosos.size() >= innocents.size()):\n                return \"mafia\"\n            return null\n\n        to lynch(victim):\n            players without= (victim)\n            mafiosos without= (victim)\n            innocents without= (victim)\n\ndef game1 := makeMafia([\"Alice\", \"Bob\", \"Charlie\"].asSet())\ngame1.lynch(\"Bob\")\ngame1.lynch(\"Charlie\")\ngame1.getWinner()\n", 
+    "section": "ordinary-programming", 
+    "lineno": 128, 
+    "want": "\"mafia\"\n"
+  }, 
+  {
+    "source": "-3.5 // 1\n", 
+    "section": "ordinary-programming", 
+    "lineno": 167, 
+    "want": "-4\n"
+  }, 
+  {
+    "source": "def players := [object alice{}, object bob{}]\n\nobject game:\n    to vote(player ? (players.contains(player)),\n            choice ? (players.contains(choice))) :\n       return \"voted\"\n\ndef t1 := game.vote(players[0], players[1])\ndef t2 := try { game.vote(object alice{}, \"bob\") } catch _ { \"BZZT!\" }\n[t1, t2]\n", 
+    "section": "patterns", 
+    "lineno": 58, 
+    "want": "[\"voted\", \"BZZT!\"]\n"
+  }, 
+  {
+    "source": "m`def patt ? (condition) := value`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 76, 
+    "want": "m`def via (_suchThat) [patt, via (_suchThat.run(condition)) _] := value`\n"
+  }, 
+  {
+    "source": "def [x, y] := [5, 10]; x\n", 
+    "section": "patterns", 
+    "lineno": 111, 
+    "want": "5\n"
+  }, 
+  {
+    "source": "def [first] + rest := [1, 2, 3, 4]\nrest\n", 
+    "section": "patterns", 
+    "lineno": 119, 
+    "want": "[2, 3, 4]\n"
+  }, 
+  {
+    "source": "def sides := [\"square\" => 4, \"triangle\" => 3]\ndef shape := \"triangle\"\n\ndef [\"square\" => squareSides, (shape) => qty1] := sides\n\ndef [\"triangle\" => qty2] | _ := sides\n\n[squareSides, shape, qty1, qty2]\n", 
+    "section": "patterns", 
+    "lineno": 129, 
+    "want": "[4, \"triangle\", 3, 3]\n"
+  }, 
+  {
+    "source": "def sides := [\"square\" => 4, \"triangle\" => 3]\n\ndef [\"octogon\" => octoSides := 8] | _ := sides\noctoSides\n", 
+    "section": "patterns", 
+    "lineno": 142, 
+    "want": "8\n"
+  }, 
+  {
+    "source": "def sides := [\"square\" => 4, \"triangle\" => 3]\n\ndef [=> triangle, => square] := sides\n[triangle, square]\n", 
+    "section": "patterns", 
+    "lineno": 154, 
+    "want": "[3, 4]\n"
+  }, 
+  {
+    "source": "m`def [item1, item2] + rest := stuff`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 165, 
+    "want": "m`def via (_splitList.run(2)) [item1, item2, rest] := stuff`\n"
+  }, 
+  {
+    "source": "m`def [\"key\" => patt] := data`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 173, 
+    "want": "m`def via (_mapExtract.run(\"key\")) [patt, _ :_mapEmpty] := data`\n"
+  }, 
+  {
+    "source": "m`def [\"key1\" => patt1] | rest := data`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 176, 
+    "want": "m`def via (_mapExtract.run(\"key1\")) [patt1, rest] := data`\n"
+  }, 
+  {
+    "source": "m`def [\"key1\" => patt1 := fallback] := data`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 179, 
+    "want": "m`def via (_mapExtract.withDefault(\"key1\", fallback)) [patt1, _ :_mapEmpty] := data`\n"
+  }, 
+  {
+    "source": "def state := \"night\"\n\nswitch (state) {\n    match ==\"day\" {\"night\"}\n    match ==\"night\" {\"day\"}\n}\n", 
+    "section": "patterns", 
+    "lineno": 197, 
+    "want": "\"day\"\n"
+  }, 
+  {
+    "source": "m`def ==specimen := value`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 215, 
+    "want": "m`def via (_matchSame.run(specimen)) _ := value`\n"
+  }, 
+  {
+    "source": "m`def !=specimen := value`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 218, 
+    "want": "m`def via (_matchSame.different(specimen)) _ := value`\n"
+  }, 
+  {
+    "source": "\"The cat and the hat.\" =~ `The cat and the @what.`\n", 
+    "section": "patterns", 
+    "lineno": 246, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "\"The cat and the hat.\" =~ `The cat and the @{what :Str}.`; what\n", 
+    "section": "patterns", 
+    "lineno": 249, 
+    "want": "\"hat\"\n"
+  }, 
+  {
+    "source": "\"The cat and the hat.\" =~ `The cat and the @{what :Int}.`\n", 
+    "section": "patterns", 
+    "lineno": 252, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "m`def ``quasi @@patt`` := value`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 260, 
+    "want": "m`def via (_quasiMatcher.run(simple__quasiParser.matchMaker(_makeList.run(\"quasi \", simple__quasiParser.patternHole(0), \"\")), _makeList.run())) [patt] := value`\n"
+  }, 
+  {
+    "source": "def via (_splitList.run(1)) [x, xs] := [1, 2, 3]\n[x, xs]\n", 
+    "section": "patterns", 
+    "lineno": 280, 
+    "want": "[1, [2, 3]]\n"
+  }, 
+  {
+    "source": "def x := 1\nx\n", 
+    "section": "patterns", 
+    "lineno": 299, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "def ::\"hello, world\" := [1, 2]\n::\"hello, world\"\n", 
+    "section": "patterns", 
+    "lineno": 305, 
+    "want": "[1, 2]\n"
+  }, 
+  {
+    "source": "m`def bind x := 2`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 364, 
+    "want": "m`def via (_bind.run(x_Resolver, null)) _ := 2`\n"
+  }, 
+  {
+    "source": "m`def &x := 1`.expand()\n", 
+    "section": "patterns", 
+    "lineno": 387, 
+    "want": "m`def via (_slotToBinding) &&x := 1`\n"
+  }, 
+  {
+    "source": "4 + 2 * 3\n", 
+    "section": "prim-expr", 
+    "lineno": 33, 
+    "want": "10\n"
+  }, 
+  {
+    "source": "(4 + 2) * 3\n", 
+    "section": "prim-expr", 
+    "lineno": 35, 
+    "want": "18\n"
+  }, 
+  {
+    "source": "Int\n", 
+    "section": "prim-expr", 
+    "lineno": 52, 
+    "want": "Int\n"
+  }, 
+  {
+    "source": "_equalizer\n", 
+    "section": "prim-expr", 
+    "lineno": 55, 
+    "want": "_equalizer\n"
+  }, 
+  {
+    "source": "{ def ::\"hello, world\" := 1; ::\"hello, world\" }\n", 
+    "section": "prim-expr", 
+    "lineno": 60, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "['I', \"love\", \"Monte\", 42, 0.5][3]\n", 
+    "section": "prim-expr", 
+    "lineno": 127, 
+    "want": "42\n"
+  }, 
+  {
+    "source": "{ def l := ['I', \"love\", \"Monte\", 42, 0.5].diverge(); l[3] := 0 }\n", 
+    "section": "prim-expr", 
+    "lineno": 139, 
+    "want": "0\n"
+  }, 
+  {
+    "source": "m`[]`.expand()\n", 
+    "section": "prim-expr", 
+    "lineno": 148, 
+    "want": "m`_makeList.run()`\n"
+  }, 
+  {
+    "source": "{ def m := [\"roses\" => \"red\", \"violets\" => \"blue\"]; m[\"roses\"] }\n", 
+    "section": "prim-expr", 
+    "lineno": 174, 
+    "want": "\"red\"\n"
+  }, 
+  {
+    "source": "{ def m := [\"roses\" => \"red\", \"violets\" => \"blue\"].diverge(); m[\"roses\"] := 3 }\n", 
+    "section": "prim-expr", 
+    "lineno": 186, 
+    "want": "3\n"
+  }, 
+  {
+    "source": "[ \"a\" => 1, \"b\" => 2] == [ \"b\" => 2, \"a\" => 1]\n", 
+    "section": "prim-expr", 
+    "lineno": 191, 
+    "want": "false\n"
+  }, 
+  {
+    "source": "[ \"a\" => 1, \"b\" => 2].sortKeys() == [ \"b\" => 2, \"a\" => 1].sortKeys()\n", 
+    "section": "prim-expr", 
+    "lineno": 196, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "def x := 3\n`Value of x is: $x`\n", 
+    "section": "quasiparsers", 
+    "lineno": 17, 
+    "want": "\"Value of x is: 3\"\n"
+  }, 
+  {
+    "source": "def a := 2 + 3\nvar a2 := 4\na2 += 1\ndef b := `answer: $a`\ntraceln(b)\nb\n", 
+    "section": "quick_ref", 
+    "lineno": 14, 
+    "want": "\"answer: 5\"\n"
+  }, 
+  {
+    "source": "if ('a' == 'b'):\n   \"match\"\nelse:\n   \"no match\"\n", 
+    "section": "quick_ref", 
+    "lineno": 28, 
+    "want": "\"no match\"\n"
+  }, 
+  {
+    "source": "var a := 0; def b := 4\nwhile (a < b):\n    a += 1\na\n", 
+    "section": "quick_ref", 
+    "lineno": 36, 
+    "want": "4\n"
+  }, 
+  {
+    "source": "var resource := \"reserved\"\ntry:\n    3 // 0\ncatch err:\n    `error!`\nfinally:\n    resource := \"released\"\nresource\n", 
+    "section": "quick_ref", 
+    "lineno": 44, 
+    "want": "\"released\"\n"
+  }, 
+  {
+    "source": "def x := [].diverge()\nfor next in (1..3):\n    x.push([next, next])\nx.snapshot()\n", 
+    "section": "quick_ref", 
+    "lineno": 56, 
+    "want": "[[1, 1], [2, 2], [3, 3]]\n"
+  }, 
+  {
+    "source": "def map := ['a' => 65, 'b' => 66]\nvar sum := 0\nfor key => value in (map):\n    sum += value\nsum\n", 
+    "section": "quick_ref", 
+    "lineno": 64, 
+    "want": "131\n"
+  }, 
+  {
+    "source": "def addTwoPrint(number):\n    traceln(number + 2)\n    return number + 2\n\ndef twoPlusThree := addTwoPrint(3)\ntwoPlusThree\n", 
+    "section": "quick_ref", 
+    "lineno": 77, 
+    "want": "5\n"
+  }, 
+  {
+    "source": "object adder:\n    to add1(number):\n        return number + 1\n    to add2(number):\n        return number + 2\ndef result := adder.add1(3)\nresult\n", 
+    "section": "quick_ref", 
+    "lineno": 90, 
+    "want": "4\n"
+  }, 
+  {
+    "source": "def makeOperator(baseNum):\n    def instanceValue := 3\n    object operator:\n        to addBase(number):\n            return baseNum + number\n        to multiplyBase(number):\n            return baseNum * number\n    return operator\ndef threeHandler := makeOperator(3)\ndef threeTimes2 := threeHandler.multiplyBase(2)\nthreeTimes2\n", 
+    "section": "quick_ref", 
+    "lineno": 105, 
+    "want": "6\n"
+  }, 
+  {
+    "source": "def makeRadio(car):\n    `radio for $car`\ndef makeCar(name):\n    var x := 0\n    var y := 0\n    def car # using def with no assignment\n    def myWeatherRadio := makeRadio(car)\n    bind car:\n        to receiveWeatherAlert():\n            # ....process the weather report....\n            traceln(myWeatherRadio)\n        to getX():\n            return x\n        to getY():\n            return y\n        # ....list the rest of the car methods....\n    return car\nmakeCar(\"ferrari\").getX()\n", 
+    "section": "quick_ref", 
+    "lineno": 124, 
+    "want": "0\n"
+  }, 
+  {
+    "source": "def makeExtendedFile(myFile):\n    return object extendedFile extends myFile:\n        to append(text):\n            var current := myFile.getText()\n            current := current + text\n            myFile.setText(current)\n\nmakeExtendedFile(object _ {})._respondsTo(\"append\", 1)\n", 
+    "section": "quick_ref", 
+    "lineno": 150, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "def main(argv, => makeFileResource):\n    def fileA := makeFileResource(\"fileA\")\n    fileA <- setContents(b`abc\\ndef`)\n    def contents := fileA <- getContents()\n    when (contents) ->\n        for line in (contents.split(\"\\n\")):\n            traceln(line)\n\nmain._respondsTo(\"run\", 1)\n", 
+    "section": "quick_ref", 
+    "lineno": 166, 
+    "want": "true\n"
+  }, 
+  {
+    "source": "var a := [8, 6, \"a\"]\na[2]\n", 
+    "section": "quick_ref", 
+    "lineno": 204, 
+    "want": "\"a\"\n"
+  }, 
+  {
+    "source": "var a := [8, 6, \"a\"]\na.size()\n", 
+    "section": "quick_ref", 
+    "lineno": 208, 
+    "want": "3\n"
+  }, 
+  {
+    "source": "var a := [8, 6, \"a\"]\nfor i in (a):\n    traceln(i)\na := a + [\"b\"]\na.slice(0, 2)\n", 
+    "section": "quick_ref", 
+    "lineno": 212, 
+    "want": "[8, 6]\n"
+  }, 
+  {
+    "source": "def m := [\"c\" => 5]\nm[\"c\"]\n", 
+    "section": "quick_ref", 
+    "lineno": 225, 
+    "want": "5\n"
+  }, 
+  {
+    "source": "[\"c\" => 5].size()\n", 
+    "section": "quick_ref", 
+    "lineno": 229, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "def m := [\"c\" => 5]\nfor key => value in (m):\n    traceln(value)\ndef flexM := m.diverge()\nflexM[\"d\"] := 6\nflexM.size()\n", 
+    "section": "quick_ref", 
+    "lineno": 232, 
+    "want": "2\n"
+  }, 
+  {
+    "source": "def flexA := [8, 6, \"a\", \"b\"].diverge()\nflexA.extend([\"b\"])\nflexA.push(\"b\")\ndef constA := flexA.snapshot()\n", 
+    "section": "quick_ref", 
+    "lineno": 246, 
+    "want": "[8, 6, \"a\", \"b\", \"b\", \"b\"]\n"
+  }, 
+  {
+    "source": "def m := [\"c\" => 5]\ndef flexM := m.diverge()\nflexM[\"b\"] := 2\nflexM.removeKey(\"b\")\ndef constM := flexM.snapshot()\n", 
+    "section": "quick_ref", 
+    "lineno": 258, 
+    "want": "[\"c\" => 5]\n"
+  }, 
+  {
+    "source": "def abacus := object mock { to add(x, y) { return x + y } }\nvar out := null\n\ndef answer := abacus <- add(1, 2)\nwhen (answer) ->\n    out := `computation complete: $answer`\ncatch problem:\n    traceln(`promise broken $problem `)\n", 
+    "section": "quick_ref", 
+    "lineno": 271, 
+    "want": "3\n"
+  }, 
+  {
+    "source": "def makeCarRcvr := fn autoMake { `shiny $autoMake` }\n\ndef carRcvr := makeCarRcvr <- (\"Mercedes\")\nRef.whenBroken(carRcvr, def lost(brokenRef) {\n    traceln(\"Lost connection to carRcvr\")\n})\ncarRcvr\n", 
+    "section": "quick_ref", 
+    "lineno": 283, 
+    "want": "\"shiny Mercedes\"\n"
+  }, 
+  {
+    "source": "def [resultVow, resolver] := Ref.promise()\n\nwhen (resultVow) ->\n    traceln(resultVow)\ncatch prob:\n    traceln(`oops: $prob`)\n\nresolver.resolve(\"this text is the answer\")\nresultVow\n", 
+    "section": "quick_ref", 
+    "lineno": 292, 
+    "want": "\"this text is the answer\"\n"
+  }, 
+  {
+    "source": "DEF x := 1\n", 
+    "section": "symbols", 
+    "lineno": 92, 
+    "want": "1\n"
+  }, 
+  {
+    "source": "5\n", 
+    "section": "symbols", 
+    "lineno": 161, 
+    "want": "5\n"
+  }, 
+  {
+    "source": "0xF\n", 
+    "section": "symbols", 
+    "lineno": 164, 
+    "want": "15\n"
+  }, 
+  {
+    "source": "128 ** 20\n", 
+    "section": "symbols", 
+    "lineno": 170, 
+    "want": "1393796574908163946345982392040522594123776\n"
+  }, 
+  {
+    "source": "5 + 2\n", 
+    "section": "symbols", 
+    "lineno": 185, 
+    "want": "7\n"
+  }, 
+  {
+    "source": "def x :Double := 1.0\n", 
+    "section": "symbols", 
+    "lineno": 232, 
+    "want": "1.000000\n"
+  }, 
+  {
+    "source": "4.0.floor()\n", 
+    "section": "symbols", 
+    "lineno": 237, 
+    "want": "4\n"
+  }, 
+  {
+    "source": "4 * 1.0\n", 
+    "section": "symbols", 
+    "lineno": 240, 
+    "want": "4.000000\n"
+  }, 
+  {
+    "source": "'\u2603'\n", 
+    "section": "symbols", 
+    "lineno": 276, 
+    "want": "'\u2603'\n"
+  }, 
+  {
+    "source": "'\\u23b6'\n", 
+    "section": "symbols", 
+    "lineno": 278, 
+    "want": "'\u23b6'\n"
+  }, 
+  {
+    "source": "\"Hello World!\".replace(\"World\", \"Monte hackers\")\n", 
+    "section": "symbols", 
+    "lineno": 297, 
+    "want": "\"Hello Monte hackers!\"\n"
+  }, 
+  {
+    "source": "\"\u00bfD\u00f3nde aqu\u00ed habla Monte o espa\u00f1ol?\".size()\n", 
+    "section": "symbols", 
+    "lineno": 299, 
+    "want": "34\n"
+  }, 
+  {
+    "source": "def price := 10.00\n`The price is $$$price.`\n", 
+    "section": "symbols", 
+    "lineno": 373, 
+    "want": "\"The price is $10.000000.\"\n"
+  }, 
+  {
+    "source": "def helloWeb(request) { return [200, \"hello\"]; }\nhelloWeb(\"/\")\n", 
+    "section": "taste", 
+    "lineno": 19, 
+    "want": "[200, \"hello\"]\n"
+  }
+]
