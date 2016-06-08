@@ -20,8 +20,8 @@ def makeIRCService(makeTCP4ClientEndpoint, getAddrInfo, Timer,
             return when (addrs) ->
                 def choices := [
                     for addr in (addrs)
-                    if (addr.getFamily() == "INET" &&
-                        addr.getSocketType() == "stream") addr.getAddress()]
+                    ? (addr.getFamily() == "INET" &&
+                       addr.getSocketType() == "stream") addr.getAddress()]
                 def [address] + _ := choices
                 def ep := makeTCP4ClientEndpoint(address, port)
                 connectIRCClient(client, ep)
@@ -178,7 +178,7 @@ def makeMafiaBot(rng) as DeepFrozen:
                 def users := chan.getUsers(notReady)
                 def playerNames := [
                     for name => _ in (users)
-                    if (name != nick)
+                    ? (name != nick)
                     # @chanop -> chanop
                     (if (name =~ `@@@op`) { op } else { name })]
                 traceln("players:", playerNames, users)
