@@ -116,9 +116,9 @@ def makeDocstringWalker(doc) as DeepFrozen:
             doc.data(name, docOf(iface))
 
             def methods := try { iface.getMethods() } catch _ { return; }
-
-            for meth in (methods):
-                def [verb, arity] := [meth.getVerb(), meth.getArity()]
+            for verb => meth in ([for m in (methods)
+                                  m.getVerb() => m].sortKeys()):
+                def arity := meth.getArity()
 
                 doc.method_(`$verb/$arity`, docOf(meth))
             doc.endList()

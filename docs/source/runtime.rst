@@ -102,15 +102,7 @@ Data Constructors
 
       *no docstring*
 
-   .. py:method:: fromBytes/2
-
-      *no docstring*
-
    .. py:method:: run/1
-
-      *no docstring*
-
-   .. py:method:: run/2
 
       *no docstring*
 
@@ -121,11 +113,11 @@ Data Constructors
    A maker of `Double`s.
    
 
-   .. py:method:: run/1
+   .. py:method:: fromBytes/1
 
       *no docstring*
 
-   .. py:method:: fromBytes/1
+   .. py:method:: run/1
 
       *no docstring*
 
@@ -136,15 +128,11 @@ Data Constructors
    A maker of `Str`s.
    
 
-   .. py:method:: fromString/1
+   .. py:method:: fromChars/1
 
       *no docstring*
 
    .. py:method:: fromString/2
-
-      *no docstring*
-
-   .. py:method:: fromChars/1
 
       *no docstring*
 
@@ -155,11 +143,11 @@ Data Constructors
    A maker of `Bytes`.
    
 
-   .. py:method:: fromString/1
+   .. py:method:: fromInts/1
 
       *no docstring*
 
-   .. py:method:: fromInts/1
+   .. py:method:: fromString/1
 
       *no docstring*
 
@@ -193,11 +181,7 @@ Data Constructors
    This object implements several Monte operators, including those which
    provide ordered space syntax.
 
-   .. py:method:: spaceOfGuard/1
-
-      *no docstring*
-
-   .. py:method:: spaceOfValue/1
+   .. py:method:: op__thru/2
 
       *no docstring*
 
@@ -205,7 +189,11 @@ Data Constructors
 
       *no docstring*
 
-   .. py:method:: op__thru/2
+   .. py:method:: spaceOfGuard/1
+
+      *no docstring*
+
+   .. py:method:: spaceOfValue/1
 
       *no docstring*
 
@@ -243,11 +231,11 @@ Data Constructors
    A maker of final slots.
    
 
-   .. py:method:: run/3
+   .. py:method:: asType/0
 
       *no docstring*
 
-   .. py:method:: asType/0
+   .. py:method:: run/3
 
       *no docstring*
 
@@ -258,11 +246,11 @@ Data Constructors
    A maker of var slots.
    
 
-   .. py:method:: run/3
+   .. py:method:: asType/0
 
       *no docstring*
 
-   .. py:method:: asType/0
+   .. py:method:: run/3
 
       *no docstring*
 
@@ -291,7 +279,11 @@ Basic guards
    This guard is unretractable.
    
 
-   .. py:method:: supersetOf/1
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: extractGuards/2
 
       *no docstring*
 
@@ -299,11 +291,7 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuards/2
+   .. py:method:: supersetOf/1
 
       *no docstring*
 
@@ -316,11 +304,11 @@ Basic guards
    This guard is unretractable.
    
 
-   .. py:method:: supersetOf/1
+   .. py:method:: coerce/2
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: supersetOf/1
 
       *no docstring*
 
@@ -348,11 +336,11 @@ Basic guards
    This guard is unretractable.
    
 
-   .. py:method:: supersetOf/1
+   .. py:method:: coerce/2
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: supersetOf/1
 
       *no docstring*
 
@@ -373,7 +361,15 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: add/1
+
+      *no docstring*
+
    .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -381,15 +377,7 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: add/1
-
-      *no docstring*
-
    .. py:method:: subtract/1
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -410,7 +398,15 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: add/1
+
+      *no docstring*
+
    .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -418,15 +414,7 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: add/1
-
-      *no docstring*
-
    .. py:method:: subtract/1
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -447,7 +435,15 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: add/1
+
+      *no docstring*
+
    .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -455,15 +451,7 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: add/1
-
-      *no docstring*
-
    .. py:method:: subtract/1
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -484,7 +472,15 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: add/1
+
+      *no docstring*
+
    .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -492,15 +488,7 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: add/1
-
-      *no docstring*
-
    .. py:method:: subtract/1
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -521,7 +509,15 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: add/1
+
+      *no docstring*
+
    .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -529,15 +525,7 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: add/1
-
-      *no docstring*
-
    .. py:method:: subtract/1
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
 
       *no docstring*
 
@@ -558,11 +546,11 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:method:: extractGuard/2
 
       *no docstring*
 
-   .. py:method:: extractGuard/2
+   .. py:method:: get/1
 
       *no docstring*
 
@@ -583,11 +571,11 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: get/2
+   .. py:method:: extractGuards/2
 
       *no docstring*
 
-   .. py:method:: extractGuards/2
+   .. py:method:: get/2
 
       *no docstring*
 
@@ -608,11 +596,11 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:method:: extractGuard/2
 
       *no docstring*
 
-   .. py:method:: extractGuard/2
+   .. py:method:: get/1
 
       *no docstring*
 
@@ -631,11 +619,11 @@ Basic guards
 
       *no docstring*
 
-   .. py:method:: get/2
+   .. py:method:: extractGuards/2
 
       *no docstring*
 
-   .. py:method:: extractGuards/2
+   .. py:method:: get/2
 
       *no docstring*
 
@@ -655,11 +643,11 @@ Guard utilities
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:method:: extractGuard/2
 
       *no docstring*
 
-   .. py:method:: extractGuard/2
+   .. py:method:: get/1
 
       *no docstring*
 
@@ -777,15 +765,15 @@ Quasiparsers
    quasiliteral, only the rightmost pattern can match any characters; the
    other patterns to the left will all match the empty string.
 
+   .. py:method:: matchMaker/1
+
+      *no docstring*
+
    .. py:method:: patternHole/1
 
       *no docstring*
 
    .. py:method:: valueHole/1
-
-      *no docstring*
-
-   .. py:method:: matchMaker/1
 
       *no docstring*
 
@@ -806,15 +794,15 @@ Quasiparsers
    mirror `simple__quasiParser` with respect to concatenated patterns and
    greediness.
 
+   .. py:method:: matchMaker/1
+
+      *no docstring*
+
    .. py:method:: patternHole/1
 
       *no docstring*
 
    .. py:method:: valueHole/1
-
-      *no docstring*
-
-   .. py:method:: matchMaker/1
 
       *no docstring*
 
@@ -831,19 +819,11 @@ Quasiparsers
    value. In the near future, this object will instead return a translucent
    view into a Monte compiler and optimizer.
 
+   .. py:method:: fromStr/1
+
+      *no docstring*
+
    .. py:method:: getAstBuilder/0
-
-      *no docstring*
-
-   .. py:method:: valueHole/1
-
-      *no docstring*
-
-   .. py:method:: patternHole/1
-
-      *no docstring*
-
-   .. py:method:: valueMaker/1
 
       *no docstring*
 
@@ -851,7 +831,15 @@ Quasiparsers
 
       *no docstring*
 
-   .. py:method:: fromStr/1
+   .. py:method:: patternHole/1
+
+      *no docstring*
+
+   .. py:method:: valueHole/1
+
+      *no docstring*
+
+   .. py:method:: valueMaker/1
 
       *no docstring*
 
@@ -866,23 +854,7 @@ Flow control
    Miscellaneous vat management and quoting services.
    
 
-   .. py:method:: send/4
-
-      *no docstring*
-
-   .. py:method:: callWithPair/3
-
-      *no docstring*
-
-   .. py:method:: toString/1
-
-      *no docstring*
-
    .. py:method:: call/3
-
-      *no docstring*
-
-   .. py:method:: sendOnly/4
 
       *no docstring*
 
@@ -890,23 +862,23 @@ Flow control
 
       *no docstring*
 
+   .. py:method:: callWithPair/3
+
+      *no docstring*
+
+   .. py:method:: send/4
+
+      *no docstring*
+
    .. py:method:: sendOnly/3
 
       *no docstring*
 
-   .. py:method:: send/3
-
-      *no docstring*
-
-   .. py:method:: call/4
-
-      *no docstring*
-
-   .. py:method:: callWithPair/2
-
-      *no docstring*
-
    .. py:method:: toQuote/1
+
+      *no docstring*
+
+   .. py:method:: toString/1
 
       *no docstring*
 
@@ -915,11 +887,11 @@ Flow control
 
    *no docstring*
 
-   .. py:method:: run/1
+   .. py:method:: eject/2
 
       *no docstring*
 
-   .. py:method:: eject/2
+   .. py:method:: run/1
 
       *no docstring*
 
@@ -959,11 +931,11 @@ Evaluation
    This object respects POLA and grants no privileges whatsoever to
    evaluated code. To grant a safe scope, pass `safeScope`.
 
-   .. py:method:: run/2
+   .. py:method:: evalToPair/2
 
       *no docstring*
 
-   .. py:method:: evalToPair/2
+   .. py:method:: run/2
 
       *no docstring*
 
@@ -995,59 +967,7 @@ Reference/object operations
    Ref management and utilities.
    
 
-   .. py:method:: isDeepFrozen/1
-
-      *no docstring*
-
-   .. py:method:: isSelfish/1
-
-      *no docstring*
-
-   .. py:method:: makeProxy/3
-
-      *no docstring*
-
-   .. py:method:: promise/0
-
-      *no docstring*
-
-   .. py:method:: isSettled/1
-
-      *no docstring*
-
    .. py:method:: broken/1
-
-      *no docstring*
-
-   .. py:method:: state/1
-
-      *no docstring*
-
-   .. py:method:: isFar/1
-
-      *no docstring*
-
-   .. py:method:: optProblem/1
-
-      *no docstring*
-
-   .. py:method:: isSelfless/1
-
-      *no docstring*
-
-   .. py:method:: isNear/1
-
-      *no docstring*
-
-   .. py:method:: isResolved/1
-
-      *no docstring*
-
-   .. py:method:: whenResolved/2
-
-      *no docstring*
-
-   .. py:method:: isEventual/1
 
       *no docstring*
 
@@ -1059,11 +979,63 @@ Reference/object operations
 
       *no docstring*
 
-   .. py:method:: whenResolvedOnly/2
+   .. py:method:: isDeepFrozen/1
+
+      *no docstring*
+
+   .. py:method:: isEventual/1
+
+      *no docstring*
+
+   .. py:method:: isFar/1
+
+      *no docstring*
+
+   .. py:method:: isNear/1
+
+      *no docstring*
+
+   .. py:method:: isResolved/1
+
+      *no docstring*
+
+   .. py:method:: isSelfish/1
+
+      *no docstring*
+
+   .. py:method:: isSelfless/1
+
+      *no docstring*
+
+   .. py:method:: isSettled/1
+
+      *no docstring*
+
+   .. py:method:: makeProxy/3
+
+      *no docstring*
+
+   .. py:method:: optProblem/1
+
+      *no docstring*
+
+   .. py:method:: promise/0
+
+      *no docstring*
+
+   .. py:method:: state/1
 
       *no docstring*
 
    .. py:method:: whenBroken/2
+
+      *no docstring*
+
+   .. py:method:: whenResolved/2
+
+      *no docstring*
+
+   .. py:method:: whenResolvedOnly/2
 
       *no docstring*
 
@@ -1158,11 +1130,11 @@ Reference/object operations
    A guard which admits bindings.
    
 
-   .. py:method:: supersetOf/1
+   .. py:method:: coerce/2
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: supersetOf/1
 
       *no docstring*
 
@@ -1175,23 +1147,131 @@ Abstract Syntax
 
    
 
-   .. py:method:: getAstGuard/0
+   .. py:method:: AndExpr/3
 
       *no docstring*
 
-   .. py:method:: getPatternGuard/0
+   .. py:method:: AssignExpr/3
 
       *no docstring*
 
-   .. py:method:: getExprGuard/0
+   .. py:method:: AugAssignExpr/4
 
       *no docstring*
 
-   .. py:method:: getNamePatternGuard/0
+   .. py:method:: BinaryExpr/4
 
       *no docstring*
 
-   .. py:method:: getNounGuard/0
+   .. py:method:: BindPattern/3
+
+      *no docstring*
+
+   .. py:method:: BindingExpr/2
+
+      *no docstring*
+
+   .. py:method:: BindingPattern/2
+
+      *no docstring*
+
+   .. py:method:: CatchExpr/4
+
+      *no docstring*
+
+   .. py:method:: Catcher/3
+
+      *no docstring*
+
+   .. py:method:: CoerceExpr/3
+
+      *no docstring*
+
+   .. py:method:: CompareExpr/4
+
+      *no docstring*
+
+   .. py:method:: CurryExpr/4
+
+      *no docstring*
+
+   .. py:method:: DefExpr/4
+
+      *no docstring*
+
+   .. py:method:: EscapeExpr/5
+
+      *no docstring*
+
+   .. py:method:: ExitExpr/3
+
+      *no docstring*
+
+   .. py:method:: FinalPattern/3
+
+      *no docstring*
+
+   .. py:method:: FinallyExpr/3
+
+      *no docstring*
+
+   .. py:method:: ForExpr/7
+
+      *no docstring*
+
+   .. py:method:: ForwardExpr/2
+
+      *no docstring*
+
+   .. py:method:: FunCallExpr/4
+
+      *no docstring*
+
+   .. py:method:: FunSendExpr/4
+
+      *no docstring*
+
+   .. py:method:: FunctionExpr/3
+
+      *no docstring*
+
+   .. py:method:: FunctionInterfaceExpr/7
+
+      *no docstring*
+
+   .. py:method:: FunctionScript/5
+
+      *no docstring*
+
+   .. py:method:: GetExpr/3
+
+      *no docstring*
+
+   .. py:method:: HideExpr/2
+
+      *no docstring*
+
+   .. py:method:: IfExpr/4
+
+      *no docstring*
+
+   .. py:method:: IgnorePattern/2
+
+      *no docstring*
+
+   .. py:method:: InterfaceExpr/7
+
+      *no docstring*
+
+   .. py:method:: ListComprehensionExpr/6
+
+      *no docstring*
+
+   .. py:method:: ListExpr/2
+
+      *no docstring*
+
+   .. py:method:: ListPattern/3
 
       *no docstring*
 
@@ -1199,15 +1279,43 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: NounExpr/2
+   .. py:method:: MapComprehensionExpr/7
 
       *no docstring*
 
-   .. py:method:: TempNounExpr/2
+   .. py:method:: MapExpr/2
 
       *no docstring*
 
-   .. py:method:: SlotExpr/2
+   .. py:method:: MapExprAssoc/3
+
+      *no docstring*
+
+   .. py:method:: MapExprExport/2
+
+      *no docstring*
+
+   .. py:method:: MapPattern/3
+
+      *no docstring*
+
+   .. py:method:: MapPatternAssoc/4
+
+      *no docstring*
+
+   .. py:method:: MapPatternImport/3
+
+      *no docstring*
+
+   .. py:method:: MatchBindExpr/3
+
+      *no docstring*
+
+   .. py:method:: Matcher/3
+
+      *no docstring*
+
+   .. py:method:: MessageDesc/5
 
       *no docstring*
 
@@ -1219,11 +1327,15 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: BindingExpr/2
+   .. py:method:: Method/7
 
       *no docstring*
 
-   .. py:method:: SeqExpr/2
+   .. py:method:: MethodCallExpr/5
+
+      *no docstring*
+
+   .. py:method:: MismatchExpr/3
 
       *no docstring*
 
@@ -1239,27 +1351,19 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: MethodCallExpr/5
+   .. py:method:: NamedParam/4
 
       *no docstring*
 
-   .. py:method:: FunCallExpr/4
+   .. py:method:: NamedParamImport/3
 
       *no docstring*
 
-   .. py:method:: SendExpr/5
+   .. py:method:: NounExpr/2
 
       *no docstring*
 
-   .. py:method:: FunSendExpr/4
-
-      *no docstring*
-
-   .. py:method:: GetExpr/3
-
-      *no docstring*
-
-   .. py:method:: AndExpr/3
+   .. py:method:: ObjectExpr/6
 
       *no docstring*
 
@@ -1267,11 +1371,39 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: BinaryExpr/4
+   .. py:method:: ParamDesc/3
 
       *no docstring*
 
-   .. py:method:: CompareExpr/4
+   .. py:method:: PatternHoleExpr/2
+
+      *no docstring*
+
+   .. py:method:: PatternHolePattern/2
+
+      *no docstring*
+
+   .. py:method:: PrefixExpr/3
+
+      *no docstring*
+
+   .. py:method:: QuasiExprHole/2
+
+      *no docstring*
+
+   .. py:method:: QuasiParserExpr/3
+
+      *no docstring*
+
+   .. py:method:: QuasiParserPattern/3
+
+      *no docstring*
+
+   .. py:method:: QuasiPatternHole/2
+
+      *no docstring*
+
+   .. py:method:: QuasiText/2
 
       *no docstring*
 
@@ -1283,67 +1415,7 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: MatchBindExpr/3
-
-      *no docstring*
-
-   .. py:method:: MismatchExpr/3
-
-      *no docstring*
-
-   .. py:method:: PrefixExpr/3
-
-      *no docstring*
-
-   .. py:method:: CoerceExpr/3
-
-      *no docstring*
-
-   .. py:method:: CurryExpr/4
-
-      *no docstring*
-
-   .. py:method:: ExitExpr/3
-
-      *no docstring*
-
-   .. py:method:: ForwardExpr/2
-
-      *no docstring*
-
-   .. py:method:: VarPattern/3
-
-      *no docstring*
-
-   .. py:method:: DefExpr/4
-
-      *no docstring*
-
-   .. py:method:: AssignExpr/3
-
-      *no docstring*
-
-   .. py:method:: VerbAssignExpr/4
-
-      *no docstring*
-
-   .. py:method:: AugAssignExpr/4
-
-      *no docstring*
-
-   .. py:method:: Method/7
-
-      *no docstring*
-
-   .. py:method:: To/7
-
-      *no docstring*
-
-   .. py:method:: Matcher/3
-
-      *no docstring*
-
-   .. py:method:: Catcher/3
+   .. py:method:: SamePattern/3
 
       *no docstring*
 
@@ -1351,115 +1423,15 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: FunctionScript/5
+   .. py:method:: SendExpr/5
 
       *no docstring*
 
-   .. py:method:: FunctionExpr/3
+   .. py:method:: SeqExpr/2
 
       *no docstring*
 
-   .. py:method:: ListExpr/2
-
-      *no docstring*
-
-   .. py:method:: ListComprehensionExpr/6
-
-      *no docstring*
-
-   .. py:method:: MapExprAssoc/3
-
-      *no docstring*
-
-   .. py:method:: MapExprExport/2
-
-      *no docstring*
-
-   .. py:method:: MapExpr/2
-
-      *no docstring*
-
-   .. py:method:: MapComprehensionExpr/7
-
-      *no docstring*
-
-   .. py:method:: ForExpr/7
-
-      *no docstring*
-
-   .. py:method:: ObjectExpr/6
-
-      *no docstring*
-
-   .. py:method:: ParamDesc/3
-
-      *no docstring*
-
-   .. py:method:: MessageDesc/5
-
-      *no docstring*
-
-   .. py:method:: InterfaceExpr/7
-
-      *no docstring*
-
-   .. py:method:: FunctionInterfaceExpr/7
-
-      *no docstring*
-
-   .. py:method:: CatchExpr/4
-
-      *no docstring*
-
-   .. py:method:: FinallyExpr/3
-
-      *no docstring*
-
-   .. py:method:: TryExpr/4
-
-      *no docstring*
-
-   .. py:method:: EscapeExpr/5
-
-      *no docstring*
-
-   .. py:method:: SwitchExpr/3
-
-      *no docstring*
-
-   .. py:method:: WhenExpr/5
-
-      *no docstring*
-
-   .. py:method:: IfExpr/4
-
-      *no docstring*
-
-   .. py:method:: WhileExpr/4
-
-      *no docstring*
-
-   .. py:method:: HideExpr/2
-
-      *no docstring*
-
-   .. py:method:: ValueHoleExpr/2
-
-      *no docstring*
-
-   .. py:method:: PatternHoleExpr/2
-
-      *no docstring*
-
-   .. py:method:: ValueHolePattern/2
-
-      *no docstring*
-
-   .. py:method:: PatternHolePattern/2
-
-      *no docstring*
-
-   .. py:method:: FinalPattern/3
+   .. py:method:: SlotExpr/2
 
       *no docstring*
 
@@ -1467,39 +1439,39 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: BindingPattern/2
+   .. py:method:: SuchThatPattern/3
 
       *no docstring*
 
-   .. py:method:: BindPattern/3
+   .. py:method:: SwitchExpr/3
 
       *no docstring*
 
-   .. py:method:: IgnorePattern/2
+   .. py:method:: TempNounExpr/2
 
       *no docstring*
 
-   .. py:method:: ListPattern/3
+   .. py:method:: To/7
 
       *no docstring*
 
-   .. py:method:: MapPatternAssoc/4
+   .. py:method:: TryExpr/4
 
       *no docstring*
 
-   .. py:method:: MapPatternImport/3
+   .. py:method:: ValueHoleExpr/2
 
       *no docstring*
 
-   .. py:method:: MapPattern/3
+   .. py:method:: ValueHolePattern/2
 
       *no docstring*
 
-   .. py:method:: NamedParam/4
+   .. py:method:: VarPattern/3
 
       *no docstring*
 
-   .. py:method:: NamedParamImport/3
+   .. py:method:: VerbAssignExpr/4
 
       *no docstring*
 
@@ -1507,31 +1479,31 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: SuchThatPattern/3
+   .. py:method:: WhenExpr/5
 
       *no docstring*
 
-   .. py:method:: SamePattern/3
+   .. py:method:: WhileExpr/4
 
       *no docstring*
 
-   .. py:method:: QuasiText/2
+   .. py:method:: getAstGuard/0
 
       *no docstring*
 
-   .. py:method:: QuasiExprHole/2
+   .. py:method:: getExprGuard/0
 
       *no docstring*
 
-   .. py:method:: QuasiPatternHole/2
+   .. py:method:: getNamePatternGuard/0
 
       *no docstring*
 
-   .. py:method:: QuasiParserExpr/3
+   .. py:method:: getNounGuard/0
 
       *no docstring*
 
-   .. py:method:: QuasiParserPattern/3
+   .. py:method:: getPatternGuard/0
 
       *no docstring*
 
@@ -1617,10 +1589,6 @@ Utilities for syntax expansions
    other.
    
 
-   .. py:method:: sameYet/2
-
-      *no docstring*
-
    .. py:method:: isSettled/1
 
       *no docstring*
@@ -1634,6 +1602,10 @@ Utilities for syntax expansions
       *no docstring*
 
    .. py:method:: sameEver/2
+
+      *no docstring*
+
+   .. py:method:: sameYet/2
 
       *no docstring*
 
@@ -1679,11 +1651,11 @@ Utilities for syntax expansions
 
    
 
-   .. py:method:: run/1
+   .. py:method:: different/1
 
       *no docstring*
 
-   .. py:method:: different/1
+   .. py:method:: run/1
 
       *no docstring*
 
@@ -1707,10 +1679,6 @@ Utilities for syntax expansions
 
       *no docstring*
 
-   .. py:method:: run/2
-
-      *no docstring*
-
 
 .. py:data:: _splitList
 
@@ -1727,10 +1695,6 @@ Utilities for syntax expansions
 .. py:data:: _suchThat
 
    The pattern patt ? (expr).
-
-   .. py:method:: run/1
-
-      *no docstring*
 
    .. py:method:: run/2
 
@@ -1783,11 +1747,11 @@ Interface constructors
 
    Produce an interface.
 
-   .. py:method:: run/5
+   .. py:method:: makePair/5
 
       *no docstring*
 
-   .. py:method:: makePair/5
+   .. py:method:: run/5
 
       *no docstring*
 
@@ -1813,7 +1777,9 @@ Time
    
    This object provides a useful collection of time-related methods:
    * `fromNow(delay :Double)`: Produce a promise which will fully resolve
-   after at least `delay` seconds have elapsed in the runtime.
+   after at least `delay` seconds have elapsed in the runtime. The promise
+   will resolve to a `Double` representing the precise amount of time
+   elapsed, in seconds.
    * `sendTimestamp(callable)`: Send a `Double` representing the runtime's
    clock to `callable`.
    
@@ -1831,11 +1797,11 @@ Time
 
       *no docstring*
 
-   .. py:method:: unsafeNow/0
+   .. py:method:: sendTimestamp/1
 
       *no docstring*
 
-   .. py:method:: sendTimestamp/1
+   .. py:method:: unsafeNow/0
 
       *no docstring*
 
@@ -1932,7 +1898,7 @@ Runtime
    This object is necessarily unsafe and nondeterministic.
    
 
-   .. py:method:: getReactorStatistics/0
+   .. py:method:: getCrypt/0
 
       *no docstring*
 
@@ -1940,11 +1906,11 @@ Runtime
 
       *no docstring*
 
-   .. py:method:: getCrypt/0
+   .. py:method:: getHeapStatistics/0
 
       *no docstring*
 
-   .. py:method:: getHeapStatistics/0
+   .. py:method:: getReactorStatistics/0
 
       *no docstring*
 
@@ -1970,7 +1936,7 @@ Processes and Vats
    The current process on the local node.
    
 
-   .. py:method:: interrupt/0
+   .. py:method:: getArguments/0
 
       *no docstring*
 
@@ -1978,11 +1944,11 @@ Processes and Vats
 
       *no docstring*
 
-   .. py:method:: getArguments/0
+   .. py:method:: getPID/0
 
       *no docstring*
 
-   .. py:method:: getPID/0
+   .. py:method:: interrupt/0
 
       *no docstring*
 
@@ -1993,15 +1959,15 @@ Processes and Vats
    Turn management and object isolation.
    
 
+   .. py:method:: run/0
+
+      *no docstring*
+
    .. py:method:: seed/1
 
       *no docstring*
 
    .. py:method:: sprout/2
-
-      *no docstring*
-
-   .. py:method:: run/0
 
       *no docstring*
 
