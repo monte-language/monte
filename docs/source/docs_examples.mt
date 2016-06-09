@@ -14,13 +14,6 @@ def runSuite(suite) as DeepFrozen:
     for case in (suite):
         def [=>section, =>lineno, =>source, =>want] | _ := case
 
-        if (want.contains("m`")):
-            # skip these until the m`...` bug is fixed:
-            # > m`1`
-            # Exception: Message refused: (<chainer>, Atom(next/2), [<ejector>, throw])
-            # @@@ traceln(`$section.rst:$lineno: SKIP $want`)
-            continue
-
         def doOrAbort(thunk, getMsg, ej):
             try:
                 return thunk()
@@ -35,8 +28,12 @@ def runSuite(suite) as DeepFrozen:
                              fn { `$msg $expr` }, ej)
 
         escape abort:
-            def expected := tryEval(want, "expected result??", abort)
-            def actual := tryEval(source, "actual result??", abort)
+            def fixAST(v):
+                def isAST := want.contains("m`")
+                return if (isAST) { v.canonical() } else { v }
+            def expected := fixAST(tryEval(want, "expected result??", abort))
+            def actual := fixAST(tryEval(source, "actual result??", abort))
+
             def result := doOrAbort(
                 fn { actual == expected },
                 fn { `$actual =??= $expected` }, abort)
