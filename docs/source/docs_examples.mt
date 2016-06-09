@@ -1,27 +1,53 @@
 import "lib/json" =~ [=> JSON :DeepFrozen]
 import "lib/codec/utf8" =~ [=> UTF8 :DeepFrozen]
+import "lib/tubes" =~ [
+    => makeUTF8EncodePump :DeepFrozen,
+    => makePumpTube :DeepFrozen,
+]
 exports (main)
 
-"docs_examples: run tests extracted from Monte docs
+def usage :DeepFrozen := "docs_examples: run tests extracted from Monte docs
 
 Usage:
- python extract_examples.py suite.json *.rst
- monte eval docs_examples.mt suite.json
+ monte eval docs_examples.mt <suitefile> <timeout>
+
+e.g.
+ monte eval docs_examples.mt suite.json 10
+
+See extract_examples.py to generate <suitefile>.
 
 See also extract_examples.py and ../Makefile.
 "
 
-def loadJSON(fr) as DeepFrozen:
-    def bs := fr <- getContents()
-    return when (bs) ->
-        def via (UTF8.decode) json := bs
-        def via (JSON.decode) obj := json
-        obj
+def runSuite(suite, timeout) as DeepFrozen:
+    def CaseID := Pair[Str, Int]  # section, lineno
+    def Status := NullOk[Bool]
+    def aborted := fn s :Status { s == null }
+    def passed := fn s :Status { s != null && s }
+    def failed := fn s :Status { s != null && !s}
+    def var status :Map[CaseID, Status] := [].asMap()
+    def getResults():
+        def pick := fn crit { [for cid => s in (status) ? (crit(s)) cid] }
+        return ["pass" => pick(passed),
+                "fail" => pick(failed),
+                "abort" => pick(aborted),
+                "pending" => [for [=>section, =>lineno] | _ in (suite)
+                              ? (!status.contains([section, lineno]))
+                              [section, lineno]]]
+    def [var wins :Int, var losses :Int, var aborts :Int] := [0, 0, 0]
+    def var done :Bool := false
+    def [resultsP, resultsR] := Ref.promise()
+    when (timeout) ->
+        done := true
+        resultsR.resolve(getResults())
+    def areWeThereYet():
+        if (!done && wins + losses + aborts >= suite.size()):
+            done := true
+            resultsR.resolve(getResults())
 
-def runSuite(suite) as DeepFrozen:
-    def [var wins, var losses, var aborts] := [0, 0, 0]
     for case in (suite):
         def [=>section, =>lineno, =>source, =>want] | _ := case
+        def caseId := [section, lineno]
 
         def tryEval(expr, msg, ej):
             return try { eval(expr, safeScope) } catch oops { ej([oops, msg]) }
@@ -30,29 +56,57 @@ def runSuite(suite) as DeepFrozen:
                                                fn v { v })
 
         escape abort:
-            def expected := fixAST(tryEval(want, "expected result??", abort))
-            def actual := fixAST(tryEval(source, "actual result??", abort))
+            def expected :Near := tryEval(want, "expected result??", abort)
+            def actual := tryEval(source, "actual result??", abort)
 
-            def result := try { actual == expected } catch oops {
-                abort([oops, `$actual =??= $expected`]) }
-
-            if (result):
-                wins += 1
-                # traceln(`$section.rst:$lineno: ok $wins $source => $expected`)
-            else:
-                losses += 1
-                traceln(`$section.rst:$lineno: FAIL: $source => $actual ; expected: $expected`)
+            when (actual) ->
+                if (fixAST(actual) == fixAST(expected)):
+                    status with= (caseId, true)
+                    wins += 1
+                    # traceln(`$section.rst:$lineno: ok $wins $source => $expected`)
+                else:
+                    traceln(`$section.rst:$lineno: FAIL: $source => $actual ; expected: $expected`)
+                    status with= (caseId, false)
+                    losses += 1
+                areWeThereYet()
         catch [oops, msg]:
-            aborts += 1
             traceln(`$section.rst:$lineno: ABORT: $msg`)
             traceln.exception(oops)
+            status with= (caseId, null)
+            aborts += 1
+            areWeThereYet()
 
-    return ["pass" => wins, "fail" => losses, "abort" => aborts]
+    return resultsP
 
 
-def main(argv, => makeFileResource) as DeepFrozen:
-    def suite := loadJSON(makeFileResource(argv.last()))
-    when (suite) ->
-        traceln(suite.size())
-        def result := runSuite(suite)
-        traceln(result)
+def printer(rawTube) as DeepFrozen:
+    def out := makePumpTube(makeUTF8EncodePump())
+    out <- flowTo(rawTube)
+    return out
+
+
+def main(argv, =>makeStdErr, =>makeFileResource, =>Timer) as DeepFrozen:
+    escape ux:
+        def [via (_makeInt) timeout, suiteFile] + _ exit ux := argv.reverse()
+
+        when (def bytes := makeFileResource(suiteFile) <- getContents()) ->
+            escape fmtErr:
+                def via (UTF8.decode) chars exit fmtErr := bytes
+                def via (JSON.decode) suite exit fmtErr := chars
+
+                traceln(`Testing ${suite.size()} cases with $timeout sec timeout.`)
+                when (def result := runSuite(suite, Timer.fromNow(timeout))) ->
+                    traceln([for status => caseIds in (result)
+                             status => caseIds.size()])
+                    traceln(`Timed out: ${result["pending"]}`)
+                    0
+            catch err:
+                traceln(`cannot parse JSON from $suiteFile`)
+                traceln.exception(err)
+                1
+        catch ioErr:
+            traceln(`failed to getContents of $suiteFile`)
+            traceln.exception(ioErr)
+    catch _:
+        printer(makeStdErr()) <- receive(usage)
+        1
