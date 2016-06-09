@@ -681,7 +681,7 @@
     "source": "m`def ``quasi @@patt`` := value`.expand()\n", 
     "section": "patterns", 
     "lineno": 260, 
-    "want": "m`def via (_quasiMatcher.run(simple__quasiParser.matchMaker(_makeList.run(\"quasi \", simple__quasiParser.patternHole(0), \"\")), _makeList.run())) [patt] := value`\n"
+    "want": "m`def via (_quasiMatcher.run(::\"````\".matchMaker(_makeList.run(\"quasi \", ::\"````\".patternHole(0), \"\")), _makeList.run())) [patt] := value`\n"
   }, 
   {
     "source": "def via (_splitList.run(1)) [x, xs] := [1, 2, 3]\n[x, xs]\n", 

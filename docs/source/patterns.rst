@@ -259,7 +259,7 @@ Quasi-Literal Pattern Expansion
 ::
 
    >>> m`def ``quasi @@patt`` := value`.expand()
-   m`def via (_quasiMatcher.run(simple__quasiParser.matchMaker(_makeList.run("quasi ", simple__quasiParser.patternHole(0), "")), _makeList.run())) [patt] := value`
+   m`def via (_quasiMatcher.run(::"````".matchMaker(_makeList.run("quasi ", ::"````".patternHole(0), "")), _makeList.run())) [patt] := value`
 
 .. index:: view, transformation
 
