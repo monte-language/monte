@@ -272,11 +272,7 @@ Eventual Sends
    >>> def abacus := object mock { to add(x, y) { return x + y } }
    ... var out := null
    ...
-   ... def answer := abacus <- add(1, 2)
-   ... when (answer) ->
-   ...     out := `computation complete: $answer`
-   ... catch problem:
-   ...     traceln(`promise broken $problem `)
+   ... abacus <- add(1, 2)
    3
 
 ::

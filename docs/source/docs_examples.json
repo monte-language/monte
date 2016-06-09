@@ -912,7 +912,7 @@
     "want": "[\"c\" => 5]\n"
   }, 
   {
-    "source": "def abacus := object mock { to add(x, y) { return x + y } }\nvar out := null\n\ndef answer := abacus <- add(1, 2)\nwhen (answer) ->\n    out := `computation complete: $answer`\ncatch problem:\n    traceln(`promise broken $problem `)\n", 
+    "source": "def abacus := object mock { to add(x, y) { return x + y } }\nvar out := null\n\nabacus <- add(1, 2)\n", 
     "section": "quick_ref", 
     "lineno": 271, 
     "want": "3\n"
@@ -920,13 +920,13 @@
   {
     "source": "def makeCarRcvr := fn autoMake { `shiny $autoMake` }\n\ndef carRcvr := makeCarRcvr <- (\"Mercedes\")\nRef.whenBroken(carRcvr, def lost(brokenRef) {\n    traceln(\"Lost connection to carRcvr\")\n})\ncarRcvr\n", 
     "section": "quick_ref", 
-    "lineno": 283, 
+    "lineno": 279, 
     "want": "\"shiny Mercedes\"\n"
   }, 
   {
     "source": "def [resultVow, resolver] := Ref.promise()\n\nwhen (resultVow) ->\n    traceln(resultVow)\ncatch prob:\n    traceln(`oops: $prob`)\n\nresolver.resolve(\"this text is the answer\")\nresultVow\n", 
     "section": "quick_ref", 
-    "lineno": 292, 
+    "lineno": 288, 
     "want": "\"this text is the answer\"\n"
   }, 
   {
