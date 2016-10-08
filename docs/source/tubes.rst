@@ -2,6 +2,9 @@
 Tubes
 =====
 
+.. deprecated:: unstable
+    Tubes have been deprecated in favor of :doc:`streamcaps`.
+
 Tutorial
 ========
 

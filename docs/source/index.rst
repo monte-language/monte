@@ -50,6 +50,7 @@ Secure Distributed Computing
     vats
     brands
     promises
+    streamcaps
     tubes
 
 Appendixes, Indices and tables
