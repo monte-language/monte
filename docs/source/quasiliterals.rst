@@ -74,7 +74,7 @@ Simple
 .. sidebar:: Did You Know?
 
     Monte originally used the same name as E for ::"``":
-    ``simple__quasiParser``. That's why we sometimes call ::"``" the
+    ``simple__quasiParser``. That's why we call ::"``" the
     "simple" quasiparser.
 
 The simple or empty QP builds strings::
@@ -104,9 +104,10 @@ The bytes QP builds bytestrings::
 
     b`asdf`
 
-Non-ASCII characters, like these, cause errors to be thrown at runtime::
+The encoding of characters is unconditionally Latin-1. Non-Latin-1 characters
+cause errors to be thrown at runtime::
 
-    b`¡Olé!`
+    b`ErrorRaiser™`
 
 Other than that quirk, the bytes QP behaves much like the simple QP, including
 parsing::
@@ -124,3 +125,59 @@ The Monte QP can be used for code generation, since it evaluates to objects
 usable with ``eval/2``::
 
     eval(m`2 + 2`, [].asMap())
+
+Custom Quasiparsers
+===================
+
+Anybody can write their own quasiparser.
+
+Parsing with Values
+-------------------
+
+The first half of the QP API deals with building the initial structure and
+including values.
+
+``.valueHole(index :Int)`` should create a value marker which can be used in
+place of some value which will be included later. ``.valueMaker(pieces
+:List)`` will be called with a list of pieces, which can be either strings or
+value markers, and it should return a partial structure. That structure can be
+completed with its ``.substitute(values :List)``, which provides a list of
+values that can be swapped with the value markers.
+
+To see how this API all comes together, let's look at the kernel expansion of
+a simple QP call::
+
+    `Just another $day for this humble $string.`
+
+What Monte actually does is call ``.valueMaker/1``, like so::
+
+    ::"``".valueMaker(["Just another ", ::"``".valueHole(0),
+                       " for this humble ", ::"``".valueHole(1),
+                       "."]).substitute([day, string])
+
+Parsing Patterns
+----------------
+
+The pattern API is similar and builds upon the expression API.
+
+First, the ``.patternHole/1`` method allows pattern hole markers to be built,
+just like with value holes. Then, the structure is built with
+``.matchMaker/1`` instead of ``.valueMaker/1``. This structure should have a
+completion method, ``.matchBind(values :List, specimen, ej)`` which attempts
+to unify the specimen with the structure completed by the values or eject on
+failure.
+
+Here's a simple pattern::
+
+    def `how ${hard} could it be to match @this?` := "not hard, just complex"
+
+And its expansion::
+
+    def via (_quasiMatcher.run(::"``".matchMaker(["how ", ::"``".valueHole(0),
+                                                  " could it be to match ",
+                                                  ::"``".patternHole(0),
+                                                  "?"]),
+                               [hard])) [this] := "not hard, just complex"
+
+Note how the ``_quasiMatcher`` helper in the safe scope takes care of the
+extra runtime plumbing.

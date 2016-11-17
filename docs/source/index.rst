@@ -30,7 +30,7 @@ Language Reference
     operators
     patterns
     symbols
-    quasiparsers
+    quasiliterals
     interfaces
     miranda
     iteration
