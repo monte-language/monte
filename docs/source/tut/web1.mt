@@ -1,5 +1,5 @@
-# Import a name from the "lib/http/server" module.
-import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
+# Import a name from the "http/server" module.
+import "http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
 # Export the entrypoint.
 exports (main)
 

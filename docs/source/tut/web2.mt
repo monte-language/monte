@@ -1,5 +1,5 @@
-import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
-import "lib/http/tag" =~ [=> tag :DeepFrozen]
+import "http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
+import "http/tag" =~ [=> tag :DeepFrozen]
 import "formData" =~ [=> fieldMap :DeepFrozen]
 exports (main)
 

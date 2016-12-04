@@ -179,11 +179,10 @@ Access to files is given to the `main` entry point::
 Web Applications
 ----------------
 
-Access to TCP/IP networking is also given to the `main` entry
-point. The ``lib/http/server`` module builds an HTTP server from a
-TCP/IP listener::
+Access to TCP/IP networking is also given to the `main` entry point. The
+``http/server`` module builds an HTTP server from a TCP/IP listener::
 
-    import "lib/http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
+    import "http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
     exports (main)
 
     def hello(request) as DeepFrozen:
