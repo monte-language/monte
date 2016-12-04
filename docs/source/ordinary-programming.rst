@@ -157,8 +157,8 @@ Traditional Datatypes and Operators
 -----------------------------------
 
 Monte includes :ref:`basic data types <basic_data>` such as ``Int``,
-``Double``, ``Str``, ``Char``, and ``Boolean``. All integer arithmetic is
-unlimited precision, as if all integers were python longs.
+``Double``, ``Str``, ``Char``, and ``Bool``. All integer arithmetic is
+unlimited precision, like in Python.
 
 The operators ``+``, ``-``, and ``*`` have their traditional meanings
 for ``Int`` and ``Double``. The normal division operator ``/`` always
@@ -170,8 +170,7 @@ gives you an ``Int``, truncated towards negative infinity. So::
 
 .. sidebar:: Comments
 
-   Monte uses the same ``# ...`` syntax for comments as python and
-   shell programming.
+   Monte uses the same ``# ...`` syntax for comments as Python and bash.
 
 Strings are enclosed in double quotes. Characters are enclosed in
 single quotes.
@@ -210,8 +209,8 @@ constructs a pseudo-random number generator given an initial seed, and
 ``makeEntropy`` makes an object that takes the resulting sequence of bytes and
 packages them up conveniently as integers etc. In
 :ref:`secure_distributed_computing`, we will develop the part of the game that
-provides a truly random seed. But for unit testing, the seed is an
-arbitrarily chosen constant.
+provides a truly random seed. But for unit testing, the seed is an arbitrarily
+chosen constant.
 
 Additional flow of control
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -233,7 +232,7 @@ of complex strings as described in detail later;
 back-ticks denote a quasi-literal, and the dollar sign denotes a
 variable whose value is to be embedded in the string.
 
-Dynamic "type checking" with Guards
+Dynamic "type checking" with guards
 -----------------------------------
 
 Monte :ref:`guards <guards>` perform many of the functions usually thought of
@@ -246,11 +245,14 @@ Guards are not checked during compilation. They are checked during
 execution and will throw exceptions if the value cannot be coerced to
 pass the guard.
 
-Monte features strong dynamic types. By "strong" we mean that Monte's types
-resist automatic coercion; by "dynamic" we mean that objects are not
-necessarily specialized to any specific type.
+.. sidebar:: Optimizing Monte Compilers
 
-As an example of strong typing in Monte, consider the following statement::
+    Monte does not specify a compilation model. Some guards can be optimized
+    away by intelligent Monte compilers, and linters may warn about
+    statically-detectable guard failures.
+
+Monte features strong types; monte values resist automatic coercion. As an
+example of strong typing in Monte, consider the following statement::
 
     def x := 42 + true
 
@@ -258,7 +260,7 @@ This statement will result in an error, because ``true`` is a boolean value
 and cannot be automatically transformed into an integer, float, or other value
 which integers will accept for addition.
 
-We can also build Guards at runtime. The call to ``makeEnum`` returns
+We can also build guards at runtime. The call to ``makeEnum`` returns
 a list where the first item is a new guard and the remaining items are
 distinct new objects that pass the guard. No other objects pass the
 guard.
@@ -269,20 +271,19 @@ guard.
 Final, Var, and DeepFrozen
 --------------------------
 
-Bindings in Monte are final (immutable) by default.
+Bindings in Monte are immutable by default.
 
-The :ref:`DeepFrozen guard <deepfrozen>` ensures that an
-object and everything it refers to are immutable.  The ``def
-makeMafia(...) as DeepFrozen`` expression results in this sort of
-binding as well as patterns such as ``DAY :DeepFrozen``.
+The :ref:`DeepFrozen guard <deepfrozen>` ensures that an object and everything
+it refers to are immutable.  The ``def makeMafia(…) as DeepFrozen`` expression
+results in this sort of binding as well as patterns such as ``DAY
+:DeepFrozen``.
 
-Using a ``var`` pattern in a definition (such as ``mafiosos``) or
-parameter (such as ``players``) lets you assign to that variable again
-later.
+Using a ``var`` pattern in a definition (such as ``mafiosos``) or parameter
+(such as ``players``) lets you assign to that variable again later.
 
-There are no (mutable) global variables, however. We cannot import a
-random number generator. Rather, the random number generator argument
-``rng`` is passed to the ``makeMafia`` maker function explicitly.
+There are no (mutable) global variables, however. We cannot import a random
+number generator. Rather, the random number generator argument ``rng`` is
+passed to the ``makeMafia`` maker function explicitly.
 
 Assignment and Equality
 -----------------------
@@ -363,17 +364,17 @@ Monte:
      ``makeEnum`` using a :ref:`list pattern<ListPatt>`.
 
      If the match fails, an :ref:`ejector<ejector>` is fired, if
-     provided; otherwise, an exception is raised () .
+     provided; otherwise, an exception is raised.
 
   2. Parameters to methods are patterns which are matched against
      arguments. Match failure raises an exception.
 
-     A :ref:`final pattern<FinalPatt>` such as ``to _printOn(out)`` or
-     with a guard ``to sample(population :List)`` should look
-     familiar, but the :ref:`such-that patterns <SuchThatPattern>` in
-     ``to vote(player ?  (players.contains(player)), ...)`` are
-     somewhat novel. The pattern matches only if the expression after
-     the ``?`` is true.
+     A :ref:`final pattern<FinalPatt>` such as ``to _printOn(out)`` or with a
+     guard ``to sample(population :List)`` should look familiar, but the
+     :ref:`such-that patterns <SuchThatPattern>` in ``to vote(player ?
+     (players.contains(player)), ...)`` are somewhat novel. The pattern
+     matches only if the expression after the ``?`` evaluates to ``true``; at
+     the same time, ``player`` is usable in the such-that expression.
 
   3. Each matcher in a ``switch`` expression has a pattern.
 
