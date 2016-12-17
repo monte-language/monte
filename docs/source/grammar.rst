@@ -52,7 +52,7 @@ __ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_par
    guard:   IDENTIFIER  "["  ((`expr`  "," )+  | /* empty */) "]" 
    : |  IDENTIFIER
    : |  "("  `expr`  ")" 
-   module_header:   "imports"  `StrExpr`   "=~"  ((`namePatt`  )+ ) [`exports` ]  `sequence` 
+   module_header:   "imports"  `StrExpr`   "=~"  ((`pattern`  )+ ) [`exports` ]  `sequence` 
    exports:  "exports"   "("  ((`name`  "," )+  | /* empty */) ")" 
    sequence: ((`blockExpr`  | `expr` ) ";" )+ 
    : | /* empty */
