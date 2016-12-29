@@ -48,56 +48,76 @@ of new contributors.
 * "Exit stealth mode"; display a sleek and friendly front page to neophytes
   and visitors which explains:
 
-  * Why Monte exists
-  * What Monte can do
-  * How to get started using Monte
-  * Licensing and code reuse policies
-  * Monte branding
+  * ✓ Why Monte exists
+  * ✓ How to get started using Monte
 
 * Have stories for:
 
-  * Writing high-performance Monte code
-  * Debugging faulty Monte code
-  * Writing large-scale Monte code
-  * Developing modular Monte codebases
+  * ✓ Developing modular Monte codebases
 
 * Finish key language features
 
-  * Records
-  * Printer features
-  * Tubes
-  * Farrefs
-  * Arity overloading deprecation?
-
-* Finish key compiler features
-
-  * The compiler should be much faster. Concrete goal: Compile a single Monte
-    module of at least 2KLoC within 500ms on a typical reference machine
-    (two-core laptop circa 2012.)
-  * While proving the compiler correct would be arduous, it should certainly
-    be more solid than it currently is.
+  * ✓ Streamcaps
+  * ✓ Vats
 
 * Finish key integration features
 
-  * Debugger
-  * IDE support
+  * Initial IDE support
 
-    * vim (Corbin)
-    * emacs (Allen)
-    * sublime/atom (Mike, Justin)
-
-  * Profiling
-
-    * Space
-    * Coverage
-    * Turns
-    * Vats
-    * IPC/Networking
+    * ✓ vim (Corbin)
+    * ✓ emacs (Allen)
+    * ✓ Sublime/Atom (Mike, Justin)
 
 2017
 ====
 
-We currently don't know what we're going to do for 2017. Possibilities range
+* Make Monte desireable
+
+* Improve the core
+
+  * Speed: Nobody should have to wait for code to compile
+  * Safe objects
+
+    * Many method improvements to builtin collections
+    * Semitransparent
+    * PassByCopy
+    * makeWeakMap
+    * Twines
+    * Elusive Eight: Useful numerical analysis methods for doubles
+
+  * Unsafe objects
+
+    * Filesystem
+    * Timers
+
+  * Typhon-specific improvements
+
+    * Even faster interpreting
+
+* Develop Monte packaging
+
+  * Packages
+  * Muffins
+  * Environments
+  * mtpkgs
+
+* Develop important libraries
+
+  * HTTP
+  * Debugger
+  * Records
+  * Pretty-printers
+
+* Monte-related R&D
+
+  * Rationals
+  * Capn Proto
+  * CapTP/VatTP
+
+2018
+====
+
+We currently don't know what we're going to do for 2018. Possibilities range
 from MonteCon to The Monte Foundation to nothing at all. Who knows? It is a
 mystery~
 
@@ -114,12 +134,11 @@ question (use a pastebin_ to share any errors, rather than pasting into the
 channel), and wait a few hours if nobody is around. 
 
 If you'd like to contribute to Monte, check out the Monte_ and Typhon_ issue
-trackers and the `pipe dreams`_ wiki page. It's also worth grepping for
-``TODO`` in the source of both projects. 
+trackers. It's also worth grepping for ``TODO`` in the source of both
+projects. 
 
 .. _Monte: https://github.com/monte-language/monte/issues
 .. _Typhon: https://github.com/monte-language/typhon/issues
-.. _pipe dreams: https://github.com/monte-language/monte/wiki/Pipe-Dreams
 .. _Python: https://docs.python.org/2/tutorial/
 .. _E: http://www.skyhunter.com/marcs/ewalnut.html
 .. _repo: https://github.com/monte-language/monte
