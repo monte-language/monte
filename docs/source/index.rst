@@ -17,6 +17,20 @@ Monte is a dynamic language inspired by Python and E.
     ordinary-programming
     quick_ref
 
+.. _secure_distributed_computing:
+
+Secure Distributed Computing
+----------------------------
+
+.. toctree::
+
+    design
+    vats
+    brands
+    promises
+    streamcaps
+    tubes
+
 Language Reference
 ------------------
 
@@ -38,20 +52,6 @@ Language Reference
     slots
     auditors
     semantics
-
-.. _secure_distributed_computing:
-
-Secure Distributed Computing
-----------------------------
-
-.. toctree::
-
-    design
-    vats
-    brands
-    promises
-    streamcaps
-    tubes
 
 Appendixes, Indices and tables
 ------------------------------

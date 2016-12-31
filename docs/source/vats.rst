@@ -1,3 +1,5 @@
+.. _vats:
+
 ====
 Vats
 ====
@@ -179,9 +181,6 @@ For the future… Try to structure your code into modules; Typhon may
 parallelize module loading in the future. Also try to structure your code into
 vats, since we expect most interpreters to eventually implement parallel vat
 execution.
-
-.. todo:: reconcile parallel / concurrent discussion here with
-          Distributed Systems section.
 
 How do I perform concurrent operations?
 ---------------------------------------

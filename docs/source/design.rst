@@ -31,7 +31,8 @@ named arguments:
 
 We can go ahead and run this code from a file by using the ``monte`` commandline
 tool::
-  monte eval mafiabot.mt chat.freenode.net
+
+    monte eval mafiabot.mt chat.freenode.net
 
 Everything after the source filename is passed to main in ``argv`` as a list of
 strings.
@@ -56,25 +57,19 @@ Monte comes with builtin explicit parallelism suitable for scaling to
 arbitrary numbers of processes or machines, and a well-defined concurrency
 system that simplifies and streamlines the task of writing event-driven code.
 
-Monte has one parallel primitive: the **vat**.  Monte programs are a
-collection of vats running in one or more processes on one or more hosts.
-Each vat isolates a collection of objects from objects in other vats. Vats are
-able to communicate across a variety of gulfs, from inter-process threads to
-separate machines on a network.  Vats contain three elements: a stack, a
-queue, and a heap.  All three contain Monte objects. The queue contains
-messages to objects in the heap; messages consist of a verb and may contain
-objects passed as arguments.  Execution of code in a vat progresses by
-**turns**; each turn is started by delivering the next message in the queue to
-its recipient, which can result in activation records being placed on the
-stack and further messages going into the queue. The turn progresses until the
-stack is empty. A new turn begins with the next message on the queue.
-
-Monte also has one concurrent operation. Monte permits messages to be passed
-as **eventual sends**. An eventually-sent message will be passed to the target
+Monte has one concurrent operation. Monte permits messages to be passed as
+**eventual sends**. An eventually-sent message will be passed to the target
 object at a later time, generating a **promise** which can have more messages
 sent to it. Unlike similar mechanisms in Twisted, Node.js, etc., Monte builds
 promises and eventual sending directly into the language and runtime, removing
 the need for extraneous libraries.
+
+Monte also has a single primitive for combining isolation and parallelism, the
+:ref:`vat <vats>`. Each vat isolates a collection of objects from objects in
+other vats. Each eventual send in a vat becomes a distinct **turn** of
+execution, and vats execute concurrently with one another. During a turn, a
+vat delivers a single queued send, which could result in more sends being
+queued up for subsequent turns.
 
 .. literalinclude:: tut/mafiabot.mt
     :linenos:
@@ -82,7 +77,7 @@ the need for extraneous libraries.
     :lineno-start: 30
 
 
-Principal of Least Authority
+Principle of Least Authority
 ----------------------------
 
 Straightforwad object-oriented design results in each object having the least
