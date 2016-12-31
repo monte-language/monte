@@ -104,17 +104,20 @@ Methods
     the correct caller, then you can have discussions with them that you
     wouldn't have over an ordinary phone.
 
+.. _uncall:
+
 ``_uncall/0``
     ``_uncall`` undoes the call that created this object. The default
     implementation returns ``null``, because objects are, by default, not
     uncallable. A good implementation of ``_uncall`` will return a list
     containing ``[maker, verb :Str, args :List, namedArgs :Map]`` such that
     ``M.call(maker, verb, args, namedArgs)`` will produce a new object which
-    is equal to this object.
+    is equal to this object. Promises or other far references may not be
+    returned. (:ref:`why-not-only-sends`)
 
     Providing an instance of ``_uncall`` makes an object eligible for
     uncall-based catamorphisms (fold, reduce, ...). In particular, uncallable
-    objects are comparable by value.
+    objects are comparable by value using ``Transparent``.
 
     .. note::
         In order to be eligible for value comparisons, you'll need to both
