@@ -150,8 +150,9 @@ linkcheck:
 
 NIXP=~/.nix-profile
 
+TIMEOUT=10
 doctest: source/docs_examples.mt source/docs_examples.json
-	$(NIXP)/bin/monte eval source/docs_examples.mt source/docs_examples.json
+	$(NIXP)/bin/monte eval source/docs_examples.mt source/docs_examples.json $(TIMEOUT)
 
 PYTHON=python
 
