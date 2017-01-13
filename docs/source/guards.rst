@@ -19,7 +19,7 @@ Guards are used constrain pattern bindings and method return values::
   ... escape oops {
   ...     def x :(Int > 0) exit oops := y
   ... }
-  "-5 is not in <(0, ∞) <IntGuard> region>"
+  "-5 is not in <(0, ∞) Int region>"
 
 .. syntax:: guardOpt
 
