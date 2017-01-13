@@ -154,9 +154,9 @@ installer script::
 
 Alternately, you can `install it manually`__ from tarball, deb or rpm.
 
-Once you have Nix set up, you can add our build server as a source of binary packages::
+Once you have Nix set up, you can use prebuilt packages courtesy of `Matador Cloud`_::
 
-    nix-channel --add http://ci.monte-language.org:3000/project/typhon/channel/latest monte
+    nix-channel --add https://hydra.matador.cloud/project/monte/channel/latest monte
 
 Once that's set up, you can always fetch the latest build by running::
 
@@ -171,6 +171,7 @@ __ http://nixos.org/nix/
 __ http://nixos.org/releases/nix/latest/
 __ https://github.com/monte-language/typhon/
 
+.. _`Matador Cloud`: https://matador.cloud/
 
 
 Interacting with the Monte REPL
