@@ -23,3 +23,64 @@ Monte::
 
     for i => x in xs:
         f(i, x)
+
+Objects
+-------
+
+Classes
+~~~~~~~
+
+Monte does not have classes, but the maker pattern is equivalent.
+
+Python:
+
+.. code-block:: python
+
+    class ClassName(object):
+        def __init__(self, param, namedParam=defaultValue):
+            self._param = param
+            self._namedParam = namedParam
+
+        def meth(self, arg):
+            return self._param(self._namedParam, arg)
+
+Monte::
+
+    def makeClassName(param, => namedParam := defaultValue):
+        return object objectName:
+            to meth(arg):
+                return param(namedParam, arg)
+
+Inheritance
+~~~~~~~~~~~
+
+Monte doesn't have class-based inheritance; instead, there is
+composition-based inheritance.
+
+Python:
+
+.. code-block:: python
+
+    class Parent(object):
+        def meth(self, arg):
+            return arg * 2
+
+        def overridden(self, arg):
+            return arg + 2
+
+    class Child(Parent):
+        def overridden(self, arg):
+            return arg + 3
+
+Monte::
+
+    object parent:
+        to meth(arg):
+            return arg * 2
+
+        to overridden(arg):
+            return arg + 2
+
+    object child extends parent:
+        to overridden(arg):
+            return arg + 3
