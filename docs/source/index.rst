@@ -31,6 +31,13 @@ Secure Distributed Computing
     streamcaps
     tubes
 
+Rosetta Stones
+--------------
+
+.. toctree::
+
+    rosetta-python
+
 Language Reference
 ------------------
 
@@ -53,7 +60,7 @@ Language Reference
     auditors
     semantics
 
-Appendixes, Indices and tables
+Appendixes, Indices and Tables
 ------------------------------
 
 
