@@ -124,10 +124,6 @@ Methods
         implement ``_uncall`` and also pass an audition proving that your
         uncall is correct. See ``Selfless`` and ``Transparent`` for details.
 
-``_whenBroken/1``
-    ``_whenBroken``, by default, does nothing on near objects and sends
-    notifications of breakage through references. It is not interesting.
-
 ``_whenMoreResolved/1``
     ``_whenMoreResolved``, by default, does nothing on near objects and sends
     notifications of partial fulfillment through references. It is not
