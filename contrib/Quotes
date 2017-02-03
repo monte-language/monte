@@ -55,3 +55,7 @@
 * time passes *
 < dash> simpson: i'm not a completely sensible fellow
 %
+< DanC_> -o $(which cat) ?
+< wleslie> using cat as an output processor
+< wleslie> it's important to select a cat that is docile and soft for this task
+%
