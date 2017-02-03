@@ -44,3 +44,14 @@
 %
 <dash> simpson: ... I just realized how surprised I am that nobody has referred to auditor stamps as "unreferenceable forges" yet.
 %
+< simpson> dash, DanC: I got bored and started doing the capnp needful: https://gist.github.com/MostAwesomeDude/025fbd2db873fb470a4bb1cf4a944d91
+< wleslie> what code are you working from?
+< simpson> I turned capnp inside-out: $ capnp compile -o $(which cat) schema.capnp > meta
+< simpson> And I'm working from that compiled schema.
+< dash> simpson: Mmm.
+< dash> simpson: I was tempted to start on this in rpython.
+< dash> simpson: Still might, but your idea is better.
+< simpson> dash: Networking? In RPython? :c
+* time passes *
+< dash> simpson: i'm not a completely sensible fellow
+%
