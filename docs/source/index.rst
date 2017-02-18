@@ -70,6 +70,7 @@ Appendixes, Indices and Tables
     montefesto
     runtime
     tools
+    glossary
 
 * :ref:`genindex`
 * :ref:`modindex`
