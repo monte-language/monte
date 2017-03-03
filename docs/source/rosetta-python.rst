@@ -84,3 +84,45 @@ Monte::
     object child extends parent:
         to overridden(arg):
             return arg + 3
+
+Private Methods
+~~~~~~~~~~~~~~~
+
+Neither Python nor Monte have private methods. Python has a naming convention
+for methods which should not be called from outside the class. Monte has an
+idiom for functions which cannot be called from outside the class.
+
+Python:
+
+.. code-block:: python
+
+    class ClassName(object):
+
+        _state = 42
+
+        def _private(self):
+            return self._state
+
+        def public(self):
+            return self._private()
+
+Monte::
+
+    def makeClassName():
+        var state := 42
+
+        def private():
+            return state
+
+        return object objectName:
+            to public():
+                return private()
+
+Equivalently::
+
+    def makeClassName():
+        var state := 42
+
+        return object objectName:
+            to public():
+                return state
