@@ -25,16 +25,41 @@ a subset of the full language called :dfn:`Kernel-Monte`, and only this subset
 need be given a rigorous semantics. The rest of Monte is defined by syntactic
 expansion to this subset.
 
+Full-Monte
+----------
+
+We define :dfn:`Full-Monte` as the complete AST of Monte, and :dfn:`canonical
+expansion` as the syntactic expansion which expands Full-Monte to Kernel-Monte
+while preserving the intended semantics.
+
+.. note::
+    Full-Monte should get its own page and have all of its rich semantics
+    spelled out in gory detail.
+
 
 .. index:: expression, pattern, scope, static scope, abstract syntax
 
 Monte as a Tree
 ===============
 
-Kernel-Monte is specified as an abstract syntax tree. Each node in the tree is
-either an :dfn:`expression` or a :dfn:`pattern`. Expressions can be evaluated
-to product an object; patterns do not produce values but :dfn:`unify` with
-values (i.e. objects) to introduce names into scopes.
+.. _left_to_right:
+
+.. sidebar:: Left-to-Right Rule
+
+    The :dfn:`left-to-right` rule states that *evaluation proceeds lexically
+    from left to right.* This rule is violated only rarely:
+
+    * At the kernel level, `DefExpr` evaluates both its RHS and exit before
+      any expressions buried in the LHS pattern. Canonical expansion from
+      Full-Monte to Kernel-Monte resolves any recursively-defined names in
+      order to make this less unintuitive.
+    * Object literals have their auditors evaluated before object creation and
+      their patterns are unified after object creation.
+
+Kernel-Monte is specified as an abstract syntax tree (AST). Each node in the
+tree is either an :dfn:`expression` or a :dfn:`pattern`. Expressions can be
+evaluated to product an object; patterns do not produce values but
+:dfn:`unify` with values (i.e. objects) to introduce names into scopes.
 
 Along with every node, there is a :dfn:`static scope`, a compile-time constant
 mapping of names to declaration and usage sites. For every expression, it is
@@ -45,8 +70,8 @@ Computation proceeds by tree evaluation; the root of the tree is evaluated,
 which in turn can provoke evaluation of various branch and leaf nodes as
 required.
 
-.. todo:: ensure left-to-right rule is discussed; is it part of the
-          specification? or a design goal?
+Recursion in a Monte AST is possible via self-reference; all object patterns
+are visible within their corresponding script's scope.
 
 
 .. index:: lexical scoping, stale stack frames
@@ -56,24 +81,25 @@ Scope Introduction & Dismissal
 
 .. _no_stale_stack_frames:
 
-.. sidebar:: No stale stack frames.
+.. sidebar:: No Stale Stack Frames Rule
    
-   Monte has a rule known as :dfn:`no stale stack frames`. Inherited from E,
-   the rule is simple to state: *No Monte expression shall require a scope to
-   be dismissed by any expression other than itself.*
+    The :dfn:`no stale stack frames` rule states that *A Monte expression must
+    dismiss any scope which it introduces.*
 
-   A stale stack frame is one that isn't currently running; it is neither the
-   current stack frame nor below the current stack frame.
+    A stale stack frame is one that isn't currently running; it is neither the
+    current stack frame nor below the current stack frame.
 
-   Monte forbids suspending computation mid-frame. There are no coroutines or
-   undelimited continuations in Monte. Monte also does not have an
-   "async/await" syntax, since there is no way to implement this syntax
-   without stale stack frames.
+    Monte forbids suspending computation mid-frame. There are no coroutines or
+    undelimited continuations in Monte. Monte also does not have an
+    "async/await" syntax, since there is no way to implement this syntax
+    without stale stack frames. As a direct result, no partial execution can
+    ever require a Monte implementation to reify stack frames for suspended
+    computation.
 
-   The policy is justified by readability concerns. Since Monte permits
-   mutable state, one author's code's behavior could be affected by another
-   author's code running further up the frame stack. Stale frames make
-   comprehension of code much harder as a result.
+    The policy is justified by readability concerns. Since Monte permits
+    mutable state, one author's code's behavior could be affected by another
+    author's code running further up the frame stack. Stale frames make
+    comprehension of code much harder as a result.
 
 Many expressions, during evaluation, introduce scopes. When this is done,
 names declared after scope introduction are said to be :dfn:`visible` within
@@ -112,6 +138,20 @@ the slot. Bindings are essential to :ref:`auditors<auditors>`.
 To allow references across turns and vats, we indirect via :ref:`references
 <references>`.
 
+Exceptions
+==========
+
+A Monte expression can yield either a successful result or an exceptional
+state. Exceptional states are intentionally vague; they are usually
+represented as panics in virtual machines or stack unwinders in interpreters.
+
+While in an exceptional state, most expressions evaluate to that same
+exceptional state. A `TryExpr` can replace an exceptional state with a
+successful result. A `FinallyExpr` can perform some side computation despite
+an exceptional state.
+
+When an error is thrown, the computation switches to an exceptional state and
+the thrown error is sealed in an implementation-dependent manner.
 
 Expressions
 ===========
@@ -262,11 +302,39 @@ Finally
 ~~~~~~~
 
 A `FinallyExpr` contain two expressions. The first expression is evaluated in
-a fresh scope. Then, the second expression is evaluated in a fresh scope and
-its produced value is the produced value of the entire finally-expr.
+a fresh scope and its resulting object or failing state is retained. Then, the
+second expression is evaluated in a fresh scope. Finally, the retained state
+from the first expression, success or failure, is the produced value of the
+entire finally-expr.
 
-The second expression is evaluated even if evaluation is in a failing state
-after evaluating the first expression.
+The second expression is evaluated regardless of whether the first expression
+returns an exceptional state; its state is discarded. It is
+implementation-dependent whether exceptional states are chained together.
+
+.. sidebar:: Chained Exceptions
+
+    Why doesn't Monte require chained exceptions? In many languages, the
+    exception from the first part of a finally-expr would have a chain
+    including the exception from the second part of the finally-expr. This
+    faciliates debugging.
+
+    Since Monte doesn't offer tools for digging into exceptional states beyond
+    catching them as a reified but opaque value, there is little point in
+    mandating implementation details for that value. Instead, one might expect
+    unsafe names like `unsealException` to have standard behavior, and that
+    behavior might include exposing a possibly-empty list of chained
+    exceptions. This isn't currently the case, but it might be in the future.
+
+This table shows the possible states:
+
+======= ========= =======
+`try`   `finally` result
+======= ========= =======
+success success   success
+error   success   error
+success error     error
+error   error     error
+======= ========= =======
 
 If
 ~~
