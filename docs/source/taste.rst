@@ -11,7 +11,7 @@ Let's see what a simple web server looks like in Monte:
     :language: monte
 
 The ``makeHTTPEndpoint`` import reads much like Python's ``from
-lib.http.server import makeHTTPEndpoint``, though the mechanics of a
+http.server import makeHTTPEndpoint``, though the mechanics of a
 :ref:`module declaration <module-decl>` in monte are a bit different:
 it uses :ref:`pattern matching <patterns>` to bind names to objects
 imported from modules.
