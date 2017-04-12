@@ -52,6 +52,8 @@ Operations on Basic Data
     - _makeIterator
 
 
+.. _safescope:
+
 safeScope
 =========
 

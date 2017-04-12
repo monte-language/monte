@@ -1,6 +1,4 @@
-# Import a name from the "http/server" module.
 import "http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
-# Export the entrypoint.
 exports (main)
 
 def helloWeb(request) as DeepFrozen:
@@ -11,8 +9,6 @@ def helloWeb(request) as DeepFrozen:
 def main(argv, => makeTCP4ServerEndpoint) :Int as DeepFrozen:
     "Obtain a port and create an HTTP server on that port."
 
-    # m`argv.last()` is the final command-line argument. The _makeInt()
-    # function converts strings into integers.
     def portNum :Int := _makeInt(argv.last())
     def ep := makeHTTPEndpoint(makeTCP4ServerEndpoint(portNum))
     traceln(`serving on port $portNum`)

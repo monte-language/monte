@@ -10,75 +10,33 @@ Let's see what a simple web server looks like in Monte:
     :linenos:
     :language: monte
 
-.. todo:: Document how to compile and run such a script.
-
-Indentation and Blocks
-----------------------
-
-Like Python, Monte's blocks are usually indentation-delimited::
-
-    def f(x):
-        g()
-        return x + 1
-
-Monte also permits curly braces instead of colons for marking blocks::
-
-    def f(x) {
-        g()
-        return x + 1
-    }
-
-And, finally, Monte allows sequences to be separated by semicolons::
-
-    def f(x) { g(); return x + 1 }
-
-Idiomatic Monte can take on any of these styles. Typical Monte code prefers
-the colon-indented-block style.
-
-Braces are required only if the surrounding block uses braces. For example,
-this is legal Monte::
-
-    def f(x):
-        def g(y):
-            return x + y
-        return g
-
-And so is this::
-
-    def f(x):
-        def g(y) { return x + y }
-        return g
-
-On the topic of indentation whitespace, Monte does not support the horizontal
-tab character for indentation; spaces must be used instead.
-
-.. important::
-    Monte code should always uses four spaces for each indentation level.
-
-
-Using Library Modules
----------------------
-
-A :ref:`module declaration <module-decl>` has any number of ``import``
-declarations followed by an ``exports`` declaration.
-
 The ``makeHTTPEndpoint`` import reads much like Python's ``from
-lib.http.server import makeHTTPEndpoint``, though the mechanics are a bit
-different: it uses :ref:`pattern matching <patterns>` to bind names to objects
+lib.http.server import makeHTTPEndpoint``, though the mechanics of a
+:ref:`module declaration <module-decl>` in monte are a bit different:
+it uses :ref:`pattern matching <patterns>` to bind names to objects
 imported from modules.
 
 
-DeepFrozen Module Exports
--------------------------
+.. sidebar:: DeepFrozen Module Exports
+
+   One of the constraints of :ref:`object capability discipline
+   <ocap>` is that there is no global mutable state; so exported
+   objects must be ``DeepFrozen``, i.e. transitively immutable. Since
+   ``main`` calls ``helloWeb``, ``helloWeb`` must be ``DeepFrozen`` as
+   well. We'll discuss this and other static properties of Monte code
+   in the :ref:`auditors` section.
+
 
 We declare that this module ``exports`` its ``main`` function, as is
 conventional for executable programs.
 
-One of the constraints of :ref:`object capability discipline <ocap>` is that
-there is no global mutable state; so exported objects must be ``DeepFrozen``,
-i.e. transitively immutable. Since ``main`` calls ``helloWeb``, ``helloWeb``
-must be ``DeepFrozen`` as well. We'll discuss this and other static properties
-of Monte code in the :ref:`auditors` section.
+.. todo:: Document how to compile and run such a script.
+
+Blocks in Monte are typically written with indentation, like Python,
+though :ref:`blocks in general <indent_blocks>` may be written with
+curly-braces as well.
+
+.. note:: Tabs are a syntax error in Monte.
 
 
 Expressions
@@ -136,7 +94,7 @@ the list of top 10 web application security flaws:
 But using object capability discipline, untrusted code has only the authority
 that we explicitly give it.  This rich form of cooperation comes with
 dramatically less vulnerability [#dos]_.  The environment in this example is
-``safeScope``, which is the same environment modules are evaluated in -- it
+:ref:`safeScope`, which is the same environment modules are evaluated in -- it
 provides basic runtime services such as constructors for lists, maps, and
 other structures, but no "powerful" objects.  In particular,
 ``makeTCP4ServerEndpoint`` is not in scope when the remote code is executed,

@@ -12,8 +12,10 @@ __ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_lex
 
 .. index:: tab, block, indentation
 
-Brackets and Blocks
--------------------
+.. _indent_blocks:
+
+Brackets, Indentation, and Blocks
+---------------------------------
 
 Opening and closing bracket tokens must be balanced::
 
@@ -23,7 +25,45 @@ A colon (``:``) token begins an :dfn:`indented block`.
 
 .. todo:: specify canStartIndentedBlock, braceStack exactly
 
+Like Python, Monte's blocks are usually indentation-delimited::
+
+    def f(x):
+        g()
+        return x + 1
+
+Monte also permits curly braces instead of colons for marking blocks::
+
+    def f(x) {
+        g()
+        return x + 1
+    }
+
+And, finally, Monte allows sequences to be separated by semicolons::
+
+    def f(x) { g(); return x + 1 }
+
+Idiomatic Monte can take on any of these styles. Typical Monte code prefers
+the colon-indented-block style.
+
+Braces are required only if the surrounding block uses braces. For example,
+this is legal Monte::
+
+    def f(x):
+        def g(y):
+            return x + y
+        return g
+
+And so is this::
+
+    def f(x):
+        def g(y) { return x + y }
+        return g
+
 .. note:: Tabs are a syntax error in Monte.
+
+.. important::
+    Monte code should always uses four spaces for each indentation level.
+
 
 Operators
 ---------
