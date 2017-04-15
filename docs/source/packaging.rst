@@ -8,6 +8,7 @@ https://github.com/monte-language/mt-mafia . Let's download and run it::
   cd mt-mafia
   monte test mafiabot
   monte run mafiabot chat.freenode.net
+
 This should result in the bot connecting to IRC and being ready to receive commands.
 
 Monte packages are defined by a file in the project root directory named
