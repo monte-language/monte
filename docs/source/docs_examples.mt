@@ -87,7 +87,7 @@ def printer(rawTube) as DeepFrozen:
 
 def main(argv, =>makeStdErr, =>makeFileResource, =>Timer) as DeepFrozen:
     escape ux:
-        def [via (_makeInt) timeout, suiteFile] + _ exit ux := argv.reverse()
+        def [via (_makeDouble) timeout, suiteFile] + _ exit ux := argv.reverse()
 
         when (def bytes := makeFileResource(suiteFile) <- getContents()) ->
             escape fmtErr:

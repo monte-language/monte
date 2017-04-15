@@ -47,7 +47,7 @@ The `if` Expression
    Sequence(
     "if", "(", NonTerminal('expr'), ")", NonTerminal('block'),
     Optional(Sequence("else", Choice(
-        0, Sequence("if", Comment('blockExpr@@')),
+        0, NonTerminal('IfExpr'),
         NonTerminal('block')))))
 
 ::
@@ -158,7 +158,7 @@ The `escape` Expression
 If `hatch` is called during `expr`, complete with `hatch`'s argument::
 
   >>> escape hatch { def x :Int exit hatch := 1.0 }
-  "1.000000 does not conform to <IntGuard>"
+  "1.000000 does not conform to Int"
 
 The `while` Loop
 ----------------
