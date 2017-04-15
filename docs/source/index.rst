@@ -32,6 +32,7 @@ Secure Distributed Computing
     promises
     streamcaps
     tubes
+    packaging
 
 Language Reference
 ------------------
