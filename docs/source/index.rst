@@ -16,6 +16,8 @@ Monte is a dynamic language inspired by Python and E.
     taste
     ordinary-programming
     quick_ref
+    rosetta-python
+
 
 .. _secure_distributed_computing:
 
@@ -30,13 +32,6 @@ Secure Distributed Computing
     promises
     streamcaps
     tubes
-
-Rosetta Stones
---------------
-
-.. toctree::
-
-    rosetta-python
 
 Language Reference
 ------------------
