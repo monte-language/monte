@@ -7,10 +7,34 @@ idioms.
 Iteration
 ---------
 
+Comprehensions
+~~~~~~~~~~~~~~
+
+Python features list, set, and dict comprehensions. Monte has list and map
+comprehensions, although efficient set comprehensions are missing.
+
+The main difference between Python and Monte here is that Monte puts the
+for-loop construction at the beginning of the comprehension.
+
+Python:
+
+.. code-block:: python
+
+    squares = [x**2 for x in range(10)]
+
+    more_squares = {x: x**2 for x in (2, 4, 6)}
+
+Monte::
+
+    def squares := [for x in (0..!10) x ** 2]
+
+    def moreSquares := [for x in ([2, 4, 6]) x => x ** 2]
+
 Enumeration
 ~~~~~~~~~~~
 
-Python's ``enumerate`` is usually not necessary in Monte.
+Python's ``enumerate`` is usually not necessary in Monte, because Monte has
+two-valued iteration and iterates over key-value pairs.
 
 Python:
 
@@ -54,8 +78,8 @@ Monte::
 Inheritance
 ~~~~~~~~~~~
 
-Monte doesn't have class-based inheritance; instead, there is
-composition-based inheritance.
+Monte doesn't have class-based inheritance. Instead, we have composition-based
+inheritance. This means that there is not a parent class, but a parent object.
 
 Python:
 
@@ -72,7 +96,26 @@ Python:
         def overridden(self, arg):
             return arg + 3
 
-Monte::
+    child = Child()
+
+Monte, styled like Python::
+
+    def makeParent():
+        return object parent:
+            to meth(arg):
+                return arg * 2
+
+            to overridden(arg):
+                return arg + 2
+
+    def makeChild(parent):
+        return object child extends parent:
+            to overridden(arg):
+                return arg + 3
+
+    def child := makeChild(makeParent())
+
+Monte, styled like Monte::
 
     object parent:
         to meth(arg):
@@ -106,7 +149,7 @@ Python:
         def public(self):
             return self._private()
 
-Monte::
+Monte, styled like Python::
 
     def makeClassName():
         var state := 42
@@ -118,7 +161,7 @@ Monte::
             to public():
                 return private()
 
-Equivalently::
+Monte, styled like Monte::
 
     def makeClassName():
         var state := 42
