@@ -47,10 +47,9 @@ Python's syntax for defining functions.
 
 .. sidebar:: Expression Languages
 
-    Unlike Python, Haskell, and C, which use a mix of statements and
-    expressions, Monte is an expression language, like Scheme. So ``def
-    body…`` is an expression with a value, just like string literals and
-    method calls.
+    Unlike Python and C, which use a mix of statements and expressions, Monte
+    is an expression language, like Scheme. So ``def body := …`` is an
+    expression with a value, just like string literals and method calls.
 
 The expression inside the call to ``traceln(…)`` does string interpolation,
 similar to Perl, Ruby, and bash. It is a :ref:`quasiliteral<quasiliteral>`
