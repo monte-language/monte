@@ -52,8 +52,9 @@ def makeFormatter(drain) as DeepFrozen:
         to class(name :Str, docstring :Str):
             decl("class", name, docstring)
 
-        to method_(sig :Str, docstring :NullOk[Str]):
-            drain.receive(`   .. py:method:: $sig$\n$\n`)
+        to method_(sig :Str, docstring :NullOk[Str],
+                   =>sort := "method"):
+            drain.receive(`   .. py:$sort:: $sig$\n$\n`)
             if (docstring != null):
                 drain.receive(dedent(docstring, "indent" => 2) + "\n\n")
 
@@ -88,12 +89,13 @@ def makeDocstringWalker(doc) as DeepFrozen:
             match label:
                 " :" + label
 
-    def explainMethods(methods):
+    def explainMethods(methods, =>sort:="method"):
         for verb => meth in ([for m in (methods)
                               m.getVerb() => m].sortKeys()):
             def arity := meth.getArity()
 
-            doc.method_(`$verb/$arity`, docOf(meth))
+            doc.method_(`$verb(${", ".join([for _ in (1..arity) "_"])})`,
+                        docOf(meth), "sort"=>sort)
         doc.endList()
 
     return object walker:
@@ -129,10 +131,14 @@ def makeDocstringWalker(doc) as DeepFrozen:
 
         to explainInterface(name :Str, iface, ej):
             # XXX _respondsTo isn't reliable even for basic data guards
-            def kludge := [List => [], Map => [].asMap(), Bool => true]
+            def kludge := [List => [], Map => [].asMap(), Bool => true, Set => [].asSet()]
             def iface2 := if (kludge =~ [(iface) => ex] | _) { ex._getAllegedInterface()} else { iface }
+
             def methods := try { iface2.getMethods() } catch _ { ej() }
-            doc.class(name, docOf(iface._getAllegedInterface()))
+            def metaFace := iface._getAllegedInterface()
+            doc.class(name, docOf(metaFace))
+            explainMethods(try { metaFace.getMethods() } catch _ { [] },
+                           "sort"=>"staticmethod")
             explainMethods(methods)
 
         to explainObject(name :Str, obj, seen):

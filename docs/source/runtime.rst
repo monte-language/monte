@@ -28,6 +28,23 @@ Basic guards
    This guard is unretractable.
    
 
+   .. py:staticmethod:: coerce(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: getDocstring()
+
+      *no docstring*
+
+   .. py:staticmethod:: getMethods()
+
+      *no docstring*
+
+   .. py:staticmethod:: supersetOf(_)
+
+      *no docstring*
+
+
 
 .. py:class:: Str
 
@@ -37,99 +54,132 @@ Basic guards
    the space. Comparison operators may be used on this object to
    create subguards which only admit a partition of the set.
 
-   .. py:method:: _makeIterator/0
+   .. py:staticmethod:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: add/1
+   .. py:staticmethod:: _uncall()
 
       *no docstring*
 
-   .. py:method:: asList/0
+   .. py:staticmethod:: add(_)
 
       *no docstring*
 
-   .. py:method:: asSet/0
+   .. py:staticmethod:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: contains/1
+   .. py:staticmethod:: makeEmptyRegion()
 
       *no docstring*
 
-   .. py:method:: endsWith/1
+   .. py:staticmethod:: makeRegion(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:staticmethod:: op__cmp(_)
 
       *no docstring*
 
-   .. py:method:: getSpan/0
+   .. py:staticmethod:: subtract(_)
 
       *no docstring*
 
-   .. py:method:: indexOf/2
+
+   .. py:method:: _makeIterator()
 
       *no docstring*
 
-   .. py:method:: isEmpty/0
+   .. py:method:: add(_)
 
       *no docstring*
 
-   .. py:method:: join/1
+   .. py:method:: asList()
 
       *no docstring*
 
-   .. py:method:: lastIndexOf/1
+   .. py:method:: asSet()
 
       *no docstring*
 
-   .. py:method:: multiply/1
+   .. py:method:: contains(_)
 
       *no docstring*
 
-   .. py:method:: op__cmp/1
+   .. py:method:: endsWith(_)
 
       *no docstring*
 
-   .. py:method:: quote/0
+   .. py:method:: get(_)
 
       *no docstring*
 
-   .. py:method:: replace/2
+   .. py:method:: getSpan()
 
       *no docstring*
 
-   .. py:method:: size/0
+   .. py:method:: indexOf(_, _)
 
       *no docstring*
 
-   .. py:method:: slice/1
+   .. py:method:: isEmpty()
 
       *no docstring*
 
-   .. py:method:: split/2
+   .. py:method:: join(_)
 
       *no docstring*
 
-   .. py:method:: startsWith/1
+   .. py:method:: lastIndexOf(_)
+
+      *no docstring*
+
+   .. py:method:: multiply(_)
+
+      *no docstring*
+
+   .. py:method:: op__cmp(_)
+
+      *no docstring*
+
+   .. py:method:: quote()
+
+      *no docstring*
+
+   .. py:method:: replace(_, _)
+
+      *no docstring*
+
+   .. py:method:: size()
+
+      *no docstring*
+
+   .. py:method:: slice(_)
+
+      *no docstring*
+
+   .. py:method:: split(_, _)
+
+      *no docstring*
+
+   .. py:method:: startsWith(_)
 
       Whether this string has `s` as a prefix.
 
-   .. py:method:: toLowerCase/0
+   .. py:method:: toLowerCase()
 
       *no docstring*
 
-   .. py:method:: toUpperCase/0
+   .. py:method:: toUpperCase()
 
       *no docstring*
 
-   .. py:method:: trim/0
+   .. py:method:: trim()
 
       *no docstring*
 
-   .. py:method:: with/1
+   .. py:method:: with(_)
 
       *no docstring*
 
@@ -142,47 +192,80 @@ Basic guards
    the space. Comparison operators may be used on this object to
    create subguards which only admit a partition of the set.
 
-   .. py:method:: add/1
+   .. py:staticmethod:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: asInteger/0
+   .. py:staticmethod:: _uncall()
 
       *no docstring*
 
-   .. py:method:: asString/0
+   .. py:staticmethod:: add(_)
 
       *no docstring*
 
-   .. py:method:: getCategory/0
+   .. py:staticmethod:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: max/1
+   .. py:staticmethod:: makeEmptyRegion()
 
       *no docstring*
 
-   .. py:method:: min/1
+   .. py:staticmethod:: makeRegion(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: next/0
+   .. py:staticmethod:: op__cmp(_)
 
       *no docstring*
 
-   .. py:method:: op__cmp/1
+   .. py:staticmethod:: subtract(_)
 
       *no docstring*
 
-   .. py:method:: previous/0
+
+   .. py:method:: add(_)
 
       *no docstring*
 
-   .. py:method:: quote/0
+   .. py:method:: asInteger()
 
       *no docstring*
 
-   .. py:method:: subtract/1
+   .. py:method:: asString()
+
+      *no docstring*
+
+   .. py:method:: getCategory()
+
+      *no docstring*
+
+   .. py:method:: max(_)
+
+      *no docstring*
+
+   .. py:method:: min(_)
+
+      *no docstring*
+
+   .. py:method:: next()
+
+      *no docstring*
+
+   .. py:method:: op__cmp(_)
+
+      *no docstring*
+
+   .. py:method:: previous()
+
+      *no docstring*
+
+   .. py:method:: quote()
+
+      *no docstring*
+
+   .. py:method:: subtract(_)
 
       *no docstring*
 
@@ -195,87 +278,120 @@ Basic guards
    the space. Comparison operators may be used on this object to
    create subguards which only admit a partition of the set.
 
-   .. py:method:: aboveZero/0
+   .. py:staticmethod:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: abs/0
+   .. py:staticmethod:: _uncall()
 
       *no docstring*
 
-   .. py:method:: add/1
+   .. py:staticmethod:: add(_)
 
       *no docstring*
 
-   .. py:method:: approxDivide/1
+   .. py:staticmethod:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: atLeastZero/0
+   .. py:staticmethod:: makeEmptyRegion()
 
       *no docstring*
 
-   .. py:method:: atMostZero/0
+   .. py:staticmethod:: makeRegion(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: belowZero/0
+   .. py:staticmethod:: op__cmp(_)
 
       *no docstring*
 
-   .. py:method:: cos/0
+   .. py:staticmethod:: subtract(_)
 
       *no docstring*
 
-   .. py:method:: floor/0
+
+   .. py:method:: aboveZero()
 
       *no docstring*
 
-   .. py:method:: floorDivide/1
+   .. py:method:: abs()
 
       *no docstring*
 
-   .. py:method:: isZero/0
+   .. py:method:: add(_)
 
       *no docstring*
 
-   .. py:method:: log/0
+   .. py:method:: approxDivide(_)
 
       *no docstring*
 
-   .. py:method:: multiply/1
+   .. py:method:: atLeastZero()
 
       *no docstring*
 
-   .. py:method:: negate/0
+   .. py:method:: atMostZero()
 
       *no docstring*
 
-   .. py:method:: op__cmp/1
+   .. py:method:: belowZero()
 
       *no docstring*
 
-   .. py:method:: pow/1
+   .. py:method:: cos()
 
       *no docstring*
 
-   .. py:method:: sin/0
+   .. py:method:: floor()
 
       *no docstring*
 
-   .. py:method:: sqrt/0
+   .. py:method:: floorDivide(_)
 
       *no docstring*
 
-   .. py:method:: subtract/1
+   .. py:method:: isZero()
 
       *no docstring*
 
-   .. py:method:: tan/0
+   .. py:method:: log()
 
       *no docstring*
 
-   .. py:method:: toBytes/0
+   .. py:method:: multiply(_)
+
+      *no docstring*
+
+   .. py:method:: negate()
+
+      *no docstring*
+
+   .. py:method:: op__cmp(_)
+
+      *no docstring*
+
+   .. py:method:: pow(_)
+
+      *no docstring*
+
+   .. py:method:: sin()
+
+      *no docstring*
+
+   .. py:method:: sqrt()
+
+      *no docstring*
+
+   .. py:method:: subtract(_)
+
+      *no docstring*
+
+   .. py:method:: tan()
+
+      *no docstring*
+
+   .. py:method:: toBytes()
 
       *no docstring*
 
@@ -288,115 +404,148 @@ Basic guards
    the space. Comparison operators may be used on this object to
    create subguards which only admit a partition of the set.
 
-   .. py:method:: aboveZero/0
+   .. py:staticmethod:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: abs/0
+   .. py:staticmethod:: _uncall()
 
       *no docstring*
 
-   .. py:method:: add/1
+   .. py:staticmethod:: add(_)
 
       *no docstring*
 
-   .. py:method:: and/1
+   .. py:staticmethod:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: approxDivide/1
+   .. py:staticmethod:: makeEmptyRegion()
 
       *no docstring*
 
-   .. py:method:: asDouble/0
+   .. py:staticmethod:: makeRegion(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: atLeastZero/0
+   .. py:staticmethod:: op__cmp(_)
 
       *no docstring*
 
-   .. py:method:: atMostZero/0
+   .. py:staticmethod:: subtract(_)
 
       *no docstring*
 
-   .. py:method:: belowZero/0
+
+   .. py:method:: aboveZero()
 
       *no docstring*
 
-   .. py:method:: bitLength/0
+   .. py:method:: abs()
 
       *no docstring*
 
-   .. py:method:: complement/0
+   .. py:method:: add(_)
 
       *no docstring*
 
-   .. py:method:: floorDivide/1
+   .. py:method:: and(_)
 
       *no docstring*
 
-   .. py:method:: isZero/0
+   .. py:method:: approxDivide(_)
 
       *no docstring*
 
-   .. py:method:: max/1
+   .. py:method:: asDouble()
 
       *no docstring*
 
-   .. py:method:: min/1
+   .. py:method:: atLeastZero()
 
       *no docstring*
 
-   .. py:method:: mod/1
+   .. py:method:: atMostZero()
 
       *no docstring*
 
-   .. py:method:: modPow/2
+   .. py:method:: belowZero()
 
       *no docstring*
 
-   .. py:method:: multiply/1
+   .. py:method:: bitLength()
 
       *no docstring*
 
-   .. py:method:: negate/0
+   .. py:method:: complement()
 
       *no docstring*
 
-   .. py:method:: next/0
+   .. py:method:: floorDivide(_)
 
       *no docstring*
 
-   .. py:method:: op__cmp/1
+   .. py:method:: isZero()
 
       *no docstring*
 
-   .. py:method:: or/1
+   .. py:method:: max(_)
 
       *no docstring*
 
-   .. py:method:: pow/1
+   .. py:method:: min(_)
 
       *no docstring*
 
-   .. py:method:: previous/0
+   .. py:method:: mod(_)
 
       *no docstring*
 
-   .. py:method:: shiftLeft/1
+   .. py:method:: modPow(_, _)
 
       *no docstring*
 
-   .. py:method:: shiftRight/1
+   .. py:method:: multiply(_)
 
       *no docstring*
 
-   .. py:method:: subtract/1
+   .. py:method:: negate()
 
       *no docstring*
 
-   .. py:method:: xor/1
+   .. py:method:: next()
+
+      *no docstring*
+
+   .. py:method:: op__cmp(_)
+
+      *no docstring*
+
+   .. py:method:: or(_)
+
+      *no docstring*
+
+   .. py:method:: pow(_)
+
+      *no docstring*
+
+   .. py:method:: previous()
+
+      *no docstring*
+
+   .. py:method:: shiftLeft(_)
+
+      *no docstring*
+
+   .. py:method:: shiftRight(_)
+
+      *no docstring*
+
+   .. py:method:: subtract(_)
+
+      *no docstring*
+
+   .. py:method:: xor(_)
 
       *no docstring*
 
@@ -409,87 +558,120 @@ Basic guards
    the space. Comparison operators may be used on this object to
    create subguards which only admit a partition of the set.
 
-   .. py:method:: _makeIterator/0
+   .. py:staticmethod:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: _uncall/0
+   .. py:staticmethod:: _uncall()
 
       *no docstring*
 
-   .. py:method:: add/1
+   .. py:staticmethod:: add(_)
 
       *no docstring*
 
-   .. py:method:: asList/0
+   .. py:staticmethod:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: asSet/0
+   .. py:staticmethod:: makeEmptyRegion()
 
       *no docstring*
 
-   .. py:method:: contains/1
+   .. py:staticmethod:: makeRegion(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:staticmethod:: op__cmp(_)
 
       *no docstring*
 
-   .. py:method:: indexOf/1
+   .. py:staticmethod:: subtract(_)
 
       *no docstring*
 
-   .. py:method:: isEmpty/0
+
+   .. py:method:: _makeIterator()
 
       *no docstring*
 
-   .. py:method:: join/1
+   .. py:method:: _uncall()
 
       *no docstring*
 
-   .. py:method:: lastIndexOf/1
+   .. py:method:: add(_)
 
       *no docstring*
 
-   .. py:method:: multiply/1
+   .. py:method:: asList()
 
       *no docstring*
 
-   .. py:method:: op__cmp/1
+   .. py:method:: asSet()
 
       *no docstring*
 
-   .. py:method:: replace/2
+   .. py:method:: contains(_)
 
       *no docstring*
 
-   .. py:method:: size/0
+   .. py:method:: get(_)
 
       *no docstring*
 
-   .. py:method:: slice/1
+   .. py:method:: indexOf(_)
 
       *no docstring*
 
-   .. py:method:: split/2
+   .. py:method:: isEmpty()
 
       *no docstring*
 
-   .. py:method:: toLowerCase/0
+   .. py:method:: join(_)
 
       *no docstring*
 
-   .. py:method:: toUpperCase/0
+   .. py:method:: lastIndexOf(_)
 
       *no docstring*
 
-   .. py:method:: trim/0
+   .. py:method:: multiply(_)
 
       *no docstring*
 
-   .. py:method:: with/1
+   .. py:method:: op__cmp(_)
+
+      *no docstring*
+
+   .. py:method:: replace(_, _)
+
+      *no docstring*
+
+   .. py:method:: size()
+
+      *no docstring*
+
+   .. py:method:: slice(_)
+
+      *no docstring*
+
+   .. py:method:: split(_, _)
+
+      *no docstring*
+
+   .. py:method:: toLowerCase()
+
+      *no docstring*
+
+   .. py:method:: toUpperCase()
+
+      *no docstring*
+
+   .. py:method:: trim()
+
+      *no docstring*
+
+   .. py:method:: with(_)
 
       *no docstring*
 
@@ -502,99 +684,116 @@ Basic guards
    with `diverge/0` will not be admitted; freeze them first with
    `snapshot/0`.
 
-   .. py:method:: _makeIterator/0
+   .. py:staticmethod:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: _printOn/1
+   .. py:staticmethod:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: _uncall/0
+   .. py:staticmethod:: extractGuard(_, _)
 
       *no docstring*
 
-   .. py:method:: add/1
+   .. py:staticmethod:: get(_)
 
       *no docstring*
 
-   .. py:method:: asMap/0
+
+   .. py:method:: _makeIterator()
 
       *no docstring*
 
-   .. py:method:: asSet/0
+   .. py:method:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: contains/1
+   .. py:method:: _uncall()
 
       *no docstring*
 
-   .. py:method:: diverge/0
+   .. py:method:: add(_)
 
       *no docstring*
 
-   .. py:method:: empty/0
+   .. py:method:: asMap()
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:method:: asSet()
 
       *no docstring*
 
-   .. py:method:: indexOf/1
+   .. py:method:: contains(_)
 
       *no docstring*
 
-   .. py:method:: isEmpty/0
+   .. py:method:: diverge()
 
       *no docstring*
 
-   .. py:method:: join/1
+   .. py:method:: empty()
 
       *no docstring*
 
-   .. py:method:: last/0
+   .. py:method:: get(_)
 
       *no docstring*
 
-   .. py:method:: multiply/1
+   .. py:method:: indexOf(_)
 
       *no docstring*
 
-   .. py:method:: op__cmp/1
+   .. py:method:: isEmpty()
 
       *no docstring*
 
-   .. py:method:: put/2
+   .. py:method:: join(_)
 
       *no docstring*
 
-   .. py:method:: reverse/0
+   .. py:method:: last()
 
       *no docstring*
 
-   .. py:method:: size/0
+   .. py:method:: multiply(_)
 
       *no docstring*
 
-   .. py:method:: slice/1
+   .. py:method:: op__cmp(_)
 
       *no docstring*
 
-   .. py:method:: snapshot/0
+   .. py:method:: put(_, _)
 
       *no docstring*
 
-   .. py:method:: sort/0
+   .. py:method:: reverse()
 
       *no docstring*
 
-   .. py:method:: startOf/2
+   .. py:method:: size()
 
       *no docstring*
 
-   .. py:method:: with/2
+   .. py:method:: slice(_)
+
+      *no docstring*
+
+   .. py:method:: snapshot()
+
+      *no docstring*
+
+   .. py:method:: sort()
+
+      *no docstring*
+
+   .. py:method:: startOf(_, _)
+
+      *no docstring*
+
+   .. py:method:: with(_, _)
 
       *no docstring*
 
@@ -607,92 +806,109 @@ Basic guards
    with `diverge/0` will not be admitted; freeze them first with
    `snapshot/0`.
 
-   .. py:method:: _makeIterator/0
+   .. py:staticmethod:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: _printOn/1
+   .. py:staticmethod:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: _uncall/0
+   .. py:staticmethod:: extractGuards(_, _)
 
       *no docstring*
 
-   .. py:method:: asSet/0
-
-      *no docstring*
-
-   .. py:method:: contains/1
-
-      *no docstring*
-
-   .. py:method:: diverge/0
-
-      *no docstring*
-
-   .. py:method:: empty/0
-
-      *no docstring*
-
-   .. py:method:: fetch/2
-
-      *no docstring*
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-   .. py:method:: getKeys/0
-
-      *no docstring*
-
-   .. py:method:: getValues/0
-
-      *no docstring*
-
-   .. py:method:: isEmpty/0
-
-      *no docstring*
-
-   .. py:method:: or/1
-
-      *no docstring*
-
-   .. py:method:: reverse/0
-
-      *no docstring*
-
-   .. py:method:: size/0
-
-      *no docstring*
-
-   .. py:method:: slice/1
-
-      *no docstring*
-
-   .. py:method:: snapshot/0
-
-      *no docstring*
-
-   .. py:method:: sortKeys/0
-
-      *no docstring*
-
-   .. py:method:: sortValues/0
-
-      *no docstring*
-
-   .. py:method:: with/2
-
-      *no docstring*
-
-   .. py:method:: without/1
+   .. py:staticmethod:: get(_, _)
 
       *no docstring*
 
 
-.. py:data:: Set
+   .. py:method:: _makeIterator()
+
+      *no docstring*
+
+   .. py:method:: _printOn(_)
+
+      *no docstring*
+
+   .. py:method:: _uncall()
+
+      *no docstring*
+
+   .. py:method:: asSet()
+
+      *no docstring*
+
+   .. py:method:: contains(_)
+
+      *no docstring*
+
+   .. py:method:: diverge()
+
+      *no docstring*
+
+   .. py:method:: empty()
+
+      *no docstring*
+
+   .. py:method:: fetch(_, _)
+
+      *no docstring*
+
+   .. py:method:: get(_)
+
+      *no docstring*
+
+   .. py:method:: getKeys()
+
+      *no docstring*
+
+   .. py:method:: getValues()
+
+      *no docstring*
+
+   .. py:method:: isEmpty()
+
+      *no docstring*
+
+   .. py:method:: or(_)
+
+      *no docstring*
+
+   .. py:method:: reverse()
+
+      *no docstring*
+
+   .. py:method:: size()
+
+      *no docstring*
+
+   .. py:method:: slice(_)
+
+      *no docstring*
+
+   .. py:method:: snapshot()
+
+      *no docstring*
+
+   .. py:method:: sortKeys()
+
+      *no docstring*
+
+   .. py:method:: sortValues()
+
+      *no docstring*
+
+   .. py:method:: with(_, _)
+
+      *no docstring*
+
+   .. py:method:: without(_)
+
+      *no docstring*
+
+
+.. py:class:: Set
 
    A guard which admits sets.
    
@@ -700,19 +916,96 @@ Basic guards
    with `diverge/0` will not be admitted; freeze them first with
    `snapshot/0`.
 
-   .. py:method:: _printOn/1
+   .. py:staticmethod:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:staticmethod:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: extractGuard/2
+   .. py:staticmethod:: extractGuard(_, _)
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:staticmethod:: get(_)
+
+      *no docstring*
+
+
+   .. py:method:: _makeIterator()
+
+      *no docstring*
+
+   .. py:method:: _printOn(_)
+
+      *no docstring*
+
+   .. py:method:: _uncall()
+
+      *no docstring*
+
+   .. py:method:: and(_)
+
+      *no docstring*
+
+   .. py:method:: asList()
+
+      *no docstring*
+
+   .. py:method:: asSet()
+
+      *no docstring*
+
+   .. py:method:: butNot(_)
+
+      *no docstring*
+
+   .. py:method:: contains(_)
+
+      *no docstring*
+
+   .. py:method:: diverge()
+
+      *no docstring*
+
+   .. py:method:: empty()
+
+      *no docstring*
+
+   .. py:method:: isEmpty()
+
+      *no docstring*
+
+   .. py:method:: op__cmp(_)
+
+      *no docstring*
+
+   .. py:method:: or(_)
+
+      *no docstring*
+
+   .. py:method:: size()
+
+      *no docstring*
+
+   .. py:method:: slice(_, _)
+
+      *no docstring*
+
+   .. py:method:: snapshot()
+
+      *no docstring*
+
+   .. py:method:: subtract(_)
+
+      *no docstring*
+
+   .. py:method:: with(_)
+
+      *no docstring*
+
+   .. py:method:: without(_)
 
       *no docstring*
 
@@ -723,19 +1016,19 @@ Basic guards
    
    Pairs are merely lists of size two.
 
-   .. py:method:: _printOn/1
+   .. py:method:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: extractGuards/2
+   .. py:method:: extractGuards(_, _)
 
       *no docstring*
 
-   .. py:method:: get/2
+   .. py:method:: get(_, _)
 
       *no docstring*
 
@@ -746,12 +1039,70 @@ Basic guards
    A guard which emits makers of FinalSlots.
    
 
+   .. py:staticmethod:: coerce(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: extractGuard(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: get(_)
+
+      *no docstring*
+
+   .. py:staticmethod:: getDocstring()
+
+      *no docstring*
+
+   .. py:staticmethod:: getGuard()
+
+      *no docstring*
+
+   .. py:staticmethod:: getMethods()
+
+      *no docstring*
+
+   .. py:staticmethod:: supersetOf(_)
+
+      *no docstring*
+
+
 
 .. py:class:: VarSlot
 
    
    A guard which admits makers of VarSlots.
    
+
+   .. py:staticmethod:: coerce(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: extractGuard(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: get(_)
+
+      *no docstring*
+
+   .. py:staticmethod:: getDocstring()
+
+      *no docstring*
+
+   .. py:staticmethod:: getGuard()
+
+      *no docstring*
+
+   .. py:staticmethod:: getMethods()
+
+      *no docstring*
+
+   .. py:staticmethod:: supersetOf(_)
+
+      *no docstring*
+
 
 
 
@@ -769,6 +1120,23 @@ Guard utilities
    This guard is unretractable.
    
 
+   .. py:staticmethod:: coerce(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: extractGuards(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: getMethods()
+
+      *no docstring*
+
+   .. py:staticmethod:: supersetOf(_)
+
+      *no docstring*
+
+
 
 .. py:class:: Void
 
@@ -778,6 +1146,23 @@ Guard utilities
    This guard is unretractable.
    
 
+   .. py:staticmethod:: coerce(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: getDocstring()
+
+      *no docstring*
+
+   .. py:staticmethod:: getMethods()
+
+      *no docstring*
+
+   .. py:staticmethod:: supersetOf(_)
+
+      *no docstring*
+
+
 
 .. py:data:: Empty
 
@@ -785,11 +1170,11 @@ Guard utilities
    
    This guard admits any object which passes its predicate.
 
-   .. py:method:: _printOn/1
+   .. py:method:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
@@ -801,15 +1186,15 @@ Guard utilities
    When specialized, this object returns a guard which admits its subguard
    as well as `null`.
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: extractGuard/2
+   .. py:method:: extractGuard(_, _)
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:method:: get(_)
 
       *no docstring*
 
@@ -824,11 +1209,11 @@ Guard utilities
    == x`.
    
 
-   .. py:method:: extractValue/2
+   .. py:method:: extractValue(_, _)
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:method:: get(_)
 
       *no docstring*
 
@@ -844,19 +1229,19 @@ Guard utilities
    When specialized, this guard returns a guard which ensures that promised
    prizes either conform to its subguard or are broken.
 
-   .. py:method:: _printOn/1
+   .. py:method:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: extractGuard/2
+   .. py:method:: extractGuard(_, _)
 
       *no docstring*
 
-   .. py:method:: get/1
+   .. py:method:: get(_)
 
       *no docstring*
 
@@ -870,7 +1255,7 @@ Guard utilities
    guards which admit proper subsets of that guard.
    
 
-   .. py:method:: get/1
+   .. py:method:: get(_)
 
       *no docstring*
 
@@ -881,7 +1266,7 @@ Guard utilities
    Whether an auditor has audited a specimen.
    
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -925,15 +1310,15 @@ Data Constructors
    7942433573816828193485776
    
 
-   .. py:method:: fromBytes/2
+   .. py:method:: fromBytes(_, _)
 
       *no docstring*
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
-   .. py:method:: withRadix/1
+   .. py:method:: withRadix(_)
 
       *no docstring*
 
@@ -944,11 +1329,11 @@ Data Constructors
    The maker of `Double`s.
    
 
-   .. py:method:: fromBytes/2
+   .. py:method:: fromBytes(_, _)
 
       *no docstring*
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -959,11 +1344,11 @@ Data Constructors
    The maker of `Str`s.
    
 
-   .. py:method:: fromChars/1
+   .. py:method:: fromChars(_)
 
       *no docstring*
 
-   .. py:method:: fromStr/2
+   .. py:method:: fromStr(_, _)
 
       *no docstring*
 
@@ -974,11 +1359,11 @@ Data Constructors
    The maker of `Str`s.
    
 
-   .. py:method:: fromChars/1
+   .. py:method:: fromChars(_)
 
       *no docstring*
 
-   .. py:method:: fromStr/2
+   .. py:method:: fromStr(_, _)
 
       *no docstring*
 
@@ -989,11 +1374,11 @@ Data Constructors
    The maker of `Bytes`.
    
 
-   .. py:method:: fromInts/1
+   .. py:method:: fromInts(_)
 
       *no docstring*
 
-   .. py:method:: fromStr/1
+   .. py:method:: fromStr(_)
 
       *no docstring*
 
@@ -1004,7 +1389,7 @@ Data Constructors
    The maker of `List`s.
    
 
-   .. py:method:: fromIterable/1
+   .. py:method:: fromIterable(_)
 
       *no docstring*
 
@@ -1015,7 +1400,7 @@ Data Constructors
    Given a `List[Pair]`, produce a `Map`.
    
 
-   .. py:method:: fromPairs/1
+   .. py:method:: fromPairs(_)
 
       *no docstring*
 
@@ -1027,19 +1412,19 @@ Data Constructors
    This object implements several Monte operators, including those which
    provide ordered space syntax.
 
-   .. py:method:: op__thru/2
+   .. py:method:: op__thru(_, _)
 
       *no docstring*
 
-   .. py:method:: op__till/2
+   .. py:method:: op__till(_, _)
 
       *no docstring*
 
-   .. py:method:: spaceOfGuard/1
+   .. py:method:: spaceOfGuard(_)
 
       *no docstring*
 
-   .. py:method:: spaceOfValue/1
+   .. py:method:: spaceOfValue(_)
 
       *no docstring*
 
@@ -1048,7 +1433,7 @@ Data Constructors
 
    
 
-   .. py:method:: run/5
+   .. py:method:: run(_, _, _, _, _)
 
       *no docstring*
 
@@ -1057,7 +1442,7 @@ Data Constructors
 
    Make regions for sets of objects with total ordering.
 
-   .. py:method:: run/3
+   .. py:method:: run(_, _, _)
 
       *no docstring*
 
@@ -1066,7 +1451,7 @@ Data Constructors
 
    *no docstring*
 
-   .. py:method:: run/6
+   .. py:method:: run(_, _, _, _, _, _)
 
       *no docstring*
 
@@ -1077,11 +1462,11 @@ Data Constructors
    A maker of final slots.
    
 
-   .. py:method:: asType/0
+   .. py:method:: asType()
 
       *no docstring*
 
-   .. py:method:: run/3
+   .. py:method:: run(_, _, _)
 
       *no docstring*
 
@@ -1092,11 +1477,11 @@ Data Constructors
    A maker of var slots.
    
 
-   .. py:method:: asType/0
+   .. py:method:: asType()
 
       *no docstring*
 
-   .. py:method:: run/3
+   .. py:method:: run(_, _, _)
 
       *no docstring*
 
@@ -1105,7 +1490,7 @@ Data Constructors
 
    Make a slot that lazily binds its value.
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -1126,7 +1511,7 @@ Tracing
    a formatted traceback.
    
 
-   .. py:method:: exception/1
+   .. py:method:: exception(_)
 
       *no docstring*
 
@@ -1143,7 +1528,7 @@ Tracing
    a formatted traceback.
    
 
-   .. py:method:: exception/1
+   .. py:method:: exception(_)
 
       *no docstring*
 
@@ -1156,7 +1541,7 @@ Brands
 
    Make a [sealer, unsealer] pair.
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -1179,19 +1564,19 @@ Quasiparsers
    quasiliteral, only the rightmost pattern can match any characters; the
    other patterns to the left will all match the empty string.
 
-   .. py:method:: matchMaker/1
+   .. py:method:: matchMaker(_)
 
       *no docstring*
 
-   .. py:method:: patternHole/1
+   .. py:method:: patternHole(_)
 
       *no docstring*
 
-   .. py:method:: valueHole/1
+   .. py:method:: valueHole(_)
 
       *no docstring*
 
-   .. py:method:: valueMaker/1
+   .. py:method:: valueMaker(_)
 
       *no docstring*
 
@@ -1208,19 +1593,19 @@ Quasiparsers
    mirror `simple__quasiParser` with respect to concatenated patterns and
    greediness.
 
-   .. py:method:: matchMaker/1
+   .. py:method:: matchMaker(_)
 
       *no docstring*
 
-   .. py:method:: patternHole/1
+   .. py:method:: patternHole(_)
 
       *no docstring*
 
-   .. py:method:: valueHole/1
+   .. py:method:: valueHole(_)
 
       *no docstring*
 
-   .. py:method:: valueMaker/1
+   .. py:method:: valueMaker(_)
 
       *no docstring*
 
@@ -1233,27 +1618,27 @@ Quasiparsers
    value. In the near future, this object will instead return a translucent
    view into a Monte compiler and optimizer.
 
-   .. py:method:: fromStr/1
+   .. py:method:: fromStr(_)
 
       *no docstring*
 
-   .. py:method:: getAstBuilder/0
+   .. py:method:: getAstBuilder()
 
       *no docstring*
 
-   .. py:method:: matchMaker/1
+   .. py:method:: matchMaker(_)
 
       *no docstring*
 
-   .. py:method:: patternHole/1
+   .. py:method:: patternHole(_)
 
       *no docstring*
 
-   .. py:method:: valueHole/1
+   .. py:method:: valueHole(_)
 
       *no docstring*
 
-   .. py:method:: valueMaker/1
+   .. py:method:: valueMaker(_)
 
       *no docstring*
 
@@ -1264,27 +1649,27 @@ Quasiparsers
    
    This object is like m``, but for patterns.
 
-   .. py:method:: fromStr/1
+   .. py:method:: fromStr(_)
 
       *no docstring*
 
-   .. py:method:: getAstBuilder/0
+   .. py:method:: getAstBuilder()
 
       *no docstring*
 
-   .. py:method:: matchMaker/1
+   .. py:method:: matchMaker(_)
 
       *no docstring*
 
-   .. py:method:: patternHole/1
+   .. py:method:: patternHole(_)
 
       *no docstring*
 
-   .. py:method:: valueHole/1
+   .. py:method:: valueHole(_)
 
       *no docstring*
 
-   .. py:method:: valueMaker/1
+   .. py:method:: valueMaker(_)
 
       *no docstring*
 
@@ -1299,27 +1684,27 @@ Flow control
    Miscellaneous vat management and quoting services.
    
 
-   .. py:method:: call/4
+   .. py:method:: call(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: callWithMessage/2
+   .. py:method:: callWithMessage(_, _)
 
       *no docstring*
 
-   .. py:method:: send/4
+   .. py:method:: send(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: sendOnly/4
+   .. py:method:: sendOnly(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: toQuote/1
+   .. py:method:: toQuote(_)
 
       *no docstring*
 
-   .. py:method:: toString/1
+   .. py:method:: toString(_)
 
       *no docstring*
 
@@ -1328,11 +1713,11 @@ Flow control
 
    *no docstring*
 
-   .. py:method:: eject/2
+   .. py:method:: eject(_, _)
 
       *no docstring*
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -1343,7 +1728,7 @@ Flow control
    Perform an iterative loop.
    
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -1352,11 +1737,11 @@ Flow control
 
    Implementation of while-expression syntax.
 
-   .. py:method:: _makeIterator/0
+   .. py:method:: _makeIterator()
 
       *no docstring*
 
-   .. py:method:: next/1
+   .. py:method:: next(_)
 
       *no docstring*
 
@@ -1372,11 +1757,11 @@ Evaluation
    This object respects POLA and grants no privileges whatsoever to
    evaluated code. To grant a safe scope, pass `safeScope`.
 
-   .. py:method:: evalToPair/2
+   .. py:method:: evalToPair(_, _)
 
       *no docstring*
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -1385,11 +1770,11 @@ Evaluation
 
    *no docstring*
 
-   .. py:method:: evalToPair/2
+   .. py:method:: evalToPair(_, _)
 
       *no docstring*
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -1404,75 +1789,75 @@ Reference/object operations
    Ref management and utilities.
    
 
-   .. py:method:: broken/1
+   .. py:method:: broken(_)
 
       *no docstring*
 
-   .. py:method:: fulfillment/1
+   .. py:method:: fulfillment(_)
 
       *no docstring*
 
-   .. py:method:: isBroken/1
+   .. py:method:: isBroken(_)
 
       *no docstring*
 
-   .. py:method:: isDeepFrozen/1
+   .. py:method:: isDeepFrozen(_)
 
       *no docstring*
 
-   .. py:method:: isEventual/1
+   .. py:method:: isEventual(_)
 
       *no docstring*
 
-   .. py:method:: isFar/1
+   .. py:method:: isFar(_)
 
       *no docstring*
 
-   .. py:method:: isNear/1
+   .. py:method:: isNear(_)
 
       *no docstring*
 
-   .. py:method:: isResolved/1
+   .. py:method:: isResolved(_)
 
       *no docstring*
 
-   .. py:method:: isSelfish/1
+   .. py:method:: isSelfish(_)
 
       *no docstring*
 
-   .. py:method:: isSelfless/1
+   .. py:method:: isSelfless(_)
 
       *no docstring*
 
-   .. py:method:: makeProxy/3
+   .. py:method:: makeProxy(_, _, _)
 
       *no docstring*
 
-   .. py:method:: optProblem/1
+   .. py:method:: optProblem(_)
 
       *no docstring*
 
-   .. py:method:: promise/0
+   .. py:method:: promise()
 
       *no docstring*
 
-   .. py:method:: state/1
+   .. py:method:: state(_)
 
       *no docstring*
 
-   .. py:method:: whenBroken/2
+   .. py:method:: whenBroken(_, _)
 
       *no docstring*
 
-   .. py:method:: whenBrokenOnly/2
+   .. py:method:: whenBrokenOnly(_, _)
 
       *no docstring*
 
-   .. py:method:: whenResolved/2
+   .. py:method:: whenResolved(_, _)
 
       *no docstring*
 
-   .. py:method:: whenResolvedOnly/2
+   .. py:method:: whenResolvedOnly(_, _)
 
       *no docstring*
 
@@ -1481,7 +1866,7 @@ Reference/object operations
 
    
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -1492,15 +1877,15 @@ Reference/object operations
    Auditor and guard for transitive immutability.
    
 
-   .. py:method:: audit/1
+   .. py:method:: audit(_)
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: supersetOf/1
+   .. py:method:: supersetOf(_)
 
       *no docstring*
 
@@ -1515,15 +1900,15 @@ Reference/object operations
    `Transparent`.
    
 
-   .. py:method:: audit/1
+   .. py:method:: audit(_)
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: passes/1
+   .. py:method:: passes(_)
 
       *no docstring*
 
@@ -1536,11 +1921,11 @@ Reference/object operations
    state. Objects that are both Selfless and Transparent are compared for sameness
    by comparing their uncalls.
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
-   .. py:method:: makeAuditorKit/0
+   .. py:method:: makeAuditorKit()
 
       *no docstring*
 
@@ -1556,7 +1941,7 @@ Reference/object operations
    This guard is unretractable.
    
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
@@ -1567,6 +1952,23 @@ Reference/object operations
    A guard which admits bindings.
    
 
+   .. py:staticmethod:: coerce(_, _)
+
+      *no docstring*
+
+   .. py:staticmethod:: getDocstring()
+
+      *no docstring*
+
+   .. py:staticmethod:: getMethods()
+
+      *no docstring*
+
+   .. py:staticmethod:: supersetOf(_)
+
+      *no docstring*
+
+
 
 
 Abstract Syntax
@@ -1576,363 +1978,363 @@ Abstract Syntax
 
    
 
-   .. py:method:: AndExpr/3
+   .. py:method:: AndExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: AssignExpr/3
+   .. py:method:: AssignExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: AugAssignExpr/4
+   .. py:method:: AugAssignExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: BinaryExpr/4
+   .. py:method:: BinaryExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: BindPattern/3
+   .. py:method:: BindPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: BindingExpr/2
+   .. py:method:: BindingExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: BindingPattern/2
+   .. py:method:: BindingPattern(_, _)
 
       *no docstring*
 
-   .. py:method:: CatchExpr/4
+   .. py:method:: CatchExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: Catcher/3
+   .. py:method:: Catcher(_, _, _)
 
       *no docstring*
 
-   .. py:method:: CoerceExpr/3
+   .. py:method:: CoerceExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: CompareExpr/4
+   .. py:method:: CompareExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: CurryExpr/4
+   .. py:method:: CurryExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: DefExpr/4
+   .. py:method:: DefExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: EscapeExpr/5
+   .. py:method:: EscapeExpr(_, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: ExitExpr/3
+   .. py:method:: ExitExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: FinalPattern/3
+   .. py:method:: FinalPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: FinallyExpr/3
+   .. py:method:: FinallyExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: ForExpr/7
+   .. py:method:: ForExpr(_, _, _, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: ForwardExpr/2
+   .. py:method:: ForwardExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: FunCallExpr/4
+   .. py:method:: FunCallExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: FunSendExpr/4
+   .. py:method:: FunSendExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: FunctionExpr/4
+   .. py:method:: FunctionExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: FunctionInterfaceExpr/7
+   .. py:method:: FunctionInterfaceExpr(_, _, _, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: FunctionScript/5
+   .. py:method:: FunctionScript(_, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: GetExpr/3
+   .. py:method:: GetExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: HideExpr/2
+   .. py:method:: HideExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: IfExpr/4
+   .. py:method:: IfExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: IgnorePattern/2
+   .. py:method:: IgnorePattern(_, _)
 
       *no docstring*
 
-   .. py:method:: InterfaceExpr/7
+   .. py:method:: InterfaceExpr(_, _, _, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: ListComprehensionExpr/6
+   .. py:method:: ListComprehensionExpr(_, _, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: ListExpr/2
+   .. py:method:: ListExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: ListPattern/3
+   .. py:method:: ListPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: LiteralExpr/2
+   .. py:method:: LiteralExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: MapComprehensionExpr/7
+   .. py:method:: MapComprehensionExpr(_, _, _, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: MapExpr/2
+   .. py:method:: MapExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: MapExprAssoc/3
+   .. py:method:: MapExprAssoc(_, _, _)
 
       *no docstring*
 
-   .. py:method:: MapExprExport/2
+   .. py:method:: MapExprExport(_, _)
 
       *no docstring*
 
-   .. py:method:: MapPattern/3
+   .. py:method:: MapPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: MapPatternAssoc/4
+   .. py:method:: MapPatternAssoc(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: MapPatternImport/3
+   .. py:method:: MapPatternImport(_, _, _)
 
       *no docstring*
 
-   .. py:method:: MatchBindExpr/3
+   .. py:method:: MatchBindExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: Matcher/3
+   .. py:method:: Matcher(_, _, _)
 
       *no docstring*
 
-   .. py:method:: MessageDesc/5
+   .. py:method:: MessageDesc(_, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: MetaContextExpr/1
+   .. py:method:: MetaContextExpr(_)
 
       *no docstring*
 
-   .. py:method:: MetaStateExpr/1
+   .. py:method:: MetaStateExpr(_)
 
       *no docstring*
 
-   .. py:method:: Method/7
+   .. py:method:: Method(_, _, _, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: MethodCallExpr/5
+   .. py:method:: MethodCallExpr(_, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: MismatchExpr/3
+   .. py:method:: MismatchExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: Module/4
+   .. py:method:: Module(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: NamedArg/3
+   .. py:method:: NamedArg(_, _, _)
 
       *no docstring*
 
-   .. py:method:: NamedArgExport/2
+   .. py:method:: NamedArgExport(_, _)
 
       *no docstring*
 
-   .. py:method:: NamedParam/4
+   .. py:method:: NamedParam(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: NamedParamImport/3
+   .. py:method:: NamedParamImport(_, _, _)
 
       *no docstring*
 
-   .. py:method:: NounExpr/2
+   .. py:method:: NounExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: ObjectExpr/6
+   .. py:method:: ObjectExpr(_, _, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: OrExpr/3
+   .. py:method:: OrExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: ParamDesc/3
+   .. py:method:: ParamDesc(_, _, _)
 
       *no docstring*
 
-   .. py:method:: PatternHoleExpr/2
+   .. py:method:: PatternHoleExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: PatternHolePattern/2
+   .. py:method:: PatternHolePattern(_, _)
 
       *no docstring*
 
-   .. py:method:: PrefixExpr/3
+   .. py:method:: PrefixExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: QuasiExprHole/2
+   .. py:method:: QuasiExprHole(_, _)
 
       *no docstring*
 
-   .. py:method:: QuasiParserExpr/3
+   .. py:method:: QuasiParserExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: QuasiParserPattern/3
+   .. py:method:: QuasiParserPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: QuasiPatternHole/2
+   .. py:method:: QuasiPatternHole(_, _)
 
       *no docstring*
 
-   .. py:method:: QuasiText/2
+   .. py:method:: QuasiText(_, _)
 
       *no docstring*
 
-   .. py:method:: RangeExpr/4
+   .. py:method:: RangeExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: SameExpr/4
+   .. py:method:: SameExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: SamePattern/3
+   .. py:method:: SamePattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: Script/4
+   .. py:method:: Script(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: SendExpr/5
+   .. py:method:: SendExpr(_, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: SeqExpr/2
+   .. py:method:: SeqExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: SlotExpr/2
+   .. py:method:: SlotExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: SlotPattern/3
+   .. py:method:: SlotPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: SuchThatPattern/3
+   .. py:method:: SuchThatPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: SwitchExpr/3
+   .. py:method:: SwitchExpr(_, _, _)
 
       *no docstring*
 
-   .. py:method:: TempNounExpr/2
+   .. py:method:: TempNounExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: To/7
+   .. py:method:: To(_, _, _, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: TryExpr/4
+   .. py:method:: TryExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: ValueHoleExpr/2
+   .. py:method:: ValueHoleExpr(_, _)
 
       *no docstring*
 
-   .. py:method:: ValueHolePattern/2
+   .. py:method:: ValueHolePattern(_, _)
 
       *no docstring*
 
-   .. py:method:: VarPattern/3
+   .. py:method:: VarPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: VerbAssignExpr/4
+   .. py:method:: VerbAssignExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: ViaPattern/3
+   .. py:method:: ViaPattern(_, _, _)
 
       *no docstring*
 
-   .. py:method:: WhenExpr/5
+   .. py:method:: WhenExpr(_, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: WhileExpr/4
+   .. py:method:: WhileExpr(_, _, _, _)
 
       *no docstring*
 
-   .. py:method:: getAstGuard/0
+   .. py:method:: getAstGuard()
 
       *no docstring*
 
-   .. py:method:: getExprGuard/0
+   .. py:method:: getExprGuard()
 
       *no docstring*
 
-   .. py:method:: getNamePatternGuard/0
+   .. py:method:: getNamePatternGuard()
 
       *no docstring*
 
-   .. py:method:: getNounGuard/0
+   .. py:method:: getNounGuard()
 
       *no docstring*
 
-   .. py:method:: getPatternGuard/0
+   .. py:method:: getPatternGuard()
 
       *no docstring*
 
@@ -1945,7 +2347,7 @@ Utilities for syntax expansions
 
    Implementation of list comprehension syntax.
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -1954,7 +2356,7 @@ Utilities for syntax expansions
 
    Implementation of map comprehension syntax.
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -1963,7 +2365,7 @@ Utilities for syntax expansions
 
    Resolve a forward declaration.
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -1973,11 +2375,11 @@ Utilities for syntax expansions
    Implementation of implicit breakage semantics in conditionally-defined
    names.
 
-   .. py:method:: broken/0
+   .. py:method:: broken()
 
       *no docstring*
 
-   .. py:method:: failureList/1
+   .. py:method:: failureList(_)
 
       *no docstring*
 
@@ -1988,23 +2390,23 @@ Utilities for syntax expansions
    
    This object implements the various comparison operators.
 
-   .. py:method:: asBigAs/2
+   .. py:method:: asBigAs(_, _)
 
       *no docstring*
 
-   .. py:method:: geq/2
+   .. py:method:: geq(_, _)
 
       *no docstring*
 
-   .. py:method:: greaterThan/2
+   .. py:method:: greaterThan(_, _)
 
       *no docstring*
 
-   .. py:method:: leq/2
+   .. py:method:: leq(_, _)
 
       *no docstring*
 
-   .. py:method:: lessThan/2
+   .. py:method:: lessThan(_, _)
 
       *no docstring*
 
@@ -2018,23 +2420,23 @@ Utilities for syntax expansions
    other.
    
 
-   .. py:method:: isSettled/1
+   .. py:method:: isSettled(_)
 
       *no docstring*
 
-   .. py:method:: makeTraversalKey/1
+   .. py:method:: makeTraversalKey(_)
 
       *no docstring*
 
-   .. py:method:: optSame/2
+   .. py:method:: optSame(_, _)
 
       *no docstring*
 
-   .. py:method:: sameEver/2
+   .. py:method:: sameEver(_, _)
 
       *no docstring*
 
-   .. py:method:: sameYet/2
+   .. py:method:: sameYet(_, _)
 
       *no docstring*
 
@@ -2043,11 +2445,11 @@ Utilities for syntax expansions
 
    The operator `obj`.`method`.
 
-   .. py:method:: curryCall/2
+   .. py:method:: curryCall(_, _)
 
       *no docstring*
 
-   .. py:method:: currySend/2
+   .. py:method:: currySend(_, _)
 
       *no docstring*
 
@@ -2058,11 +2460,11 @@ Utilities for syntax expansions
    
    This guard admits any object which passes its predicate.
 
-   .. py:method:: _printOn/1
+   .. py:method:: _printOn(_)
 
       *no docstring*
 
-   .. py:method:: coerce/2
+   .. py:method:: coerce(_, _)
 
       *no docstring*
 
@@ -2071,11 +2473,11 @@ Utilities for syntax expansions
 
    Implementation of key pattern-matching syntax in map patterns.
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
-   .. py:method:: withDefault/2
+   .. py:method:: withDefault(_, _)
 
       *no docstring*
 
@@ -2084,11 +2486,11 @@ Utilities for syntax expansions
 
    
 
-   .. py:method:: different/1
+   .. py:method:: different(_)
 
       *no docstring*
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -2097,7 +2499,7 @@ Utilities for syntax expansions
 
    Implementation of quasiliteral pattern syntax.
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -2108,7 +2510,7 @@ Utilities for syntax expansions
    Implementation of bind-pattern syntax for forward declarations.
    
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -2121,7 +2523,7 @@ Utilities for syntax expansions
    m`def [x] + xs := l`.expand() == m`def via (_splitList.run(1)) [x, xs] := l`
    
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -2130,7 +2532,7 @@ Utilities for syntax expansions
 
    The pattern patt ? (expr).
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -2150,7 +2552,7 @@ Utilities for syntax expansions
    to `true` and closed over by a loop body; once the loop is finished, the
    flag is set to `false` and the loop cannot be reëntered.
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -2163,7 +2565,7 @@ Interface constructors
 
    Describe a message.
 
-   .. py:method:: run/4
+   .. py:method:: run(_, _, _, _)
 
       *no docstring*
 
@@ -2172,7 +2574,7 @@ Interface constructors
 
    Describe a parameter.
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -2181,11 +2583,11 @@ Interface constructors
 
    Produce an interface.
 
-   .. py:method:: makePair/5
+   .. py:method:: makePair(_, _, _, _, _)
 
       *no docstring*
 
-   .. py:method:: run/5
+   .. py:method:: run(_, _, _, _, _)
 
       *no docstring*
 
@@ -2223,15 +2625,15 @@ Time
    Use with caution.
    
 
-   .. py:method:: fromNow/1
+   .. py:method:: fromNow(_)
 
       *no docstring*
 
-   .. py:method:: sendTimestamp/1
+   .. py:method:: sendTimestamp(_)
 
       *no docstring*
 
-   .. py:method:: unsafeNow/0
+   .. py:method:: unsafeNow()
 
       *no docstring*
 
@@ -2246,15 +2648,15 @@ I/O
    A producer of streamcaps for the ancient standard I/O bytestreams.
    
 
-   .. py:method:: stderr/0
+   .. py:method:: stderr()
 
       *no docstring*
 
-   .. py:method:: stdin/0
+   .. py:method:: stdin()
 
       *no docstring*
 
-   .. py:method:: stdout/0
+   .. py:method:: stdout()
 
       *no docstring*
 
@@ -2263,7 +2665,7 @@ I/O
 
    *no docstring*
 
-   .. py:method:: run/0
+   .. py:method:: run()
 
       *no docstring*
 
@@ -2272,7 +2674,7 @@ I/O
 
    *no docstring*
 
-   .. py:method:: run/0
+   .. py:method:: run()
 
       *no docstring*
 
@@ -2281,7 +2683,7 @@ I/O
 
    *no docstring*
 
-   .. py:method:: run/0
+   .. py:method:: run()
 
       *no docstring*
 
@@ -2292,7 +2694,7 @@ I/O
    Make a file Resource.
    
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -2307,7 +2709,7 @@ Networking
    Make a TCPv4 client endpoint.
    
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -2318,7 +2720,7 @@ Networking
    Make a TCPv4 server endpoint.
    
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -2329,7 +2731,7 @@ Networking
    Make a TCPv6 client endpoint.
    
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -2340,7 +2742,7 @@ Networking
    Make a TCPv4 server endpoint.
    
 
-   .. py:method:: run/1
+   .. py:method:: run(_)
 
       *no docstring*
 
@@ -2349,7 +2751,7 @@ Networking
 
    *no docstring*
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -2369,15 +2771,15 @@ Runtime
    This object is necessarily unsafe and nondeterministic.
    
 
-   .. py:method:: getCrypt/0
+   .. py:method:: getCrypt()
 
       *no docstring*
 
-   .. py:method:: getHeapStatistics/0
+   .. py:method:: getHeapStatistics()
 
       *no docstring*
 
-   .. py:method:: getReactorStatistics/0
+   .. py:method:: getReactorStatistics()
 
       *no docstring*
 
@@ -2388,7 +2790,7 @@ Runtime
    Unseal a specimen.
    
 
-   .. py:method:: run/2
+   .. py:method:: run(_, _)
 
       *no docstring*
 
@@ -2403,19 +2805,19 @@ Processes and Vats
    The current process on the local node.
    
 
-   .. py:method:: getArguments/0
+   .. py:method:: getArguments()
 
       *no docstring*
 
-   .. py:method:: getEnvironment/0
+   .. py:method:: getEnvironment()
 
       *no docstring*
 
-   .. py:method:: getPID/0
+   .. py:method:: getPID()
 
       *no docstring*
 
-   .. py:method:: interrupt/0
+   .. py:method:: interrupt()
 
       *no docstring*
 
@@ -2439,7 +2841,7 @@ Processes and Vats
    flowed to them.
    
 
-   .. py:method:: run/3
+   .. py:method:: run(_, _, _)
 
       *no docstring*
 
