@@ -1,57 +1,3 @@
-Operations on Basic Data
-========================
-
-  - ``Bool``
-
-    - and, or, xor, not, butNot, pick
-    - op__cmp
-
-  - ``Int``
-
-    - add, subtract, multiply, negate, approxDivide, floorDivide,
-      mod, pow, modPow
-    - and, or, xor, bitLength, complement, shiftLeft, shiftRight
-    - abs
-    - next, previous
-    - aboveZero, atLeastZero, atMostZero, belowZero, isZero, op__cmp,
-      max, min
-    - floor, toBytes
-
-  - ``Double``
-
-    - add, subtract, multiply, negate, approxDivide, floorDivide
-    - abs, sqrt, log, sin, cos, tan
-    - aboveZero, atLeastZero, atMostZero, belowZero, isZero, op__cmp
-    - floor, toBytes
-
-  - ``Char``
-
-    - add, subtract
-    - asInteger, asString, quote
-    - max, min, op__cmp
-    - next, previous
-    - getCategory
-
-  - ``Str``
-
-    - with, get, size
-    - contains, startsWith, endsWith, indexOf
-    - add, replace, join, multiply, slice, split, trim, toUpperCase,
-      toLowerCase
-    - asList, asSet, _makeIterator, quote
-    - getSpan
-    - op__cmp
-
-  - ``Bytes``
-
-    - with, size, get
-    - add, join, multiply, replace, slice, split, toLowerCase,
-      toUpperCase, trim
-    - contains, indexOf, lastIndexOf
-    - asList, asSet
-    - _makeIterator
-
-
 .. _safescope:
 
 safeScope
@@ -64,7 +10,881 @@ default. They are all `DeepFrozen`.
    Fix the `module.name` notation
    resulting from abuse of sphinx python support.
 
+.. todo::
+   When ``Bool`` is fixed to reveal its interface,
+   re-run mtDocStrings to document and, or, xor, not, butNot, pick, op__cmp.
+
 .. py:module:: safeScope
+
+
+Basic guards
+------------
+
+.. py:class:: Bool
+
+   
+   The set of Boolean values: `[true, false].asSet()`
+   
+   This guard is unretractable.
+   
+
+
+.. py:class:: Str
+
+   An ordered vector space.
+   
+   As a guard, this object admits any value in the set of objects in
+   the space. Comparison operators may be used on this object to
+   create subguards which only admit a partition of the set.
+
+   .. py:method:: _makeIterator/0
+
+      *no docstring*
+
+   .. py:method:: add/1
+
+      *no docstring*
+
+   .. py:method:: asList/0
+
+      *no docstring*
+
+   .. py:method:: asSet/0
+
+      *no docstring*
+
+   .. py:method:: contains/1
+
+      *no docstring*
+
+   .. py:method:: endsWith/1
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+   .. py:method:: getSpan/0
+
+      *no docstring*
+
+   .. py:method:: indexOf/2
+
+      *no docstring*
+
+   .. py:method:: isEmpty/0
+
+      *no docstring*
+
+   .. py:method:: join/1
+
+      *no docstring*
+
+   .. py:method:: lastIndexOf/1
+
+      *no docstring*
+
+   .. py:method:: multiply/1
+
+      *no docstring*
+
+   .. py:method:: op__cmp/1
+
+      *no docstring*
+
+   .. py:method:: quote/0
+
+      *no docstring*
+
+   .. py:method:: replace/2
+
+      *no docstring*
+
+   .. py:method:: size/0
+
+      *no docstring*
+
+   .. py:method:: slice/1
+
+      *no docstring*
+
+   .. py:method:: split/2
+
+      *no docstring*
+
+   .. py:method:: startsWith/1
+
+      Whether this string has `s` as a prefix.
+
+   .. py:method:: toLowerCase/0
+
+      *no docstring*
+
+   .. py:method:: toUpperCase/0
+
+      *no docstring*
+
+   .. py:method:: trim/0
+
+      *no docstring*
+
+   .. py:method:: with/1
+
+      *no docstring*
+
+
+.. py:class:: Char
+
+   An ordered vector space.
+   
+   As a guard, this object admits any value in the set of objects in
+   the space. Comparison operators may be used on this object to
+   create subguards which only admit a partition of the set.
+
+   .. py:method:: add/1
+
+      *no docstring*
+
+   .. py:method:: asInteger/0
+
+      *no docstring*
+
+   .. py:method:: asString/0
+
+      *no docstring*
+
+   .. py:method:: getCategory/0
+
+      *no docstring*
+
+   .. py:method:: max/1
+
+      *no docstring*
+
+   .. py:method:: min/1
+
+      *no docstring*
+
+   .. py:method:: next/0
+
+      *no docstring*
+
+   .. py:method:: op__cmp/1
+
+      *no docstring*
+
+   .. py:method:: previous/0
+
+      *no docstring*
+
+   .. py:method:: quote/0
+
+      *no docstring*
+
+   .. py:method:: subtract/1
+
+      *no docstring*
+
+
+.. py:class:: Double
+
+   An ordered vector space.
+   
+   As a guard, this object admits any value in the set of objects in
+   the space. Comparison operators may be used on this object to
+   create subguards which only admit a partition of the set.
+
+   .. py:method:: aboveZero/0
+
+      *no docstring*
+
+   .. py:method:: abs/0
+
+      *no docstring*
+
+   .. py:method:: add/1
+
+      *no docstring*
+
+   .. py:method:: approxDivide/1
+
+      *no docstring*
+
+   .. py:method:: atLeastZero/0
+
+      *no docstring*
+
+   .. py:method:: atMostZero/0
+
+      *no docstring*
+
+   .. py:method:: belowZero/0
+
+      *no docstring*
+
+   .. py:method:: cos/0
+
+      *no docstring*
+
+   .. py:method:: floor/0
+
+      *no docstring*
+
+   .. py:method:: floorDivide/1
+
+      *no docstring*
+
+   .. py:method:: isZero/0
+
+      *no docstring*
+
+   .. py:method:: log/0
+
+      *no docstring*
+
+   .. py:method:: multiply/1
+
+      *no docstring*
+
+   .. py:method:: negate/0
+
+      *no docstring*
+
+   .. py:method:: op__cmp/1
+
+      *no docstring*
+
+   .. py:method:: pow/1
+
+      *no docstring*
+
+   .. py:method:: sin/0
+
+      *no docstring*
+
+   .. py:method:: sqrt/0
+
+      *no docstring*
+
+   .. py:method:: subtract/1
+
+      *no docstring*
+
+   .. py:method:: tan/0
+
+      *no docstring*
+
+   .. py:method:: toBytes/0
+
+      *no docstring*
+
+
+.. py:class:: Int
+
+   An ordered vector space.
+   
+   As a guard, this object admits any value in the set of objects in
+   the space. Comparison operators may be used on this object to
+   create subguards which only admit a partition of the set.
+
+   .. py:method:: aboveZero/0
+
+      *no docstring*
+
+   .. py:method:: abs/0
+
+      *no docstring*
+
+   .. py:method:: add/1
+
+      *no docstring*
+
+   .. py:method:: and/1
+
+      *no docstring*
+
+   .. py:method:: approxDivide/1
+
+      *no docstring*
+
+   .. py:method:: asDouble/0
+
+      *no docstring*
+
+   .. py:method:: atLeastZero/0
+
+      *no docstring*
+
+   .. py:method:: atMostZero/0
+
+      *no docstring*
+
+   .. py:method:: belowZero/0
+
+      *no docstring*
+
+   .. py:method:: bitLength/0
+
+      *no docstring*
+
+   .. py:method:: complement/0
+
+      *no docstring*
+
+   .. py:method:: floorDivide/1
+
+      *no docstring*
+
+   .. py:method:: isZero/0
+
+      *no docstring*
+
+   .. py:method:: max/1
+
+      *no docstring*
+
+   .. py:method:: min/1
+
+      *no docstring*
+
+   .. py:method:: mod/1
+
+      *no docstring*
+
+   .. py:method:: modPow/2
+
+      *no docstring*
+
+   .. py:method:: multiply/1
+
+      *no docstring*
+
+   .. py:method:: negate/0
+
+      *no docstring*
+
+   .. py:method:: next/0
+
+      *no docstring*
+
+   .. py:method:: op__cmp/1
+
+      *no docstring*
+
+   .. py:method:: or/1
+
+      *no docstring*
+
+   .. py:method:: pow/1
+
+      *no docstring*
+
+   .. py:method:: previous/0
+
+      *no docstring*
+
+   .. py:method:: shiftLeft/1
+
+      *no docstring*
+
+   .. py:method:: shiftRight/1
+
+      *no docstring*
+
+   .. py:method:: subtract/1
+
+      *no docstring*
+
+   .. py:method:: xor/1
+
+      *no docstring*
+
+
+.. py:class:: Bytes
+
+   An ordered vector space.
+   
+   As a guard, this object admits any value in the set of objects in
+   the space. Comparison operators may be used on this object to
+   create subguards which only admit a partition of the set.
+
+   .. py:method:: _makeIterator/0
+
+      *no docstring*
+
+   .. py:method:: _uncall/0
+
+      *no docstring*
+
+   .. py:method:: add/1
+
+      *no docstring*
+
+   .. py:method:: asList/0
+
+      *no docstring*
+
+   .. py:method:: asSet/0
+
+      *no docstring*
+
+   .. py:method:: contains/1
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+   .. py:method:: indexOf/1
+
+      *no docstring*
+
+   .. py:method:: isEmpty/0
+
+      *no docstring*
+
+   .. py:method:: join/1
+
+      *no docstring*
+
+   .. py:method:: lastIndexOf/1
+
+      *no docstring*
+
+   .. py:method:: multiply/1
+
+      *no docstring*
+
+   .. py:method:: op__cmp/1
+
+      *no docstring*
+
+   .. py:method:: replace/2
+
+      *no docstring*
+
+   .. py:method:: size/0
+
+      *no docstring*
+
+   .. py:method:: slice/1
+
+      *no docstring*
+
+   .. py:method:: split/2
+
+      *no docstring*
+
+   .. py:method:: toLowerCase/0
+
+      *no docstring*
+
+   .. py:method:: toUpperCase/0
+
+      *no docstring*
+
+   .. py:method:: trim/0
+
+      *no docstring*
+
+   .. py:method:: with/1
+
+      *no docstring*
+
+
+.. py:class:: List
+
+   A guard which admits lists.
+   
+   Only immutable lists are admitted by this object. Mutable lists created
+   with `diverge/0` will not be admitted; freeze them first with
+   `snapshot/0`.
+
+   .. py:method:: _makeIterator/0
+
+      *no docstring*
+
+   .. py:method:: _printOn/1
+
+      *no docstring*
+
+   .. py:method:: _uncall/0
+
+      *no docstring*
+
+   .. py:method:: add/1
+
+      *no docstring*
+
+   .. py:method:: asMap/0
+
+      *no docstring*
+
+   .. py:method:: asSet/0
+
+      *no docstring*
+
+   .. py:method:: contains/1
+
+      *no docstring*
+
+   .. py:method:: diverge/0
+
+      *no docstring*
+
+   .. py:method:: empty/0
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+   .. py:method:: indexOf/1
+
+      *no docstring*
+
+   .. py:method:: isEmpty/0
+
+      *no docstring*
+
+   .. py:method:: join/1
+
+      *no docstring*
+
+   .. py:method:: last/0
+
+      *no docstring*
+
+   .. py:method:: multiply/1
+
+      *no docstring*
+
+   .. py:method:: op__cmp/1
+
+      *no docstring*
+
+   .. py:method:: put/2
+
+      *no docstring*
+
+   .. py:method:: reverse/0
+
+      *no docstring*
+
+   .. py:method:: size/0
+
+      *no docstring*
+
+   .. py:method:: slice/1
+
+      *no docstring*
+
+   .. py:method:: snapshot/0
+
+      *no docstring*
+
+   .. py:method:: sort/0
+
+      *no docstring*
+
+   .. py:method:: startOf/2
+
+      *no docstring*
+
+   .. py:method:: with/2
+
+      *no docstring*
+
+
+.. py:class:: Map
+
+   A guard which admits maps.
+   
+   Only immutable maps are admitted by this object. Mutable maps created
+   with `diverge/0` will not be admitted; freeze them first with
+   `snapshot/0`.
+
+   .. py:method:: _makeIterator/0
+
+      *no docstring*
+
+   .. py:method:: _printOn/1
+
+      *no docstring*
+
+   .. py:method:: _uncall/0
+
+      *no docstring*
+
+   .. py:method:: asSet/0
+
+      *no docstring*
+
+   .. py:method:: contains/1
+
+      *no docstring*
+
+   .. py:method:: diverge/0
+
+      *no docstring*
+
+   .. py:method:: empty/0
+
+      *no docstring*
+
+   .. py:method:: fetch/2
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+   .. py:method:: getKeys/0
+
+      *no docstring*
+
+   .. py:method:: getValues/0
+
+      *no docstring*
+
+   .. py:method:: isEmpty/0
+
+      *no docstring*
+
+   .. py:method:: or/1
+
+      *no docstring*
+
+   .. py:method:: reverse/0
+
+      *no docstring*
+
+   .. py:method:: size/0
+
+      *no docstring*
+
+   .. py:method:: slice/1
+
+      *no docstring*
+
+   .. py:method:: snapshot/0
+
+      *no docstring*
+
+   .. py:method:: sortKeys/0
+
+      *no docstring*
+
+   .. py:method:: sortValues/0
+
+      *no docstring*
+
+   .. py:method:: with/2
+
+      *no docstring*
+
+   .. py:method:: without/1
+
+      *no docstring*
+
+
+.. py:data:: Set
+
+   A guard which admits sets.
+   
+   Only immutable sets are admitted by this object. Mutable sets created
+   with `diverge/0` will not be admitted; freeze them first with
+   `snapshot/0`.
+
+   .. py:method:: _printOn/1
+
+      *no docstring*
+
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: extractGuard/2
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+
+.. py:data:: Pair
+
+   A guard which admits immutable pairs.
+   
+   Pairs are merely lists of size two.
+
+   .. py:method:: _printOn/1
+
+      *no docstring*
+
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: extractGuards/2
+
+      *no docstring*
+
+   .. py:method:: get/2
+
+      *no docstring*
+
+
+.. py:class:: FinalSlot
+
+   
+   A guard which emits makers of FinalSlots.
+   
+
+
+.. py:class:: VarSlot
+
+   
+   A guard which admits makers of VarSlots.
+   
+
+
+
+Guard utilities
+---------------
+
+.. py:class:: Any
+
+   
+   A guard which admits the universal set.
+   
+   This object specializes to a guard which admits the union of its
+   subguards: Any[X, Y, Z] =~ X ∪ Y ∪ Z
+   
+   This guard is unretractable.
+   
+
+
+.. py:class:: Void
+
+   
+   The singleton set of null: `[null].asSet()`
+   
+   This guard is unretractable.
+   
+
+
+.. py:data:: Empty
+
+   An unretractable predicate guard.
+   
+   This guard admits any object which passes its predicate.
+
+   .. py:method:: _printOn/1
+
+      *no docstring*
+
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+
+.. py:data:: NullOk
+
+   A guard which admits `null`.
+   
+   When specialized, this object returns a guard which admits its subguard
+   as well as `null`.
+
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: extractGuard/2
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+
+.. py:data:: Same
+
+   
+   When specialized, this object yields a guard which only admits precisely
+   the object used to specialize it.
+   
+   In simpler terms, `Same[x]` will match only those objects `o` for which `o
+   == x`.
+   
+
+   .. py:method:: extractValue/2
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+
+.. py:data:: Vow
+
+   A guard which admits promises and their entailments.
+   
+   Vows admit the union of unfulfilled promises, fulfilled promises, broken
+   promises, and `Near` values. The unifying concept is that of a partial
+   future value to which messages will be sent but that is not `Far`.
+   
+   When specialized, this guard returns a guard which ensures that promised
+   prizes either conform to its subguard or are broken.
+
+   .. py:method:: _printOn/1
+
+      *no docstring*
+
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: extractGuard/2
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+
+.. py:data:: SubrangeGuard
+
+   
+   The maker of subrange guards.
+   
+   When specialized with a guard, this object produces a auditor for those
+   guards which admit proper subsets of that guard.
+   
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+
+.. py:data:: _auditedBy
+
+   
+   Whether an auditor has audited a specimen.
+   
+
+   .. py:method:: run/2
+
+      *no docstring*
+
 
 
 Primitive values
@@ -72,200 +892,23 @@ Primitive values
 
 .. py:data:: true
 
-   A primitive type of some sort.
-
+   :Bool
 
 .. py:data:: false
 
-   A primitive type of some sort.
-
+   :Bool
 
 .. py:data:: null
 
-   A primitive type of some sort.
-
+   :Void
 
 .. py:data:: NaN
 
-   
-   An IEEE 754 floating-point number with at least double precision.
-   
-
-   .. py:method:: aboveZero/0
-
-      *no docstring*
-
-   .. py:method:: abs/0
-
-      *no docstring*
-
-   .. py:method:: add/1
-
-      *no docstring*
-
-   .. py:method:: approxDivide/1
-
-      *no docstring*
-
-   .. py:method:: atLeastZero/0
-
-      *no docstring*
-
-   .. py:method:: atMostZero/0
-
-      *no docstring*
-
-   .. py:method:: belowZero/0
-
-      *no docstring*
-
-   .. py:method:: cos/0
-
-      *no docstring*
-
-   .. py:method:: floor/0
-
-      *no docstring*
-
-   .. py:method:: floorDivide/1
-
-      *no docstring*
-
-   .. py:method:: isZero/0
-
-      *no docstring*
-
-   .. py:method:: log/0
-
-      *no docstring*
-
-   .. py:method:: multiply/1
-
-      *no docstring*
-
-   .. py:method:: negate/0
-
-      *no docstring*
-
-   .. py:method:: op__cmp/1
-
-      *no docstring*
-
-   .. py:method:: pow/1
-
-      *no docstring*
-
-   .. py:method:: sin/0
-
-      *no docstring*
-
-   .. py:method:: sqrt/0
-
-      *no docstring*
-
-   .. py:method:: subtract/1
-
-      *no docstring*
-
-   .. py:method:: tan/0
-
-      *no docstring*
-
-   .. py:method:: toBytes/0
-
-      *no docstring*
-
+   :Double
 
 .. py:data:: Infinity
 
-   
-   An IEEE 754 floating-point number with at least double precision.
-   
-
-   .. py:method:: aboveZero/0
-
-      *no docstring*
-
-   .. py:method:: abs/0
-
-      *no docstring*
-
-   .. py:method:: add/1
-
-      *no docstring*
-
-   .. py:method:: approxDivide/1
-
-      *no docstring*
-
-   .. py:method:: atLeastZero/0
-
-      *no docstring*
-
-   .. py:method:: atMostZero/0
-
-      *no docstring*
-
-   .. py:method:: belowZero/0
-
-      *no docstring*
-
-   .. py:method:: cos/0
-
-      *no docstring*
-
-   .. py:method:: floor/0
-
-      *no docstring*
-
-   .. py:method:: floorDivide/1
-
-      *no docstring*
-
-   .. py:method:: isZero/0
-
-      *no docstring*
-
-   .. py:method:: log/0
-
-      *no docstring*
-
-   .. py:method:: multiply/1
-
-      *no docstring*
-
-   .. py:method:: negate/0
-
-      *no docstring*
-
-   .. py:method:: op__cmp/1
-
-      *no docstring*
-
-   .. py:method:: pow/1
-
-      *no docstring*
-
-   .. py:method:: sin/0
-
-      *no docstring*
-
-   .. py:method:: sqrt/0
-
-      *no docstring*
-
-   .. py:method:: subtract/1
-
-      *no docstring*
-
-   .. py:method:: tan/0
-
-      *no docstring*
-
-   .. py:method:: toBytes/0
-
-      *no docstring*
-
+   :Double
 
 
 Data Constructors
@@ -463,572 +1106,6 @@ Data Constructors
    Make a slot that lazily binds its value.
 
    .. py:method:: run/1
-
-      *no docstring*
-
-
-
-Basic guards
-------------
-
-.. py:data:: Any
-
-   
-   A guard which admits the universal set.
-   
-   This object specializes to a guard which admits the union of its
-   subguards: Any[X, Y, Z] =~ X ∪ Y ∪ Z
-   
-   This guard is unretractable.
-   
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuards/2
-
-      *no docstring*
-
-   .. py:method:: getMethods/0
-
-      *no docstring*
-
-   .. py:method:: supersetOf/1
-
-      *no docstring*
-
-
-.. py:data:: Void
-
-   
-   The singleton set of null: `[null].asSet()`
-   
-   This guard is unretractable.
-   
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: getDocstring/0
-
-      *no docstring*
-
-   .. py:method:: getMethods/0
-
-      *no docstring*
-
-   .. py:method:: supersetOf/1
-
-      *no docstring*
-
-
-.. py:data:: Empty
-
-   An unretractable predicate guard.
-   
-   This guard admits any object which passes its predicate.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-
-.. py:data:: Bool
-
-   
-   The set of Boolean values: `[true, false].asSet()`
-   
-   This guard is unretractable.
-   
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: getDocstring/0
-
-      *no docstring*
-
-   .. py:method:: getMethods/0
-
-      *no docstring*
-
-   .. py:method:: supersetOf/1
-
-      *no docstring*
-
-
-.. py:data:: Str
-
-   An ordered vector space.
-   
-   As a guard, this object admits any value in the set of objects in
-   the space. Comparison operators may be used on this object to
-   create subguards which only admit a partition of the set.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: _uncall/0
-
-      *no docstring*
-
-   .. py:method:: add/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: makeEmptyRegion/0
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
-
-      *no docstring*
-
-   .. py:method:: op__cmp/1
-
-      *no docstring*
-
-   .. py:method:: subtract/1
-
-      *no docstring*
-
-
-.. py:data:: Char
-
-   An ordered vector space.
-   
-   As a guard, this object admits any value in the set of objects in
-   the space. Comparison operators may be used on this object to
-   create subguards which only admit a partition of the set.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: _uncall/0
-
-      *no docstring*
-
-   .. py:method:: add/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: makeEmptyRegion/0
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
-
-      *no docstring*
-
-   .. py:method:: op__cmp/1
-
-      *no docstring*
-
-   .. py:method:: subtract/1
-
-      *no docstring*
-
-
-.. py:data:: Double
-
-   An ordered vector space.
-   
-   As a guard, this object admits any value in the set of objects in
-   the space. Comparison operators may be used on this object to
-   create subguards which only admit a partition of the set.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: _uncall/0
-
-      *no docstring*
-
-   .. py:method:: add/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: makeEmptyRegion/0
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
-
-      *no docstring*
-
-   .. py:method:: op__cmp/1
-
-      *no docstring*
-
-   .. py:method:: subtract/1
-
-      *no docstring*
-
-
-.. py:data:: Int
-
-   An ordered vector space.
-   
-   As a guard, this object admits any value in the set of objects in
-   the space. Comparison operators may be used on this object to
-   create subguards which only admit a partition of the set.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: _uncall/0
-
-      *no docstring*
-
-   .. py:method:: add/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: makeEmptyRegion/0
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
-
-      *no docstring*
-
-   .. py:method:: op__cmp/1
-
-      *no docstring*
-
-   .. py:method:: subtract/1
-
-      *no docstring*
-
-
-.. py:data:: Bytes
-
-   An ordered vector space.
-   
-   As a guard, this object admits any value in the set of objects in
-   the space. Comparison operators may be used on this object to
-   create subguards which only admit a partition of the set.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: _uncall/0
-
-      *no docstring*
-
-   .. py:method:: add/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: makeEmptyRegion/0
-
-      *no docstring*
-
-   .. py:method:: makeRegion/4
-
-      *no docstring*
-
-   .. py:method:: op__cmp/1
-
-      *no docstring*
-
-   .. py:method:: subtract/1
-
-      *no docstring*
-
-
-.. py:data:: List
-
-   A guard which admits lists.
-   
-   Only immutable lists are admitted by this object. Mutable lists created
-   with `diverge/0` will not be admitted; freeze them first with
-   `snapshot/0`.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuard/2
-
-      *no docstring*
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-
-.. py:data:: Map
-
-   A guard which admits maps.
-   
-   Only immutable maps are admitted by this object. Mutable maps created
-   with `diverge/0` will not be admitted; freeze them first with
-   `snapshot/0`.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuards/2
-
-      *no docstring*
-
-   .. py:method:: get/2
-
-      *no docstring*
-
-
-.. py:data:: Set
-
-   A guard which admits sets.
-   
-   Only immutable sets are admitted by this object. Mutable sets created
-   with `diverge/0` will not be admitted; freeze them first with
-   `snapshot/0`.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuard/2
-
-      *no docstring*
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-
-.. py:data:: Pair
-
-   A guard which admits immutable pairs.
-   
-   Pairs are merely lists of size two.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuards/2
-
-      *no docstring*
-
-   .. py:method:: get/2
-
-      *no docstring*
-
-
-.. py:data:: FinalSlot
-
-   
-   A guard which emits makers of FinalSlots.
-   
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuard/2
-
-      *no docstring*
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-   .. py:method:: getDocstring/0
-
-      *no docstring*
-
-   .. py:method:: getGuard/0
-
-      *no docstring*
-
-   .. py:method:: getMethods/0
-
-      *no docstring*
-
-   .. py:method:: supersetOf/1
-
-      *no docstring*
-
-
-.. py:data:: VarSlot
-
-   
-   A guard which admits makers of VarSlots.
-   
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuard/2
-
-      *no docstring*
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-   .. py:method:: getDocstring/0
-
-      *no docstring*
-
-   .. py:method:: getGuard/0
-
-      *no docstring*
-
-   .. py:method:: getMethods/0
-
-      *no docstring*
-
-   .. py:method:: supersetOf/1
-
-      *no docstring*
-
-
-
-Guard utilities
----------------
-
-.. py:data:: NullOk
-
-   A guard which admits `null`.
-   
-   When specialized, this object returns a guard which admits its subguard
-   as well as `null`.
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuard/2
-
-      *no docstring*
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-
-.. py:data:: Same
-
-   
-   When specialized, this object yields a guard which only admits precisely
-   the object used to specialize it.
-   
-   In simpler terms, `Same[x]` will match only those objects `o` for which `o
-   == x`.
-   
-
-   .. py:method:: extractValue/2
-
-      *no docstring*
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-
-.. py:data:: Vow
-
-   A guard which admits promises and their entailments.
-   
-   Vows admit the union of unfulfilled promises, fulfilled promises, broken
-   promises, and `Near` values. The unifying concept is that of a partial
-   future value to which messages will be sent but that is not `Far`.
-   
-   When specialized, this guard returns a guard which ensures that promised
-   prizes either conform to its subguard or are broken.
-
-   .. py:method:: _printOn/1
-
-      *no docstring*
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: extractGuard/2
-
-      *no docstring*
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-
-.. py:data:: SubrangeGuard
-
-   
-   The maker of subrange guards.
-   
-   When specialized with a guard, this object produces a auditor for those
-   guards which admit proper subsets of that guard.
-   
-
-   .. py:method:: get/1
-
-      *no docstring*
-
-
-.. py:data:: _auditedBy
-
-   
-   Whether an auditor has audited a specimen.
-   
-
-   .. py:method:: run/2
 
       *no docstring*
 
@@ -1484,27 +1561,11 @@ Reference/object operations
       *no docstring*
 
 
-.. py:data:: Binding
+.. py:class:: Binding
 
    
    A guard which admits bindings.
    
-
-   .. py:method:: coerce/2
-
-      *no docstring*
-
-   .. py:method:: getDocstring/0
-
-      *no docstring*
-
-   .. py:method:: getMethods/0
-
-      *no docstring*
-
-   .. py:method:: supersetOf/1
-
-      *no docstring*
 
 
 

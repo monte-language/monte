@@ -19,6 +19,10 @@ def makeFormatter(drain) as DeepFrozen:
                        pfx + line.trim()]
         return "\n".join(pieces)
 
+    def decl(sort :Str, name :Str, docstring :NullOk[Str]):
+        drain.receive(`.. py:$sort:: $name$\n$\n`)
+        if (docstring != null):
+            drain.receive(dedent(docstring, "indent" => 1) + "\n\n")
 
     return object formatter:
         to heading(level :(1..!h.size()), text):
@@ -40,12 +44,13 @@ def makeFormatter(drain) as DeepFrozen:
 
         to module(name :Str):
             # cheat a little and use the Python domain for Monte.
-            drain.receive(`.. py:module:: $name$\n$\n`)
+            decl("module", name, null)
 
         to data(name :Str, docstring :Str):
-            drain.receive(`.. py:data:: $name$\n$\n`)
-            if (docstring != null):
-                drain.receive(dedent(docstring, "indent" => 1) + "\n\n")
+            decl("data", name, docstring)
+
+        to class(name :Str, docstring :Str):
+            decl("class", name, docstring)
 
         to method_(sig :Str, docstring :NullOk[Str]):
             drain.receive(`   .. py:method:: $sig$\n$\n`)
@@ -67,6 +72,30 @@ object Not as DeepFrozen:
 
 
 def makeDocstringWalker(doc) as DeepFrozen:
+    def docOf(x) :Str:
+        def d := try { x.getDocstring() } catch _ { "*cannot get docstring*" }
+        return switch (d):
+            match ==null:
+                "*no docstring*"
+            match txt:
+                txt
+
+    # TODO: novelDoc(iface)
+    def novelDoc(iface):
+        return switch (`$iface`):
+            match =="<computed interface>":
+                ""
+            match label:
+                " :" + label
+
+    def explainMethods(methods):
+        for verb => meth in ([for m in (methods)
+                              m.getVerb() => m].sortKeys()):
+            def arity := meth.getArity()
+
+            doc.method_(`$verb/$arity`, docOf(meth))
+        doc.endList()
+
     return object walker:
         to explainScope(name :Str, scope :Map,
                         sections :Map[Str, List[Str]],
@@ -82,7 +111,10 @@ def makeDocstringWalker(doc) as DeepFrozen:
                     done.push(`&&$name`)
                     if (obj == scope):
                         continue
-                    walker.explainObject(name, obj)
+                    escape notInterface:
+                        walker.explainInterface(name, obj, notInterface)
+                    catch _:
+                        walker.explainObject(name, obj, done)
                     if (related =~ [(name) => others] | _):
                         for obj in (others):
                             walker.explainObject(`$obj`, obj)
@@ -95,36 +127,31 @@ def makeDocstringWalker(doc) as DeepFrozen:
                 doc.heading(2, "Oops! Not in any section")
                 walkNames([for `&&@name` in (missed) name])
 
-        to explainObject(name :Str, obj):
-            def docOf(x) :Str:
-                def d := try { x.getDocstring() } catch _ { "*cannot get docstring*" }
-                return switch (d):
-                    match ==null:
-                        "*no docstring*"
-                    match txt:
-                        txt
+        to explainInterface(name :Str, iface, ej):
+            # XXX _respondsTo isn't reliable even for basic data guards
+            def kludge := [List => [], Map => [].asMap(), Bool => true]
+            def iface2 := if (kludge =~ [(iface) => ex] | _) { ex._getAllegedInterface()} else { iface }
+            def methods := try { iface2.getMethods() } catch _ { ej() }
+            doc.class(name, docOf(iface._getAllegedInterface()))
+            explainMethods(methods)
 
-            def novelDoc(iface):
-                return switch (`$iface`):
-                    match =="<computed interface>":
-                        ""
-                    match label:
-                        " :" + label
-
+        to explainObject(name :Str, obj, seen):
             def iface := obj._getAllegedInterface()
-            # TODO: novelDoc(iface)
-            doc.data(name, docOf(iface))
+            if (seen.contains(`&&$iface`)):
+                doc.data(name, ` :$iface`)
+            else:
+                doc.data(name, docOf(iface))
 
-            def methods := try { iface.getMethods() } catch _ { return; }
-            for verb => meth in ([for m in (methods)
-                                  m.getVerb() => m].sortKeys()):
-                def arity := meth.getArity()
-
-                doc.method_(`$verb/$arity`, docOf(meth))
-            doc.endList()
+                def methods := try { iface.getMethods() } catch _ { return; }
+                explainMethods(methods)
 
 
 def safeScopeBySection :DeepFrozen := [
+    "Basic guards" => ["Bool", "Str", "Char", "Double", "Int", "Bytes",
+                       "List", "Map", "Set", "Pair",
+                       "FinalSlot", "VarSlot"],
+    "Guard utilities" => ["Any", "Void", "Empty",
+                          "NullOk", "Same", "Vow", "SubrangeGuard", "_auditedBy"],
     "Primitive values" => ["true", "false", "null", "NaN", "Infinity"],
     "Data Constructors" => ["_makeInt", "_makeDouble",
                             "_makeStr", "_makeString", "_makeBytes",
@@ -132,11 +159,6 @@ def safeScopeBySection :DeepFrozen := [
                             "_makeOrderedSpace", "_makeTopSet", "_makeOrderedRegion",
                             "_makeSourceSpan",
                             "_makeFinalSlot", "_makeVarSlot", "makeLazySlot"],
-    "Basic guards" => ["Any", "Void", "Empty",
-                       "Bool", "Str", "Char", "Double", "Int", "Bytes",
-                       "List", "Map", "Set", "Pair",
-                       "FinalSlot", "VarSlot"],
-    "Guard utilities" => ["NullOk", "Same", "Vow", "SubrangeGuard", "_auditedBy"],
     "Tracing" => ["trace", "traceln"],
     "Brands" => ["makeBrandPair"],
     "Quasiparsers" => ["``", "b``", "m``", "mpatt``"],
@@ -162,6 +184,7 @@ def safeScopeBySection :DeepFrozen := [
 def related :DeepFrozen := [
     # "Int" => [1]
 ].asMap()
+
 
 def unsafeScopeBySection :DeepFrozen := [
     "Time" => ["Timer"],
@@ -193,6 +216,9 @@ def doSafeScope(rst, d) as DeepFrozen:
 
     rst.todo("Fix the `module.name` notation
     resulting from abuse of sphinx python support.")
+
+    rst.todo("When ``Bool`` is fixed to reveal its interface,
+    re-run mtDocStrings to document and, or, xor, not, butNot, pick, op__cmp.")
 
     d.explainScope("safeScope", safeScope, safeScopeBySection, related)
 
