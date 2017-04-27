@@ -72,23 +72,200 @@ Primitive values
 
 .. py:data:: true
 
-   *cannot get docstring*
+   A primitive type of some sort.
+
 
 .. py:data:: false
 
-   *cannot get docstring*
+   A primitive type of some sort.
+
 
 .. py:data:: null
 
-   *cannot get docstring*
+   A primitive type of some sort.
+
 
 .. py:data:: NaN
 
-   *cannot get docstring*
+   
+   An IEEE 754 floating-point number with at least double precision.
+   
+
+   .. py:method:: aboveZero/0
+
+      *no docstring*
+
+   .. py:method:: abs/0
+
+      *no docstring*
+
+   .. py:method:: add/1
+
+      *no docstring*
+
+   .. py:method:: approxDivide/1
+
+      *no docstring*
+
+   .. py:method:: atLeastZero/0
+
+      *no docstring*
+
+   .. py:method:: atMostZero/0
+
+      *no docstring*
+
+   .. py:method:: belowZero/0
+
+      *no docstring*
+
+   .. py:method:: cos/0
+
+      *no docstring*
+
+   .. py:method:: floor/0
+
+      *no docstring*
+
+   .. py:method:: floorDivide/1
+
+      *no docstring*
+
+   .. py:method:: isZero/0
+
+      *no docstring*
+
+   .. py:method:: log/0
+
+      *no docstring*
+
+   .. py:method:: multiply/1
+
+      *no docstring*
+
+   .. py:method:: negate/0
+
+      *no docstring*
+
+   .. py:method:: op__cmp/1
+
+      *no docstring*
+
+   .. py:method:: pow/1
+
+      *no docstring*
+
+   .. py:method:: sin/0
+
+      *no docstring*
+
+   .. py:method:: sqrt/0
+
+      *no docstring*
+
+   .. py:method:: subtract/1
+
+      *no docstring*
+
+   .. py:method:: tan/0
+
+      *no docstring*
+
+   .. py:method:: toBytes/0
+
+      *no docstring*
+
 
 .. py:data:: Infinity
 
-   *cannot get docstring*
+   
+   An IEEE 754 floating-point number with at least double precision.
+   
+
+   .. py:method:: aboveZero/0
+
+      *no docstring*
+
+   .. py:method:: abs/0
+
+      *no docstring*
+
+   .. py:method:: add/1
+
+      *no docstring*
+
+   .. py:method:: approxDivide/1
+
+      *no docstring*
+
+   .. py:method:: atLeastZero/0
+
+      *no docstring*
+
+   .. py:method:: atMostZero/0
+
+      *no docstring*
+
+   .. py:method:: belowZero/0
+
+      *no docstring*
+
+   .. py:method:: cos/0
+
+      *no docstring*
+
+   .. py:method:: floor/0
+
+      *no docstring*
+
+   .. py:method:: floorDivide/1
+
+      *no docstring*
+
+   .. py:method:: isZero/0
+
+      *no docstring*
+
+   .. py:method:: log/0
+
+      *no docstring*
+
+   .. py:method:: multiply/1
+
+      *no docstring*
+
+   .. py:method:: negate/0
+
+      *no docstring*
+
+   .. py:method:: op__cmp/1
+
+      *no docstring*
+
+   .. py:method:: pow/1
+
+      *no docstring*
+
+   .. py:method:: sin/0
+
+      *no docstring*
+
+   .. py:method:: sqrt/0
+
+      *no docstring*
+
+   .. py:method:: subtract/1
+
+      *no docstring*
+
+   .. py:method:: tan/0
+
+      *no docstring*
+
+   .. py:method:: toBytes/0
+
+      *no docstring*
+
 
 
 Data Constructors
@@ -99,12 +276,21 @@ Data Constructors
    
    A maker of `Int`s.
    
+   This maker can handle radices from 2 to 36:
+   
+   ▲> _makeInt.withRadix(36)("zxcvasdfqwer1234")
+   7942433573816828193485776
+   
 
-   .. py:method:: fromBytes/1
+   .. py:method:: fromBytes/2
 
       *no docstring*
 
    .. py:method:: run/1
+
+      *no docstring*
+
+   .. py:method:: withRadix/1
 
       *no docstring*
 
@@ -112,14 +298,29 @@ Data Constructors
 .. py:data:: _makeDouble
 
    
-   A maker of `Double`s.
+   The maker of `Double`s.
    
 
-   .. py:method:: fromBytes/1
+   .. py:method:: fromBytes/2
 
       *no docstring*
 
-   .. py:method:: run/1
+   .. py:method:: run/2
+
+      *no docstring*
+
+
+.. py:data:: _makeStr
+
+   
+   The maker of `Str`s.
+   
+
+   .. py:method:: fromChars/1
+
+      *no docstring*
+
+   .. py:method:: fromStr/2
 
       *no docstring*
 
@@ -127,14 +328,14 @@ Data Constructors
 .. py:data:: _makeString
 
    
-   A maker of `Str`s.
+   The maker of `Str`s.
    
 
    .. py:method:: fromChars/1
 
       *no docstring*
 
-   .. py:method:: fromString/2
+   .. py:method:: fromStr/2
 
       *no docstring*
 
@@ -142,14 +343,14 @@ Data Constructors
 .. py:data:: _makeBytes
 
    
-   A maker of `Bytes`.
+   The maker of `Bytes`.
    
 
    .. py:method:: fromInts/1
 
       *no docstring*
 
-   .. py:method:: fromString/1
+   .. py:method:: fromStr/1
 
       *no docstring*
 
@@ -157,7 +358,7 @@ Data Constructors
 .. py:data:: _makeList
 
    
-   A maker of `List`s.
+   The maker of `List`s.
    
 
    .. py:method:: fromIterable/1
@@ -310,6 +511,14 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: getDocstring/0
+
+      *no docstring*
+
+   .. py:method:: getMethods/0
+
+      *no docstring*
+
    .. py:method:: supersetOf/1
 
       *no docstring*
@@ -342,6 +551,14 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: getDocstring/0
+
+      *no docstring*
+
+   .. py:method:: getMethods/0
+
+      *no docstring*
+
    .. py:method:: supersetOf/1
 
       *no docstring*
@@ -368,6 +585,10 @@ Basic guards
       *no docstring*
 
    .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: makeEmptyRegion/0
 
       *no docstring*
 
@@ -408,6 +629,10 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: makeEmptyRegion/0
+
+      *no docstring*
+
    .. py:method:: makeRegion/4
 
       *no docstring*
@@ -442,6 +667,10 @@ Basic guards
       *no docstring*
 
    .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: makeEmptyRegion/0
 
       *no docstring*
 
@@ -482,6 +711,10 @@ Basic guards
 
       *no docstring*
 
+   .. py:method:: makeEmptyRegion/0
+
+      *no docstring*
+
    .. py:method:: makeRegion/4
 
       *no docstring*
@@ -516,6 +749,10 @@ Basic guards
       *no docstring*
 
    .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: makeEmptyRegion/0
 
       *no docstring*
 
@@ -630,6 +867,76 @@ Basic guards
       *no docstring*
 
 
+.. py:data:: FinalSlot
+
+   
+   A guard which emits makers of FinalSlots.
+   
+
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: extractGuard/2
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+   .. py:method:: getDocstring/0
+
+      *no docstring*
+
+   .. py:method:: getGuard/0
+
+      *no docstring*
+
+   .. py:method:: getMethods/0
+
+      *no docstring*
+
+   .. py:method:: supersetOf/1
+
+      *no docstring*
+
+
+.. py:data:: VarSlot
+
+   
+   A guard which admits makers of VarSlots.
+   
+
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: extractGuard/2
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+   .. py:method:: getDocstring/0
+
+      *no docstring*
+
+   .. py:method:: getGuard/0
+
+      *no docstring*
+
+   .. py:method:: getMethods/0
+
+      *no docstring*
+
+   .. py:method:: supersetOf/1
+
+      *no docstring*
+
+
 
 Guard utilities
 ---------------
@@ -665,6 +972,34 @@ Guard utilities
    
 
    .. py:method:: extractValue/2
+
+      *no docstring*
+
+   .. py:method:: get/1
+
+      *no docstring*
+
+
+.. py:data:: Vow
+
+   A guard which admits promises and their entailments.
+   
+   Vows admit the union of unfulfilled promises, fulfilled promises, broken
+   promises, and `Near` values. The unifying concept is that of a partial
+   future value to which messages will be sent but that is not `Far`.
+   
+   When specialized, this guard returns a guard which ensures that promised
+   prizes either conform to its subguard or are broken.
+
+   .. py:method:: _printOn/1
+
+      *no docstring*
+
+   .. py:method:: coerce/2
+
+      *no docstring*
+
+   .. py:method:: extractGuard/2
 
       *no docstring*
 
@@ -753,7 +1088,7 @@ Brands
 Quasiparsers
 ------------
 
-.. py:data:: simple__quasiParser
+.. py:data:: ``
 
    A quasiparser of Unicode strings.
    
@@ -784,7 +1119,7 @@ Quasiparsers
       *no docstring*
 
 
-.. py:data:: b__quasiParser
+.. py:data:: b``
 
    A quasiparser for `Bytes`.
    
@@ -813,13 +1148,44 @@ Quasiparsers
       *no docstring*
 
 
-.. py:data:: m__quasiParser
+.. py:data:: m``
 
    A quasiparser for the Monte programming language.
    
    This object will parse any Monte expression and return an opaque
    value. In the near future, this object will instead return a translucent
    view into a Monte compiler and optimizer.
+
+   .. py:method:: fromStr/1
+
+      *no docstring*
+
+   .. py:method:: getAstBuilder/0
+
+      *no docstring*
+
+   .. py:method:: matchMaker/1
+
+      *no docstring*
+
+   .. py:method:: patternHole/1
+
+      *no docstring*
+
+   .. py:method:: valueHole/1
+
+      *no docstring*
+
+   .. py:method:: valueMaker/1
+
+      *no docstring*
+
+
+.. py:data:: mpatt``
+
+   A quasiparser for the Monte programming language's patterns.
+   
+   This object is like m``, but for patterns.
 
    .. py:method:: fromStr/1
 
@@ -856,7 +1222,7 @@ Flow control
    Miscellaneous vat management and quoting services.
    
 
-   .. py:method:: call/3
+   .. py:method:: call/4
 
       *no docstring*
 
@@ -864,15 +1230,11 @@ Flow control
 
       *no docstring*
 
-   .. py:method:: callWithPair/3
-
-      *no docstring*
-
    .. py:method:: send/4
 
       *no docstring*
 
-   .. py:method:: sendOnly/3
+   .. py:method:: sendOnly/4
 
       *no docstring*
 
@@ -942,15 +1304,11 @@ Evaluation
       *no docstring*
 
 
-.. py:data:: typhonEval
+.. py:data:: astEval
 
    *no docstring*
 
    .. py:method:: evalToPair/2
-
-      *no docstring*
-
-   .. py:method:: fromAST/3
 
       *no docstring*
 
@@ -1009,10 +1367,6 @@ Reference/object operations
 
       *no docstring*
 
-   .. py:method:: isSettled/1
-
-      *no docstring*
-
    .. py:method:: makeProxy/3
 
       *no docstring*
@@ -1030,6 +1384,10 @@ Reference/object operations
       *no docstring*
 
    .. py:method:: whenBroken/2
+
+      *no docstring*
+
+   .. py:method:: whenBrokenOnly/2
 
       *no docstring*
 
@@ -1136,6 +1494,14 @@ Reference/object operations
 
       *no docstring*
 
+   .. py:method:: getDocstring/0
+
+      *no docstring*
+
+   .. py:method:: getMethods/0
+
+      *no docstring*
+
    .. py:method:: supersetOf/1
 
       *no docstring*
@@ -1233,7 +1599,7 @@ Abstract Syntax
 
       *no docstring*
 
-   .. py:method:: FunctionExpr/3
+   .. py:method:: FunctionExpr/4
 
       *no docstring*
 
@@ -1620,6 +1986,10 @@ Utilities for syntax expansions
 
       *no docstring*
 
+   .. py:method:: currySend/2
+
+      *no docstring*
+
 
 .. py:data:: _mapEmpty
 
@@ -1677,17 +2047,18 @@ Utilities for syntax expansions
    Implementation of bind-pattern syntax for forward declarations.
    
 
-   .. py:method:: run/1
+   .. py:method:: run/2
 
       *no docstring*
 
 
 .. py:data:: _splitList
 
+   
    Implementation of tail pattern-matching syntax in list patterns.
    
-   m`def [x] + xs := l`.expand() ==
-   m`def via (_splitList.run(1)) [x, xs] := l`
+   m`def [x] + xs := l`.expand() == m`def via (_splitList.run(1)) [x, xs] := l`
+   
 
    .. py:method:: run/1
 
@@ -1795,10 +2166,6 @@ Time
 
       *no docstring*
 
-   .. py:method:: run/1
-
-      *no docstring*
-
    .. py:method:: sendTimestamp/1
 
       *no docstring*
@@ -1811,6 +2178,25 @@ Time
 
 I/O
 ---
+
+.. py:data:: stdio
+
+   
+   A producer of streamcaps for the ancient standard I/O bytestreams.
+   
+
+   .. py:method:: stderr/0
+
+      *no docstring*
+
+   .. py:method:: stdin/0
+
+      *no docstring*
+
+   .. py:method:: stdout/0
+
+      *no docstring*
+
 
 .. py:data:: makeStdErr
 
@@ -1876,6 +2262,28 @@ Networking
       *no docstring*
 
 
+.. py:data:: makeTCP6ClientEndpoint
+
+   
+   Make a TCPv6 client endpoint.
+   
+
+   .. py:method:: run/2
+
+      *no docstring*
+
+
+.. py:data:: makeTCP6ServerEndpoint
+
+   
+   Make a TCPv4 server endpoint.
+   
+
+   .. py:method:: run/1
+
+      *no docstring*
+
+
 .. py:data:: getAddrInfo
 
    *no docstring*
@@ -1901,10 +2309,6 @@ Runtime
    
 
    .. py:method:: getCrypt/0
-
-      *no docstring*
-
-   .. py:method:: getDisassembler/0
 
       *no docstring*
 
@@ -1955,32 +2359,27 @@ Processes and Vats
       *no docstring*
 
 
-.. py:data:: currentVat
-
-   
-   Turn management and object isolation.
-   
-
-   .. py:method:: run/0
-
-      *no docstring*
-
-   .. py:method:: seed/1
-
-      *no docstring*
-
-   .. py:method:: sprout/2
-
-      *no docstring*
-
-
 .. py:data:: makeProcess
 
    
    Create a subordinate process on the current node from the given
    executable, arguments, and environment.
    
+   `=> stdin`, `=> stdout`, and `=> stderr` control the same-named methods on
+   the resulting process object, which will return a sink, source, and source
+   respectively. If any of these named arguments are `true`, then the
+   corresponding method on the process will return a live streamcap which
+   is connected to the process; otherwise, the returned streamcap will be a
+   no-op.
+   
    `=> stdinFount`, if not null, will be treated as a fount and it will be
    flowed to a drain representing stdin. `=> stdoutDrain` and
    `=> stderrDrain` are similar but should be drains which will have founts
    flowed to them.
+   
+
+   .. py:method:: run/3
+
+      *no docstring*
+
+

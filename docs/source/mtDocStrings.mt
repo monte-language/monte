@@ -127,20 +127,21 @@ def makeDocstringWalker(doc) as DeepFrozen:
 def safeScopeBySection :DeepFrozen := [
     "Primitive values" => ["true", "false", "null", "NaN", "Infinity"],
     "Data Constructors" => ["_makeInt", "_makeDouble",
-                            "_makeString", "_makeBytes",
+                            "_makeStr", "_makeString", "_makeBytes",
                             "_makeList", "_makeMap",
                             "_makeOrderedSpace", "_makeTopSet", "_makeOrderedRegion",
                             "_makeSourceSpan",
                             "_makeFinalSlot", "_makeVarSlot", "makeLazySlot"],
     "Basic guards" => ["Any", "Void", "Empty",
                        "Bool", "Str", "Char", "Double", "Int", "Bytes",
-                       "List", "Map", "Set", "Pair"],
-    "Guard utilities" => ["NullOk", "Same", "SubrangeGuard", "_auditedBy"],
+                       "List", "Map", "Set", "Pair",
+                       "FinalSlot", "VarSlot"],
+    "Guard utilities" => ["NullOk", "Same", "Vow", "SubrangeGuard", "_auditedBy"],
     "Tracing" => ["trace", "traceln"],
     "Brands" => ["makeBrandPair"],
-    "Quasiparsers" => ["simple__quasiParser", "b__quasiParser", "m__quasiParser"],
+    "Quasiparsers" => ["``", "b``", "m``", "mpatt``"],
     "Flow control" => ["M", "throw", "_loop", "_iterForever"],
-    "Evaluation" => ["eval", "typhonEval", "safeScope"],
+    "Evaluation" => ["eval", "astEval", "safeScope"],
     "Reference/object operations" => ["Ref", "promiseAllFulfilled",
                                       "DeepFrozen", "Selfless", "Transparent", "Near",
                                       "Binding"],
@@ -165,6 +166,7 @@ def related :DeepFrozen := [
 def unsafeScopeBySection :DeepFrozen := [
     "Time" => ["Timer"],
     "I/O" => [
+        "stdio",
         "makeStdErr",
         "makeStdIn",
         "makeStdOut",
@@ -172,13 +174,14 @@ def unsafeScopeBySection :DeepFrozen := [
     "Networking" => [
         "makeTCP4ClientEndpoint",
         "makeTCP4ServerEndpoint",
+        "makeTCP6ClientEndpoint",
+        "makeTCP6ServerEndpoint",
         "getAddrInfo"],
     "Runtime" => [
         "currentRuntime",
         "unsealException"],
     "Processes and Vats" => [
         "currentProcess",
-        "currentVat",
         "makeProcess"]
 ]
 
@@ -203,11 +206,13 @@ def doEntryCaps(rst, d, caps) as DeepFrozen:
                    [].asMap())
     
 
-def main(argv,
+def main(_argv,
+         # from typhon/scopes/unsafe.py
          =>Timer,
+         # excluded by loader.mt
+         #=>bench,
          =>currentProcess,
          =>currentRuntime,
-         =>currentVat,
          =>getAddrInfo,
          =>makeFileResource,
          =>makeProcess,
@@ -216,6 +221,9 @@ def main(argv,
          =>makeStdOut,
          =>makeTCP4ClientEndpoint,
          =>makeTCP4ServerEndpoint,
+         =>makeTCP6ClientEndpoint,
+         =>makeTCP6ServerEndpoint,
+         =>stdio,
          =>unsealException) as DeepFrozen:
     def stdout := makePumpTube(makeUTF8EncodePump())
     stdout<-flowTo(makeStdOut())
@@ -227,9 +235,9 @@ def main(argv,
 
     def io := [
         =>&&Timer,
+        #=>&&bench,
         =>&&currentProcess,
         =>&&currentRuntime,
-        =>&&currentVat,
         =>&&getAddrInfo,
         =>&&makeFileResource,
         =>&&makeProcess,
@@ -238,6 +246,9 @@ def main(argv,
         =>&&makeStdOut,
         =>&&makeTCP4ClientEndpoint,
         =>&&makeTCP4ServerEndpoint,
+        =>&&makeTCP6ClientEndpoint,
+        =>&&makeTCP6ServerEndpoint,
+        =>&&stdio,
         =>&&unsealException]
 
     doEntryCaps(rst, d, io)
