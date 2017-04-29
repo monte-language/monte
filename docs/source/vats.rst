@@ -83,7 +83,7 @@ Vats, Formally and Informally
 
 This is all confusing. What, precisely, **is** a vat?
 
-Formally, a vat is just container of objects. Vats have a **turn queue**, a
+Formally, a vat is just a container of objects. Vats have a **turn queue**, a
 list of messages yet to be delivered to objects within the vat, along with an
 optional resolver for each message. Vats compute by repeatedly delivering
 individual messages in the turn queue; each delivery is called a **turn**.
