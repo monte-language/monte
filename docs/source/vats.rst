@@ -83,11 +83,11 @@ Vats, Formally and Informally
 
 This is all confusing. What, precisely, **is** a vat?
 
-Formally, a vat is an object which encapsulates a :ref:`Set`. Vats have a
-**turn queue**, a list of messages yet to be delivered to objects within the
-vat, along with an optional resolver for each message. Vats compute by
-repeatedly delivering individual messages in the turn queue; each delivery is
-called a **turn**. Turns are taken in the order that they are enqueued, FIFO.
+Formally, a vat is just container of objects. Vats have a **turn queue**, a
+list of messages yet to be delivered to objects within the vat, along with an
+optional resolver for each message. Vats compute by repeatedly delivering
+individual messages in the turn queue; each delivery is called a **turn**.
+Turns are taken in the order that they are enqueued, FIFO.
 
 If a resolver is provided for a turn, then the resolver is resolved with the
 result of delivery. If delivery causes an exception, then the vat catches the
@@ -96,7 +96,7 @@ either case, a **membrane** is applied to all objects which come into or leave
 the vat, including the result of delivery; this membrane replaces all
 non-``DeepFrozen`` values with far references.
 
-Informally, a vat isolates an object graph. Objects "inside" the vat can only
+Informally, a vat isolates an object graph. Objects inside the vat can only
 refer to things outside the vat by far reference; there is no way to perform
 an immediate call across a vat boundary.
 
