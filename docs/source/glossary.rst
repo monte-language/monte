@@ -3,6 +3,7 @@ Glossary
 ========
 
 .. glossary::
+    :sorted:
 
     message
         An object of the form ``[verb :Str, args :List, namedArgs :Map]``
@@ -20,3 +21,12 @@ Glossary
 
     prize : Coercion
         The result of a successful coercion.
+
+    quasiliteral
+    QL
+        An literal expression or pattern which is composed of both literal and
+        variable pieces.
+
+    quasiparser
+    QP
+        An object which provides the :ref:`quasiliteral` protocol.
