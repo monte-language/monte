@@ -56,9 +56,9 @@ Monte as a Tree
     * Object literals have their auditors evaluated before object creation and
       their patterns are unified after object creation.
 
-Kernel-Monte is specified as an abstract syntax tree (AST). Each node in the
-tree is either an :dfn:`expression` or a :dfn:`pattern`. Expressions can be
-evaluated to product an object; patterns do not produce values but
+Kernel-Monte is specified as an :abbr:`AST (abstract syntax tree)`. Each node
+in the tree is either an :dfn:`expression` or a :dfn:`pattern`. Expressions
+can be evaluated to product an object; patterns do not produce values but
 :dfn:`unify` with values (i.e. objects) to introduce names into scopes.
 
 Along with every node, there is a :dfn:`static scope`, a compile-time constant
