@@ -49,6 +49,14 @@ Monte values have :dfn:`strong` types which resist coercion. Indeed, in Monte,
 coercion is a reified object protocol. Objects do not have to be coercible,
 and most builtin objects cannot be coerced.
 
+Nominal
+=======
+
+A language has :dfn:`nominal` typing if types are identifiable, comparable,
+substitutable, etc. only if they are identical. Monte guards and interfaces
+have this property; in particular, Monte interfaces are not equal just by
+having the same declared names and methods.
+
 Manifest
 ========
 
