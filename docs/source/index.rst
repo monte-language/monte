@@ -7,7 +7,15 @@
 Monte is Serious Business
 =========================
 
-Monte is a dynamic language inspired by Python and E. 
+Monte is a programming language inspired by the E_ and Python_ programming
+languages. Monte aims to be:
+
+* A reliable scaffold for secure distributed computing
+* An example of capability-safe programming language design
+* A new standard by which to judge other programming languages
+
+.. _E: http://erights.org/
+.. _Python: https://www.python.org/
 
 .. toctree::
     :maxdepth: 2
