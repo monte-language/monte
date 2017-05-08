@@ -25,6 +25,7 @@ languages. Monte aims to be:
     ordinary-programming
     quick_ref
     rosetta-python
+    type-system
 
 
 .. _secure_distributed_computing:
