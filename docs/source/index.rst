@@ -12,7 +12,7 @@ languages. Monte aims to be:
 
 * A reliable scaffold for secure distributed computing
 * An example of capability-safe programming language design
-* A new standard by which to judge other programming languages
+* A model for misuse-resistant programming
 
 .. _E: http://erights.org/
 .. _Python: https://www.python.org/
