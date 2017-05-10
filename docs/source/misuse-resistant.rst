@@ -36,3 +36,14 @@ as a bare identifier for names and attributes.
 
 .. _Haskell 98 Report Lexical Structure: https://www.haskell.org/onlinereport/lexemes.html
 .. _PEP 3131: https://www.python.org/dev/peps/pep-3131/
+
+Parenthesized Sub-Expressions
+=============================
+
+Whenever an expression is syntactically contained within another expression,
+it must be parenthesized, with the sole exception of common guard-exprs used
+in patterns. This feature, explained in more detail in `The Power of
+Irrelevance`_, improves readability by clearly distinguishing patterns from
+expressions.
+
+.. _The Power of Irrelevance: http://erights.org/data/irrelevance.html
