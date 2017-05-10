@@ -26,6 +26,7 @@ languages. Monte aims to be:
     quick_ref
     rosetta-python
     type-system
+    misuse-resistant
 
 
 .. _secure_distributed_computing:
