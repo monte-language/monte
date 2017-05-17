@@ -15,20 +15,36 @@ def makeTextReader(source) as DeepFrozen:
                 UTF8.decode(b``.join(chunks), throw)
 
 
-def serialize(tree :DeepFrozen) as DeepFrozen:
-    def context := makeMASTContext()
-    context(tree)
-    return context.bytes()
+def withMAST(case :DeepFrozen) :Map[Str, DeepFrozen] as DeepFrozen:
+    def serialize(tree :DeepFrozen) as DeepFrozen:
+        def context := makeMASTContext()
+        context(tree)
+        return context.bytes()
+
+    def hexDigit :DeepFrozen := "0123456789ABCDEF"
+
+    def hex(bs :Bytes) :Str as DeepFrozen:
+        def hi := fn b { b >> 4 }
+        def lo := fn b { b & 0x0f }
+        return "".join([for b in (bs) "" + hexDigit[hi(b)] + hexDigit[lo(b)]])
+
+    def expr := ::"m``".fromStr(case["source"])
+    def mast := serialize(expr.expand())
+
+    def fname := `${case["section"]}_${case["lineno"]}.mast`
+    trace(`$fname: ${mast.size()} bytes for ${case["source"]}`)
+
+    return case.with("MAST", hex(mast))
 
 
-def main(_argv, => stdio, => makeFileResource) as DeepFrozen:
+def main(argv, => stdio, => makeFileResource) as DeepFrozen:
+    def [_eval, _script, outfn] := argv
     when (def text := makeTextReader(stdio.stdin()).read()) ->
         def suite := JSON.decode(text, throw)
         trace(`suite size: ${suite.size()}`)
 
-        for case in (suite):
-            def expr := ::"m``".fromStr(case["source"])
-            def mast := serialize(expr.expand())
-            def fname := `${case["section"]}_${case["lineno"]}.mast`
-            trace(`$fname: ${mast.size()} bytes for ${case["source"]}`)
-            makeFileResource(fname).setContents(mast)
+        def suiteWithMast := [for case in (suite) withMAST(case)]
+        def out := UTF8.encode(JSON.encode(suiteWithMast, throw), throw)
+        makeFileResource(outfn).setContents(out)
+    catch oops:
+        traceln.exception(oops)
