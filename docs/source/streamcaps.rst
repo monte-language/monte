@@ -45,7 +45,7 @@ In the standard library, the "lib/streams" module has tools for manipulating
 streamcaps. To deliver all (zero or more) data from a source to a sink, we can
 use the ``flow`` helper::
 
-    import "lib/streams" ~= [=> flow]
+    import "lib/streams" =~ [=> flow]
     when (flow(source, sink)) -> { done() }
 
 Object Protocol
@@ -142,7 +142,7 @@ The most common pattern for streamcaps is *flowing* all data from a source to
 a sink. Use the ``flow`` helper from "lib/streams" to make this easy. Here's a
 complete TCP echo server::
 
-    import "lib/streams" ~= [=> flow :DeepFrozen]
+    import "lib/streams" =~ [=> flow :DeepFrozen]
     exports (main)
 
     def main([via (_makeInt) port], => makeTCP4ServerEndpoint) as DeepFrozen:
