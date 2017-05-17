@@ -48,8 +48,8 @@ use the ``flow`` helper::
     import "lib/streams" ~= [=> flow]
     when (flow(source, sink)) -> { done() }
 
-Meta-Object Protocol
-====================
+Object Protocol
+===============
 
 Pumps
 -----
@@ -69,9 +69,9 @@ a list of zero or more data.
         return [acc]
 
 .. warning::
-    Unlike the rest of the streamcap MOP, pumps must currently be synchronous;
-    they must return ``List``. In the future, pumps should be able to return
-    ``Vow[List]``.
+    Unlike the rest of the streamcap protocol, pumps must currently be
+    synchronous; they must return ``List``. In the future, pumps should be
+    able to return ``Vow[List]``.
 
 Sinks
 -----
