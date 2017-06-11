@@ -45,7 +45,7 @@ __ https://github.com/monte-language/typhon/blob/master/mast/lib/monte/monte_par
    objectScript:  [`doco` ]  ("pass"  | [("@@meth"  )+ ] ) ("pass"  | [(`matchers`  )+ ] )
    matchers: ( "match"  `pattern`  `block`  )+ 
    doco: .String.
-   FunctionExpr:  "def"  "("  [(`pattern`  "," )+ ]  ")"  `block` 
+   FunctionExpr:  "def"  [ "." `verb` ] "("  [(`pattern`  "," )+ ]  ")"  `block`
    InterfaceExpr:  "interface"  `namePatt`  [ "guards"  `pattern` ]  [ "extends"  (`order`  "," )+ ]  /* implements_@@ */  /* msgs@@ */ 
    guardOpt:  ":"  `guard` 
    : | /* empty */

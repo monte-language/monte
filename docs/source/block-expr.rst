@@ -296,7 +296,7 @@ Defining Objects
 
 .. syntax:: FunctionExpr
 
-   Sequence('def', '(', ZeroOrMore(NonTerminal('pattern'), ','), ')',
+   Sequence('def', Optional(Sequence('.', NonTerminal('verb'))), '(', ZeroOrMore(NonTerminal('pattern'), ','), ')',
      NonTerminal('block'))
 
 ::
