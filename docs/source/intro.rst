@@ -16,22 +16,22 @@ faster, smaller, more connected, and more capable, but when it comes to
 security, `everything is broken`__. We propose to reconsider the
 identity-based access control approach dominant in today's dominant languages
 and frameworks [#]_. Monte takes the object-capability paradigm of E [#]_ and
-updates it for the metamodern era:
+expands on the approach, delivering a powerful and expressive language.
 
 __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 
 Monte, like E before it, has dramatic advantages for secure distributed
 systems:
 
+   - Capability-based security enables the concise composition of powerful
+     patterns of interoperation--patterns that enable extensive cooperation
+     even in the presence of severely limited trust.
+
    - Monte promises benefit from a *promise-pipelining* architecture which
      ensures that *most deadlocks cannot occur*. [*]_
 
    - Monte offers cryptographic services directly to its users, easing the use
      of good cryptographic primitives.
-
-   - Capability-based security enables the concise composition of powerful
-     patterns of interoperation--patterns that enable extensive cooperation
-     even in the presence of severely limited trust.
 
 
 Because Readability Matters
@@ -46,7 +46,7 @@ Because Readability Matters
 Monte wraps its strengths in a Python-like syntax to make it quickly
 comfortable for a large number of software engineers.
 
-Monte is a pure object-based language in the Smalltalk tradition.  making it
+Monte is a pure object-based language in the Smalltalk tradition, making it
 easy to write modular, readable, maintainable software using the strategies
 familiar from Python, JavaScript, Ruby, Java, and other object-based
 languages.  All values are objects and all computation is done by sending
