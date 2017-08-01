@@ -46,7 +46,7 @@ Selfless
 --------
 
 The ``Selfless`` auditor is a stamp. Any object bearing ``Selfless`` can also
-bare other stamps to indicate that equality comparisons with that object
+bear other stamps to indicate that equality comparisons with that object
 should be done in a customized way.
 
 ::

@@ -80,7 +80,7 @@ queued up for subsequent turns.
 Principle of Least Authority
 ----------------------------
 
-Straightforwad object-oriented design results in each object having the least
+Straightforward object-oriented design results in each object having the least
 authority it needs:
 
   - ``makeIRCService`` provides the full range of IRC client behavior
@@ -99,7 +99,7 @@ compromise lets the attacker do anything that the user could do. A simple game
 such as solitaire executes with all authority necessary to corrupt,
 exfiltrate, or ransom the user's files.
 
-With object capability disciplne, when the time comes for a security
+With object capability discipline, when the time comes for a security
 inspection, we do not have to consider the possibility that any compromise in
 any part of our program leaves the whole system wide open in this way. Each
 component in the system can be reviewed independently and auditing a system
