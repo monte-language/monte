@@ -302,23 +302,26 @@ Defining Objects
 ::
 
   object foo {
+      "A docstring for this object."
+
       to someMethod(p, q) {
-          methBody
+          return methBody
       }
   
       method rawMethod(p, q) {
           methBody
       }
-       match [verb, arglist] {
-           matcherBody
-       }
+
+      match [verb, args, namedArgs] {
+          matcherBody
+      }
   }
   object foo as someAuditor { ... }
   object foo implements firstAuditor, secondAuditor { ... }
   object foo extends baz { ... }
 
-  /** doc string */
-  object foo as someAuditor implements firstAuditor, secondAuditor extends baz { ... }
+  object foo as someAuditor implements firstAuditor, secondAuditor extends baz:
+      "A docstring."
 
 ::
 
