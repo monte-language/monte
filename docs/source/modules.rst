@@ -30,7 +30,7 @@ Module Declaration Syntax
 Module files start with a :dfn:`module header`, which is a declaration of the
 form::
 
-    import "namespace/name" =~ [=> first :DeepFrozen, => second]
+    import "namespace/name" =~ [=> first, => second]
     exports (maker, main)
 
 with zero or more ``import`` lines and exactly one ``exports`` line.
@@ -79,7 +79,7 @@ All exports must pass ``DeepFrozen``::
 
 Which means that exports can only depend on ``DeepFrozen`` imports::
 
-    import "unittest" =~ [=> unittest] # not DeepFrozen
+    import "unittest" =~ [=> unittest :Any] # not DeepFrozen!
     exports (f)
 
     def f() as DeepFrozen: # Exception: `unittest` in the scope of `f` isn't DeepFrozen!
@@ -107,8 +107,9 @@ Imports can have guards on them::
     import "fries/victor" =~ [=> diamonds :DeepFrozen]
     exports (freezeRay, oneLiners)
 
-Imported names are usually guarded with ``DeepFrozen``. This allows those
-imported names to be used in exported objects.
+In fact, by default, imported names are automatically guarded with
+``DeepFrozen``. This allows those imported names to be used in exported
+objects.
 
 .. _module_expansion:
 
@@ -165,9 +166,9 @@ The package loader provides a few Miranda import pet names to all modules.
     A unit test collector. It is not ``DeepFrozen``, so unit tests are
     confined to their module::
 
-      import "unittest" =~ [=> unittest]
+      import "unittest" =~ [=> unittest :Any]
 
 "bench"
     A benchmark collector. It is not ``DeepFrozen``::
 
-        import "bench" =~ [=> bench]
+        import "bench" =~ [=> bench :Any]
