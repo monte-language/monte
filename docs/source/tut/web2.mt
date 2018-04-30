@@ -1,6 +1,6 @@
-import "http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
-import "http/tag" =~ [=> tag :DeepFrozen]
-import "formData" =~ [=> fieldMap :DeepFrozen]
+import "lib/http/server" =~ [=> makeHTTPEndpoint]
+import "lib/http/tag" =~ [=> tag]
+import "formData" =~ [=> fieldMap]
 exports (main)
 
 object calculator as DeepFrozen:
@@ -11,7 +11,7 @@ object calculator as DeepFrozen:
             match =="POST":
                 calculator.post(request)
 
-    to get(request):
+    to get(_request):
         def body := b`
         <form method="POST">
           <label>Arbitrary code to execute:<input name="code" /></label>

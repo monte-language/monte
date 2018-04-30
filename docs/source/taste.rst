@@ -19,12 +19,12 @@ imported from modules.
 
 .. sidebar:: DeepFrozen Module Exports
 
-   One of the constraints of :ref:`object capability discipline
-   <ocap>` is that there is no global mutable state; so exported
-   objects must be ``DeepFrozen``, i.e. transitively immutable. Since
-   ``main`` calls ``helloWeb``, ``helloWeb`` must be ``DeepFrozen`` as
-   well. We'll discuss this and other static properties of Monte code
-   in the :ref:`auditors` section.
+   One of the constraints of :ref:`object capability discipline <ocap>` is
+   that there is no global mutable state, so exported objects must be
+   ``DeepFrozen``; that is, transitively immutable. Since ``main`` calls
+   ``helloWeb``, ``helloWeb`` must be ``DeepFrozen`` as well. We'll discuss
+   this and other static properties of Monte code in the :ref:`auditors`
+   section.
 
 
 We declare that this module ``exports`` its ``main`` function, as is

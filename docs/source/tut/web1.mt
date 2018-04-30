@@ -1,7 +1,7 @@
-import "http/server" =~ [=> makeHTTPEndpoint :DeepFrozen]
+import "lib/http/server" =~ [=> makeHTTPEndpoint]
 exports (main)
 
-def helloWeb(request) as DeepFrozen:
+def helloWeb(_request) as DeepFrozen:
     "Build a simple HTML response."
 
     return [200, ["Content-Type" => "text/html"], b`<p>Hello!</p>`]
