@@ -223,17 +223,6 @@ No, you misunderstood; why doesn't Monte have only eventual sends?
 Ah! There are several reasons, to be taken together as a measure of how
 difficult such a system would be to work with.
 
-Execution speed is very bad in these systems. This is because it is quite
-difficult for any compiler to see, even with cutting-edge technology, where a
-sent message will be delivered to, since it travels in both time and space
-before being resolved. While our general feeling is that speed is a secondary
-concern in most cases, we are motivated to care here for two reasons. First,
-practical compilers tend to do enormous amounts of work to convert chains of
-monomorphic sends into calls; `GHC`_ has a strictness analyzer to avoid lazy
-thunk chains on the heap, which have similar delayed-evaluation properties to
-sends. Second, `Joule`_, an ancestor of Monte, tried this design approach and
-found speed to be a serious problem.
-
 Some edges of Monte's interaction with the external world are much
 better-modeled with calls than sends. A chauvanist argument can be made about
 how arithmetic should at least occasionally be lowered to a sequence of CPU
@@ -264,12 +253,9 @@ structure or contents of the graph being traversed. Concretely:
    collect. But then speed concerns pop up, and really this is a very deep
    rabbit hole…
 
-So, for these reason, we distinguish promises at the edges of our object
+So, for these reasons, we distinguish promises at the edges of our object
 graphs, and we implement these traversals using calls. As a practical
 consequence, :ref:`uncalls <uncall>` are calls and must return near values.
 This also influenced the design of printers, which serialize by
 pretty-printing, and vats, which could optionally be implemented with per-vat
 GC.
-
-.. _GHC: https://en.wikipedia.org/wiki/Glasgow_Haskell_Compiler
-.. _Joule: https://en.wikipedia.org/wiki/Joule_(programming_language)
