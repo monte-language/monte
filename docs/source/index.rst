@@ -37,6 +37,7 @@ Secure Distributed Computing
 .. toctree::
 
     design
+    ejectors
     vats
     brands
     promises

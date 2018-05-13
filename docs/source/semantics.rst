@@ -264,8 +264,6 @@ Control Flow
 Escape
 ~~~~~~
 
-.. _ejector:
-
 .. sidebar:: Ejectors
 
              An ejector is an object whose ``run`` method aborts the current
@@ -282,7 +280,7 @@ An `EscapeExpr` has a pattern and inner expression and, optionally, a catch
 pattern and catch expression (not to be confused with :ref:`Try`/catch
 expressions).
 
-An ejector is created and a scope is introduced. The ejector is unified with
+An :ref:`ejector` is created and a scope is introduced. The ejector is unified with
 the pattern and then the inner expression is evaluated.
 
 If the ejector was not called during evaluation of the inner expression, the
