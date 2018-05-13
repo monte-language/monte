@@ -55,6 +55,7 @@ Language Reference
     block-expr
     guards
     prim-expr
+    collections
     operators
     patterns
     symbols
