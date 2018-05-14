@@ -64,6 +64,7 @@ Language Reference
     miranda
     iteration
     custom-guards
+    controllers
     slots
     auditors
     semantics
