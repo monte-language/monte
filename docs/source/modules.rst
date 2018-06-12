@@ -153,7 +153,7 @@ a promise for an ``Int``.
 
     exports (main)
 
-    def main(=> currentProcess) :Int as DeepFrozen:
+    def main(_argv, => currentProcess) :Int as DeepFrozen:
         traceln(`Current process: $currentProcess`)
         return 0
 
