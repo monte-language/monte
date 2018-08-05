@@ -68,6 +68,7 @@ Language Reference
     slots
     auditors
     semantics
+    operad
 
 Appendixes, Indices and Tables
 ------------------------------
