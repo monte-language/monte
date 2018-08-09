@@ -73,22 +73,50 @@ of new contributors.
 
 * Make Monte desireable
 
+  * ✓ Branding
+  * ✓ Object capability community outreach
+
 * Improve the core
 
-  * Speed: Nobody should have to wait for code to compile
+  * ✓ Speed: Nobody should have to wait for code to compile
   * Safe objects
 
-    * Many method improvements to builtin collections
-    * Semitransparent
-    * PassByCopy
-    * makeWeakMap
-    * Twines
-    * Elusive Eight: Useful numerical analysis methods for doubles
+    * ✓ Many method improvements to builtin collections
+    * ✓ Semitransparent
+    * ✓ Vow
 
   * Unsafe objects
 
-    * Filesystem
-    * Timers
+    * ✓ Timers
+    * ✓ Property tests
+
+  * Typhon-specific improvements
+
+    * ✓ Even faster interpreting
+
+* Develop important libraries
+
+  * ✓ HTTP
+  * ✓ Records
+
+* Monte-related R&D
+
+  * ✓ Capn Proto
+
+2018
+====
+
+* Advanced safe objects
+
+  * PassByCopy
+  * makeWeakMap
+  * Twines
+  * Elusive Eight: Useful numerical analysis methods for doubles
+
+* Production-ready unsafe objects
+
+  * FS
+  * Tamed timers
 
   * Typhon-specific improvements
 
@@ -96,30 +124,21 @@ of new contributors.
 
 * Develop Monte packaging
 
+  * ✓ Muffins
   * Packages
-  * Muffins
   * Environments
   * mtpkgs
 
 * Develop important libraries
 
-  * HTTP
   * Debugger
-  * Records
   * Pretty-printers
 
 * Monte-related R&D
 
   * Rationals
-  * Capn Proto
-  * CapTP/VatTP
-
-2018
-====
-
-We currently don't know what we're going to do for 2018. Possibilities range
-from MonteCon to The Monte Foundation to nothing at all. Who knows? It is a
-mystery~
+  * Capn Proto: Message generation, CapTP/VatTP
+  * kubeless integration
 
 Contributing
 ============
