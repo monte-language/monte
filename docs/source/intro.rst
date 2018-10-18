@@ -13,10 +13,19 @@ Because Security Matters
 
 **Secure distributed computing should not be hard**. Computers are getting
 faster, smaller, more connected, and more capable, but when it comes to
-security, `everything is broken`__. We propose to reconsider the
-identity-based access control approach dominant in today's dominant languages
-and frameworks [#]_. Monte takes the object-capability paradigm of E [#]_ and
+security, `everything is broken`__. A major cause is the "water balloon"
+design philosophy of contemporary languages and frameworks: Security is only
+enforced at the edges of programs, and not within the structure of programs
+themselves. Monte takes the object-capability paradigm of E [#]_ and
 expands on the approach, delivering a powerful and expressive language.
+
+.. sidebar:: Can we reuse existing languages?
+
+    Disciplined use of existing languages such as Java and ECMAScript can be
+    used to build object capability systems, but the standard practices and
+    libraries are not compatible with this discipline. We believe that nothing
+    short of a capability-safe-by-construction language can enforce capability
+    discipline.
 
 __ https://medium.com/message/everything-is-broken-81e5f33a24e1
 
@@ -257,11 +266,6 @@ __ http://erights.org/elang/index.html
 __ http://erights.org/elib/index.html
 
 .. rubric:: Notes
-
-.. [#] Disciplined use of existing languages such as Java and
-       JavaScript can be used to build object capability systems, but
-       the standard practices and libraries are not compatible with
-       this discipline.
 
 .. [#] Miller, M.S.: `Robust Composition: Towards a Unified Approach to
        Access Control and Concurrency Control`__. PhD thesis, Johns
