@@ -33,7 +33,7 @@
     "source": "escape hatch { def x :Int exit hatch := 1.0 }\n", 
     "section": "block-expr", 
     "lineno": 159, 
-    "want": "\"1.000000 does not conform to <IntGuard>\"\n"
+    "want": "\"1.000000 does not conform to Int\"\n"
   }, 
   {
     "source": "def x :Int := 1\nx\n", 
@@ -51,7 +51,7 @@
     "source": "def y := -5\nescape oops {\n    def x :(Int > 0) exit oops := y\n}\n", 
     "section": "guards", 
     "lineno": 17, 
-    "want": "\"-5 is not in <(0, \u221e) <IntGuard> region>\"\n"
+    "want": "\"-5 is not in <(0, \u221e) Int region>\"\n"
   }, 
   {
     "source": "def x :('a'..'z' | 'A'..'Z') := 'c'\ndef y :(Double >= 4.2) := 7.0\ndef z :(Int < 5) := 3\n[x, y, z]\n", 
@@ -68,13 +68,13 @@
   {
     "source": "1 + 1\n", 
     "section": "intro", 
-    "lineno": 181, 
+    "lineno": 191, 
     "want": "2\n"
   }, 
   {
     "source": "\"abc\".size()\n", 
     "section": "intro", 
-    "lineno": 184, 
+    "lineno": 194, 
     "want": "3\n"
   }, 
   {
@@ -92,7 +92,7 @@
   {
     "source": "m`1 + 1`.expand()\n", 
     "section": "modules", 
-    "lineno": 90, 
+    "lineno": 131, 
     "want": "m`1.add(1)`\n"
   }, 
   {
@@ -786,12 +786,6 @@
     "want": "true\n"
   }, 
   {
-    "source": "def x := 3\n`Value of x is: $x`\n", 
-    "section": "quasiparsers", 
-    "lineno": 17, 
-    "want": "\"Value of x is: 3\"\n"
-  }, 
-  {
     "source": "def a := 2 + 3\nvar a2 := 4\na2 += 1\ndef b := `answer: $a`\ntraceln(b)\nb\n", 
     "section": "quick_ref", 
     "lineno": 14, 
@@ -866,151 +860,145 @@
   {
     "source": "var a := [8, 6, \"a\"]\na[2]\n", 
     "section": "quick_ref", 
-    "lineno": 204, 
+    "lineno": 203, 
     "want": "\"a\"\n"
   }, 
   {
     "source": "var a := [8, 6, \"a\"]\na.size()\n", 
     "section": "quick_ref", 
-    "lineno": 208, 
+    "lineno": 207, 
     "want": "3\n"
   }, 
   {
     "source": "var a := [8, 6, \"a\"]\nfor i in (a):\n    traceln(i)\na := a + [\"b\"]\na.slice(0, 2)\n", 
     "section": "quick_ref", 
-    "lineno": 212, 
+    "lineno": 211, 
     "want": "[8, 6]\n"
   }, 
   {
     "source": "def m := [\"c\" => 5]\nm[\"c\"]\n", 
     "section": "quick_ref", 
-    "lineno": 225, 
+    "lineno": 224, 
     "want": "5\n"
   }, 
   {
     "source": "[\"c\" => 5].size()\n", 
     "section": "quick_ref", 
-    "lineno": 229, 
+    "lineno": 228, 
     "want": "1\n"
   }, 
   {
     "source": "def m := [\"c\" => 5]\nfor key => value in (m):\n    traceln(value)\ndef flexM := m.diverge()\nflexM[\"d\"] := 6\nflexM.size()\n", 
     "section": "quick_ref", 
-    "lineno": 232, 
+    "lineno": 231, 
     "want": "2\n"
   }, 
   {
     "source": "def flexA := [8, 6, \"a\", \"b\"].diverge()\nflexA.extend([\"b\"])\nflexA.push(\"b\")\ndef constA := flexA.snapshot()\n", 
     "section": "quick_ref", 
-    "lineno": 246, 
+    "lineno": 245, 
     "want": "[8, 6, \"a\", \"b\", \"b\", \"b\"]\n"
   }, 
   {
     "source": "def m := [\"c\" => 5]\ndef flexM := m.diverge()\nflexM[\"b\"] := 2\nflexM.removeKey(\"b\")\ndef constM := flexM.snapshot()\n", 
     "section": "quick_ref", 
-    "lineno": 258, 
+    "lineno": 257, 
     "want": "[\"c\" => 5]\n"
   }, 
   {
     "source": "def abacus := object mock { to add(x, y) { return x + y } }\nvar out := null\n\nabacus <- add(1, 2)\n", 
     "section": "quick_ref", 
-    "lineno": 271, 
+    "lineno": 270, 
     "want": "3\n"
   }, 
   {
     "source": "def makeCarRcvr := fn autoMake { `shiny $autoMake` }\n\ndef carRcvr := makeCarRcvr <- (\"Mercedes\")\nRef.whenBroken(carRcvr, def lost(brokenRef) {\n    traceln(\"Lost connection to carRcvr\")\n})\ncarRcvr\n", 
     "section": "quick_ref", 
-    "lineno": 279, 
+    "lineno": 278, 
     "want": "\"shiny Mercedes\"\n"
   }, 
   {
     "source": "def [resultVow, resolver] := Ref.promise()\n\nwhen (resultVow) ->\n    traceln(resultVow)\ncatch prob:\n    traceln(`oops: $prob`)\n\nresolver.resolve(\"this text is the answer\")\nresultVow\n", 
     "section": "quick_ref", 
-    "lineno": 288, 
+    "lineno": 287, 
     "want": "\"this text is the answer\"\n"
   }, 
   {
     "source": "DEF x := 1\n", 
     "section": "symbols", 
-    "lineno": 92, 
+    "lineno": 132, 
     "want": "1\n"
   }, 
   {
     "source": "5\n", 
     "section": "symbols", 
-    "lineno": 161, 
+    "lineno": 201, 
     "want": "5\n"
   }, 
   {
     "source": "0xF\n", 
     "section": "symbols", 
-    "lineno": 164, 
+    "lineno": 204, 
     "want": "15\n"
   }, 
   {
     "source": "128 ** 20\n", 
     "section": "symbols", 
-    "lineno": 170, 
+    "lineno": 210, 
     "want": "1393796574908163946345982392040522594123776\n"
   }, 
   {
     "source": "5 + 2\n", 
     "section": "symbols", 
-    "lineno": 185, 
+    "lineno": 225, 
     "want": "7\n"
   }, 
   {
     "source": "def x :Double := 1.0\n", 
     "section": "symbols", 
-    "lineno": 232, 
+    "lineno": 272, 
     "want": "1.000000\n"
   }, 
   {
     "source": "4.0.floor()\n", 
     "section": "symbols", 
-    "lineno": 237, 
+    "lineno": 277, 
     "want": "4\n"
   }, 
   {
     "source": "4 * 1.0\n", 
     "section": "symbols", 
-    "lineno": 240, 
+    "lineno": 280, 
     "want": "4.000000\n"
   }, 
   {
     "source": "'\u2603'\n", 
     "section": "symbols", 
-    "lineno": 276, 
+    "lineno": 316, 
     "want": "'\u2603'\n"
   }, 
   {
     "source": "'\\u23b6'\n", 
     "section": "symbols", 
-    "lineno": 278, 
+    "lineno": 318, 
     "want": "'\u23b6'\n"
   }, 
   {
     "source": "\"Hello World!\".replace(\"World\", \"Monte hackers\")\n", 
     "section": "symbols", 
-    "lineno": 297, 
+    "lineno": 337, 
     "want": "\"Hello Monte hackers!\"\n"
   }, 
   {
     "source": "\"\u00bfD\u00f3nde aqu\u00ed habla Monte o espa\u00f1ol?\".size()\n", 
     "section": "symbols", 
-    "lineno": 299, 
+    "lineno": 339, 
     "want": "34\n"
   }, 
   {
     "source": "def price := 10.00\n`The price is $$$price.`\n", 
     "section": "symbols", 
-    "lineno": 373, 
+    "lineno": 413, 
     "want": "\"The price is $10.000000.\"\n"
-  }, 
-  {
-    "source": "def helloWeb(request) { return [200, \"hello\"]; }\nhelloWeb(\"/\")\n", 
-    "section": "taste", 
-    "lineno": 19, 
-    "want": "[200, \"hello\"]\n"
   }
 ]

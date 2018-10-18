@@ -1,12 +1,8 @@
-import "lib/json" =~ [=> JSON :DeepFrozen]
-import "lib/codec/utf8" =~ [=> UTF8 :DeepFrozen]
-import "lib/tubes" =~ [
-    => makeUTF8EncodePump :DeepFrozen,
-    => makePumpTube :DeepFrozen,
-]
+import "lib/json" =~ [=> JSON]
+import "lib/codec/utf8" =~ [=> UTF8]
 exports (main)
 
-def usage :DeepFrozen := "docs_examples: run tests extracted from Monte docs
+def usage :Bytes := UTF8.encode("docs_examples: run tests extracted from Monte docs
 
 Usage:
  monte eval docs_examples.mt <suitefile> <timeout>
@@ -17,7 +13,7 @@ e.g.
 See extract_examples.py to generate <suitefile>.
 
 See also extract_examples.py and ../Makefile.
-"
+", null)
 
 def runSuite(suite, timeout) as DeepFrozen:
     def CaseID := Pair[Str, Int]  # section, lineno
@@ -79,13 +75,7 @@ def runSuite(suite, timeout) as DeepFrozen:
     return resultsP
 
 
-def printer(rawTube) as DeepFrozen:
-    def out := makePumpTube(makeUTF8EncodePump())
-    out <- flowTo(rawTube)
-    return out
-
-
-def main(argv, =>makeStdErr, =>makeFileResource, =>Timer) as DeepFrozen:
+def main(argv, => stdio, => makeFileResource, => Timer) as DeepFrozen:
     escape ux:
         def [via (_makeDouble) timeout, suiteFile] + _ exit ux := argv.reverse()
 
@@ -108,5 +98,7 @@ def main(argv, =>makeStdErr, =>makeFileResource, =>Timer) as DeepFrozen:
             traceln(`failed to getContents of $suiteFile`)
             traceln.exception(ioErr)
     catch _:
-        printer(makeStdErr()) <- receive(usage)
-        1
+        def stderr := stdio.stderr()
+        when (stderr<-(usage)) ->
+            stderr<-complete()
+            1
