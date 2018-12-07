@@ -40,7 +40,28 @@ call.
 
     tuple -> 2 [label="call"];
 
-This is like the Monte expression ``1 + 1``, or ``(1).add(1)``.
+This is like the Monte expression ``1 + 1``, or ``(1).add(1)``. It is also
+like the Monte expression ``2``. In **DF-Mont**, Monte execution is
+represented by diagrams which commute, and the direction of computation is
+indicated by the direction of arrows.
+
+Initial Object
+--------------
+
+We can formalize the statement that every object in **DF-Mont** is
+``DeepFrozen`` by showing that there is a unique arrow (up to isomorphism)
+``!`` from ``DeepFrozen`` to any other object ``obj`` in the category.
+
+.. digraph:: DeepFrozenInitial
+
+    message [label="[DeepFrozen, \"coerce\", [obj, null], [].asMap()]"];
+
+    DeepFrozen -> message -> obj;
+
+    DeepFrozen -> obj [label="!"];
+
+This diagram commutes. The up-to-isomorphism limitation comes from ``null`` in
+``coerce/2``; we may replace it in this diagram with any other object.
 
 Products
 --------
