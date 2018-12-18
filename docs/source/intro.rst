@@ -156,31 +156,36 @@ Installation
 ~~~~~~~~~~~~
 
 If you don't want to use Docker, the other supported environment requires the
-packaging/build tool `Nix`__. It can be installed on Linux and OSX from their
+packaging/build tool `Nix`_. It can be installed on Linux and OSX from their
 installer script::
 
     curl https://nixos.org/nix/install | sh
 
-Alternately, you can `install it manually`__ from tarball, deb or rpm.
+Alternately, you can `install it manually`__ from tarball, DEB, RPM, etc.
 
-Once you have Nix set up, you can use prebuilt packages courtesy of `Matador Cloud`_::
+.. _`Nix`: http://nixos.org/nix/
+__ http://nixos.org/releases/nix/latest/
 
-    nix-channel --add https://hydra.matador.cloud/project/monte/channel/latest monte
+From Source
++++++++++++
 
-Once that's set up, you can always fetch the latest build by running::
+Builds of Monte from source are straightforward, using Nix::
 
-    nix-channel --update
+    git clone https://github.com/monte-language/typhon/
+    nix-env -f typhon -iA monte
+
+From Cachix
++++++++++++
+
+One of our community members maintains a `Cachix`_ instance. Instructions are
+at the `Monte Cachix`_ page.
+
+Once that's set up, you can install Monte by running::
+
     nix-env -i monte
 
-Alternately, you can use Nix to build from source. After fetching the `Monte runtime from GitHub`__, you can start the build from the root directory of the source tree::
-
-    nix-env -f . -iA monte
-
-__ http://nixos.org/nix/
-__ http://nixos.org/releases/nix/latest/
-__ https://github.com/monte-language/typhon/
-
-.. _`Matador Cloud`: https://matador.cloud/
+.. _`Cachix`: https://cachix.org/
+.. _`Monte Cachix`: https://monte.cachix.org/
 
 
 Interacting with the Monte REPL
