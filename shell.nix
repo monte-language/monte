@@ -4,7 +4,7 @@ let
 in pkgs.stdenv.mkDerivation {
   name = "typhon-env";
   buildInputs = with pkgs; [
-    graphviz tahoelafs git
+    graphviz git
     pythonPackages.sphinx
   ];
 }

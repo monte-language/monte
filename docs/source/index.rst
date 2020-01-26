@@ -23,6 +23,7 @@ languages. Monte aims to be:
     intro
     taste
     ordinary-programming
+    cheat-sheet
     quick_ref
     rosetta-python
     type-system
