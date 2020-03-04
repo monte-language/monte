@@ -6,6 +6,36 @@ Several of Monte's design decisions are based on the concept of
 *misuse-resistant* tools which are designed to frustrate attempts to write
 faulty code, whether accidentally or intentionally.
 
+Sealed Exceptions
+=================
+
+Monte has exceptions. Exceptions are meant to indicate failures which cannot
+be locally recovered from; the throwing object is stuck and has no options
+left. However, to whom is the failure indicated? We treat the ability to
+handle failures as a capability, because failures may violate containment by
+revealing information about the internal state of the throwing object.
+
+Exceptions are unwound like ejectors. Try-finally expressions do not have
+access to exceptions. Try-catch expressions do not receive the exception
+itself, but a sealed box for the exception. The unsealer, ``unsealException``,
+is closely held by the system debugger. As a result, exception handlers form a
+structure where escaping ejectors are handled at the lone call site that
+spawned them, and thrown exceptions are handled by the nearest caller with the
+authority to act as the system debugger.
+
+Why do we allow ``unsealException``? The primary motivation is to allow the
+construction of inner interpreters which absorb exception-handling from Monte.
+We have built such interpreters as REPLs at the command line and in IRC bots.
+Only entrypoints can even ask for ``unsealException``, and of course they may
+not get it, or get a stand-in object which is limited in scope and extent.
+
+Other Languages
+~~~~~~~~~~~~~~~
+
+Haskell only allows exceptions in the IO Monad. If pure code were truly pure,
+then this would allow for pure code to never know about exceptions at all.
+(Haskell has escape hatches for throwing exceptions out of pure code.)
+
 Unicode Identifers
 ==================
 
