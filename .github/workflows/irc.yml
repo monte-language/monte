@@ -1,0 +1,17 @@
+name: "IRC Notice"
+on: [push]
+
+jobs:
+    irc:
+        runs-on: ubuntu-latest
+        steps:
+            - name: push
+              uses: rectalogic/notify-irc@v1
+              if: github.event_name == 'push'
+              with:
+                  channel: "#monte"
+                  nickname: monte-notify-irc
+                  notice: true
+                  message: |
+                      ${{ github.actor }} pushed ${{ github.event.ref }} ${{ github.event.compare }}
+                      ${{ join(github.event.commits.*.message) }}
