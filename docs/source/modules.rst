@@ -135,8 +135,22 @@ Module Syntax Expansion
       ``m`` is a :doc:`quasiparser<quasiparsers>` that parses
       Monte source code. It is part of the runtime Monte compiler.
 
-Under the hood, modules are compiled to be singleton objects which accept
-a mapping of imported objects, and return a mapping of exported names.
+Under the hood, modules are compiled to be DeepFrozen singleton objects which
+accept a mapping of imported objects, and return a mapping of exported names.
+The module protocol consists of two methods.
+
+The first method, `.requirements/0`, returns a list of strings. Since modules
+are immutable, this list cannot vary. When this list is empty, then the module
+is a muffin.
+
+The second method, `.run/1`, does the main work of the module. This method
+takes a map as its sole argument, and this map should take every string from
+the requirements and provide it as a key which maps to an imported module. We
+can think of this map as the imports of the module being evaluated. The method
+will return another map of strings, but this map contains the exported values.
+
+Module loaders will check that module exports are immutable by guarding them
+with `Map[Str, DeepFrozen]`. This is crucial for enforcing module isolation.
 
 .. index:: entrypoint, main, unsafe capabilities
 .. _entrypoints:

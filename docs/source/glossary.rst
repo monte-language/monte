@@ -30,3 +30,18 @@ Glossary
     quasiparser
     QP
         An object which provides the :ref:`quasiliteral` protocol.
+
+    auditor
+        An object which proves that other objects implement a behavior.
+
+    audition
+        The process by which auditors examine object behaviors. Auditors are
+        invited to examine the AST and binding guards for audited objects.
+
+    DeepFrozen
+        An auditor which proves that its objects are transitively immutable
+        and are either composed of plain data or references to other immutable
+        objects.
+
+    module
+        A :ref:`DeepFrozen` object which provides the :ref:`module` protocol.
