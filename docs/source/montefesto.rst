@@ -106,6 +106,31 @@ of new contributors.
 2018
 ====
 
+* Develop Monte packaging
+
+  * ✓ Muffins
+
+2019
+====
+
+* Develop important libraries
+
+  * ✓ Pretty-printers
+
+* Monte-related R&D
+
+  * ✓ Rationals
+  * ✓ Capn Proto: Message generation, CapTP/VatTP
+  * ✓ kubeless integration
+
+2020
+====
+
+Everybody was on vacation.
+
+2021
+====
+
 * Advanced safe objects
 
   * PassByCopy
