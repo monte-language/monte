@@ -256,8 +256,8 @@ We welcome feedback:
 
 Or come say hi on IRC, in `#monte` on `irc.freenode.net`!
 
-__ https://github.com/monte-language/monte/issues
 __ https://github.com/monte-language/typhon/issues
+__ https://github.com/monte-language/monte/issues
 
 
 Acknowledgements
