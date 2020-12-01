@@ -152,16 +152,15 @@ will return another map of strings, but this map contains the exported values.
 Module loaders will check that module exports are immutable by guarding them
 with `Map[Str, DeepFrozen]`. This is crucial for enforcing module isolation.
 
-.. index:: entrypoint, main, unsafe capabilities
+.. index:: entrypoint, main, entrypoint capabilities
 .. _entrypoints:
 
 Entrypoints
 -----------
 
-The export name "main", when present, denotes the :dfn:`entrypoint` of
-the module.  The entrypoint should take named parameters corresponding
-to unsafe capabilities from the unsafe scope, and return an ``Int`` or
-a promise for an ``Int``.
+The export name "main", when present, denotes the :dfn:`entrypoint` of the
+module.  The entrypoint should take named parameters corresponding to
+entrypoint capabilities, and return an ``Int`` or a promise for an ``Int``.
 
 ::
 

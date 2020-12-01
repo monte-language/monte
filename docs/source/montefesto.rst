@@ -138,7 +138,7 @@ Everybody was on vacation.
   * Twines
   * Elusive Eight: Useful numerical analysis methods for doubles
 
-* Production-ready unsafe objects
+* Production-ready entrypoint capabilities
 
   * FS
   * Tamed timers

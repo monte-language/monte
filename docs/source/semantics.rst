@@ -319,8 +319,8 @@ implementation-dependent whether exceptional states are chained together.
     Since Monte doesn't offer tools for digging into exceptional states beyond
     catching them as a reified but opaque value, there is little point in
     mandating implementation details for that value. Instead, one might expect
-    unsafe names like `unsealException` to have standard behavior, and that
-    behavior might include exposing a possibly-empty list of chained
+    entrypoint capabilities like `unsealException` to have standard behavior,
+    and that behavior might include exposing a possibly-empty list of chained
     exceptions. This isn't currently the case, but it might be in the future.
 
 This table shows the possible states:
