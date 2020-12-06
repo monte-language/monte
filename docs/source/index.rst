@@ -28,6 +28,7 @@ languages. Monte aims to be:
     rosetta-python
     type-system
     misuse-resistant
+    performance
 
 
 .. _secure_distributed_computing:
