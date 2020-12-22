@@ -37,6 +37,13 @@ form::
 with zero or more ``import`` lines, zero or more ``parameter`` lines, and
 exactly one ``exports`` line.
 
+.. syntax:: module_header
+
+   Ap('Module',
+    NonTerminal('import'),
+    NonTerminal('module_params'),
+    NonTerminal('exports'))
+
 .. _imports:
 
 Imports
@@ -62,6 +69,10 @@ As a convenience, if the import pattern is a map-pattern, then an automatic
 ignore-pattern tail will be attached by the expander. This makes forward
 compatibility easier, as unknown names in imported modules will not throw
 exceptions.
+
+.. syntax:: import
+
+    SepBy(Sigil("import", P('StrExpr'), Sigil("=~", NonTerminal('pattern'))))
 
 Module Parameters
 ~~~~~~~~~~~~~~~~~
@@ -92,6 +103,10 @@ provided throughout an instantiated module graph.
 
 .. _dependency injection: https://en.wikipedia.org/wiki/Dependency_injection
 
+.. syntax:: module_params
+
+    SepBy(Sigil("parameter", NonTerminal('pattern')))
+
 .. _exports:
 
 Exports
@@ -115,12 +130,6 @@ Which means that exports can only depend on ``DeepFrozen`` imports::
 
     def f() as DeepFrozen: # Exception: `unittest` in the scope of `f` isn't DeepFrozen!
         return unittest
-
-.. syntax:: module_header
-
-   Ap('Module',
-    SepBy(Sigil("imports", P('StrExpr'), Sigil("=~", NonTerminal('pattern')))),
-    NonTerminal('exports'))
 
 .. syntax:: exports
 
@@ -163,8 +172,8 @@ Module Syntax Expansion
          >>> m`1 + 1`.expand()
          m`1.add(1)`
 
-      ``m`` is a :doc:`quasiparser<quasiparsers>` that parses
-      Monte source code. It is part of the runtime Monte compiler.
+      ``m`` is a quasiparser which parses Monte source code. It is part of the
+      runtime Monte compiler.
 
 Under the hood, modules are compiled to be DeepFrozen singleton objects which
 accept a mapping of imported objects, and return a mapping of exported names.
