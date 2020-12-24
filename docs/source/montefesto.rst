@@ -120,7 +120,7 @@ of new contributors.
 * Monte-related R&D
 
   * ✓ Rationals
-  * ✓ Capn Proto: Message generation, CapTP/VatTP
+  * ✓ Capn Proto: Message generation, RPC primitives
   * ✓ kubeless integration
 
 2020
@@ -128,42 +128,76 @@ of new contributors.
 
 Everybody was on vacation.
 
+* ✓ Elusive Eight: Useful numerical analysis methods for doubles (Typhon 212_)
+* ✓ Muffins: Package-to-module compilation toolchain
+* ✓ CapTP on AMP_
+
+  * ✓ Ampoule_, but in Monte: Process pooling for multicore distributed workloads
+
+.. _212: https://github.com/monte-language/typhon/issues/212
+.. _AMP: https://amp-protocol.net/
+.. _Ampoule: https://github.com/twisted/ampoule
+
 2021
 ====
 
-* Advanced safe objects
+* Iterate the bootstrap and turn over the compost heap:
 
-  * PassByCopy
-  * makeWeakMap
-  * Twines
-  * Elusive Eight: Useful numerical analysis methods for doubles
+  * Migrate from montec to tools/muffin,
+  * Switch from interpreted prelude to compiled-in/tree-shaken prelude,
+  * Build out lib/mim as an alternative to lib/monte,
+  * Iterate the Typhon low-level module loader (loader.mt_)
 
-* Production-ready entrypoint capabilities
+  * Issue to be filed pending resolution of dependencies
 
-  * FS
-  * Tamed timers
+    * There are like a dozen relevant open issues
 
-  * Typhon-specific improvements
+* Monte, but native: Implement ENative_ by
+  compiling to C with Cello_
 
-    * Even faster interpreting
+  * Issue to be filed pending resolution of obvious pun problems with
+    nomenclature
 
-* Develop Monte packaging
+* makeWeakMap: Safe maker of weakref-keyed maps (Typhon 128_)
+* User package repositories
 
-  * ✓ Muffins
-  * Packages
-  * Environments
-  * mtpkgs
+  * Issue to be filed pending resolution of scope
 
-* Develop important libraries
+    * Not PyPI
+    * Not NPM
+    * Not Cargo
+    * Not go get
+    * Not AUR
 
-  * Debugger
-  * Pretty-printers
+      * Maybe NUR
 
-* Monte-related R&D
+* CapTP over `Capn Proto RPC`_
 
-  * Rationals
-  * Capn Proto: Message generation, CapTP/VatTP
-  * kubeless integration
+  * Issue to be filed pending resolution of dependencies
+
+    * Typhon 220_ is a hard blocker
+
+.. _128: https://github.com/monte-language/typhon/issues/128
+.. _220: https://github.com/monte-language/typhon/issues/220
+.. _Capn Proto RPC: https://capnproto.org/rpc.html
+.. _Cello: http://libcello.org/
+.. _ENative: http://erights.org/enative/
+.. _loader.mt: https://github.com/monte-language/typhon/blob/master/mast/loader.mt
+
+Bonus Content
+=============
+
+These are projects that we'd like to prioritize, but they either involve
+unbelievable amounts of work, or we don't know how to do them. In either case,
+come chat on IRC and we can probably figure out how to make progress.
+
+* Twines: String-like objects with embedded span information
+* Pass-by-copy construction semantics for CapTP
+* Better filesystem APIs
+* Better timer APIs
+* virtualenvs, but for Monte
+* Line-by-line debugging
+* Expression-by-expression debugging
 
 Contributing
 ============
@@ -172,18 +206,20 @@ If you'd like to get involved with developing or using the Monte language,
 start by getting in touch with us on IRC. It is useful, but not necessary, to
 be acquainted with Python_'s syntax and/or the computational concepts of E_.
 
-Then clone the repo_ and follow the directions below to begin running Monte
-code. If you have problems, join us in #monte on irc.freenode.net, ask your
-question (use a pastebin_ to share any errors, rather than pasting into the
-channel), and wait a few hours if nobody is around. 
+Then clone the repo_ and follow the `installation instructions`_ to begin
+running Monte code. If you have problems, join us in #monte on
+irc.freenode.net, ask your question (use a pastebin_ to share any errors,
+rather than pasting into the channel), and wait a few hours if nobody is
+around.
 
 If you'd like to contribute to Monte, check out the Monte_ and Typhon_ issue
 trackers. It's also worth grepping for ``TODO`` in the source of both
 projects. 
 
-.. _Monte: https://github.com/monte-language/monte/issues
-.. _Typhon: https://github.com/monte-language/typhon/issues
-.. _Python: https://docs.python.org/2/tutorial/
 .. _E: http://www.skyhunter.com/marcs/ewalnut.html
+.. _Monte: https://github.com/monte-language/monte/issues
+.. _Python: https://docs.python.org/2/tutorial/
+.. _Typhon: https://github.com/monte-language/typhon/issues
+.. _installation instructions: https://monte.readthedocs.io/en/latest/intro.html#getting-started
+.. _pastebin: https://bpa.st/
 .. _repo: https://github.com/monte-language/monte
-.. _pastebin: https://bpaste.net/
